@@ -195,8 +195,8 @@
 }
 
 @layer components {
-  /* Length of one full loop. Every panel animation shares it, so the three
-     cards stay in step no matter how their delays differ. */
+  /* Length of one full loop. Inherited, so each card can override it and run
+     at its own tempo — see the per-card --cycle in FeatureSection.vue. */
   .anim-ready {
     --cycle: 8s;
   }

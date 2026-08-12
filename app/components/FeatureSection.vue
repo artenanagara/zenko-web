@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const checks = ['Tutor terverifikasi', 'Pembahasan lengkap', 'Soal sesuai kisi-kisi']
 
-// One observer for the whole section: the three panels animate together as a
-// single beat rather than firing three separate times while scrolling past.
+// One observer starts all three panels, but each card carries its own --cycle
+// (4s / 6s / 8s) so the loops drift apart instead of pulsing in unison.
 const { target, ready, isInView } = useInView(0.2)
 </script>
 
@@ -28,7 +28,10 @@ const { target, ready, isInView } = useInView(0.2)
       </div>
 
       <div class="grid grid-cols-1 gap-6 min-[901px]:grid-cols-3">
-        <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
+        <article
+          style="--cycle: 4s"
+          class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+        >
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
             <ul class="grid gap-4">
               <!-- 260ms apart: wide enough to read as one-by-one, and the
@@ -54,7 +57,10 @@ const { target, ready, isInView } = useInView(0.2)
           </p>
         </article>
 
-        <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
+        <article
+          style="--cycle: 6s"
+          class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+        >
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
             <FeatureExamMock :active="isInView" />
           </div>
@@ -65,7 +71,10 @@ const { target, ready, isInView } = useInView(0.2)
           </p>
         </article>
 
-        <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
+        <article
+          style="--cycle: 8s"
+          class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+        >
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
             <div
               class="anim-item anim-sheen flex h-full min-h-[188px] w-full items-center justify-center rounded-[14px] bg-linear-160 from-[#3f7bf0] via-primary via-55% to-primary-dark shadow-[0_10px_24px_rgba(47,111,235,0.25)]"
