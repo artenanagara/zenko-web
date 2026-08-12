@@ -97,6 +97,122 @@
 }
 
 /* ==========================================================================
+   Scroll-in animations
+   Elements are visible by default; `.anim-ready` (added on mount) hides them,
+   and `.is-inview` plays them back. Without JavaScript neither class lands, so
+   the content simply stays visible.
+   ========================================================================== */
+
+@keyframes zenko-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes zenko-draw {
+  from {
+    stroke-dashoffset: 26;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes zenko-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes zenko-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes zenko-sheen {
+  0% {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  55%,
+  100% {
+    transform: translateX(240%) skewX(-18deg);
+  }
+}
+
+@layer components {
+  /* Fade + rise. Stagger with style="--delay: 120ms". */
+  .anim-ready .anim-item {
+    opacity: 0;
+  }
+
+  .anim-ready.is-inview .anim-item {
+    animation: zenko-reveal 0.55s var(--ease-smooth) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  /* Checkmark draws itself along its own path. */
+  .anim-ready .anim-draw path {
+    stroke-dasharray: 26;
+    stroke-dashoffset: 26;
+  }
+
+  .anim-ready.is-inview .anim-draw path {
+    animation: zenko-draw 0.45s var(--ease-smooth) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  /* Skeleton bars wipe in from the left. */
+  .anim-ready .anim-bar {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .anim-ready.is-inview .anim-bar {
+    animation: zenko-grow 0.5s var(--ease-smooth) both;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  .is-inview .anim-pulse {
+    animation: zenko-pulse 2.4s ease-in-out infinite;
+    animation-delay: 0.8s;
+  }
+
+  /* Light sweeping across the brand tile. */
+  .anim-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .anim-sheen::after {
+    content: '';
+    position: absolute;
+    inset-block: -50%;
+    left: 0;
+    width: 42%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+    transform: translateX(-130%) skewX(-18deg);
+    pointer-events: none;
+  }
+
+  .is-inview .anim-sheen::after {
+    animation: zenko-sheen 4.5s var(--ease-smooth) 0.9s infinite;
+  }
+}
+
+/* ==========================================================================
    Component classes
    Only for things utilities express poorly: layered backgrounds, gradient
    borders, masks and multi-layer inset shadows.

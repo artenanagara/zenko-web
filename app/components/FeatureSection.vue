@@ -1,9 +1,18 @@
 <script setup lang="ts">
 const checks = ['Tutor terverifikasi', 'Pembahasan lengkap', 'Soal sesuai kisi-kisi']
+
+// One observer for the whole section: the three panels animate together as a
+// single beat rather than firing three separate times while scrolling past.
+const { target, ready, isInView } = useInView(0.2)
 </script>
 
 <template>
-  <section id="cara-kerja" class="dot-grid relative border-y border-hairline bg-surface-alt py-18 md:py-22">
+  <section
+    id="cara-kerja"
+    ref="target"
+    class="dot-grid relative border-y border-hairline bg-surface-alt py-18 md:py-22"
+    :class="[ready && 'anim-ready', isInView && 'is-inview']"
+  >
     <div class="container-page relative z-1">
       <div class="mx-auto mb-11 max-w-[640px] text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
@@ -22,8 +31,16 @@ const checks = ['Tutor terverifikasi', 'Pembahasan lengkap', 'Soal sesuai kisi-k
         <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
             <ul class="grid gap-4">
-              <li v-for="check in checks" :key="check" class="flex items-center gap-3 font-semibold tracking-[-0.01em]">
-                <IconCheck class="h-[18px] w-[18px] shrink-0 stroke-primary" />
+              <li
+                v-for="(check, index) in checks"
+                :key="check"
+                class="anim-item flex items-center gap-3 font-semibold tracking-[-0.01em]"
+                :style="{ '--delay': `${120 + index * 140}ms` }"
+              >
+                <IconCheck
+                  class="anim-draw h-[18px] w-[18px] shrink-0 stroke-primary"
+                  :style="{ '--delay': `${200 + index * 140}ms` }"
+                />
                 {{ check }}
               </li>
             </ul>
@@ -37,18 +54,7 @@ const checks = ['Tutor terverifikasi', 'Pembahasan lengkap', 'Soal sesuai kisi-k
 
         <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
-            <!-- Decorative "exam screen" mock -->
-            <div class="w-full max-w-[260px] rounded-[14px] bg-surface p-5 shadow-[0_6px_18px_rgba(15,23,42,0.07)]" aria-hidden="true">
-              <div class="flex items-center justify-between gap-3">
-                <span class="block h-2.5 w-3/5 rounded-pill bg-skeleton" />
-                <span class="shrink-0 rounded-pill bg-primary-soft px-[11px] py-[5px] text-[0.72rem] font-bold text-primary">45:00</span>
-              </div>
-              <span class="mt-4 block h-2.5 w-2/5 rounded-pill bg-skeleton" />
-              <div class="mt-7 flex items-center justify-between gap-3">
-                <span class="block h-2.5 w-[30%] rounded-pill bg-skeleton" />
-                <span class="h-5 w-5 rounded-full bg-skeleton" />
-              </div>
-            </div>
+            <FeatureExamMock :active="isInView" />
           </div>
           <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Kerjakan simulasi</h3>
           <p class="leading-[1.62] text-muted">
@@ -60,10 +66,13 @@ const checks = ['Tutor terverifikasi', 'Pembahasan lengkap', 'Soal sesuai kisi-k
         <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
             <div
-              class="flex h-full min-h-[188px] w-full items-center justify-center rounded-[14px] bg-linear-160 from-[#3f7bf0] via-primary via-55% to-primary-dark shadow-[0_10px_24px_rgba(47,111,235,0.25)]"
+              class="anim-item anim-sheen flex h-full min-h-[188px] w-full items-center justify-center rounded-[14px] bg-linear-160 from-[#3f7bf0] via-primary via-55% to-primary-dark shadow-[0_10px_24px_rgba(47,111,235,0.25)]"
+              style="--delay: 120ms"
               aria-hidden="true"
             >
-              <span class="font-serif text-[2.2rem] font-medium text-white italic">Zenko</span>
+              <span class="anim-item font-serif text-[2.2rem] font-medium text-white italic" style="--delay: 420ms">
+                Zenko
+              </span>
             </div>
           </div>
           <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Lihat hasilmu</h3>
