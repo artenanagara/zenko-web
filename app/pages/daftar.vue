@@ -204,6 +204,10 @@ async function onSubmit() {
         { label: 'Rata-rata rating', value: '4.8' },
       ]"
     >
+      <template #showcase>
+        <AuthShowcaseCatalog />
+      </template>
+
       Mulai dari satu paket, lalu naikkan targetmu
       <span class="text-accent">sesuai kemajuanmu sendiri</span>
     </AuthAside>

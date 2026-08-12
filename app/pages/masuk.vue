@@ -154,6 +154,10 @@ async function onSubmit() {
         { label: 'Rata-rata rating', value: '4.8' },
       ]"
     >
+      <template #showcase>
+        <AuthShowcaseProgress />
+      </template>
+
       Setiap soal yang kamu kerjakan hari ini
       <span class="text-accent">mengurangi kejutan di hari ujian</span>
     </AuthAside>

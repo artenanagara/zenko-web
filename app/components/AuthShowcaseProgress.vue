@@ -1,22 +1,34 @@
 <script setup lang="ts">
 /**
- * Product glimpse for the auth pages: a mock score report that answers
- * "what do I actually get after signing up?".
+ * Sign-in panel visual: a returning student's own progress.
  *
- * Motion plays once and settles — a form is no place for a repeating loop.
+ * It matches the page's promise — "lanjutkan latihan dari paket yang sudah
+ * kamu beli" — by showing history rather than the catalogue.
+ *
+ * The score counts up once per animation cycle, so the number is moving at
+ * the moment the card finishes arriving.
  */
 
 /** Relative bar heights, five attempts trending upward. */
 const attempts = [38, 52, 61, 74, 92]
+const subtests = [
+  { label: 'TWK', score: 118 },
+  { label: 'TIU', score: 142 },
+  { label: 'TKP', score: 152 },
+]
 
 const TARGET_SCORE = 412
 const COUNT_DURATION = 1100
-const COUNT_DELAY = 350
+
+/** Must match --cycle on .anim-ready, so the count restarts with the card. */
+const CYCLE = 8000
+const COUNT_DELAY = 500
 
 const score = ref(0)
 
 let frame = 0
 let timer: ReturnType<typeof setTimeout> | null = null
+let cycle: ReturnType<typeof setInterval> | null = null
 
 function countUp() {
   const start = performance.now()
@@ -32,25 +44,31 @@ function countUp() {
   frame = requestAnimationFrame(step)
 }
 
+function restart() {
+  score.value = 0
+  timer = setTimeout(countUp, COUNT_DELAY)
+}
+
 onMounted(() => {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     score.value = TARGET_SCORE
     return
   }
 
-  // Wait for the card to finish arriving before the number starts moving.
-  timer = setTimeout(countUp, COUNT_DELAY)
+  restart()
+  cycle = setInterval(restart, CYCLE)
 })
 
 onBeforeUnmount(() => {
   if (timer) clearTimeout(timer)
+  if (cycle) clearInterval(cycle)
   cancelAnimationFrame(frame)
 })
 </script>
 
 <template>
   <div class="relative" aria-hidden="true">
-    <div class="anim-in rounded-lg bg-white/85 p-6 shadow-float backdrop-blur-sm" style="--delay: 80ms">
+    <div class="anim-item rounded-lg bg-white/85 p-6 shadow-float backdrop-blur-sm" style="--delay: 80ms">
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-[0.82rem] text-muted">Hasil try out terakhir</p>
@@ -67,7 +85,7 @@ onBeforeUnmount(() => {
         <span
           v-for="(height, index) in attempts"
           :key="index"
-          class="anim-rise flex-1 rounded-t-md rounded-b-sm"
+          class="anim-bar-y flex-1 rounded-t-md rounded-b-sm"
           :class="index === attempts.length - 1
             ? 'bg-linear-to-b from-primary-light to-primary'
             : 'bg-primary/15'"
@@ -81,16 +99,21 @@ onBeforeUnmount(() => {
       </div>
 
       <dl class="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-5 text-center">
-        <div v-for="(subtest, index) in ['TWK', 'TIU', 'TKP']" :key="subtest" class="anim-in" :style="{ '--delay': `${760 + index * 90}ms` }">
-          <dt class="text-[0.72rem] text-muted">{{ subtest }}</dt>
-          <dd class="mt-0.5 font-bold tabular-nums">{{ [118, 142, 152][index] }}</dd>
+        <div
+          v-for="(subtest, index) in subtests"
+          :key="subtest.label"
+          class="anim-item"
+          :style="{ '--delay': `${760 + index * 90}ms` }"
+        >
+          <dt class="text-[0.72rem] text-muted">{{ subtest.label }}</dt>
+          <dd class="mt-0.5 font-bold tabular-nums">{{ subtest.score }}</dd>
         </div>
       </dl>
     </div>
 
     <!-- Floating note, offset so the card does not read as a flat rectangle -->
     <p
-      class="anim-in absolute -right-3 -bottom-4 flex items-center gap-2 rounded-pill bg-white px-4 py-2.5 text-[0.8rem] font-semibold shadow-lift"
+      class="anim-item absolute -right-3 -bottom-4 flex items-center gap-2 rounded-pill bg-white px-4 py-2.5 text-[0.8rem] font-semibold shadow-lift"
       style="--delay: 1020ms"
     >
       <IconSeal class="h-[18px] w-[18px] shrink-0" />

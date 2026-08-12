@@ -2,6 +2,9 @@
 /**
  * Brand column for the auth pages. Purely decorative, so it disappears below
  * lg rather than stacking under the form and pushing it off the fold.
+ *
+ * The visual comes in through the `showcase` slot: sign-in shows returning
+ * progress, sign-up shows the catalogue.
  */
 defineProps<{
   badge: string
@@ -25,7 +28,9 @@ const { target, ready, isInView } = useInView(0.1)
         {{ badge }}
       </p>
 
-      <AuthShowcase class="mx-auto w-full max-w-[380px]" />
+      <div class="mx-auto w-full max-w-[380px]">
+        <slot name="showcase" />
+      </div>
 
       <div>
         <p class="text-[clamp(1.6rem,2.2vw,2.1rem)] leading-[1.25] tracking-[-0.03em]">
