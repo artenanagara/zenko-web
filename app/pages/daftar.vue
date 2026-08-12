@@ -150,7 +150,11 @@ async function onSubmit() {
                 :aria-describedby="errors.acceptTerms ? 'terms-error' : undefined"
               >
               <span>
-                Saya setuju dengan Ketentuan Layanan dan
+                Saya setuju dengan
+                <NuxtLink to="/ketentuan-layanan" class="font-semibold text-primary hover:underline">
+                  Ketentuan Layanan
+                </NuxtLink>
+                dan
                 <NuxtLink to="/kebijakan-privasi" class="font-semibold text-primary hover:underline">
                   Kebijakan Privasi
                 </NuxtLink>
