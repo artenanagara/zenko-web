@@ -51,7 +51,12 @@ onBeforeUnmount(() => window.removeEventListener('scroll', syncScrollState))
         >
           <IconSearch class="h-[19px] w-[19px]" />
         </a>
-        <a href="#" class="rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt">Masuk</a>
+        <NuxtLink
+          to="/masuk"
+          class="rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt"
+        >
+          Masuk
+        </NuxtLink>
         <AppButton href="#" size="sm">Daftar</AppButton>
       </div>
     </nav>
