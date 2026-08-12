@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { user, isSignedIn, signOut } = useAuth()
+
 const isScrolled = ref(false)
 
 function syncScrollState() {
@@ -51,13 +53,35 @@ onBeforeUnmount(() => window.removeEventListener('scroll', syncScrollState))
         >
           <IconSearch class="h-[19px] w-[19px]" />
         </a>
-        <NuxtLink
-          to="/masuk"
-          class="rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt"
-        >
-          Masuk
-        </NuxtLink>
-        <AppButton href="#" size="sm">Daftar</AppButton>
+        <template v-if="isSignedIn">
+          <span class="hidden items-center gap-2.5 sm:flex">
+            <img
+              v-if="user?.avatarUrl"
+              :src="user.avatarUrl"
+              alt=""
+              referrerpolicy="no-referrer"
+              class="h-8 w-8 rounded-full object-cover"
+            >
+            <span class="max-w-[140px] truncate font-semibold">{{ user?.name }}</span>
+          </span>
+          <button
+            type="button"
+            class="rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt"
+            @click="signOut"
+          >
+            Keluar
+          </button>
+        </template>
+
+        <template v-else>
+          <NuxtLink
+            to="/masuk"
+            class="rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt"
+          >
+            Masuk
+          </NuxtLink>
+          <AppButton to="/masuk" size="sm">Daftar</AppButton>
+        </template>
       </div>
     </nav>
   </header>

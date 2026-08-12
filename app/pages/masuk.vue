@@ -10,6 +10,17 @@ useHead({
   ],
 })
 
+const { signInWithGoogle } = useAuth()
+const route = useRoute()
+
+/** The OAuth callback bounces back here with ?error=<reason> on failure. */
+const CALLBACK_ERRORS: Record<string, string> = {
+  dibatalkan: 'Login dibatalkan. Kamu bisa mencoba lagi kapan saja.',
+  state_tidak_cocok: 'Sesi login kedaluwarsa. Silakan ulangi dari awal.',
+  kode_kosong: 'Google tidak mengirim kode otorisasi. Coba lagi.',
+  gagal_masuk: 'Gagal menyelesaikan login dengan Google. Coba lagi sebentar lagi.',
+}
+
 const form = reactive({
   email: '',
   password: '',
@@ -19,7 +30,9 @@ const form = reactive({
 const errors = reactive<{ email?: string, password?: string }>({})
 const showPassword = ref(false)
 const isSubmitting = ref(false)
-const submitError = ref('')
+const submitError = ref(
+  CALLBACK_ERRORS[String(route.query.error ?? '')] ?? '',
+)
 
 /** Deliberately permissive: the server is the real authority on validity. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -162,6 +175,7 @@ async function onSubmit() {
         <button
           type="button"
           class="flex w-full items-center justify-center gap-3 rounded-pill border border-line bg-surface px-6 py-3.5 font-semibold transition-[background,border-color] duration-200 ease-smooth hover:border-hairline-strong hover:bg-surface-alt"
+          @click="signInWithGoogle"
         >
           <svg viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
             <path fill="#4285F4" d="M21.6 12.2c0-.7-.06-1.4-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.9-1.74 2.98-4.3 2.98-7.35Z" />

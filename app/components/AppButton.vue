@@ -5,6 +5,9 @@
  */
 withDefaults(
   defineProps<{
+    /** Internal route — renders a NuxtLink. */
+    to?: string
+    /** External or placeholder URL — renders a plain anchor. */
     href?: string
     variant?: 'primary' | 'light'
     size?: 'sm' | 'md' | 'lg'
@@ -33,9 +36,10 @@ const sizes = {
 
 <template>
   <component
-    :is="href ? 'a' : 'button'"
+    :is="to ? resolveComponent('NuxtLink') : href ? 'a' : 'button'"
+    :to="to"
     :href="href"
-    :type="href ? undefined : type"
+    :type="to || href ? undefined : type"
     :class="[base, variants[variant], sizes[size], pill ? 'rounded-pill' : 'rounded-xs']"
   >
     <slot />

@@ -48,16 +48,33 @@ urutan yang sama seperti API sungguhan.
 Defaultnya `false` supaya build produksi tidak pernah menyajikan fixture karena
 lupa mematikan flag.
 
+## Login dengan Google
+
+Tombol **Masuk dengan Google** melakukan navigasi penuh ke
+`{apiBase}/auth/google`; consent screen Google tidak bisa dijalankan di iframe.
+Setelah selesai, zenko-api menerbitkan cookie `HttpOnly` lalu mengembalikan
+browser ke `/?masuk=berhasil`, atau ke `/masuk?error=<alasan>` bila gagal.
+
+Karena cookienya `HttpOnly` dan milik origin API, status login tidak bisa dibaca
+dari `document.cookie`. `useAuth()` menanyakannya ke `/auth/me` — hanya di sisi
+klien, lewat plugin `auth.client.ts`. Saat SSR cookie browser tidak tersedia di
+server Nuxt, dan menebaknya akan membuat header berkedip salah saat hydration.
+
+Login butuh zenko-api berjalan dengan kredensial Google terisi; mode mock tidak
+mencakup autentikasi.
+
 ## Struktur
 
 ```
 app/
-  app.vue              shell: header + halaman + footer
+  app.vue              shell: <NuxtLayout> + <NuxtPage>
   pages/index.vue      landing page, merangkai section
   components/          komponen presentasional
-  composables/         useCatalog.ts — pembungkus endpoint API
+  composables/         useCatalog.ts, useAuth.ts, useInView.ts
+  layouts/             default (header+footer) dan auth (tanpa chrome)
   assets/css/main.css  design token (@theme) + component class
-types/catalog.ts       tipe wire, cerminan internal/model/catalog.go
+  plugins/auth.client.ts memuat sesi sekali saat aplikasi start
+types/catalog.ts       tipe wire, cerminan internal/model/
 ```
 
 ## Design token
@@ -90,3 +107,4 @@ component class di file yang sama: `.dot-grid` (pola titik latar),
 - **Form pencarian** belum memfilter apa-apa; endpoint `?q=` di backend sudah
   siap dipakai.
 - **Menu mobile** belum ada — di bawah 768px link nav disembunyikan.
+- **Login email/kata sandi** belum tersambung; hanya Google yang berfungsi.

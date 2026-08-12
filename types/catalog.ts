@@ -57,3 +57,11 @@ export interface SortOption {
   key: SortKey
   label: string
 }
+
+/** Signed-in identity, mirrors zenko-api/internal/model/user.go. */
+export interface User {
+  id: string
+  email: string
+  name: string
+  avatarUrl: string
+}
