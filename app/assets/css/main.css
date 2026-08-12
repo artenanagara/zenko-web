@@ -57,8 +57,9 @@
   /* Motion */
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Layout */
-  --container-page: 1400px;
+  /* Layout. The cap only bites on very wide displays — below it the 20px
+     gutter governs, which is what keeps the hero panel near the edges. */
+  --container-page: 1720px;
 }
 
 /* ==========================================================================
