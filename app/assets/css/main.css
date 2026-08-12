@@ -91,57 +91,86 @@
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      /* Without this, a looping animation keeps restarting at 0.01ms and
+         flickers instead of stopping. */
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
   }
 }
 
 /* ==========================================================================
-   Scroll-in animations
+   Panel animations
    Elements are visible by default; `.anim-ready` (added on mount) hides them,
-   and `.is-inview` plays them back. Without JavaScript neither class lands, so
-   the content simply stays visible.
+   and `.is-inview` plays them. Without JavaScript neither class lands, so the
+   content simply stays visible.
+
+   Each animation is one 8s cycle: enter over the first ~7%, hold for ~6.2s,
+   leave, then sit hidden until the cycle restarts. Per-element --delay offsets
+   the cycle, which is what keeps the stagger on every repeat.
    ========================================================================== */
 
 @keyframes zenko-reveal {
-  from {
+  0% {
     opacity: 0;
     transform: translateY(12px);
   }
-  to {
+  7%,
+  85% {
     opacity: 1;
     transform: none;
+  }
+  93%,
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
   }
 }
 
 /* Slides along the reading direction, so a stagger reads as a sequence
    rather than as several things fading at once. */
 @keyframes zenko-reveal-x {
-  from {
+  0% {
     opacity: 0;
     transform: translateX(-18px);
   }
-  to {
+  7%,
+  85% {
     opacity: 1;
     transform: none;
+  }
+  93%,
+  100% {
+    opacity: 0;
+    transform: translateX(12px);
   }
 }
 
 @keyframes zenko-draw {
-  from {
+  0% {
     stroke-dashoffset: 26;
   }
-  to {
+  7%,
+  85% {
     stroke-dashoffset: 0;
+  }
+  93%,
+  100% {
+    stroke-dashoffset: 26;
   }
 }
 
 @keyframes zenko-grow {
-  from {
+  0% {
     transform: scaleX(0);
   }
-  to {
+  7%,
+  85% {
     transform: scaleX(1);
+  }
+  93%,
+  100% {
+    transform: scaleX(0);
   }
 }
 
@@ -166,14 +195,19 @@
 }
 
 @layer components {
+  /* Length of one full loop. Every panel animation shares it, so the three
+     cards stay in step no matter how their delays differ. */
+  .anim-ready {
+    --cycle: 8s;
+  }
+
   /* Fade + rise. Stagger with style="--delay: 120ms". */
   .anim-ready .anim-item {
     opacity: 0;
   }
 
   .anim-ready.is-inview .anim-item {
-    animation: zenko-reveal 0.55s var(--ease-smooth) both;
-    animation-delay: var(--delay, 0ms);
+    animation: zenko-reveal var(--cycle) var(--ease-smooth) var(--delay, 0ms) infinite both;
   }
 
   .anim-ready .anim-slide {
@@ -181,8 +215,7 @@
   }
 
   .anim-ready.is-inview .anim-slide {
-    animation: zenko-reveal-x 0.5s var(--ease-smooth) both;
-    animation-delay: var(--delay, 0ms);
+    animation: zenko-reveal-x var(--cycle) var(--ease-smooth) var(--delay, 0ms) infinite both;
   }
 
   /* Checkmark draws itself along its own path. */
@@ -192,8 +225,7 @@
   }
 
   .anim-ready.is-inview .anim-draw path {
-    animation: zenko-draw 0.45s var(--ease-smooth) both;
-    animation-delay: var(--delay, 0ms);
+    animation: zenko-draw var(--cycle) var(--ease-smooth) var(--delay, 0ms) infinite both;
   }
 
   /* Skeleton bars wipe in from the left. */
@@ -203,8 +235,7 @@
   }
 
   .anim-ready.is-inview .anim-bar {
-    animation: zenko-grow 0.5s var(--ease-smooth) both;
-    animation-delay: var(--delay, 0ms);
+    animation: zenko-grow var(--cycle) var(--ease-smooth) var(--delay, 0ms) infinite both;
   }
 
   .is-inview .anim-pulse {
@@ -230,7 +261,31 @@
   }
 
   .is-inview .anim-sheen::after {
-    animation: zenko-sheen 4.5s var(--ease-smooth) 0.9s infinite;
+    animation: zenko-sheen var(--cycle) var(--ease-smooth) 0.9s infinite;
+  }
+
+  /* These loops end on a hidden keyframe, so the global reduced-motion rule
+     alone would leave the panels blank. Drop the animation and pin every
+     element to its resting state instead. */
+  @media (prefers-reduced-motion: reduce) {
+    .anim-ready .anim-item,
+    .anim-ready .anim-slide,
+    .anim-ready .anim-bar,
+    .anim-ready .anim-pulse {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .anim-ready .anim-draw path {
+      animation: none !important;
+      stroke-dashoffset: 0 !important;
+    }
+
+    .anim-sheen::after {
+      animation: none !important;
+      opacity: 0 !important;
+    }
   }
 }
 
