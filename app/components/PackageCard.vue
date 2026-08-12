@@ -6,8 +6,8 @@ defineProps<{ item: Package }>()
 
 <template>
   <!-- Outer tray; the white card sits inside it and lifts as one on hover. -->
-  <a
-    :href="`/paket/${item.slug}`"
+  <NuxtLink
+    :to="`/paket/${item.slug}`"
     class="group flex flex-col rounded-lg bg-surface-sunken px-2 pt-2 pb-0.5 transition-transform duration-300 ease-smooth hover:-translate-y-1 focus-visible:-translate-y-1"
     :aria-label="`Lihat detail paket ${item.title}`"
   >
@@ -50,5 +50,5 @@ defineProps<{ item: Package }>()
     <p class="px-1.5 pt-2.5 pb-2 text-center text-[0.7rem] font-bold tracking-[0.14em] text-faint uppercase">
       {{ item.category }}
     </p>
-  </a>
+  </NuxtLink>
 </template>

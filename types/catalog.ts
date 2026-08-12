@@ -21,6 +21,27 @@ export interface Package {
   priceOriginal: number
 }
 
+/** One section of material inside a package. */
+export interface Topic {
+  title: string
+  count: number
+}
+
+/**
+ * Full view of a package, returned only by the by-slug endpoint. The list
+ * endpoint stays on the lighter `Package`.
+ */
+export interface PackageDetail extends Package {
+  description: string
+  questionCount: number
+  durationMinutes: number
+  reviewCount: number
+  includes: string[]
+  topics: Topic[]
+  /** Unix seconds. */
+  updatedAt: number
+}
+
 export interface Testimonial {
   id: string
   name: string

@@ -20,7 +20,7 @@ defineProps<{
         Gagal memuat paket. Pastikan zenko-api sedang berjalan.
       </p>
 
-      <div v-else class="grid grid-cols-1 gap-[18px] min-[560px]:grid-cols-2 min-[901px]:grid-cols-3 min-[1025px]:grid-cols-4">
+      <div v-else class="grid grid-cols-1 gap-6 min-[560px]:grid-cols-2 min-[901px]:grid-cols-3 min-[1025px]:grid-cols-4">
         <template v-if="pending">
           <div v-for="n in 8" :key="n" class="h-[340px] animate-pulse rounded-lg bg-surface-sunken" />
         </template>
@@ -29,7 +29,7 @@ defineProps<{
       </div>
 
       <div
-        class="mt-6 flex flex-col items-stretch gap-5 rounded-lg bg-surface-sunken p-[22px] text-center md:flex-row md:items-center md:justify-between md:rounded-pill md:py-4 md:pr-4 md:pl-[26px] md:text-left"
+        class="mt-6 flex flex-col items-stretch gap-8 rounded-lg bg-surface-sunken p-5.5 text-center md:flex-row md:items-center md:justify-between md:rounded-pill md:py-4 md:pr-4 md:pl-6.5 md:text-left"
       >
         <p class="flex items-center justify-center gap-3 text-[0.94rem] text-muted md:justify-start md:text-base">
           <IconSeal class="h-6 w-6 shrink-0" />
