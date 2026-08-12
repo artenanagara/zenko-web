@@ -107,4 +107,5 @@ component class di file yang sama: `.dot-grid` (pola titik latar),
 - **Form pencarian** belum memfilter apa-apa; endpoint `?q=` di backend sudah
   siap dipakai.
 - **Menu mobile** belum ada — di bawah 768px link nav disembunyikan.
-- **Login email/kata sandi** belum tersambung; hanya Google yang berfungsi.
+- **Login/daftar dengan email** belum tersambung; hanya Google yang berfungsi.
+  Formulirnya memvalidasi input lalu mengarahkan pengguna ke tombol Google.

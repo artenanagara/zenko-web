@@ -80,7 +80,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', syncScrollState))
           >
             Masuk
           </NuxtLink>
-          <AppButton to="/masuk" size="sm">Daftar</AppButton>
+          <AppButton to="/daftar" size="sm">Daftar</AppButton>
         </template>
       </div>
     </nav>
