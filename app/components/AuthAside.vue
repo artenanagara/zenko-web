@@ -7,15 +7,25 @@ defineProps<{
   badge: string
   stats: { label: string, value: string }[]
 }>()
+
+// The panel is above the fold here, so this fires on mount rather than on
+// scroll — it still reuses one observer instead of a second timing path.
+const { target, ready, isInView } = useInView(0.1)
 </script>
 
 <template>
   <aside class="hidden p-5 lg:block">
-    <div class="hero-aurora flex h-full flex-col justify-between rounded-[32px] p-12">
+    <div
+      ref="target"
+      class="hero-aurora flex h-full flex-col justify-between gap-10 rounded-[32px] p-12"
+      :class="[ready && 'anim-ready', isInView && 'is-inview']"
+    >
       <p class="inline-flex w-fit items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-[7px] pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]">
         <span class="h-[7px] w-[7px] rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
         {{ badge }}
       </p>
+
+      <AuthShowcase class="mx-auto w-full max-w-[380px]" />
 
       <div>
         <p class="text-[clamp(1.6rem,2.2vw,2.1rem)] leading-[1.25] tracking-[-0.03em]">
