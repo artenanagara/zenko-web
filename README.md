@@ -11,8 +11,9 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-Jalankan `zenko-api` di terminal terpisah lebih dulu, kalau tidak grid paket
-akan menampilkan pesan gagal memuat.
+`.env.example` menyalakan mode mock, jadi katalog langsung terisi tanpa backend.
+Kalau ingin memakai data sungguhan, jalankan `zenko-api` di terminal terpisah
+lalu set `NUXT_PUBLIC_USE_MOCK=false`.
 
 | Script              | Keterangan                          |
 | ------------------- | ----------------------------------- |
@@ -23,12 +24,29 @@ akan menampilkan pesan gagal memuat.
 
 ## Konfigurasi
 
-| Variable               | Default                          | Keterangan          |
-| ---------------------- | -------------------------------- | ------------------- |
-| `NUXT_PUBLIC_API_BASE` | `http://localhost:8080/api/v1`   | Base URL zenko-api  |
+| Variable               | Default                        | Keterangan                          |
+| ---------------------- | ------------------------------ | ----------------------------------- |
+| `NUXT_PUBLIC_API_BASE` | `http://localhost:8080/api/v1` | Base URL zenko-api                  |
+| `NUXT_PUBLIC_USE_MOCK` | `false`                        | `true` = katalog dari fixture lokal |
 
-Dibaca lewat `runtimeConfig.public.apiBase` di `nuxt.config.ts`, jadi bisa
-diganti saat runtime tanpa build ulang.
+Dibaca lewat `runtimeConfig.public` di `nuxt.config.ts`, jadi bisa diganti saat
+runtime tanpa build ulang.
+
+## Mode mock
+
+`NUXT_PUBLIC_USE_MOCK=true` membuat `useCatalog` mengambil data dari
+[app/mocks/catalog.ts](app/mocks/catalog.ts) alih-alih memanggil API — berguna
+saat mengerjakan tampilan tanpa menyalakan backend, atau saat Go belum
+terpasang. Isinya 12 paket dan 3 testimoni, cerminan dari
+`zenko-api/internal/store/seed.go`; **ubah keduanya bersamaan** kalau data seed
+berubah.
+
+Tab urutan tetap berfungsi di mode ini: `sortMockPackages` menyalin logika
+`sortPackages` di service backend, jadi Pilihan/Terlaris/Terbaru menghasilkan
+urutan yang sama seperti API sungguhan.
+
+Defaultnya `false` supaya build produksi tidak pernah menyajikan fixture karena
+lupa mematikan flag.
 
 ## Struktur
 

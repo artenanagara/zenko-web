@@ -15,6 +15,10 @@ export default defineNuxtConfig({
     public: {
       // Base URL of zenko-api. Override with NUXT_PUBLIC_API_BASE.
       apiBase: 'http://localhost:8080/api/v1',
+      // Serve the catalogue from app/mocks instead of calling the API.
+      // Off by default so a production build never ships fixtures; turn it on
+      // with NUXT_PUBLIC_USE_MOCK=true while the backend is unavailable.
+      useMock: false,
     },
   },
 
