@@ -296,15 +296,13 @@
    ========================================================================== */
 
 @layer components {
+  /* --page-gutter is the space on ONE side, so the maths reads the way the
+     value does: 20px left, 20px right. */
   .container-page {
-    width: min(var(--container-page), calc(100% - var(--page-gutter, 32px)));
-    margin-inline: auto;
-  }
+    --page-gutter: 20px;
 
-  @media (max-width: 768px) {
-    .container-page {
-      --page-gutter: 24px;
-    }
+    width: min(var(--container-page), calc(100% - var(--page-gutter) * 2));
+    margin-inline: auto;
   }
 
   /* Serif italic phrase that closes each section headline. */
