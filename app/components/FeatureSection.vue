@@ -14,11 +14,11 @@ const { target, ready, isInView } = useInView(0.2)
     :class="[ready && 'anim-ready', isInView && 'is-inview']"
   >
     <div class="container-page relative z-1">
-      <div class="mx-auto mb-11 max-w-[640px] text-center">
+      <div class="mx-auto mb-11 max-w-160 text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
           Kenapa pilih Zenko
         </p>
-        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-[-0.05em]">
+        <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
           <span class="text-accent">Belajar</span> lebih terarah, lebih siap
         </h2>
         <p class="mt-3.5 text-[1.02rem] text-muted">
@@ -30,9 +30,9 @@ const { target, ready, isInView } = useInView(0.2)
       <div class="grid grid-cols-1 gap-6 min-[901px]:grid-cols-3">
         <article
           style="--cycle: 4s"
-          class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+          class="flex flex-col rounded-[26px] bg-surface p-6 pb-9 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
         >
-          <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
+          <div class="mb-8 flex min-h-60 items-center justify-center rounded-[20px] bg-surface-sunken p-7">
             <ul class="grid gap-4">
               <!-- 260ms apart: wide enough to read as one-by-one, and the
                    check lands just after its label settles. -->
@@ -43,7 +43,7 @@ const { target, ready, isInView } = useInView(0.2)
                 :style="{ '--delay': `${120 + index * 260}ms` }"
               >
                 <IconCheck
-                  class="anim-draw h-[18px] w-[18px] shrink-0 stroke-primary"
+                  class="anim-draw h-5 w-5 shrink-0 stroke-primary"
                   :style="{ '--delay': `${280 + index * 260}ms` }"
                 />
                 {{ check }}
@@ -59,9 +59,9 @@ const { target, ready, isInView } = useInView(0.2)
 
         <article
           style="--cycle: 6s"
-          class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+          class="flex flex-col rounded-[26px] bg-surface p-6 pb-9 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
         >
-          <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
+          <div class="mb-8 flex min-h-60 items-center justify-center rounded-[20px] bg-surface-sunken p-7">
             <FeatureExamMock :active="isInView" />
           </div>
           <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Kerjakan simulasi</h3>
@@ -73,11 +73,11 @@ const { target, ready, isInView } = useInView(0.2)
 
         <article
           style="--cycle: 8s"
-          class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+          class="flex flex-col rounded-[26px] bg-surface p-6 pb-9 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
         >
-          <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
+          <div class="mb-8 flex min-h-60 items-center justify-center rounded-[20px] bg-surface-sunken p-7">
             <div
-              class="anim-item anim-sheen flex h-full min-h-[188px] w-full items-center justify-center rounded-[14px] bg-linear-160 from-[#3f7bf0] via-primary via-55% to-primary-dark shadow-[0_10px_24px_rgba(47,111,235,0.25)]"
+              class="anim-item anim-sheen flex h-full min-h-47 w-full items-center justify-center rounded-[14px] bg-linear-160 from-[#3f7bf0] via-primary via-55% to-primary-dark shadow-[0_10px_24px_rgba(47,111,235,0.25)]"
               style="--delay: 120ms"
               aria-hidden="true"
             >

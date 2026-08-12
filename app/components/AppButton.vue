@@ -28,9 +28,9 @@ const variants = {
 }
 
 const sizes = {
-  sm: 'min-h-[38px] px-4',
-  md: 'min-h-[48px] px-[26px]',
-  lg: 'min-h-[52px] px-[30px]',
+  sm: 'min-h-10 px-4',
+  md: 'min-h-12 px-7',
+  lg: 'min-h-13 px-8',
 }
 </script>
 

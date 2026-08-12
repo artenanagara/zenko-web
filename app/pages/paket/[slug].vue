@@ -47,7 +47,7 @@ useHead({
           <span class="text-ink">{{ detail.title }}</span>
         </nav>
 
-        <div class="max-w-[760px]">
+        <div class="max-w-190">
           <span class="inline-block rounded-pill bg-primary-soft px-3.5 py-1.5 text-[0.78rem] font-bold tracking-[0.06em] text-primary uppercase">
             {{ detail.category }}
           </span>
@@ -100,7 +100,7 @@ useHead({
           <h2 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Yang kamu dapatkan</h2>
           <ul class="grid gap-3 min-[560px]:grid-cols-2">
             <li v-for="item in detail.includes" :key="item" class="flex items-start gap-3 text-muted">
-              <IconCheck class="mt-1 h-[18px] w-[18px] shrink-0 stroke-primary" />
+              <IconCheck class="mt-1 h-5 w-5 shrink-0 stroke-primary" />
               {{ item }}
             </li>
           </ul>
@@ -166,7 +166,7 @@ useHead({
           Paket lain di <span class="text-accent">{{ detail.category }}</span>
         </h2>
 
-        <div class="grid grid-cols-1 gap-[18px] min-[560px]:grid-cols-2 min-[901px]:grid-cols-4">
+        <div class="grid grid-cols-1 gap-5 min-[560px]:grid-cols-2 min-[901px]:grid-cols-4">
           <PackageCard v-for="item in related" :key="item.id" :item="item" />
         </div>
       </div>

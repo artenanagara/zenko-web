@@ -50,7 +50,7 @@ const packages = [
       class="anim-item absolute -right-3 -bottom-4 flex items-center gap-2 rounded-pill bg-white px-4 py-2.5 text-[0.8rem] font-semibold shadow-lift"
       style="--delay: 700ms"
     >
-      <IconSeal class="h-[18px] w-[18px] shrink-0" />
+      <IconSeal class="h-5 w-5 shrink-0" />
       120+ paket siap dikerjakan
     </p>
   </div>

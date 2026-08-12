@@ -35,13 +35,13 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="anim-item w-full max-w-[260px] rounded-[14px] bg-surface p-5 shadow-[0_6px_18px_rgba(15,23,42,0.07)]"
+    class="anim-item w-full max-w-65 rounded-[14px] bg-surface p-5 shadow-[0_6px_18px_rgba(15,23,42,0.07)]"
     style="--delay: 60ms"
   >
     <div class="flex items-center justify-between gap-3">
       <span class="anim-bar block h-2.5 w-3/5 rounded-pill bg-skeleton" style="--delay: 240ms" />
       <span
-        class="anim-item shrink-0 rounded-pill bg-primary-soft px-[11px] py-[5px] font-mono text-[0.72rem] font-bold tabular-nums text-primary"
+        class="anim-item shrink-0 rounded-pill bg-primary-soft px-3 py-1 font-mono text-[0.72rem] font-bold tabular-nums text-primary"
         style="--delay: 420ms"
         aria-hidden="true"
       >{{ timeLabel }}</span>

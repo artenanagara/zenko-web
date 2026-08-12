@@ -12,11 +12,11 @@ function stars(rating: number) {
 <template>
   <section class="py-18 md:py-22" aria-labelledby="testimonials-heading">
     <div class="container-page">
-      <div class="mx-auto mb-11 max-w-[640px] text-center">
+      <div class="mx-auto mb-11 max-w-160 text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
           Testimoni siswa
         </p>
-        <h2 id="testimonials-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-[-0.05em]">
+        <h2 id="testimonials-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
           Ribuan siswa sudah <span class="text-accent">lebih percaya diri</span>
         </h2>
         <p class="mt-3.5 text-[1.02rem] text-muted">
@@ -28,11 +28,11 @@ function stars(rating: number) {
         <article
           v-for="item in items"
           :key="item.id"
-          class="relative flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface px-7 pt-[30px] pb-[26px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+          class="relative flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface px-7 pt-8 pb-7 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
         >
           <!-- Oversized decorative closing quote -->
           <span
-            class="pointer-events-none absolute -top-[26px] right-[18px] text-[8rem] leading-none font-extrabold text-primary/[0.09]"
+            class="pointer-events-none absolute -top-7 right-5 text-[8rem] leading-none font-extrabold text-primary/[0.09]"
             aria-hidden="true"
           >&rdquo;</span>
 

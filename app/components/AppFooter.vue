@@ -38,7 +38,7 @@ const year = new Date().getFullYear()
   <footer class="border-t border-hairline bg-surface-alt">
     <div class="container-page py-14 md:py-16">
       <div class="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-8">
-        <div class="max-w-[320px]">
+        <div class="max-w-80">
           <NuxtLink
             to="/"
             class="inline-flex items-center gap-2 font-extrabold tracking-[-0.04em]"

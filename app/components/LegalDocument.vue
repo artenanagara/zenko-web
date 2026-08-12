@@ -16,7 +16,7 @@ defineProps<{
 <template>
   <main class="dot-grid relative overflow-hidden bg-linear-to-b from-white to-[#f1f3f7]">
     <div class="container-page relative z-1 py-14 md:py-20">
-      <article class="mx-auto max-w-[760px]">
+      <article class="mx-auto max-w-190">
         <header class="mb-10 border-b border-line pb-10">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
             Dokumen legal

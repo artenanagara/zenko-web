@@ -17,7 +17,7 @@ defineProps<{
 
       <div v-else class="grid grid-cols-1 gap-6 min-[560px]:grid-cols-2 min-[901px]:grid-cols-3 min-[1025px]:grid-cols-4">
         <template v-if="pending">
-          <div v-for="n in 8" :key="n" class="h-[340px] animate-pulse rounded-lg bg-surface-sunken" />
+          <div v-for="n in 8" :key="n" class="h-85 animate-pulse rounded-lg bg-surface-sunken" />
         </template>
 
         <PackageCard v-for="item in items" v-else :key="item.id" :item="item" />

@@ -12,28 +12,28 @@ function onSubmit() {
   <!-- Rounded panel floating on the white page, rather than a full-bleed band. -->
   <section class="container-page pt-3 md:pt-5">
     <div
-      class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-12 pb-20 md:rounded-[32px] md:px-10 md:pt-16 md:pb-28"
+      class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-12 pb-20 md:rounded-xl md:px-10 md:pt-16 md:pb-28"
     >
-      <div class="relative z-1 mx-auto max-w-[860px] text-center">
+      <div class="relative z-1 mx-auto max-w-215 text-center">
         <span
-          class="mb-[18px] inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-[7px] pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
+          class="mb-5 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-2 pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
         >
-          <span class="h-[7px] w-[7px] rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
+          <span class="h-2 w-2 rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
           120+ paket baru ditambahkan minggu ini
         </span>
 
-        <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-[-0.05em]">
+        <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
           Temukan paket try out untuk
           <span class="text-accent mt-1 block">impian yang kamu kejar</span>
         </h1>
 
-        <p class="mx-auto mt-3.5 max-w-[600px] text-[1.02rem] text-muted">
+        <p class="mx-auto mt-3.5 max-w-150 text-[1.02rem] text-muted">
           Latihan SKD/CPNS, BUMN, SNBT, dan TKA dengan soal realistis dari tutor
           terverifikasi — beli per paket, tanpa langganan.
         </p>
 
         <form
-          class="mx-auto mt-6 flex max-w-[700px] flex-col items-stretch gap-3 rounded-[14px] border border-white/70 bg-white p-3 shadow-xs transition-[border-color,box-shadow] duration-200 ease-smooth focus-within:border-primary/40 focus-within:shadow-[0_0_0_4px_rgba(47,111,235,0.1),var(--shadow-float)] sm:flex-row sm:items-center sm:rounded-[18px] sm:py-2 sm:pr-2 sm:pl-[18px] sm:shadow-[var(--shadow-xs),var(--shadow-float)]"
+          class="mx-auto mt-6 flex max-w-175 flex-col items-stretch gap-3 rounded-[14px] border border-white/70 bg-white p-3 shadow-xs transition-[border-color,box-shadow] duration-200 ease-smooth focus-within:border-primary/40 focus-within:shadow-[0_0_0_4px_rgba(47,111,235,0.1),var(--shadow-float)] sm:flex-row sm:items-center sm:rounded-[18px] sm:py-2 sm:pr-2 sm:pl-5 sm:shadow-[var(--shadow-xs),var(--shadow-float)]"
           aria-label="Cari paket try out"
           @submit.prevent="onSubmit"
         >
@@ -47,7 +47,7 @@ function onSubmit() {
             placeholder="Cari paket, topik, atau tutor..."
             class="w-full min-w-0 flex-1 border-0 bg-transparent px-2.5 py-3 text-base placeholder:text-placeholder focus:outline-none sm:px-0 sm:py-3.5"
           >
-          <AppButton type="submit" class="w-full min-h-[52px] rounded-xl sm:w-auto sm:min-w-[120px]">
+          <AppButton type="submit" class="w-full min-h-13 rounded-xl sm:w-auto sm:min-w-30">
             Cari
           </AppButton>
         </form>

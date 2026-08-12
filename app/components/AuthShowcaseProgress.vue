@@ -81,7 +81,7 @@ onBeforeUnmount(() => {
         </span>
       </div>
 
-      <div class="mt-7 flex h-[86px] items-end gap-2.5">
+      <div class="mt-7 flex h-22 items-end gap-2.5">
         <span
           v-for="(height, index) in attempts"
           :key="index"
@@ -116,7 +116,7 @@ onBeforeUnmount(() => {
       class="anim-item absolute -right-3 -bottom-4 flex items-center gap-2 rounded-pill bg-white px-4 py-2.5 text-[0.8rem] font-semibold shadow-lift"
       style="--delay: 1020ms"
     >
-      <IconSeal class="h-[18px] w-[18px] shrink-0" />
+      <IconSeal class="h-5 w-5 shrink-0" />
       Peringkat 128 dari 3.402
     </p>
   </div>
