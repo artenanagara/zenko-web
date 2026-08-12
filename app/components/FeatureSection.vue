@@ -31,15 +31,17 @@ const { target, ready, isInView } = useInView(0.2)
         <article class="flex flex-col rounded-[26px] bg-surface p-6 pb-[34px] shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift">
           <div class="mb-[30px] flex min-h-[240px] items-center justify-center rounded-[20px] bg-surface-sunken p-[26px]">
             <ul class="grid gap-4">
+              <!-- 260ms apart: wide enough to read as one-by-one, and the
+                   check lands just after its label settles. -->
               <li
                 v-for="(check, index) in checks"
                 :key="check"
-                class="anim-item flex items-center gap-3 font-semibold tracking-[-0.01em]"
-                :style="{ '--delay': `${120 + index * 140}ms` }"
+                class="anim-slide flex items-center gap-3 font-semibold tracking-[-0.01em]"
+                :style="{ '--delay': `${120 + index * 260}ms` }"
               >
                 <IconCheck
                   class="anim-draw h-[18px] w-[18px] shrink-0 stroke-primary"
-                  :style="{ '--delay': `${200 + index * 140}ms` }"
+                  :style="{ '--delay': `${280 + index * 260}ms` }"
                 />
                 {{ check }}
               </li>
