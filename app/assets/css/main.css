@@ -1,0 +1,173 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   Design tokens
+   Every value here becomes a Tailwind utility, e.g.
+   --color-ink → text-ink / bg-ink, --shadow-lift → shadow-lift.
+   ========================================================================== */
+
+@theme {
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-alt: #f7f8fa;
+  --color-surface-sunken: #f4f5f8;
+  --color-skeleton: #e8eaef;
+
+  /* Text */
+  --color-ink: #16161a;
+  --color-muted: #6b7280;
+  --color-faint: #9aa2b1;
+  --color-placeholder: #98a2b3;
+
+  /* Lines */
+  --color-line: #e5e7eb;
+  --color-hairline: rgba(148, 163, 184, 0.18);
+  --color-hairline-strong: rgba(148, 163, 184, 0.28);
+
+  /* Brand */
+  --color-primary: #2f6feb;
+  --color-primary-light: #4c86f0;
+  --color-primary-dark: #2557c9;
+  --color-primary-soft: #eaf1ff;
+  --color-accent: #7c5cf5;
+
+  /* Status */
+  --color-star: #f59e0b;
+  --color-success: #22c55e;
+  --color-success-ink: #15803d;
+  --color-success-soft: #e8f8ee;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+
+  /* Radii */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-lift: 0 12px 26px rgba(15, 23, 42, 0.07);
+  --shadow-float: 0 14px 34px rgba(15, 23, 42, 0.07);
+  --shadow-brand: 0 26px 54px rgba(47, 111, 235, 0.22);
+
+  /* Motion */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layout */
+  --container-page: 1400px;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(47, 111, 235, 0.5);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Component classes
+   Only for things utilities express poorly: layered backgrounds, gradient
+   borders, masks and multi-layer inset shadows.
+   ========================================================================== */
+
+@layer components {
+  .container-page {
+    width: min(var(--container-page), calc(100% - var(--page-gutter, 48px)));
+    margin-inline: auto;
+  }
+
+  @media (max-width: 768px) {
+    .container-page {
+      --page-gutter: 32px;
+    }
+  }
+
+  /* Serif italic phrase that closes each section headline. */
+  .text-accent {
+    display: inline-block;
+    color: var(--color-primary);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.08em;
+    letter-spacing: -0.01em;
+  }
+
+  /* Decorative dot grid. Strength is tunable via --dot-color. */
+  .dot-grid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(
+      var(--dot-color, rgba(15, 23, 42, 0.06)) 1.3px,
+      transparent 1.3px
+    );
+    background-size: 22px 22px;
+    pointer-events: none;
+  }
+
+  /* Hero keeps the dots through the copy, fading out where packages begin. */
+  .dot-grid-hero::before {
+    --dot-color: rgba(15, 23, 42, 0.11);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 96%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 96%);
+  }
+
+  /* Gradient border: solid fill on padding-box, gradient on border-box. */
+  .tab-track {
+    background:
+      linear-gradient(var(--color-surface-sunken), var(--color-surface-sunken)) padding-box,
+      linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%) border-box;
+    border: 1px solid transparent;
+  }
+
+  /* Inset highlight + rim + floor shadow give the CTA panel depth. */
+  .panel-inset {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+      inset 0 -20px 40px rgba(12, 40, 100, 0.18),
+      var(--shadow-brand);
+  }
+
+  /* Two-line clamp that still reserves height, so cards stay aligned. */
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
