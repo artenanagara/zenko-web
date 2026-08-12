@@ -9,11 +9,8 @@ const { data: testimonials } = useTestimonials()
 
 <template>
   <main>
-    <HeroSection>
-      <template #tabs>
-        <SortTabs v-model="sort" />
-      </template>
-    </HeroSection>
+    <HeroSection />
+    <SortTabs v-model="sort" />
 
     <PackageGrid :items="packages" :pending="pending" :error="error" />
     <FeatureSection />

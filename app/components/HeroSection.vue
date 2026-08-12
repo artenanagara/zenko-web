@@ -9,22 +9,12 @@ function onSubmit() {
 </script>
 
 <template>
-  <section class="dot-grid dot-grid-hero relative overflow-hidden bg-linear-to-b from-white to-[#f1f3f7]">
-    <!-- Ambient wash behind the headline; all three layers are the brand blue
-         at different depths, so no second hue enters the palette. -->
+  <!-- Rounded panel floating on the white page, rather than a full-bleed band. -->
+  <section class="container-page pt-3 md:pt-5">
     <div
-      class="pointer-events-none absolute inset-x-[-10%] top-[-20%] h-[520px] blur-[6px]"
-      aria-hidden="true"
-      style="
-        background:
-          radial-gradient(46% 60% at 50% 32%, rgba(47, 111, 235, 0.16), transparent 70%),
-          radial-gradient(32% 46% at 78% 18%, rgba(76, 134, 240, 0.13), transparent 70%),
-          radial-gradient(30% 44% at 20% 22%, rgba(37, 87, 201, 0.09), transparent 70%);
-      "
-    />
-
-    <div class="container-page relative z-1 pt-9 md:pt-12">
-      <div class="mx-auto max-w-[860px] text-center">
+      class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-12 pb-16 md:rounded-[32px] md:px-10 md:pt-16 md:pb-24"
+    >
+      <div class="relative z-1 mx-auto max-w-[860px] text-center">
         <span
           class="mb-[18px] inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-[7px] pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
         >
@@ -43,7 +33,7 @@ function onSubmit() {
         </p>
 
         <form
-          class="mx-auto mt-6 flex max-w-[700px] flex-col items-stretch gap-3 rounded-[14px] border border-line bg-white p-3 shadow-xs transition-[border-color,box-shadow] duration-200 ease-smooth focus-within:border-primary/40 focus-within:shadow-[0_0_0_4px_rgba(47,111,235,0.1),var(--shadow-float)] sm:flex-row sm:items-center sm:rounded-[18px] sm:py-2 sm:pr-2 sm:pl-[18px] sm:shadow-[var(--shadow-xs),var(--shadow-float)]"
+          class="mx-auto mt-6 flex max-w-[700px] flex-col items-stretch gap-3 rounded-[14px] border border-white/70 bg-white p-3 shadow-xs transition-[border-color,box-shadow] duration-200 ease-smooth focus-within:border-primary/40 focus-within:shadow-[0_0_0_4px_rgba(47,111,235,0.1),var(--shadow-float)] sm:flex-row sm:items-center sm:rounded-[18px] sm:py-2 sm:pr-2 sm:pl-[18px] sm:shadow-[var(--shadow-xs),var(--shadow-float)]"
           aria-label="Cari paket try out"
           @submit.prevent="onSubmit"
         >
@@ -68,12 +58,10 @@ function onSubmit() {
             v-for="term in popularSearches"
             :key="term"
             href="#paket"
-            class="rounded-pill border border-hairline-strong bg-white/70 px-3.5 py-1.5 font-medium transition-[background,border-color,color] duration-200 ease-smooth hover:border-primary/35 hover:bg-white hover:text-primary"
+            class="rounded-pill border border-white/80 bg-white/75 px-3.5 py-1.5 font-medium shadow-xs backdrop-blur-[6px] transition-[background,border-color,color] duration-200 ease-smooth hover:border-primary/35 hover:bg-white hover:text-primary"
           >{{ term }}</a>
         </div>
       </div>
     </div>
-
-    <slot name="tabs" />
   </section>
 </template>

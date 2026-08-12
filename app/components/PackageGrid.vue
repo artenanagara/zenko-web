@@ -9,12 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <!-- Continues the hero gradient, then fades to white by 180px. -->
-  <section
-    class="pt-6 pb-18 md:pb-22"
-    style="background: linear-gradient(180deg, #f1f3f7 0%, var(--color-surface) 180px)"
-    aria-label="Daftar paket try out"
-  >
+  <section class="pb-18 md:pb-22" aria-label="Daftar paket try out">
     <div class="container-page">
       <p v-if="error" class="rounded-lg bg-surface-sunken px-6 py-10 text-center text-muted">
         Gagal memuat paket. Pastikan zenko-api sedang berjalan.

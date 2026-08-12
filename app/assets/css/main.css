@@ -331,11 +331,24 @@
     pointer-events: none;
   }
 
-  /* Hero keeps the dots through the copy, fading out where packages begin. */
+  /* Hero keeps the dots through the copy, fading out before the blue wash. */
   .dot-grid-hero::before {
-    --dot-color: rgba(15, 23, 42, 0.11);
-    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 96%);
-    mask-image: linear-gradient(180deg, #000 0%, #000 62%, transparent 96%);
+    --dot-color: rgba(15, 23, 42, 0.08);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 78%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 78%);
+  }
+
+  /* Hero backdrop: white where the copy sits, blue pooling in at the lower
+     corners. The strong stops are pushed past 100% so only their glow reaches
+     inside the panel — otherwise the search bar would land on saturated blue. */
+  .hero-aurora {
+    background:
+      radial-gradient(58% 46% at 14% 108%, rgba(47, 111, 235, 0.42), transparent 66%),
+      radial-gradient(58% 46% at 86% 108%, rgba(76, 134, 240, 0.4), transparent 66%),
+      radial-gradient(46% 34% at 50% 120%, rgba(37, 87, 201, 0.5), transparent 62%),
+      radial-gradient(66% 50% at 86% 4%, rgba(120, 160, 255, 0.26), transparent 62%),
+      radial-gradient(58% 46% at 10% 2%, rgba(140, 180, 255, 0.22), transparent 60%),
+      linear-gradient(180deg, #ffffff 0%, #f7faff 48%, #e9f1ff 100%);
   }
 
   /* Gradient border: solid fill on padding-box, gradient on border-box.
