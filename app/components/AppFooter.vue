@@ -14,7 +14,9 @@
       <nav class="flex items-center gap-5 text-muted" aria-label="Tautan footer">
         <a href="#" class="transition-colors hover:text-ink">Tentang</a>
         <a href="#" class="transition-colors hover:text-ink">Kontak</a>
-        <a href="#" class="transition-colors hover:text-ink">Kebijakan Privasi</a>
+        <NuxtLink to="/kebijakan-privasi" class="transition-colors hover:text-ink">
+          Kebijakan Privasi
+        </NuxtLink>
       </nav>
     </div>
 

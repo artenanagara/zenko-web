@@ -163,6 +163,92 @@
       var(--shadow-brand);
   }
 
+  /* Long-form legal copy. Styles elements directly so the markup stays
+     readable instead of carrying a utility list on every paragraph. */
+  .legal-prose {
+    color: var(--color-muted);
+    line-height: 1.75;
+  }
+
+  .legal-prose h2 {
+    margin-block: 2.5rem 1rem;
+    color: var(--color-ink);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    scroll-margin-top: 6rem;
+  }
+
+  .legal-prose h3 {
+    margin-block: 1.75rem 0.75rem;
+    color: var(--color-ink);
+    font-size: 1.02rem;
+    font-weight: 700;
+  }
+
+  .legal-prose p {
+    margin-block: 1rem;
+  }
+
+  .legal-prose ul {
+    margin-block: 1rem;
+    padding-left: 1.15rem;
+    list-style: disc;
+  }
+
+  .legal-prose li {
+    margin-block: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .legal-prose strong {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  .legal-prose a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .legal-prose hr {
+    margin-block: 2.5rem;
+    border: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .legal-prose table {
+    width: 100%;
+    margin-block: 1.25rem;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .legal-prose th,
+  .legal-prose td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--color-line);
+    vertical-align: top;
+  }
+
+  .legal-prose th {
+    background: var(--color-surface-sunken);
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  /* Placeholder that must be filled before publishing. Deliberately loud —
+     if one ships by accident it should be obvious, not blend in. */
+  .legal-todo {
+    padding: 0.1em 0.4em;
+    border-radius: var(--radius-xs);
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   /* Two-line clamp that still reserves height, so cards stay aligned. */
   .clamp-2 {
     display: -webkit-box;
