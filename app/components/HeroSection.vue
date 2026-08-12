@@ -10,15 +10,16 @@ function onSubmit() {
 
 <template>
   <section class="dot-grid dot-grid-hero relative overflow-hidden bg-linear-to-b from-white to-[#f1f3f7]">
-    <!-- Ambient colour wash behind the headline -->
+    <!-- Ambient wash behind the headline; all three layers are the brand blue
+         at different depths, so no second hue enters the palette. -->
     <div
       class="pointer-events-none absolute inset-x-[-10%] top-[-20%] h-[520px] blur-[6px]"
       aria-hidden="true"
       style="
         background:
           radial-gradient(46% 60% at 50% 32%, rgba(47, 111, 235, 0.16), transparent 70%),
-          radial-gradient(32% 46% at 78% 18%, rgba(124, 92, 245, 0.13), transparent 70%),
-          radial-gradient(30% 44% at 20% 22%, rgba(56, 189, 248, 0.1), transparent 70%);
+          radial-gradient(32% 46% at 78% 18%, rgba(76, 134, 240, 0.13), transparent 70%),
+          radial-gradient(30% 44% at 20% 22%, rgba(37, 87, 201, 0.09), transparent 70%);
       "
     />
 
