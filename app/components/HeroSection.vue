@@ -12,7 +12,7 @@ function onSubmit() {
   <!-- Rounded panel floating on the white page, rather than a full-bleed band. -->
   <section class="container-page pt-3 md:pt-5">
     <div
-      class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-12 pb-16 md:rounded-[32px] md:px-10 md:pt-16 md:pb-24"
+      class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-12 pb-20 md:rounded-[32px] md:px-10 md:pt-16 md:pb-28"
     >
       <div class="relative z-1 mx-auto max-w-[860px] text-center">
         <span
@@ -53,12 +53,14 @@ function onSubmit() {
         </form>
 
         <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-[0.8rem] text-muted sm:text-[0.85rem]">
-          <span class="mr-0.5 font-semibold">Populer</span>
+          <!-- The label sits straight on the wash, so it needs a darker ink
+               than the chips, which carry their own near-white background. -->
+          <span class="mr-0.5 font-semibold text-ink/75">Populer</span>
           <a
             v-for="term in popularSearches"
             :key="term"
             href="#paket"
-            class="rounded-pill border border-white/80 bg-white/75 px-3.5 py-1.5 font-medium shadow-xs backdrop-blur-[6px] transition-[background,border-color,color] duration-200 ease-smooth hover:border-primary/35 hover:bg-white hover:text-primary"
+            class="rounded-pill border border-white/80 bg-white/85 px-3.5 py-1.5 font-medium shadow-xs backdrop-blur-[6px] transition-[background,border-color,color] duration-200 ease-smooth hover:border-primary/35 hover:bg-white hover:text-primary"
           >{{ term }}</a>
         </div>
       </div>

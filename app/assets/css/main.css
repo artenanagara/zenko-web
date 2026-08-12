@@ -337,16 +337,28 @@
     mask-image: linear-gradient(180deg, #000 0%, #000 30%, transparent 56%);
   }
 
-  /* Hero backdrop. The top half is flat white; the wash only begins at the
-     midpoint and deepens toward the lower corners. The strong stops sit past
-     100% so only their glow reaches inside the panel — with their centres in
-     view the search bar would land on saturated blue. */
+  /* Hero backdrop. The top half is flat white; the wash begins at the midpoint
+     and deepens toward the bottom edge.
+     Four blue pools sit at different heights (118% / 108% / 102% / 88%) so the
+     lower band reads as depth rather than one flat strip. Their centres stay
+     below the panel — with a centre in view the search bar would land on
+     saturated blue. The linear base carries most of the descent, with its
+     stops bunched low so the chips still sit on near-white. */
   .hero-aurora {
     background:
-      radial-gradient(62% 50% at 12% 106%, rgba(47, 111, 235, 0.42), transparent 68%),
-      radial-gradient(62% 50% at 88% 106%, rgba(76, 134, 240, 0.4), transparent 68%),
-      radial-gradient(52% 38% at 50% 118%, rgba(37, 87, 201, 0.48), transparent 64%),
-      linear-gradient(180deg, #ffffff 0%, #ffffff 50%, #dfeaff 100%);
+      radial-gradient(64% 44% at 50% 118%, rgba(37, 87, 201, 0.62), transparent 64%),
+      radial-gradient(54% 44% at 13% 108%, rgba(47, 111, 235, 0.5), transparent 66%),
+      radial-gradient(54% 42% at 88% 102%, rgba(76, 134, 240, 0.46), transparent 66%),
+      radial-gradient(42% 26% at 70% 88%, rgba(125, 168, 250, 0.32), transparent 70%),
+      linear-gradient(
+        180deg,
+        #ffffff 0%,
+        #ffffff 50%,
+        #f1f6ff 66%,
+        #dce9ff 82%,
+        #c3d8fb 93%,
+        #b2ccf8 100%
+      );
   }
 
   /* Gradient border: solid fill on padding-box, gradient on border-box.
