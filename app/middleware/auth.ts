@@ -17,16 +17,17 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const { user, isSignedIn, refresh } = useAuth()
 
+  const allowed = to.meta.roles
+
   // The auth plugin resolves the session at boot, but a direct navigation can
-  // land here first — and a session may have expired since. Re-checking costs
-  // one request and is the difference between a guard and a guess.
-  if (!isSignedIn.value) await refresh()
+  // land here first — and a role may have changed since it last ran. Re-check
+  // role-gated pages so an approved tutor does not keep the stale student role.
+  if (!isSignedIn.value || allowed?.length) await refresh()
 
   if (!isSignedIn.value) {
     return navigateTo({ path: '/masuk', query: { lanjut: to.fullPath } })
   }
 
-  const allowed = to.meta.roles
   if (allowed?.length && user.value && !allowed.includes(user.value.role)) {
     // Send them somewhere they belong rather than to a dead end.
     return navigateTo(homePathFor(user.value.role))
