@@ -2,7 +2,7 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
 
-    server_name 103.89.5.73 _;
+    server_name zenkoedu.id www.zenkoedu.id 103.89.5.73 _;
 
     # IP-address certificates are short lived, so Certbot must be able to
     # renew through HTTP without taking Nginx or the application offline.
@@ -13,7 +13,7 @@ server {
     }
 
     location / {
-        return 308 https://103.89.5.73$request_uri;
+        return 308 https://zenkoedu.id$request_uri;
     }
 }
 
@@ -22,10 +22,36 @@ server {
     listen [::]:443 ssl default_server;
 
     server_name 103.89.5.73 _;
-    client_max_body_size 2m;
 
     ssl_certificate /etc/letsencrypt/live/103.89.5.73/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/103.89.5.73/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    return 308 https://zenkoedu.id$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name www.zenkoedu.id;
+
+    ssl_certificate /etc/letsencrypt/live/zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/zenkoedu.id/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    return 308 https://zenkoedu.id$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name zenkoedu.id;
+    client_max_body_size 2m;
+
+    ssl_certificate /etc/letsencrypt/live/zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/zenkoedu.id/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 1d;
