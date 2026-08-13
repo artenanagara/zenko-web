@@ -1,4 +1,4 @@
-import type { Package, SortKey, Testimonial } from '~~/types/catalog'
+import type { Package, SortKey, Testimonial } from '#shared/types/catalog'
 
 /**
  * Local fixtures used when NUXT_PUBLIC_USE_MOCK=true, so the UI can be worked

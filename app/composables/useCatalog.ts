@@ -1,4 +1,4 @@
-import type { Package, PackageDetail, SortKey, Testimonial } from '~~/types/catalog'
+import type { Package, PackageDetail, SortKey, Testimonial } from '#shared/types/catalog'
 import { mockPackages, mockTestimonials, sortMockPackages } from '~/mocks/catalog'
 import { findMockDetail } from '~/mocks/detail'
 

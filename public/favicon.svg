@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <defs>
+    <linearGradient id="zenko-g" x1="48" y1="0" x2="48" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#57ADFF"/>
+      <stop offset="1" stop-color="#1B6BE6"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="22" fill="url(#zenko-g)"/>
+  <path d="M23 30 H60 L26 68" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path fill="#fff" d="M76 13 69 32 55 19z"/>
+  <g fill="#fff">
+    <rect x="47" y="64" width="10" height="14" rx="3"/>
+    <rect x="60" y="56" width="10" height="22" rx="3"/>
+    <rect x="73" y="48" width="10" height="30" rx="3"/>
+  </g>
+</svg>

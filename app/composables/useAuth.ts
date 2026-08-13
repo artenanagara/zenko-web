@@ -1,4 +1,4 @@
-import type { User } from '~~/types/catalog'
+import type { User } from '#shared/types/user'
 
 /**
  * Session state, backed by the HttpOnly cookie zenko-api sets.

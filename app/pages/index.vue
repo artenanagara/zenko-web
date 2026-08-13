@@ -1,18 +1,37 @@
 <script setup lang="ts">
-import type { SortKey } from '~~/types/catalog'
+import type { SortKey } from '#shared/types/catalog'
 
 const sort = ref<SortKey>('featured')
 
 const { data: packages, pending, error } = usePackages(sort)
 const { data: testimonials } = useTestimonials()
+
+useHead({
+  title: 'Paket Try Out Online SKD, BUMN, SNBT, dan TKA | Zenko',
+  meta: [
+    {
+      name: 'description',
+      content:
+        'Latihan try out online untuk SKD CPNS, BUMN, SNBT, dan TKA. Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
+    },
+  ],
+})
 </script>
 
 <template>
   <main>
     <HeroSection />
-    <SortTabs v-model="sort" />
 
-    <PackageGrid :items="packages" :pending="pending" :error="error" />
+    <!-- #paket is the anchor the package detail breadcrumb jumps back to. -->
+    <div id="paket" class="container-page flex justify-center py-8">
+      <SortTabs v-model="sort" />
+    </div>
+
+    <div class="container-page pb-18 md:pb-22">
+      <PackageGrid :items="packages" :pending="pending" :error="error" />
+      <CatalogAssurance class="mt-6" />
+    </div>
+
     <FeatureSection />
     <TestimonialSection :items="testimonials" />
     <TutorCta />

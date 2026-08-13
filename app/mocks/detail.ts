@@ -1,4 +1,4 @@
-import type { PackageDetail, Topic } from '~~/types/catalog'
+import type { PackageDetail, Topic } from '#shared/types/catalog'
 import { mockPackages } from '~/mocks/catalog'
 
 /**
@@ -130,7 +130,7 @@ function topicsFor(category: string): Topic[] {
         { title: 'Kompetensi bidang', count: 60 },
       ]
     default:
-      // SKD/CPNS dan Kedinasan memakai struktur SKD yang sama
+      // SKD/CPNS and Kedinasan share the SKD structure
       return [
         { title: 'Tes Wawasan Kebangsaan', count: 30 },
         { title: 'Tes Intelegensi Umum', count: 35 },

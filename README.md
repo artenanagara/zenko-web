@@ -65,17 +65,73 @@ mencakup autentikasi.
 
 ## Struktur
 
+Nama berkas dan folder memakai bahasa Inggris; URL yang dilihat pengunjung
+tetap bahasa Indonesia lewat `definePageMeta({ path })` di tiap halaman.
+
 ```
 app/
-  app.vue              shell: <NuxtLayout> + <NuxtPage>
-  pages/index.vue      landing page, merangkai section
-  components/          komponen presentasional
-  composables/         useCatalog.ts, useAuth.ts, useInView.ts
-  layouts/             default (header+footer) dan auth (tanpa chrome)
-  assets/css/main.css  design token (@theme) + component class
-  plugins/auth.client.ts memuat sesi sekali saat aplikasi start
-types/catalog.ts       tipe wire, cerminan internal/model/
+  app.vue                 shell: <NuxtLayout> + <NuxtPage>
+  pages/
+    index.vue             /                     beranda
+    about.vue             /tentang-kami
+    packages/index.vue    /paket                katalog lengkap
+    packages/[slug].vue   /paket/:slug          detail paket
+    become-tutor.vue      /jadi-tutor           + form pengajuan
+    login.vue             /masuk
+    register.vue          /daftar
+    terms.vue             /ketentuan-layanan
+    privacy.vue           /kebijakan-privasi
+    dashboard/admin.vue   /dashboard/admin      peran: admin
+    dashboard/tutor.vue   /dashboard/tutor      peran: tutor, admin
+    account/index.vue     /akun                 profil + ganti kata sandi
+    account/packages.vue  /akun/paket           kartu paket yang dimiliki
+    account/package-detail.vue
+                          /akun/paket/:slug     analisis subtes + riwayat
+    account/purchases.vue /akun/pembelian       daftar transaksi
+    account/invoice.vue   /akun/pembelian/:invoice   invoice, bisa dicetak
+  components/
+    ui/                   AppButton, FormField, GoogleButton, BrandMark
+    icons/                IconCheck, IconEye, IconSeal, IconSearch
+    layout/               AppHeader, AppFooter, ProfileMenu
+    home/                 section beranda + mock beranimasi
+    catalog/              PackageCard, PackageGrid, SortTabs
+    auth/                 panel samping halaman masuk/daftar
+    legal/                LegalDocument
+    dashboard/            DashboardStats, DashboardPanel, DashboardBadge
+    account/              OwnedPackageCard
+  composables/            useAuth, useCatalog, useTutorApplications,
+                          useDashboardNav, useAccountNav, useOwnedPackages,
+                          usePurchases, useAccountPassword, useDateFormat,
+                          useInView
+  layouts/                default (header+footer), auth (polos), dashboard,
+                          account (header+footer+sidebar akun)
+  middleware/auth.ts      guard sesi + peran, dibaca dari meta.roles
+  mocks/                  fixture katalog, dashboard, dan akun
+  types/router.d.ts       augmentasi RouteMeta (meta.roles)
+  assets/css/main.css     design token (@theme) + component class
+  plugins/auth.client.ts  memuat sesi sekali saat aplikasi start
+shared/types/             tipe wire, cerminan zenko-api/internal/model/
+  catalog.ts  user.ts  tutor-application.ts
 ```
+
+Komponen dikelompokkan per domain hanya untuk memudahkan navigasi. Karena
+`components: [{ path: '~/components', pathPrefix: false }]` di `nuxt.config.ts`,
+nama tagnya tetap `<AppButton>` — bukan `<UiAppButton>` — sehingga memindahkan
+berkas antar folder tidak memaksa perubahan di semua pemakainya.
+
+## Peran dan akses
+
+Tiga peran: `student` (default akun baru), `tutor`, `admin`. Peran datang dari
+`GET /auth/me` dan ikut ditandatangani di cookie sesi oleh zenko-api.
+
+`app/middleware/auth.ts` menjaga halaman dashboard: tanpa sesi diarahkan ke
+`/masuk?lanjut=...`, sesi valid tapi peran salah diarahkan ke dashboard yang
+sesuai. Guard ini **client-only** — cookie sesi `HttpOnly` milik origin API dan
+tidak terlihat oleh server Nuxt.
+
+Guard ini kenyamanan, bukan batas keamanan. Penegakan sesungguhnya ada di
+zenko-api, yang menolak request dengan 401/403 tanpa peduli halaman apa yang
+berhasil dibuka di browser.
 
 ## Design token
 
@@ -102,10 +158,15 @@ component class di file yang sama: `.dot-grid` (pola titik latar),
 
 - **Gambar** masih memakai URL Unsplash dan Pravatar dari seed backend.
   Ganti sebelum produksi, dan pertimbangkan `<NuxtImg>` untuk optimasi.
-- **Belum ada** halaman detail paket. `PackageCard` sudah menaut ke
-  `/paket/{slug}`, tinggal dibuat `app/pages/paket/[slug].vue`.
 - **Form pencarian** belum memfilter apa-apa; endpoint `?q=` di backend sudah
   siap dipakai.
 - **Menu mobile** belum ada — di bawah 768px link nav disembunyikan.
 - **Login/daftar dengan email** belum tersambung; hanya Google yang berfungsi.
   Formulirnya memvalidasi input lalu mengarahkan pengguna ke tombol Google.
+- **Isi dashboard tutor dan siswa masih contoh** — lihat
+  [app/mocks/dashboard.ts](app/mocks/dashboard.ts). zenko-api belum punya
+  endpoint penjualan, pencairan, pembelian, maupun riwayat try out. Dashboard
+  admin sudah memakai data sungguhan untuk daftar pengajuan tutor; panel
+  moderasi paket di halaman yang sama masih contoh.
+- **Peran hanya berubah setelah masuk ulang**, karena peran ikut ditandatangani
+  ke dalam cookie sesi.
