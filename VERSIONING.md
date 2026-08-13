@@ -31,7 +31,10 @@ tertentu dapat ditambahkan setelah penyedia dan environment production dipilih.
 
 ## Pengaturan GitHub
 
-Di Settings, Actions, General, gunakan workflow permissions `Read and write`
-dan izinkan GitHub Actions membuat pull request. Secara opsional, tambahkan
-secret `RELEASE_PLEASE_TOKEN` berupa fine-grained PAT dengan akses Contents dan
-Pull requests agar CI ikut berjalan pada pull request yang dibuat bot.
+Di Settings, Actions, General, default workflow permissions tetap `Read
+repository contents`. Opsi agar GitHub Actions dapat membuat pull request harus
+aktif. Workflow Release meminta hak tulis secara eksplisit hanya saat diperlukan.
+
+Secara opsional, tambahkan secret `RELEASE_PLEASE_TOKEN` berupa fine-grained PAT
+dengan akses Contents dan Pull requests agar CI ikut berjalan pada pull request
+yang dibuat bot.
