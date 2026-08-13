@@ -10,7 +10,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "version:show": "node -p \"require('./package.json').version\""
   },
   "dependencies": {
     "nuxt": "^4.0.0",

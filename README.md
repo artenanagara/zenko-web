@@ -21,13 +21,27 @@ lalu set `NUXT_PUBLIC_USE_MOCK=false`.
 | `npm run build`     | Build produksi ke `.output`         |
 | `npm run preview`   | Jalankan hasil build                |
 | `npm run typecheck` | `vue-tsc` di seluruh proyek         |
+| `npm run version:show` | Tampilkan versi aplikasi saat ini |
+
+## CI, versi, dan release
+
+Pull request dan setiap push ke `main` menjalankan instalasi bersih, typecheck,
+dan build produksi. Versi mengikuti Semantic Versioning dan dibuat dari
+Conventional Commits melalui Release Please.
+
+Saat release PR digabung, pipeline akan membuat tag `vX.Y.Z`, memperbarui
+`package.json`, `package-lock.json`, serta `CHANGELOG.md`, lalu menerbitkan
+GitHub Release dengan bundle server Nuxt dan checksum SHA-256.
+
+Panduan lengkap ada di [VERSIONING.md](VERSIONING.md).
 
 ## Konfigurasi
 
-| Variable               | Default                        | Keterangan                          |
-| ---------------------- | ------------------------------ | ----------------------------------- |
-| `NUXT_PUBLIC_API_BASE` | `http://localhost:8080/api/v1` | Base URL zenko-api                  |
-| `NUXT_PUBLIC_USE_MOCK` | `false`                        | `true` = katalog dari fixture lokal |
+| Variable                  | Default                        | Keterangan                          |
+| ------------------------- | ------------------------------ | ----------------------------------- |
+| `NUXT_PUBLIC_APP_VERSION` | versi dari `package.json`      | Versi build untuk diagnosis         |
+| `NUXT_PUBLIC_API_BASE`    | `http://localhost:8080/api/v1` | Base URL zenko-api                  |
+| `NUXT_PUBLIC_USE_MOCK`    | `false`                        | `true` = katalog dari fixture lokal |
 
 Dibaca lewat `runtimeConfig.public` di `nuxt.config.ts`, jadi bisa diganti saat
 runtime tanpa build ulang.

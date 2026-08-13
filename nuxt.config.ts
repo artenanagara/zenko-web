@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
+import packageMetadata from './package.json'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -19,6 +20,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      // Application version maintained by Release Please from package.json.
+      appVersion: packageMetadata.version,
       // Base URL of zenko-api. Override with NUXT_PUBLIC_API_BASE.
       apiBase: 'http://localhost:8080/api/v1',
       // Serve the catalogue from app/mocks instead of calling the API.

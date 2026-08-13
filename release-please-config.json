@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "de4ba5e888ff358b3ce7368633a88fc7da3e577b",
+  "release-type": "node",
+  "include-v-in-tag": true,
+  "include-component-in-tag": false,
+  "packages": {
+    ".": {
+      "package-name": "zenko-web"
+    }
+  }
+}
