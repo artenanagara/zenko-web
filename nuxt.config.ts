@@ -40,23 +40,20 @@ export default defineNuxtConfig({
       // backend running Postgres with its own stub enabled. Never in
       // production. Turn on with NUXT_PUBLIC_PAYMENT_STUB=true.
       paymentStub: false,
-      // Two flags rather than one, because zenko-api grew these flows at
-      // different times: verification is live, password reset is not. A single
-      // switch would send reset traffic to an endpoint that answers 404, and
-      // the page would blame the user's link for a missing route.
+		// Recovery flows are live in zenko-api. Operators can still turn one off
+		// explicitly during a partial rollback without hiding the others.
       //
       // Verification: POST /auth/email/verify and /auth/email/resend.
       // Turn on with NUXT_PUBLIC_EMAIL_VERIFICATION_ENABLED=true.
-      emailVerificationEnabled: false,
+		emailVerificationEnabled: true,
       // Password reset: POST /auth/password/forgot and /auth/password/reset.
-      // Still absent from zenko-api, which has no passwords to reset yet.
-      // Turn on with NUXT_PUBLIC_PASSWORD_RESET_ENABLED=true.
-      passwordResetEnabled: false,
+		// Turn on with NUXT_PUBLIC_PASSWORD_RESET_ENABLED=true.
+		passwordResetEnabled: true,
       // Changing a password from inside the account: POST /auth/password/change.
       // Its own switch for the same reason as the two above — a signed-in change
       // and an emailed reset are different endpoints, and may land apart.
       // Turn on with NUXT_PUBLIC_PASSWORD_CHANGE_ENABLED=true.
-      passwordChangeEnabled: false,
+		passwordChangeEnabled: true,
     },
   },
 

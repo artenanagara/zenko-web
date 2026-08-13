@@ -1,5 +1,15 @@
 import type { User } from '#shared/types/user'
 
+export type EmailAuthFailure = 'invalid' | 'unverified' | 'duplicate' | 'error'
+
+export type EmailLoginResult =
+  | { ok: true, user: User }
+  | { ok: false, reason: EmailAuthFailure, message: string }
+
+export type EmailRegistrationResult =
+  | { ok: true, email: string }
+  | { ok: false, reason: EmailAuthFailure, message: string }
+
 /**
  * Session state, backed by the HttpOnly cookie zenko-api sets.
  *
@@ -41,6 +51,45 @@ export function useAuth() {
     window.location.href = `${config.apiBase}/auth/google`
   }
 
+  async function signInWithEmail(
+    email: string,
+    password: string,
+    remember: boolean,
+  ): Promise<EmailLoginResult> {
+    try {
+      const signedIn = await $fetch<User>('/auth/login', {
+        baseURL: config.apiBase,
+        method: 'POST',
+        body: { email, password, remember },
+        credentials: 'include',
+      })
+      user.value = signedIn
+      return { ok: true, user: signedIn }
+    }
+    catch (cause) {
+      return emailAuthFailure(cause)
+    }
+  }
+
+  async function registerWithEmail(
+    name: string,
+    email: string,
+    password: string,
+  ): Promise<EmailRegistrationResult> {
+    try {
+      const created = await $fetch<{ email: string }>('/auth/register', {
+        baseURL: config.apiBase,
+        method: 'POST',
+        body: { name, email, password },
+        credentials: 'include',
+      })
+      return { ok: true, email: created.email }
+    }
+    catch (cause) {
+      return emailAuthFailure(cause)
+    }
+  }
+
   async function signOut() {
     try {
       await $fetch('/auth/logout', {
@@ -54,5 +103,47 @@ export function useAuth() {
     }
   }
 
-  return { user, isSignedIn, isLoading, refresh, signInWithGoogle, signOut }
+  return {
+    user,
+    isSignedIn,
+    isLoading,
+    refresh,
+    signInWithGoogle,
+    signInWithEmail,
+    registerWithEmail,
+    signOut,
+  }
+}
+
+function emailAuthFailure(cause: unknown): {
+  ok: false
+  reason: EmailAuthFailure
+  message: string
+} {
+  const status = (cause as { statusCode?: number, status?: number })?.statusCode
+    ?? (cause as { status?: number })?.status
+  const serverMessage = (cause as { data?: { error?: string } })?.data?.error
+
+  if (status === 401) {
+    return { ok: false, reason: 'invalid', message: 'Email atau kata sandi tidak cocok.' }
+  }
+  if (status === 403) {
+    return {
+      ok: false,
+      reason: 'unverified',
+      message: 'Email belum diverifikasi. Buka email dari Zenko atau kirim ulang tautannya.',
+    }
+  }
+  if (status === 409) {
+    return {
+      ok: false,
+      reason: 'duplicate',
+      message: 'Email ini sudah terdaftar. Masuk atau gunakan lupa kata sandi.',
+    }
+  }
+  return {
+    ok: false,
+    reason: 'error',
+    message: serverMessage || 'Gagal menghubungi server. Coba lagi sebentar lagi.',
+  }
 }

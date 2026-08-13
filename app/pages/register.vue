@@ -10,7 +10,7 @@ useHead({
   ],
 })
 
-const { signInWithGoogle } = useAuth()
+const { signInWithGoogle, registerWithEmail } = useAuth()
 
 const form = reactive({
   name: '',
@@ -54,10 +54,19 @@ async function onSubmit() {
 
   isSubmitting.value = true
   try {
-    // TODO: POST /auth/register once zenko-api exposes it.
-    // Until then, say so plainly rather than pretending an account exists.
-    submitError.value =
-      'Pendaftaran dengan email belum tersedia. Untuk sekarang, gunakan “Daftar dengan Google” di bawah.'
+    const result = await registerWithEmail(
+      form.name.trim(),
+      form.email.trim(),
+      form.password,
+    )
+    if (!result.ok) {
+      submitError.value = result.message
+      return
+    }
+    await navigateTo({
+      path: '/verifikasi-email',
+      query: { email: result.email, name: form.name.trim() },
+    })
   }
   finally {
     isSubmitting.value = false

@@ -75,7 +75,17 @@ urutan yang sama seperti API sungguhan.
 Defaultnya `false` supaya build produksi tidak pernah menyajikan fixture karena
 lupa mematikan flag.
 
-## Login dengan Google
+## Login dan pendaftaran
+
+Form `/daftar` membuat akun email/password melalui `/auth/register`, lalu
+mengarahkan pengguna ke ruang tunggu verifikasi. Form `/masuk` menerbitkan
+cookie sesi melalui `/auth/login`. Halaman lupa/reset/ganti password memakai
+endpoint recovery yang sama dan aktif secara default.
+
+Password tidak pernah disimpan di frontend; form hanya mengirimkannya lewat
+request ke zenko-api. Produksi wajib memakai HTTPS sebelum menerima kredensial.
+
+### Google
 
 Tombol **Masuk dengan Google** melakukan navigasi penuh ke
 `{apiBase}/auth/google`; consent screen Google tidak bisa dijalankan di iframe.

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { homePathFor } from '#shared/types/user'
+import type { EmailAuthFailure } from '~/composables/useAuth'
+
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ layout: 'auth', path: '/masuk' })
 
@@ -11,7 +14,7 @@ useHead({
   ],
 })
 
-const { signInWithGoogle } = useAuth()
+const { signInWithGoogle, signInWithEmail } = useAuth()
 const route = useRoute()
 
 /** The OAuth callback bounces back here with ?error=<reason> on failure. */
@@ -31,6 +34,7 @@ const form = reactive({
 const errors = reactive<{ email?: string, password?: string }>({})
 const isSubmitting = ref(false)
 const submitError = ref(CALLBACK_ERRORS[String(route.query.error ?? '')] ?? '')
+const submitReason = ref<EmailAuthFailure | ''>('')
 
 /** Deliberately permissive: the server is the real authority on validity. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -52,14 +56,22 @@ function validate() {
 
 async function onSubmit() {
   submitError.value = ''
+  submitReason.value = ''
   if (!validate()) return
 
   isSubmitting.value = true
   try {
-    // TODO: POST /auth/login once zenko-api exposes it, then redirect.
-    // Failing loudly beats faking a session the rest of the app cannot use.
-    submitError.value =
-      'Login dengan email belum tersedia. Untuk sekarang, gunakan “Masuk dengan Google” di bawah.'
+    const result = await signInWithEmail(
+      form.email.trim(),
+      form.password,
+      form.remember,
+    )
+    if (!result.ok) {
+      submitReason.value = result.reason
+      submitError.value = result.message
+      return
+    }
+    await navigateTo(homePathFor(result.user.role))
   }
   finally {
     isSubmitting.value = false
@@ -126,6 +138,13 @@ async function onSubmit() {
           >
             {{ submitError }}
           </p>
+          <NuxtLink
+            v-if="submitReason === 'unverified'"
+            :to="{ path: '/verifikasi-email', query: { email: form.email.trim() } }"
+            class="-mt-2 text-sm font-semibold text-primary hover:underline"
+          >
+            Kirim ulang email verifikasi
+          </NuxtLink>
 
           <AppButton type="submit" size="lg" class="w-full" :disabled="isSubmitting">
             {{ isSubmitting ? 'Memproses…' : 'Masuk' }}

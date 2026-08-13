@@ -17,7 +17,7 @@ export interface User {
   role: Role
   /**
    * Whether the address has been proved — by Google at sign-in, or by opening
-   * the link Zenko mailed. Read fresh from the store on every /auth/me, so it
+   * the link Zenko mailed after email registration. Read fresh on /auth/me, so it
    * flips without signing out and back in.
    */
   verified: boolean
