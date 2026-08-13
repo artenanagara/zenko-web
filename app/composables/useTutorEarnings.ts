@@ -156,7 +156,7 @@ export function useTutorPayouts() {
   return { data, pending, error, refresh }
 }
 
-/** POST /tutor/payouts — ≥ Rp50.000, ≤ saldo tersedia, rekening harus ada. */
+/** POST /tutor/payouts — ≥ Rp100.000, ≤ saldo tersedia, rekening harus ada. */
 export async function requestTutorPayout(amount: number): Promise<TutorPayout> {
   const { public: config } = useRuntimeConfig()
 
@@ -173,8 +173,8 @@ export async function requestTutorPayout(amount: number): Promise<TutorPayout> {
  * value and both dashboards agree on the same words.
  * ------------------------------------------------------------------------ */
 
-/** Minimum pencairan per kontrak. */
-export const PAYOUT_MINIMUM = 50_000
+/** Minimum pencairan per kontrak (docs/tutor-flow-contract.md): Rp100.000. */
+export const PAYOUT_MINIMUM = 100_000
 
 /**
  * Bank umum Indonesia untuk pilihan rekening. The contract stores

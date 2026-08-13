@@ -1,52 +1,212 @@
 <script setup lang="ts">
 /**
- * Shell for the three role dashboards: brand, sidebar, and a content column.
+ * Shell for the role dashboards (admin and tutor, via useDashboardNav):
+ * a full-height sidebar on the left and a content column with its own navbar.
  *
- * The sidebar contents come from the signed-in user's role, so one layout
- * serves admin, tutor, and student without any branching in the pages.
+ * - Desktop (md+): the sidebar is a fixed rail, collapsible to icon-only.
+ *   The state lives in a cookie rather than localStorage so SSR renders the
+ *   chosen width on first paint instead of flashing open and snapping shut.
+ * - Mobile (< md): the sidebar becomes an off-canvas drawer behind a
+ *   hamburger in the navbar. Body scroll locks while open; Escape and the
+ *   overlay close it; focus moves in on open and returns to the hamburger on
+ *   close, mirroring the menu pattern in ProfileMenu.vue.
  */
 const { user } = useAuth()
 const nav = useDashboardNav()
+const route = useRoute()
+
+const collapsed = useCookie<boolean>('zenko-sidebar-collapsed', {
+  default: () => false,
+  maxAge: 60 * 60 * 24 * 365,
+  sameSite: 'lax',
+})
+
+/**
+ * Breadcrumb next to the hamburger. Kept quiet (small, muted) on purpose:
+ * every page renders its own h1, and two loud titles would compete.
+ */
+const activeLabel = computed(() =>
+  nav.value.items.find(item => isDashboardItemActive(item, route))?.label ?? '',
+)
+
+/**
+ * Sidebar badge: rejected products deserve a signal on every dashboard page,
+ * not just the overview. One client fetch per layout mount, tutors only;
+ * failures simply mean no badge — the overview callout and the products page
+ * carry the real message. Reuses useTutorProducts, so its cached error
+ * handling applies and no error ever surfaces from here.
+ */
+const { data: badgeProducts, refresh: refreshBadgeProducts } = useTutorProducts()
+
+const sidebarBadges = computed<Record<string, number>>(() => {
+  const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
+  const badges: Record<string, number> = {}
+  if (rejected > 0) badges['/dashboard/tutor/products'] = rejected
+  return badges
+})
+
+onMounted(() => {
+  if (user.value?.role === 'tutor') refreshBadgeProducts()
+})
+
+/* --------------------------------------------------------------------------
+ * Mobile drawer
+ * ------------------------------------------------------------------------ */
+
+const drawerOpen = ref(false)
+const drawer = useTemplateRef('drawer')
+const hamburger = useTemplateRef('hamburger')
+const drawerId = useId()
+
+/** Visible targets only — v-show keeps the drawer in the DOM while closed. */
+function focusables(): HTMLElement[] {
+  return [...(drawer.value?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? [])]
+    .filter(el => el.offsetParent !== null)
+}
+
+async function openDrawer() {
+  drawerOpen.value = true
+  await nextTick()
+  focusables()[0]?.focus()
+}
+
+function closeDrawer(returnFocus = true) {
+  if (!drawerOpen.value) return
+  drawerOpen.value = false
+  if (returnFocus) hamburger.value?.focus()
+}
+
+/** Escape closes; Tab wraps, so keyboard focus never lands under the overlay. */
+function onDrawerKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeDrawer()
+    return
+  }
+  if (event.key !== 'Tab') return
+
+  const items = focusables()
+  const first = items[0]
+  const last = items[items.length - 1]
+  if (!first || !last) return
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  }
+  else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+// The page behind the drawer must not scroll along with it.
+watch(drawerOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+// A route change means the drawer did its job; it should not follow along.
+watch(() => route.fullPath, () => closeDrawer(false))
+
+// Crossing into md hides the drawer via CSS; close it too, or the scroll
+// lock would silently survive the resize.
+let viewport: MediaQueryList | null = null
+function onViewportChange(event: MediaQueryListEvent) {
+  if (event.matches) closeDrawer(false)
+}
+
+onMounted(() => {
+  viewport = window.matchMedia('(min-width: 768px)')
+  viewport.addEventListener('change', onViewportChange)
+})
+
+onBeforeUnmount(() => {
+  viewport?.removeEventListener('change', onViewportChange)
+  document.body.style.overflow = ''
+})
 </script>
 
 <template>
   <div class="min-h-screen bg-surface-alt">
-    <header class="sticky top-0 z-50 border-b border-hairline bg-surface/90 backdrop-blur-md">
-      <div class="container-page flex min-h-16 items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <BrandMark />
-          <span class="hidden text-[0.9rem] font-semibold text-muted sm:block">{{ nav.title }}</span>
-        </div>
+    <!-- Desktop rail: full viewport height, collapsible to 72px. -->
+    <aside
+      class="fixed inset-y-0 left-0 z-40 hidden border-r border-hairline bg-surface transition-[width] duration-200 ease-smooth md:block"
+      :class="collapsed ? 'w-18' : 'w-66'"
+    >
+      <DashboardSidebar :nav="nav" :collapsed="collapsed" :badges="sidebarBadges" @toggle="collapsed = !collapsed" />
+    </aside>
 
-        <div class="flex items-center gap-3">
-          <NuxtLink to="/" class="text-[0.9rem] font-medium text-muted transition-colors hover:text-ink">
-            Ke situs
-          </NuxtLink>
+    <!-- Mobile drawer + overlay. -->
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-smooth"
+      enter-from-class="opacity-0"
+      leave-active-class="transition-opacity duration-150 ease-smooth"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-show="drawerOpen"
+        class="fixed inset-0 z-40 bg-ink/40 md:hidden"
+        aria-hidden="true"
+        @click="closeDrawer()"
+      />
+    </Transition>
+
+    <Transition
+      enter-active-class="transition-transform duration-200 ease-smooth"
+      enter-from-class="-translate-x-full"
+      leave-active-class="transition-transform duration-150 ease-smooth"
+      leave-to-class="-translate-x-full"
+    >
+      <div
+        v-show="drawerOpen"
+        :id="drawerId"
+        ref="drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu dashboard"
+        class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] border-r border-hairline bg-surface shadow-float md:hidden"
+        @keydown="onDrawerKeydown"
+      >
+        <DashboardSidebar :nav="nav" variant="drawer" :badges="sidebarBadges" @close="closeDrawer()" />
+      </div>
+    </Transition>
+
+    <!-- Content column, shifted by the rail's current width. -->
+    <div
+      class="flex min-h-screen flex-col transition-[padding-left] duration-200 ease-smooth"
+      :class="collapsed ? 'md:pl-18' : 'md:pl-66'"
+    >
+      <header class="sticky top-0 z-30 border-b border-hairline bg-surface/90 backdrop-blur-md">
+        <div class="flex min-h-16 items-center justify-between gap-3 px-4 md:px-8">
+          <div class="flex min-w-0 items-center gap-2">
+            <button
+              ref="hamburger"
+              type="button"
+              class="-ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm text-muted transition-colors duration-200 ease-smooth hover:bg-surface-alt hover:text-ink md:hidden"
+              :aria-expanded="drawerOpen"
+              :aria-controls="drawerId"
+              aria-label="Buka menu dashboard"
+              @click="drawerOpen ? closeDrawer() : openDrawer()"
+            >
+              <IconMenu class="h-5 w-5" />
+            </button>
+
+            <p class="truncate text-[0.88rem] text-muted">
+              {{ nav.title }}
+              <template v-if="activeLabel">
+                <span class="mx-1 text-faint" aria-hidden="true">/</span>
+                <span class="font-semibold text-ink">{{ activeLabel }}</span>
+              </template>
+            </p>
+          </div>
+
           <!-- Same menu as the navbar: tutors and admins buy packages too, so
                the account page must be reachable from here. -->
           <ProfileMenu v-if="user" :user="user" />
         </div>
-      </div>
-    </header>
+      </header>
 
-    <div class="container-page grid gap-6 py-8 md:grid-cols-[220px_minmax(0,1fr)] md:py-10">
-      <!-- On narrow screens the sidebar folds into a scrollable chip row, so
-           it never eats half the viewport before the content shows. -->
-      <nav aria-label="Navigasi dashboard" class="md:sticky md:top-24 md:self-start">
-        <ul class="flex gap-2 overflow-x-auto pb-1 md:grid md:gap-1 md:overflow-visible md:pb-0">
-          <li v-for="item in nav.items" :key="item.to" class="shrink-0">
-            <NuxtLink
-              :to="item.to"
-              class="block rounded-sm px-3.5 py-2.5 text-[0.92rem] font-medium whitespace-nowrap text-muted transition-colors hover:bg-surface hover:text-ink"
-              active-class="bg-surface text-ink shadow-xs"
-            >
-              {{ item.label }}
-            </NuxtLink>
-          </li>
-        </ul>
-      </nav>
-
-      <main class="min-w-0">
+      <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8 md:py-8">
         <slot />
       </main>
     </div>

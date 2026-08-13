@@ -81,7 +81,7 @@ async function saveBankAccount() {
 }
 
 /* --------------------------------------------------------------------------
- * Ajukan pencairan — minimum Rp50.000, maksimum saldo tersedia, dan rekening
+ * Ajukan pencairan — minimum Rp100.000, maksimum saldo tersedia, dan rekening
  * harus sudah tersimpan. The server re-validates all three.
  * ------------------------------------------------------------------------ */
 
@@ -146,7 +146,7 @@ async function submitPayout() {
       {{ balanceError }}
     </p>
 
-    <p v-if="balancePending" class="text-[0.86rem] text-muted">Memuat saldo...</p>
+    <DashboardSkeleton v-if="balancePending" variant="stats" :count="3" :columns="3" label="Memuat saldo..." />
     <DashboardStats v-else :items="stats" :columns="3" />
 
     <div class="grid gap-6 xl:grid-cols-2">
@@ -155,7 +155,7 @@ async function submitPayout() {
         title="Rekening bank"
         description="Tujuan transfer pencairan. Pastikan nama pemilik sesuai buku tabungan."
       >
-        <p v-if="bankPending" class="py-6 text-center text-muted">Memuat rekening...</p>
+        <DashboardSkeleton v-if="bankPending" :count="3" label="Memuat rekening..." />
 
         <form v-else class="grid gap-5" @submit.prevent="saveBankAccount">
           <div>
@@ -221,7 +221,7 @@ async function submitPayout() {
               type="number"
               :min="PAYOUT_MINIMUM"
               step="1000"
-              placeholder="50000"
+              placeholder="100000"
               :class="FIELD_CLASS"
               :disabled="!bankAccount"
               :aria-invalid="Boolean(amountError)"
@@ -254,7 +254,7 @@ async function submitPayout() {
       title="Riwayat pencairan"
       description="Terbaru di atas. Pencairan ditolak dikembalikan ke saldo tersedia."
     >
-      <p v-if="payoutsPending" class="py-6 text-center text-muted">Memuat riwayat pencairan...</p>
+      <DashboardSkeleton v-if="payoutsPending" :count="4" label="Memuat riwayat pencairan..." />
 
       <div v-else-if="payoutsError" class="py-6 text-center">
         <p class="text-muted">{{ payoutsError }}</p>

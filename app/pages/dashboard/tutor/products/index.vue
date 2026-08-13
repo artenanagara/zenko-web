@@ -148,7 +148,7 @@ async function archiveProduct(product: TutorProductSummary) {
         </div>
       </template>
 
-      <p v-if="pending" class="py-8 text-center text-muted">Memuat produk...</p>
+      <DashboardSkeleton v-if="pending" :count="5" label="Memuat produk..." />
 
       <div v-else-if="error" class="py-8 text-center">
         <p class="text-muted">{{ error }}</p>

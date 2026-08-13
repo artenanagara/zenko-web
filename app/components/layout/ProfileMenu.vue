@@ -31,13 +31,17 @@ const ROLE_BADGE: Partial<Record<Role, { label: string, tone: 'brand' | 'neutral
 const roleBadge = computed(() => ROLE_BADGE[props.user.role] ?? null)
 
 /**
- * Only tutors and admins have a dashboard. The navbar's Dashboard link is
- * hidden below `sm`, so on a phone this menu is the only way there — the link
- * below carries `sm:hidden` to fill exactly that gap without duplicating it on
- * desktop.
+ * Only tutors and admins have a dashboard. Shown at every width — the navbar
+ * already carries its own Dashboard link on desktop, but repeating it here
+ * means the profile menu is a complete map of the account on its own,
+ * without having to know to look elsewhere first.
  */
 const dashboardPath = computed(() =>
   props.user.role === 'student' ? null : homePathFor(props.user.role),
+)
+
+const dashboardLabel = computed(() =>
+  props.user.role === 'admin' ? 'Dashboard Admin' : 'Dashboard Tutor',
 )
 
 /**
@@ -230,17 +234,17 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
           {{ item.label }}
         </NuxtLink>
 
-        <!-- Mobile only: the navbar's Dashboard link disappears below `sm`. -->
-        <div v-if="dashboardPath" class="mt-1.5 border-t border-hairline pt-1.5 sm:hidden">
+        <div v-if="dashboardPath" class="mt-1.5 border-t border-hairline pt-1.5">
           <NuxtLink
             :to="dashboardPath"
             role="menuitem"
             tabindex="-1"
-            class="flex min-h-11 items-center rounded-xs px-3.5 text-[0.94rem] font-medium text-muted transition-colors duration-200 hover:bg-surface-alt hover:text-ink"
+            class="flex min-h-11 items-center gap-2.5 rounded-xs px-3.5 text-[0.94rem] font-medium text-muted transition-colors duration-200 hover:bg-surface-alt hover:text-ink"
             exact-active-class="bg-primary-soft font-semibold text-primary"
             @click="close(false)"
           >
-            Dashboard
+            <IconChart class="h-[1.1rem] w-[1.1rem] shrink-0" />
+            {{ dashboardLabel }}
           </NuxtLink>
         </div>
 
@@ -249,9 +253,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
             type="button"
             role="menuitem"
             tabindex="-1"
-            class="flex min-h-11 w-full items-center rounded-xs px-3.5 text-left text-[0.94rem] font-semibold text-ink transition-colors duration-200 hover:bg-surface-sunken hover:text-red-600"
+            class="flex min-h-11 w-full items-center gap-2.5 rounded-xs px-3.5 text-left text-[0.94rem] font-semibold text-ink transition-colors duration-200 hover:bg-surface-sunken hover:text-red-600"
             @click="onSignOut"
           >
+            <IconLogout class="h-[1.1rem] w-[1.1rem] shrink-0" />
             Keluar
           </button>
         </div>

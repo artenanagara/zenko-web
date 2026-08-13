@@ -8,7 +8,9 @@ defineProps<{
 </script>
 
 <template>
-  <section :id="id" class="rounded-lg border border-hairline bg-surface shadow-xs">
+  <!-- scroll-mt clears the dashboard's sticky navbar, so jumping to an
+       anchor (e.g. /dashboard/admin#pengajuan) never hides the heading. -->
+  <section :id="id" class="scroll-mt-20 rounded-lg border border-hairline bg-surface shadow-xs">
     <header class="flex flex-wrap items-start justify-between gap-3 border-b border-hairline px-5 py-4 md:px-6">
       <div>
         <h2 class="text-[1.05rem] font-bold tracking-[-0.03em]">{{ title }}</h2>

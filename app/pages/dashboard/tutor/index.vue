@@ -38,6 +38,11 @@ const monthShare = computed(() =>
 
 const liveCount = computed(() => products.value.filter(product => product.status === 'live').length)
 
+// "Perlu perhatian": moderation outcomes surface on the overview, so a
+// rejection is visible without having to open Produk Saya first.
+const rejectedCount = computed(() => products.value.filter(product => product.status === 'rejected').length)
+const reviewCount = computed(() => products.value.filter(product => product.status === 'review').length)
+
 const stats = computed(() => [
   { label: 'Pendapatan bulan ini', value: formatRupiah(monthShare.value), hint: 'Porsi 70% dari penjualan bulan berjalan.' },
   { label: 'Paket terjual', value: String(summary.value.count), hint: 'Sepanjang waktu' },
@@ -55,6 +60,38 @@ const recentSales = computed(() => sales.value.slice(0, 5))
       <p class="mt-1.5 text-muted">Performa produkmu dan penghasilan yang menunggu dicairkan.</p>
     </header>
 
+    <!-- Perlu perhatian: rejected is loud (needs action), review is quiet
+         (just a status). Both link nowhere new — the detail lives in Produk
+         saya, this only makes sure it gets seen. -->
+    <div v-if="rejectedCount > 0 || reviewCount > 0" class="grid gap-3">
+      <div
+        v-if="rejectedCount > 0"
+        role="alert"
+        class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
+      >
+        <IconAlert class="h-4 w-4 shrink-0" />
+        <p class="min-w-0 flex-1">
+          <strong class="font-bold">{{ rejectedCount }} produk ditolak</strong>
+          — perlu revisi sebelum bisa diajukan ulang.
+        </p>
+        <NuxtLink
+          to="/dashboard/tutor/products"
+          class="font-semibold underline underline-offset-2 transition-colors duration-200 hover:text-amber-950"
+        >
+          Lihat produk
+        </NuxtLink>
+      </div>
+
+      <p
+        v-if="reviewCount > 0"
+        role="status"
+        class="flex items-center gap-3 rounded-sm border border-hairline-strong bg-surface px-4 py-3 text-[0.86rem] text-muted"
+      >
+        <IconEye class="h-4 w-4 shrink-0" />
+        {{ reviewCount }} produk sedang ditinjau moderator — kami mengabarimu begitu selesai.
+      </p>
+    </div>
+
     <DashboardStats :items="stats" />
 
     <DashboardPanel id="paket" title="Paket saya" description="Produk yang kamu jual di Zenko.">
@@ -67,7 +104,7 @@ const recentSales = computed(() => sales.value.slice(0, 5))
         </NuxtLink>
       </template>
 
-      <p v-if="productsPending" class="py-6 text-center text-muted">Memuat produk...</p>
+      <DashboardSkeleton v-if="productsPending" :count="3" label="Memuat produk..." />
 
       <p v-else-if="productsError" role="alert" class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900">
         {{ productsError }}
@@ -132,7 +169,7 @@ const recentSales = computed(() => sales.value.slice(0, 5))
         </NuxtLink>
       </template>
 
-      <p v-if="salesPending" class="py-6 text-center text-muted">Memuat penjualan...</p>
+      <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat penjualan..." />
 
       <p v-else-if="salesError" role="alert" class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900">
         {{ salesError }}
