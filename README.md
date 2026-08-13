@@ -35,6 +35,19 @@ GitHub Release dengan bundle server Nuxt dan checksum SHA-256.
 
 Panduan lengkap ada di [VERSIONING.md](VERSIONING.md).
 
+## Deployment
+
+Push ke `main` yang lolos workflow `CI` akan diteruskan oleh workflow `Deploy`
+ke VPS produksi. GitHub Actions membangun server Nuxt, mengunggah release baru,
+memindahkan symlink `/opt/zenko/web/current`, lalu me-restart service
+`zenko-web`. Jika health check gagal, script deployment mengembalikan symlink
+ke release sebelumnya.
+
+Konfigurasi systemd dan Nginx yang dilacak di repo ada di folder
+[deploy](deploy). Secret `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, dan
+`VPS_KNOWN_HOSTS` disimpan sebagai GitHub Actions environment secrets untuk
+environment `production`.
+
 ## Konfigurasi
 
 | Variable                  | Default                        | Keterangan                          |
