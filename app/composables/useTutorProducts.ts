@@ -200,6 +200,21 @@ export async function archiveTutorProduct(id: string): Promise<void> {
   })
 }
 
+/**
+ * DELETE /tutor/products/:id — permanent. Only draft, rejected, and archived
+ * products qualify; live must be archived first, and an archived product with
+ * existing buyers is refused too (409). See tutor_products.go Delete.
+ */
+export async function deleteTutorProduct(id: string): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  await $fetch(`/tutor/products/${id}`, {
+    baseURL: config.apiBase,
+    method: 'DELETE',
+    credentials: 'include',
+  })
+}
+
 /** zenko-api renders errors as { error, requestId }; fall back for the rest. */
 export function tutorApiMessage(cause: unknown, fallback: string): string {
   const message = (cause as { data?: { error?: string } })?.data?.error

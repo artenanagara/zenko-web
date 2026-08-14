@@ -53,6 +53,10 @@ const submitProblems = ref<{ title: string, problems: string[] } | null>(null)
 const canEdit = (product: TutorProductSummary) =>
   product.status === 'draft' || product.status === 'rejected'
 
+/** Delete is permanent — everything except live and review (admin's queue). */
+const canDelete = (product: TutorProductSummary) =>
+  product.status !== 'live' && product.status !== 'review'
+
 /** "Ajukan tayang" hanya saat lengkap — target soal terpenuhi (single) atau bundle. */
 const canSubmit = (product: TutorProductSummary) =>
   canEdit(product)
@@ -92,6 +96,24 @@ async function archiveProduct(product: TutorProductSummary) {
   }
   catch (cause) {
     actionError.value = tutorApiMessage(cause, 'Gagal mengarsipkan produk. Coba lagi sebentar lagi.')
+  }
+  finally {
+    busyId.value = ''
+  }
+}
+
+async function deleteProduct(product: TutorProductSummary) {
+  if (!window.confirm(`Hapus "${product.title}" permanen? Tindakan ini tidak bisa dibatalkan.`)) return
+
+  actionError.value = ''
+  submitProblems.value = null
+  busyId.value = product.id
+  try {
+    await deleteTutorProduct(product.id)
+    await refresh()
+  }
+  catch (cause) {
+    actionError.value = tutorApiMessage(cause, 'Gagal menghapus produk. Coba lagi sebentar lagi.')
   }
   finally {
     busyId.value = ''
@@ -244,8 +266,17 @@ async function archiveProduct(product: TutorProductSummary) {
                   >
                     Arsipkan
                   </button>
+                  <button
+                    v-if="canDelete(product)"
+                    type="button"
+                    class="text-[0.86rem] font-semibold text-red-600 hover:underline disabled:opacity-50"
+                    :disabled="busyId === product.id"
+                    @click="deleteProduct(product)"
+                  >
+                    {{ busyId === product.id ? 'Menghapus...' : 'Hapus' }}
+                  </button>
                   <span
-                    v-if="!canEdit(product) && !canSubmit(product) && product.status !== 'live'"
+                    v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
                     class="text-[0.86rem] text-muted"
                   >—</span>
                 </span>
