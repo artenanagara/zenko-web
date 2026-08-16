@@ -137,7 +137,7 @@ function progressTone(section: TutorSection) {
               class="flex flex-wrap items-center gap-3 rounded-sm border border-hairline bg-surface px-3.5 py-2.5"
             >
               <span class="w-6 shrink-0 text-[0.82rem] font-bold text-faint tabular-nums">{{ index + 1 }}.</span>
-              <span class="min-w-0 flex-1 truncate text-[0.9rem]">{{ question.prompt }}</span>
+              <span class="min-w-0 flex-1 truncate text-[0.9rem]">{{ stripHtmlToText(question.prompt) }}</span>
               <DashboardBadge tone="neutral">{{ QUESTION_KIND_LABEL[question.kind] }}</DashboardBadge>
               <span class="flex shrink-0 items-center gap-3">
                 <button

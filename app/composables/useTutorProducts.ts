@@ -126,6 +126,25 @@ export async function createTutorQuestion(
   )
 }
 
+/**
+ * POST multipart /tutor/uploads/image — gambar yang disisipkan lewat toolbar
+ * editor soal (Pertanyaan/Pembahasan). Mengembalikan URL publiknya.
+ */
+export async function uploadTutorImage(file: File): Promise<string> {
+  const { public: config } = useRuntimeConfig()
+
+  const body = new FormData()
+  body.append('image', file)
+
+  const result = await $fetch<{ url: string }>('/tutor/uploads/image', {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body,
+    credentials: 'include',
+  })
+  return result.url
+}
+
 /** Batch untuk impor CSV: body `{questions: [...]}` di endpoint yang sama. */
 export async function createTutorQuestionBatch(
   productId: string,

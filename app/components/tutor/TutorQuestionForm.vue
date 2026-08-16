@@ -101,11 +101,11 @@ function removeAnswer(index: number) {
 
 /** Validasi ringan sesuai aturan kind; server tetap sumber kebenaran. */
 function buildDraft(): QuestionDraft | null {
-  if (!prompt.value.trim()) {
+  if (!stripHtmlToText(prompt.value)) {
     errorMessage.value = 'Tulis pertanyaannya dulu.'
     return null
   }
-  if (!explanation.value.trim()) {
+  if (!stripHtmlToText(explanation.value)) {
     errorMessage.value = 'Pembahasan wajib diisi.'
     return null
   }
@@ -210,14 +210,11 @@ function onSubmit() {
     </div>
 
     <div>
-      <label :for="`${uid}-prompt`" :class="FIELD_LABEL_CLASS">Pertanyaan</label>
-      <textarea
-        :id="`${uid}-prompt`"
+      <span :class="FIELD_LABEL_CLASS">Pertanyaan</span>
+      <RichTextEditor
         v-model="prompt"
-        rows="3"
-        placeholder="Tulis pertanyaan atau instruksi soal."
-        class="resize-y"
-        :class="FIELD_CLASS"
+        aria-label="Pertanyaan"
+        placeholder="Tulis pertanyaan atau instruksi soal. Gunakan tabel untuk data, atau format teks untuk penekanan."
       />
     </div>
 
@@ -352,14 +349,11 @@ function onSubmit() {
     </fieldset>
 
     <div>
-      <label :for="`${uid}-explanation`" :class="FIELD_LABEL_CLASS">Pembahasan</label>
-      <textarea
-        :id="`${uid}-explanation`"
+      <span :class="FIELD_LABEL_CLASS">Pembahasan</span>
+      <RichTextEditor
         v-model="explanation"
-        rows="3"
+        aria-label="Pembahasan"
         placeholder="Jelaskan cara menjawabnya — wajib diisi sebelum produk bisa diajukan."
-        class="resize-y"
-        :class="FIELD_CLASS"
       />
     </div>
 
