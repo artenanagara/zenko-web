@@ -95,6 +95,10 @@ export interface Purchase {
   method: string | null
   /** Nomor rujukan dari penyedia pembayaran; null sebelum ada. */
   reference: string | null
+  /** Midtrans's hosted QRIS code image; null once the charge was never created. */
+  qrUrl: string | null
+  /** Unix seconds the QRIS code stops being payable; null alongside qrUrl. */
+  expiresAt: number | null
   status: OrderStatus
   items: PurchaseItem[]
   /** Biaya layanan penyedia pembayaran, ditagihkan apa adanya. */

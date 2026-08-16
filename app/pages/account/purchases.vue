@@ -12,6 +12,7 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
+const { public: config } = useRuntimeConfig()
 const { data: items, pending, error, refresh } = usePurchases()
 
 /** An invoice can hold several packages; the column stays a single line. */
@@ -35,9 +36,9 @@ const totalSpent = computed(() =>
       <p class="mt-1.5 text-muted">Semua transaksi paket dari akun ini, lengkap dengan invoicenya.</p>
     </header>
 
-    <AccountNotice>
-      Transaksi di bawah masih contoh. Pembayaran belum tersambung, jadi
-      zenko-api belum menyimpan riwayat pembelian.
+    <AccountNotice v-if="config.useMock">
+      Transaksi di bawah masih contoh — mode mock menyala, jadi datanya dari
+      fixture, bukan zenko-api.
     </AccountNotice>
 
     <!-- Memuat: kerangka tabel, bukan halaman kosong. -->

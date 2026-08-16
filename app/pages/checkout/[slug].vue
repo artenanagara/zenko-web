@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { PaymentMethodId } from '#shared/types/order'
-
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ path: '/checkout/:slug()' })
 
@@ -24,17 +22,42 @@ useHead({
 // order without one regardless of what the browser allows.
 const { user, isSignedIn, isLoading } = useAuth()
 
-const paymentMethod = ref<PaymentMethodId>('va')
-const { state, error, pay, reset } = useCheckout()
+const { state, error, purchase, pay, reset } = useCheckout()
 
 const signInPath = computed(() => ({ path: '/masuk', query: { lanjut: route.fullPath } }))
 
-// The order body carries only the slug — the server prices it and the session
-// says who is buying. The method picker below stays informational until a
-// gateway that needs the choice is wired in.
+// The order body carries only the slug — the server prices it and the
+// session says who is buying. Zenko charges QRIS only, so there is no method
+// to choose.
 function onSubmit() {
   pay({ slug })
 }
+
+/** A real QR code arrived — as opposed to a pending order with none, which
+ * happens when the backend has no Midtrans key configured (local dev). */
+const showQR = computed(() => state.value === 'awaiting-payment' && Boolean(purchase.value?.qrUrl))
+
+// Countdown to the QR's own deadline. Ticks once a second purely for display
+// — the state transition to 'expired' is driven by useCheckout's own timer,
+// not by this reaching zero.
+const now = ref(Date.now())
+let tickHandle: ReturnType<typeof setInterval> | null = null
+onMounted(() => {
+  tickHandle = setInterval(() => { now.value = Date.now() }, 1000)
+})
+onUnmounted(() => {
+  if (tickHandle !== null) clearInterval(tickHandle)
+})
+
+const countdown = computed(() => {
+  const expiresAt = purchase.value?.expiresAt
+  if (!expiresAt) return null
+
+  const totalSeconds = Math.max(0, Math.floor(expiresAt - now.value / 1000))
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
 </script>
 
 <template>
@@ -87,7 +110,18 @@ function onSubmit() {
         </section>
 
         <section class="rounded-lg border border-hairline bg-surface p-6 shadow-xs">
-          <PaymentMethodPicker v-model="paymentMethod" />
+          <h2 class="mb-4 font-bold tracking-[-0.02em]">Metode pembayaran</h2>
+          <div class="flex items-center gap-3.5 rounded-sm border border-primary bg-primary-soft/40 px-4 py-3.5">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-primary">
+              <IconGrid class="h-4.5 w-4.5" />
+            </span>
+            <span class="min-w-0">
+              <span class="block font-semibold tracking-[-0.01em]">QRIS</span>
+              <span class="mt-0.5 block text-[0.86rem] text-muted">
+                Scan dari aplikasi bank atau e-wallet apa pun
+              </span>
+            </span>
+          </div>
         </section>
       </div>
 
@@ -95,7 +129,28 @@ function onSubmit() {
         <OrderSummary :item="detail">
           <template #action>
             <AppButton
-              v-if="isSignedIn"
+              v-if="!isSignedIn"
+              :to="signInPath.path"
+              size="lg"
+              class="w-full"
+            >
+              Masuk untuk melanjutkan
+            </AppButton>
+
+            <!-- No :disabled here: once clicked, state leaves 'expired' and
+                 this branch stops rendering in favour of the one below,
+                 which already shows "Memproses…" while submitting. -->
+            <AppButton
+              v-else-if="state === 'expired'"
+              size="lg"
+              class="w-full"
+              @click="onSubmit"
+            >
+              Buat kode QRIS baru
+            </AppButton>
+
+            <AppButton
+              v-else-if="!showQR"
               size="lg"
               class="w-full"
               :disabled="state === 'submitting'"
@@ -104,9 +159,38 @@ function onSubmit() {
               {{ state === 'submitting' ? 'Memproses…' : 'Bayar sekarang' }}
             </AppButton>
 
-            <AppButton v-else :to="signInPath.path" size="lg" class="w-full">
-              Masuk untuk melanjutkan
-            </AppButton>
+            <!-- The QR itself. Shown once Midtrans hands back a real charge;
+                 the page polls in the background and leaves this page on its
+                 own once the payment lands (see useCheckout). -->
+            <div v-if="showQR" class="mt-4">
+              <div class="flex flex-col items-center gap-3 rounded-sm border border-hairline-strong bg-surface-alt px-5 py-6 text-center">
+                <img
+                  :src="purchase!.qrUrl!"
+                  alt="Kode QRIS untuk membayar"
+                  class="h-52 w-52 rounded-sm bg-white p-2"
+                >
+                <p class="text-[0.9rem] font-semibold">
+                  Scan dari aplikasi bank atau e-wallet apa pun
+                </p>
+                <p v-if="countdown" class="text-[0.86rem] text-muted">
+                  Kode berlaku sampai <span class="font-semibold tabular-nums text-ink">{{ countdown }}</span>
+                </p>
+              </div>
+              <p class="mt-3 text-center text-[0.82rem] text-muted">
+                Halaman ini otomatis lanjut begitu pembayaran diterima.
+              </p>
+            </div>
+
+            <!-- Kode kedaluwarsa: yang lama sudah tidak bisa dipakai, ajak
+                 buat yang baru lewat tombol di atas. -->
+            <div
+              v-if="state === 'expired'"
+              role="status"
+              class="mt-4 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3.5 text-[0.86rem] text-amber-900"
+            >
+              <p class="font-semibold">Kode QRIS kedaluwarsa</p>
+              <p class="mt-1">Belum sempat dibayar dalam waktunya. Buat kode baru untuk lanjut.</p>
+            </div>
 
             <!-- Says what did NOT happen. A checkout that looks like it
                  succeeded while nothing was charged is worse than one that
@@ -123,17 +207,18 @@ function onSubmit() {
               </p>
             </div>
 
-            <!-- Order created, payment gateway not yet wired: the purchase is
-                 pending, waiting to be settled. -->
+            <!-- Order created, but the backend has no Midtrans key configured
+                 (local dev without MIDTRANS_SERVER_KEY) — pending with no QR
+                 to show. -->
             <div
-              v-else-if="state === 'awaiting-payment'"
+              v-else-if="state === 'awaiting-payment' && !showQR"
               role="status"
               class="mt-4 rounded-sm border border-primary/30 bg-primary-soft/50 px-4 py-3.5 text-[0.86rem] text-ink"
             >
               <p class="font-semibold">Pesanan dibuat — menunggu pembayaran</p>
               <p class="mt-1 text-muted">
-                Pesananmu tercatat dan menunggu pembayaran. Penyedia pembayaran
-                akan segera tersedia; statusnya bisa kamu pantau di
+                Pesananmu tercatat dan menunggu pembayaran. Statusnya bisa kamu
+                pantau di
                 <NuxtLink to="/akun/pembelian" class="font-semibold text-primary hover:underline">
                   Riwayat pembelian
                 </NuxtLink>.

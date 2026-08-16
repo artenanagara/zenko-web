@@ -112,6 +112,8 @@ export const purchases: Purchase[] = [
     paidAt: 1_786_519_320,
     method: 'QRIS',
     reference: 'QR-88213004',
+    qrUrl: null,
+    expiresAt: null,
     status: 'paid',
     items: [
       {
@@ -130,6 +132,8 @@ export const purchases: Purchase[] = [
     paidAt: 1_785_290_700,
     method: 'BCA Virtual Account',
     reference: 'VA-3901288471',
+    qrUrl: null,
+    expiresAt: null,
     status: 'paid',
     items: [
       {
@@ -148,6 +152,8 @@ export const purchases: Purchase[] = [
     paidAt: 1_783_086_060,
     method: 'GoPay',
     reference: 'GP-77120553',
+    qrUrl: null,
+    expiresAt: null,
     status: 'paid',
     items: [
       {
@@ -166,6 +172,8 @@ export const purchases: Purchase[] = [
     paidAt: null,
     method: 'BCA Virtual Account',
     reference: null,
+    qrUrl: null,
+    expiresAt: null,
     // Expired, so the package never appears under "Paket saya" — keeping
     // failed transactions is what explains an absence.
     status: 'expired',

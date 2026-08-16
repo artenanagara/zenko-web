@@ -28,18 +28,12 @@ export default defineNuxtConfig({
       // Off by default so a production build never ships fixtures; turn it on
       // with NUXT_PUBLIC_USE_MOCK=true while the backend is unavailable.
       useMock: false,
-      // Whether checkout may call POST /orders. Off until zenko-api exposes it
-      // and a payment gateway is wired up behind it; while off, the checkout
-      // page says the payment is not connected instead of placing an order.
+      // Whether checkout may call POST /orders, which now charges a real
+      // Midtrans QRIS payment (see zenko-api's MIDTRANS_SERVER_KEY). Off until
+      // that backend is reachable; while off, the checkout page says the
+      // payment is not connected instead of placing an order.
       // Turn on with NUXT_PUBLIC_PAYMENT_ENABLED=true.
       paymentEnabled: false,
-      // Dev-only shortcut past the (still absent) payment gateway. Only has an
-      // effect while paymentEnabled is also on: after POST /orders creates the
-      // pending purchase, the checkout immediately calls zenko-api's stub
-      // POST /orders/:invoice/pay and treats the package as owned. Requires the
-      // backend running Postgres with its own stub enabled. Never in
-      // production. Turn on with NUXT_PUBLIC_PAYMENT_STUB=true.
-      paymentStub: false,
 		// Recovery flows are live in zenko-api. Operators can still turn one off
 		// explicitly during a partial rollback without hiding the others.
       //
