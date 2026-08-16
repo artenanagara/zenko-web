@@ -12,7 +12,6 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { public: config } = useRuntimeConfig()
 const { data: items, pending, error, refresh } = usePurchases()
 
 /** An invoice can hold several packages; the column stays a single line. */
@@ -36,18 +35,21 @@ const totalSpent = computed(() =>
       <p class="mt-1.5 text-muted">Semua transaksi paket dari akun ini, lengkap dengan invoicenya.</p>
     </header>
 
-    <AccountNotice v-if="config.useMock">
-      Transaksi di bawah masih contoh — mode mock menyala, jadi datanya dari fixture, bukan zenko-api.
+    <AccountNotice>
+      Transaksi di bawah masih contoh. Pembayaran belum tersambung, jadi
+      zenko-api belum menyimpan riwayat pembelian.
     </AccountNotice>
 
-    <!-- Memuat: kerangka tabel, bukan tabel kosong. -->
-    <div v-if="pending" aria-busy="true">
-      <p class="sr-only" role="status">Memuat riwayat pembelian…</p>
-      <div class="h-72 animate-pulse rounded-lg bg-surface-sunken" aria-hidden="true" />
+    <!-- Memuat: kerangka tabel, bukan halaman kosong. -->
+    <div v-if="pending" class="grid gap-6" aria-busy="true">
+      <p class="sr-only" role="status">Memuat transaksi…</p>
+      <div class="grid gap-2" aria-hidden="true">
+        <div v-for="n in 4" :key="n" class="h-12 animate-pulse rounded-sm bg-surface-sunken" />
+      </div>
     </div>
 
     <AccountError v-else-if="error" @retry="refresh">
-      Riwayat pembelianmu belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.
+      Riwayat pembelian belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.
     </AccountError>
 
     <DashboardPanel v-else title="Transaksi" description="Terbaru di atas.">
@@ -80,7 +82,7 @@ const totalSpent = computed(() =>
               <td class="py-3.5 pr-4 text-[0.86rem] font-semibold tabular-nums">{{ purchase.invoice }}</td>
               <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ formatDate(purchase.date) }}</td>
               <td class="py-3.5 pr-4 font-semibold tracking-[-0.02em]">{{ itemsLabel(purchase) }}</td>
-              <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ purchase.method ?? '—' }}</td>
+              <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ purchase.method }}</td>
               <td class="py-3.5 pr-4 font-bold tabular-nums">
                 {{ formatRupiah(invoiceTotals(purchase).total) }}
               </td>
