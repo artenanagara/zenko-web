@@ -8,21 +8,15 @@ const columns = [
     title: 'Jelajahi',
     links: [
       { label: 'Semua paket', to: '/paket' },
-      { label: 'Tentang kami', to: '/tentang' },
       { label: 'Cara kerja', to: '/#cara-kerja' },
-    ],
-  },
-  {
-    title: 'Akun',
-    links: [
-      { label: 'Masuk', to: '/masuk' },
-      { label: 'Daftar', to: '/daftar' },
+      { label: 'Tentang kami', to: '/tentang' },
       { label: 'Jadi tutor', to: '/jadi-tutor' },
     ],
   },
   {
-    title: 'Legal',
+    title: 'Bantuan',
     links: [
+      { label: 'Hubungi kami', to: 'mailto:halo@zenko.id' },
       { label: 'Kebijakan Privasi', to: '/kebijakan-privasi' },
       { label: 'Ketentuan Layanan', to: '/ketentuan-layanan' },
     ],
@@ -35,7 +29,7 @@ const year = new Date().getFullYear()
 <template>
   <footer class="border-t border-hairline bg-surface-alt">
     <div class="container-page py-14 md:py-16">
-      <div class="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-8">
+      <div class="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr] md:gap-8">
         <div class="max-w-80">
           <BrandMark img-class="h-11 w-auto object-contain" />
 
