@@ -1,18 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 96" fill="none">
-  <defs>
-    <linearGradient id="zenko-g" x1="48" y1="0" x2="48" y2="96" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#57ADFF"/>
-      <stop offset="1" stop-color="#1B6BE6"/>
-    </linearGradient>
-  </defs>
-  <rect width="96" height="96" rx="22" fill="url(#zenko-g)"/>
-  <rect x="1" y="1" width="94" height="94" rx="21" stroke="rgba(255,255,255,0.22)" stroke-width="2" fill="none"/>
-  <path d="M23 30 H60 L26 68" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path fill="#fff" d="M76 13 69 32 55 19z"/>
-  <g fill="#fff">
-    <rect x="47" y="64" width="10" height="14" rx="3"/>
-    <rect x="60" y="56" width="10" height="22" rx="3"/>
-    <rect x="73" y="48" width="10" height="30" rx="3"/>
-  </g>
-  <text x="118" y="70" font-family="'Plus Jakarta Sans', -apple-system, 'Segoe UI', Arial, sans-serif" font-size="60" font-weight="800" letter-spacing="-2.4" fill="#14224A">Zenko</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300">
+  <image href="/logo.png" width="900" height="300" />
 </svg>
