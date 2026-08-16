@@ -28,11 +28,10 @@ const isUrgent = computed(() => props.remainingSeconds <= 60)
   <header class="fixed inset-x-0 top-0 z-40 border-b border-hairline bg-surface shadow-xs">
     <div class="container-page flex h-16 items-center justify-between gap-4">
       <div class="flex min-w-0 items-center gap-3">
-        <BrandIcon class="h-8 w-8 shrink-0" />
+        <BrandMark img-class="h-9 w-auto object-contain shrink-0" />
         <span class="min-w-0 truncate">
-          <span class="font-extrabold tracking-[-0.03em] text-ink">Zenko</span>
-          <span class="mx-2 text-faint" aria-hidden="true">·</span>
-          <span class="text-[0.92rem] font-medium text-muted">{{ packageTitle }}</span>
+          <span class="text-faint" aria-hidden="true">·</span>
+          <span class="ml-2 text-[0.92rem] font-medium text-muted">{{ packageTitle }}</span>
         </span>
       </div>
 

@@ -19,7 +19,7 @@ const TONE_RING: Record<Tone, string> = {
 <template>
   <main class="flex min-h-screen items-center justify-center px-5 py-12 sm:px-8">
     <div class="w-full max-w-105">
-      <BrandMark />
+      <BrandMark img-class="h-10 w-auto object-contain" />
 
       <div class="mt-9">
         <span

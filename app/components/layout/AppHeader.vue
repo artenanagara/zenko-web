@@ -52,10 +52,7 @@ onBeforeUnmount(() => window.removeEventListener('scroll', syncScrollState))
   >
     <nav class="container-page flex min-h-18 items-center justify-between md:min-h-20" aria-label="Navigasi utama">
       <div class="flex items-center gap-9">
-        <NuxtLink to="/" class="inline-flex items-center gap-2.5 font-extrabold tracking-[-0.04em]" aria-label="Zenko home">
-          <BrandIcon class="h-8 w-8 drop-shadow-[0_6px_14px_rgba(47,111,235,0.3)]" />
-          <span class="text-xl">Zenko</span>
-        </NuxtLink>
+        <BrandMark img-class="h-11 md:h-12 w-auto object-contain" />
 
         <div class="hidden items-center gap-7 font-medium text-muted md:flex">
           <NuxtLink

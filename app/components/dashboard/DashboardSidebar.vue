@@ -51,14 +51,10 @@ function itemClass(active = false): string[] {
       class="flex h-16 shrink-0 items-center border-b border-hairline"
       :class="collapsed ? 'justify-center' : 'justify-between pr-3 pl-5'"
     >
-      <NuxtLink
-        to="/"
-        class="inline-flex items-center gap-2.5 font-extrabold tracking-[-0.04em]"
-        aria-label="Zenko — beranda"
-      >
+      <NuxtLink v-if="collapsed" to="/" aria-label="Zenko — beranda">
         <BrandIcon class="h-8 w-8 shrink-0 drop-shadow-[0_6px_14px_rgba(47,111,235,0.3)]" />
-        <span v-if="!collapsed" class="text-xl">Zenko</span>
       </NuxtLink>
+      <BrandMark v-else img-class="h-9 w-auto object-contain" aria-label="Zenko — beranda" />
 
       <button
         v-if="variant === 'drawer'"

@@ -83,7 +83,7 @@ async function onSubmit() {
   <main class="grid min-h-screen lg:grid-cols-2">
     <div class="flex items-center justify-center px-5 py-10 sm:px-8 md:py-14">
       <div class="w-full max-w-100">
-        <BrandMark />
+        <BrandMark img-class="h-10 w-auto object-contain" />
 
         <h1 class="mt-9 text-[clamp(1.7rem,2.6vw,2.1rem)] leading-[1.18] tracking-[-0.04em]">
           Masuk ke akunmu

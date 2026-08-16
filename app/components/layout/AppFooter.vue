@@ -37,14 +37,7 @@ const year = new Date().getFullYear()
     <div class="container-page py-14 md:py-16">
       <div class="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-8">
         <div class="max-w-80">
-          <NuxtLink
-            to="/"
-            class="inline-flex items-center gap-2 font-extrabold tracking-[-0.04em]"
-            aria-label="Zenko home"
-          >
-            <BrandIcon class="h-8 w-8 drop-shadow-[0_6px_14px_rgba(47,111,235,0.3)]" />
-            <span class="text-xl">Zenko</span>
-          </NuxtLink>
+          <BrandMark img-class="h-11 w-auto object-contain" />
 
           <p class="mt-4 text-[0.94rem] leading-[1.7] text-muted">
             Marketplace try out terpercaya untuk persiapan SKD/CPNS, BUMN, SNBT,
