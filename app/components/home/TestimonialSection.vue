@@ -36,12 +36,13 @@ function stars(rating: number) {
             aria-hidden="true"
           >&rdquo;</span>
 
-          <div class="text-[0.95rem] tracking-[0.16em]" :aria-label="`Rating ${item.rating} dari 5`">
-            <span
+          <div class="flex items-center gap-0.5" :aria-label="`Rating ${item.rating} dari 5`">
+            <IconStar
               v-for="(filled, index) in stars(item.rating)"
               :key="index"
+              class="h-3.5 w-3.5"
               :class="filled ? 'text-star' : 'text-[rgba(148,163,184,0.45)]'"
-            >★</span>
+            />
           </div>
 
           <blockquote class="relative mt-4 flex-1 text-[1.02rem] leading-[1.68] tracking-[-0.01em]">

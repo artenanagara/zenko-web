@@ -20,7 +20,7 @@ function clear() {
     role="search"
     @submit.prevent
   >
-    <IconSearch class="h-4.5 w-4.5 shrink-0 stroke-placeholder stroke-[1.8]" />
+    <IconSearch class="h-4.5 w-4.5 shrink-0 text-placeholder" />
 
     <label class="sr-only" for="search-input">Cari paket try out</label>
     <!-- id is what the header's search button focuses; keep it unique per page. -->

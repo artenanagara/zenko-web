@@ -63,7 +63,7 @@ const { user } = useAuth()
         class="mt-3 inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-primary transition-colors hover:text-primary-light"
       >
         Buka halaman Pencairan
-        <span aria-hidden="true">→</span>
+        <IconArrowRight aria-hidden="true" class="h-3.5 w-3.5" />
       </NuxtLink>
     </DashboardPanel>
   </div>

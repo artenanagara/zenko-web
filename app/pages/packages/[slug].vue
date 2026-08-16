@@ -60,7 +60,7 @@ useHead({
               <span class="font-semibold text-ink">{{ detail.author.name }}</span>
             </span>
             <span class="flex items-center gap-1.5">
-              <span class="text-star">★</span>
+              <IconStar class="h-3.5 w-3.5 text-star" />
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>
               ({{ detail.reviewCount }} ulasan)
             </span>
@@ -98,7 +98,7 @@ useHead({
           <h2 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Yang kamu dapatkan</h2>
           <ul class="grid gap-3 min-[560px]:grid-cols-2">
             <li v-for="item in detail.includes" :key="item" class="flex items-start gap-3 text-muted">
-              <IconCheck class="mt-1 h-5 w-5 shrink-0 stroke-primary" />
+              <IconCheck class="mt-1 h-5 w-5 shrink-0 text-primary" />
               {{ item }}
             </li>
           </ul>

@@ -24,7 +24,7 @@ const emit = defineEmits<{
           class="rounded-xs border border-hairline-strong px-4 py-2.5 text-[0.88rem] font-semibold text-ink transition-colors hover:bg-surface-alt disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           @click="emit('prev')"
         >
-          ← Sebelumnya
+          <IconArrowLeft class="inline-block h-3.5 w-3.5 -mt-0.5" /> Sebelumnya
         </button>
         <button
           type="button"
@@ -40,7 +40,7 @@ const emit = defineEmits<{
           class="rounded-xs border border-hairline-strong px-4 py-2.5 text-[0.88rem] font-semibold text-ink transition-colors hover:bg-surface-alt"
           @click="emit('next')"
         >
-          Selanjutnya →
+          Selanjutnya <IconArrowRight class="inline-block h-3.5 w-3.5 -mt-0.5" />
         </button>
       </div>
 

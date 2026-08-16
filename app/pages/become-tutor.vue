@@ -398,7 +398,7 @@ const formState = computed<FormState>(() => {
                       class="anim-item flex items-center gap-2.5 rounded-pill bg-surface py-2.5 pr-5 pl-7 shadow-lift"
                       style="--delay: 60ms"
                     >
-                      <IconSearch class="h-4 w-4 shrink-0 stroke-placeholder stroke-[1.8]" />
+                      <IconSearch class="h-4 w-4 shrink-0 text-placeholder" />
                       <span class="text-[0.82rem] font-medium text-muted">SNBT 2026</span>
                     </div>
                   </div>
@@ -520,7 +520,7 @@ const formState = computed<FormState>(() => {
                           >{{ payout.amount }}</span>
                           <IconCheck
                             v-if="payout.done"
-                            class="anim-draw h-4 w-4 shrink-0 stroke-success-ink"
+                            class="anim-draw h-4 w-4 shrink-0 text-success-ink"
                             :style="{ '--delay': `${400 + index * 170}ms` }"
                           />
                           <span v-else class="anim-pulse h-2.5 w-2.5 shrink-0 rounded-full bg-skeleton" />
@@ -689,7 +689,7 @@ const formState = computed<FormState>(() => {
                   >{{ option.label }}</span>
                   <IconCheck
                     v-if="option.correct"
-                    class="anim-draw h-4 w-4 shrink-0 stroke-primary"
+                    class="anim-draw h-4 w-4 shrink-0 text-primary"
                     style="--delay: 620ms"
                   />
                 </li>
@@ -945,7 +945,7 @@ const formState = computed<FormState>(() => {
                 class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success-soft"
                 aria-hidden="true"
               >
-                <IconCheck class="h-7 w-7 stroke-success-ink" />
+                <IconCheck class="h-7 w-7 text-success-ink" />
               </span>
               <h3 class="mt-5 text-[1.35rem] font-bold tracking-[-0.03em]">
                 {{ formState === 'submitted' ? 'Pengajuan berhasil dikirim' : 'Pengajuanmu sedang ditinjau' }}
@@ -961,7 +961,7 @@ const formState = computed<FormState>(() => {
                 class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success-soft"
                 aria-hidden="true"
               >
-                <IconCheck class="h-7 w-7 stroke-success-ink" />
+                <IconCheck class="h-7 w-7 text-success-ink" />
               </span>
               <!-- Covers both routes here: an approved application, and a
                    role granted directly by an admin. -->
@@ -1025,7 +1025,7 @@ const formState = computed<FormState>(() => {
                       ? 'border-red-400 focus:shadow-[0_0_0_4px_rgba(248,113,113,0.16)]'
                       : 'border-line focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)]',
                   ]"
-                  style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236b7280%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22m6 9 6 6 6-6%22/></svg>')"
+                  style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22 fill=%22%236b7280%22><path d=%22M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z%22/></svg>')"
                   :aria-invalid="Boolean(errors.expertise)"
                   :aria-describedby="errors.expertise ? 'tutor-expertise-error' : undefined"
                 >

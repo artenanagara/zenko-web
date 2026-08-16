@@ -187,7 +187,7 @@ function print() {
 
       <p class="print:hidden">
         <NuxtLink to="/akun/pembelian" class="text-[0.88rem] font-semibold text-primary transition-colors hover:text-primary-light">
-          ← Kembali ke riwayat pembelian
+          <IconArrowLeft class="inline-block h-3.5 w-3.5 -mt-0.5" /> Kembali ke riwayat pembelian
         </NuxtLink>
       </p>
     </template>

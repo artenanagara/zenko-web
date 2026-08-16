@@ -211,7 +211,7 @@ const summary = computed(() => {
 
             <span class="flex shrink-0 items-center gap-1.5 pr-1 font-semibold text-primary">
               <span class="hidden sm:inline">{{ s.attemptCount === 0 ? 'Mulai' : 'Buka' }}</span>
-              <span aria-hidden="true" class="transition-transform duration-200 ease-smooth group-hover:translate-x-1">→</span>
+              <IconArrowRight aria-hidden="true" class="h-3.5 w-3.5 transition-transform duration-200 ease-smooth group-hover:translate-x-1" />
             </span>
           </NuxtLink>
         </li>
@@ -230,7 +230,7 @@ const summary = computed(() => {
           to="/akun/paket"
           class="text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
         >
-          Semua paket →
+          Semua paket <IconArrowRight class="inline-block h-3.5 w-3.5 -mt-0.5" />
         </NuxtLink>
       </template>
     </DashboardPanel>
@@ -247,7 +247,7 @@ const summary = computed(() => {
         <span class="block font-semibold tracking-[-0.02em]">Riwayat pembelian</span>
         <span class="mt-0.5 block text-[0.84rem] text-muted">Invoice dan bukti pembayaranmu.</span>
       </span>
-      <span aria-hidden="true" class="font-semibold text-primary transition-transform duration-200 ease-smooth group-hover:translate-x-1">→</span>
+      <IconArrowRight aria-hidden="true" class="h-4 w-4 shrink-0 text-primary transition-transform duration-200 ease-smooth group-hover:translate-x-1" />
     </NuxtLink>
   </div>
 </template>

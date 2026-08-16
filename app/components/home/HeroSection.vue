@@ -44,7 +44,7 @@ function onSubmit() {
           @submit.prevent="onSubmit"
         >
           <label class="sr-only" for="search-input">Cari paket</label>
-          <IconSearch class="hidden h-5 w-5 shrink-0 stroke-placeholder stroke-[1.8] sm:block" />
+          <IconSearch class="hidden h-5 w-5 shrink-0 text-placeholder sm:block" />
           <input
             id="search-input"
             v-model="query"

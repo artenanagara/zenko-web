@@ -149,15 +149,18 @@
 
 @keyframes zenko-draw {
   0% {
-    stroke-dashoffset: 26;
+    opacity: 0;
+    transform: scale(0.4);
   }
   7%,
   85% {
-    stroke-dashoffset: 0;
+    opacity: 1;
+    transform: scale(1);
   }
   93%,
   100% {
-    stroke-dashoffset: 26;
+    opacity: 0;
+    transform: scale(0.4);
   }
 }
 
@@ -234,10 +237,12 @@
     animation: zenko-reveal-x var(--cycle) var(--ease-smooth) var(--delay, 0ms) infinite both;
   }
 
-  /* Checkmark draws itself along its own path. */
+  /* Checkmark pops itself into view. */
   .anim-ready .anim-draw path {
-    stroke-dasharray: 26;
-    stroke-dashoffset: 26;
+    transform-box: fill-box;
+    transform-origin: center;
+    opacity: 0;
+    transform: scale(0.4);
   }
 
   .anim-ready.is-inview .anim-draw path {
@@ -306,7 +311,8 @@
 
     .anim-ready .anim-draw path {
       animation: none !important;
-      stroke-dashoffset: 0 !important;
+      opacity: 1 !important;
+      transform: none !important;
     }
 
     .anim-sheen::after {

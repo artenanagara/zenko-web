@@ -36,7 +36,7 @@ const packages = [
             {{ item.title }}
           </span>
           <span class="mt-0.5 block truncate text-[0.78rem] text-muted">
-            {{ item.tutor }} · <span class="text-star">★</span> {{ item.rating }}
+            {{ item.tutor }} · <IconStar class="inline-block h-3 w-3 -mt-0.5 text-star" /> {{ item.rating }}
           </span>
         </span>
 

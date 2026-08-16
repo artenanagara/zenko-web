@@ -93,7 +93,7 @@ const stats = computed(() => packageStats(props.item))
              button), so the label promises that, not the try out itself. -->
         <p class="mt-auto flex items-center gap-1.5 pt-3 font-bold tracking-[-0.02em] text-primary">
           {{ stats.attemptCount === 0 ? 'Buka paket' : 'Lihat progres' }}
-          <span aria-hidden="true" class="transition-transform duration-200 ease-smooth group-hover:translate-x-1">→</span>
+          <IconArrowRight aria-hidden="true" class="h-4 w-4 transition-transform duration-200 ease-smooth group-hover:translate-x-1" />
         </p>
       </div>
     </article>

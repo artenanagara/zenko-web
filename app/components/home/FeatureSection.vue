@@ -43,7 +43,7 @@ const { target, ready, isInView } = useInView(0.2)
                 :style="{ '--delay': `${120 + index * 260}ms` }"
               >
                 <IconCheck
-                  class="anim-draw h-5 w-5 shrink-0 stroke-primary"
+                  class="anim-draw h-5 w-5 shrink-0 text-primary"
                   :style="{ '--delay': `${280 + index * 260}ms` }"
                 />
                 {{ check }}

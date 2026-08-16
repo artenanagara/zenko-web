@@ -1,7 +1,7 @@
 <template>
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
-    <path d="M2.5 10h19" />
-    <path d="M15.5 14.5h3" />
+  <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+    <path
+      d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z"
+    />
   </svg>
 </template>

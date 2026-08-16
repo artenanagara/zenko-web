@@ -87,7 +87,9 @@ function retry() {
     <!-- Pra-ujian: tata tertib dan komposisi subtes, sebelum timer berjalan. -->
     <div v-if="session.phase.value === 'intro'" class="container-page grid max-w-3xl gap-6 py-10 md:py-14">
       <nav class="text-[0.85rem] text-muted">
-        <NuxtLink :to="`/akun/paket/${slug}`" class="transition-colors hover:text-ink">← Kembali ke paket</NuxtLink>
+        <NuxtLink :to="`/akun/paket/${slug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
+          <IconArrowLeft class="h-3.5 w-3.5" /> Kembali ke paket
+        </NuxtLink>
       </nav>
 
       <div>

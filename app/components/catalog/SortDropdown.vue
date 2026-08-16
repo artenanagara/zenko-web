@@ -156,7 +156,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
           @click="select(option.key)"
         >
           {{ option.label }}
-          <IconCheck v-if="model === option.key" class="h-4 w-4 shrink-0 stroke-primary" />
+          <IconCheck v-if="model === option.key" class="h-4 w-4 shrink-0 text-primary" />
         </button>
       </div>
     </Transition>

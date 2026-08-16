@@ -53,7 +53,9 @@ const showEndConfirm = ref(false)
     <!-- Pra-sesi: cukup satu layar — apa ini, berapa lama, satu tombol. -->
     <div v-if="session.phase.value === 'intro'" class="container-page grid max-w-2xl gap-6 py-10 md:py-14">
       <nav class="text-[0.85rem] text-muted">
-        <NuxtLink :to="`/paket/${slug}`" class="transition-colors hover:text-ink">← Kembali ke halaman paket</NuxtLink>
+        <NuxtLink :to="`/paket/${slug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
+          <IconArrowLeft class="h-3.5 w-3.5" /> Kembali ke halaman paket
+        </NuxtLink>
       </nav>
 
       <div>
@@ -217,7 +219,7 @@ const showEndConfirm = ref(false)
 
       <p>
         <NuxtLink :to="`/paket/${slug}`" class="text-[0.88rem] font-semibold text-primary transition-colors hover:text-primary-light">
-          ← Kembali ke halaman paket
+          <IconArrowLeft class="inline-block h-3.5 w-3.5 -mt-0.5" /> Kembali ke halaman paket
         </NuxtLink>
       </p>
     </div>

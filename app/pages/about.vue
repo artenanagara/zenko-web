@@ -1,4 +1,14 @@
 <script setup lang="ts">
+import {
+  IconTarget,
+  IconStar,
+  IconLightning,
+  IconHandshake,
+  IconCheckCircle,
+  IconRocket,
+  IconPlant,
+} from '#components'
+
 // English file name, Indonesian URL.
 definePageMeta({ path: '/tentang' })
 
@@ -19,17 +29,17 @@ useHead({
  */
 const differentiators = [
   {
-    icon: '🎯',
+    icon: IconTarget,
     title: 'Beragam pilihan',
     description: 'Paket dari banyak tutor, bukan satu sumber.',
   },
   {
-    icon: '⭐',
+    icon: IconStar,
     title: 'Transparan',
     description: 'Rating & ulasan asli dari siswa yang sudah mencoba.',
   },
   {
-    icon: '⚡',
+    icon: IconLightning,
     title: 'Langsung kerjakan',
     description: 'Beli, akses, langsung latihan tanpa ribet.',
   },
@@ -51,25 +61,25 @@ const tutorSteps = [
 
 const values = [
   {
-    icon: '🤝',
+    icon: IconHandshake,
     title: 'Adil untuk semua pihak',
     description:
       'Bagi hasil yang transparan, siswa dapat harga wajar, tutor dapat porsi yang pantas.',
   },
   {
-    icon: '✅',
+    icon: IconCheckCircle,
     title: 'Kualitas di atas kuantitas',
     description:
       'Setiap konten yang tayang melewati proses moderasi, bukan sekadar upload asal jadi.',
   },
   {
-    icon: '🚀',
+    icon: IconRocket,
     title: 'Terus bergerak maju',
     description:
       'Kami percaya progres kecil yang konsisten lebih berarti daripada janji besar yang lambat.',
   },
   {
-    icon: '🌱',
+    icon: IconPlant,
     title: 'Membuka kesempatan',
     description:
       'Siapa pun dengan keahlian yang tepat berhak dapat kesempatan menghasilkan dari ilmunya.',
@@ -190,9 +200,11 @@ const audiences = [
             class="rounded-3xl border border-hairline bg-surface p-6 text-center shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
           >
             <span
-              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-[1.4rem]"
+              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-primary"
               aria-hidden="true"
-            >{{ point.icon }}</span>
+            >
+              <component :is="point.icon" class="h-6 w-6" />
+            </span>
             <h3 class="mt-4 mb-2 text-[1.15rem] font-bold tracking-[-0.03em]">{{ point.title }}</h3>
             <p class="leading-[1.62] text-muted">{{ point.description }}</p>
           </article>
@@ -265,9 +277,11 @@ const audiences = [
             class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
           >
             <span
-              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-[1.4rem]"
+              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-primary"
               aria-hidden="true"
-            >{{ value.icon }}</span>
+            >
+              <component :is="value.icon" class="h-6 w-6" />
+            </span>
             <h3 class="mt-4 mb-2.5 text-[1.2rem] font-bold tracking-[-0.03em]">{{ value.title }}</h3>
             <p class="leading-[1.62] text-muted">{{ value.description }}</p>
           </article>

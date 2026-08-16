@@ -32,7 +32,7 @@ defineProps<{ item: Package }>()
         </div>
 
         <p class="mt-2 flex items-center gap-1.5 text-[0.82rem] text-muted">
-          <span class="text-star">★</span> {{ item.rating.toFixed(1) }}
+          <IconStar class="h-3.5 w-3.5 shrink-0 text-star" /> {{ item.rating.toFixed(1) }}
           <span class="opacity-60">·</span>
           {{ item.soldLabel }} terjual
         </p>

@@ -1,6 +1,7 @@
 <template>
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <rect x="3.25" y="4.25" width="17.5" height="15.5" rx="2.5" />
-    <path d="M9.5 4.5v15" />
+  <svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+    <path
+      d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40ZM40,56H80V200H40ZM216,200H96V56H216V200Z"
+    />
   </svg>
 </template>

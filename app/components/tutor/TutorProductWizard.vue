@@ -440,7 +440,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
         class="flex items-center gap-1.5 text-[0.86rem] font-semibold"
         :class="saveState === 'error' ? 'text-red-600' : 'text-muted'"
       >
-        <IconCheck v-if="saveState === 'saved'" class="h-4 w-4 stroke-success-ink" />
+        <IconCheck v-if="saveState === 'saved'" class="h-4 w-4 text-success-ink" />
         {{ saveIndicator }}
       </p>
     </header>
@@ -472,7 +472,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
     <DashboardPanel v-else-if="submitted" title="Produk diajukan untuk tayang">
       <div class="py-4 text-center">
         <span class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success-soft" aria-hidden="true">
-          <IconCheck class="h-7 w-7 stroke-success-ink" />
+          <IconCheck class="h-7 w-7 text-success-ink" />
         </span>
         <p class="mx-auto mt-4 max-w-105 leading-[1.7] text-muted">
           Tim Zenko akan meninjau produkmu. Statusnya bisa kamu pantau di daftar
@@ -729,7 +729,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 class="flex items-start gap-2.5 text-[0.9rem]"
                 :class="item.ok ? 'text-muted' : 'text-amber-800'"
               >
-                <IconCheck v-if="item.ok" class="mt-0.5 h-4 w-4 shrink-0 stroke-success-ink" />
+                <IconCheck v-if="item.ok" class="mt-0.5 h-4 w-4 shrink-0 text-success-ink" />
                 <IconAlert v-else class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 {{ item.label }}
               </li>
