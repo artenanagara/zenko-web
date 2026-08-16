@@ -1,0 +1,29 @@
+[Unit]
+Description=Zenko Web (staging)
+After=network-online.target zenko-api-staging.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zenko
+Group=zenko
+WorkingDirectory=/opt/zenko/web-staging/current
+EnvironmentFile=/etc/zenko/web-staging.env
+ExecStart=/usr/bin/node /opt/zenko/web-staging/current/server/index.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+UMask=0027
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

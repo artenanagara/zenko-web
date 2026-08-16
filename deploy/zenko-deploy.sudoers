@@ -1,1 +1,1 @@
-zenko-deploy ALL=(root) NOPASSWD: /usr/local/sbin/zenko-deploy-api *, /usr/local/sbin/zenko-deploy-web *
+zenko-deploy ALL=(root) NOPASSWD: /usr/local/sbin/zenko-deploy-api *, /usr/local/sbin/zenko-deploy-web *, /usr/local/sbin/zenko-deploy-api-staging *, /usr/local/sbin/zenko-deploy-web-staging *
