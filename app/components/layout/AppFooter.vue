@@ -42,6 +42,31 @@ const year = new Date().getFullYear()
             <IconSeal class="h-5 w-5 shrink-0" />
             Semua tutor melewati kurasi
           </p>
+
+          <ul class="mt-6 flex items-center gap-2">
+            <li>
+              <a
+                href="https://www.instagram.com/zenkoedu.id"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Zenko di Instagram"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors duration-200 ease-smooth hover:bg-surface hover:text-primary"
+              >
+                <IconInstagram class="h-[1.05rem] w-[1.05rem]" />
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://www.tiktok.com/@zenkoedu.id"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Zenko di TikTok"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors duration-200 ease-smooth hover:bg-surface hover:text-primary"
+              >
+                <IconTiktok class="h-[1.05rem] w-[1.05rem]" />
+              </a>
+            </li>
+          </ul>
         </div>
 
         <nav v-for="column in columns" :key="column.title" :aria-label="column.title">
