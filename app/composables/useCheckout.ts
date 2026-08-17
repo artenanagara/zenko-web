@@ -72,7 +72,14 @@ export function useCheckout() {
     }, msLeft)
   }
 
-  function startPolling(invoice: string) {
+  /**
+   * `onPaid` lets a caller show its own confirmation before leaving —
+   * /pembayaran/:invoice does, with a success screen and a short auto-redirect
+   * rather than snapping away the instant settlement is noticed. Without one
+   * (checkout/[slug]'s no-QR dev fallback, which has no such screen) the
+   * default is the original behaviour: go straight to the owned package.
+   */
+  function startPolling(invoice: string, onPaid?: (paid: Purchase) => void) {
     pollHandle = setInterval(async () => {
       let latest: Purchase
       try {
@@ -89,7 +96,9 @@ export function useCheckout() {
 
       if (latest.status === 'paid') {
         stopWaiting()
-        await navigateTo('/akun/paket')
+        purchase.value = latest
+        if (onPaid) onPaid(latest)
+        else await navigateTo('/akun/paket')
       }
       else if (latest.status === 'expired') {
         stopWaiting()
@@ -104,7 +113,7 @@ export function useCheckout() {
    * dedicated page loading a still-pending invoice fresh (a bookmark, or the
    * buyer coming back later). A terminal status needs no timer at all.
    */
-  function resumeWaiting(existing: Purchase) {
+  function resumeWaiting(existing: Purchase, onPaid?: (paid: Purchase) => void) {
     stopWaiting()
     purchase.value = existing
 
@@ -115,7 +124,7 @@ export function useCheckout() {
 
     state.value = 'awaiting-payment'
     if (existing.expiresAt) scheduleExpiry(existing.expiresAt)
-    startPolling(existing.invoice)
+    startPolling(existing.invoice, onPaid)
   }
 
   async function pay(request: CreateOrderRequest) {
