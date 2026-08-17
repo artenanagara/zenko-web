@@ -27,6 +27,11 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *
  * A 409 means the package is already owned — send them to it. A 404 means the
  * slug is unknown — say so plainly.
+ *
+ * A real QR hands off to its own page (/pembayaran/:invoice) rather than
+ * rendering inline here — `resumeWaiting` is what lets that page (or this one,
+ * for the no-QR dev fallback) pick polling back up around an order that
+ * already exists, instead of duplicating `startPolling`/`scheduleExpiry`.
  */
 
 export type CheckoutState = 'idle' | 'submitting' | 'not-connected' | 'awaiting-payment' | 'expired' | 'error'
@@ -93,6 +98,26 @@ export function useCheckout() {
     }, POLL_INTERVAL_MS)
   }
 
+  /**
+   * Pick up polling around a purchase that already exists, rather than one
+   * just created by `pay()` — either the tail end of that same call, or a
+   * dedicated page loading a still-pending invoice fresh (a bookmark, or the
+   * buyer coming back later). A terminal status needs no timer at all.
+   */
+  function resumeWaiting(existing: Purchase) {
+    stopWaiting()
+    purchase.value = existing
+
+    if (existing.status !== 'pending') {
+      state.value = existing.status === 'expired' ? 'expired' : 'idle'
+      return
+    }
+
+    state.value = 'awaiting-payment'
+    if (existing.expiresAt) scheduleExpiry(existing.expiresAt)
+    startPolling(existing.invoice)
+  }
+
   async function pay(request: CreateOrderRequest) {
     error.value = ''
     stopWaiting()
@@ -112,10 +137,18 @@ export function useCheckout() {
       })
 
       purchase.value = created
-      state.value = 'awaiting-payment'
 
-      if (created.expiresAt) scheduleExpiry(created.expiresAt)
-      startPolling(created.invoice)
+      if (created.qrUrl) {
+        // A real QR to scan — the dedicated payment page owns showing it and
+        // polling for settlement from here.
+        await navigateTo(`/pembayaran/${created.invoice}`)
+        return
+      }
+
+      // No Midtrans key configured (local dev): stay here with the existing
+      // "waiting for payment" fallback instead of sending them to a page with
+      // no QR to show either.
+      resumeWaiting(created)
     }
     catch (cause) {
       const status = apiErrorStatus(cause)
@@ -144,7 +177,7 @@ export function useCheckout() {
   // an unmounted page.
   onUnmounted(stopWaiting)
 
-  return { state, error, purchase, pay, reset }
+  return { state, error, purchase, pay, reset, resumeWaiting }
 }
 
 /** zenko-api renders every error as { error, requestId }; fall back for the rest. */

@@ -22,42 +22,18 @@ useHead({
 // order without one regardless of what the browser allows.
 const { user, isSignedIn, isLoading } = useAuth()
 
-const { state, error, purchase, pay, reset } = useCheckout()
+const { state, error, pay, reset } = useCheckout()
 
 const signInPath = computed(() => ({ path: '/masuk', query: { lanjut: route.fullPath } }))
 
 // The order body carries only the slug — the server prices it and the
 // session says who is buying. Zenko charges QRIS only, so there is no method
-// to choose.
+// to choose. A real QR sends the buyer straight to /pembayaran/:invoice (see
+// useCheckout) — this page only ever sees 'awaiting-payment' for the no-QR
+// local-dev fallback.
 function onSubmit() {
   pay({ slug })
 }
-
-/** A real QR code arrived — as opposed to a pending order with none, which
- * happens when the backend has no Midtrans key configured (local dev). */
-const showQR = computed(() => state.value === 'awaiting-payment' && Boolean(purchase.value?.qrUrl))
-
-// Countdown to the QR's own deadline. Ticks once a second purely for display
-// — the state transition to 'expired' is driven by useCheckout's own timer,
-// not by this reaching zero.
-const now = ref(Date.now())
-let tickHandle: ReturnType<typeof setInterval> | null = null
-onMounted(() => {
-  tickHandle = setInterval(() => { now.value = Date.now() }, 1000)
-})
-onUnmounted(() => {
-  if (tickHandle !== null) clearInterval(tickHandle)
-})
-
-const countdown = computed(() => {
-  const expiresAt = purchase.value?.expiresAt
-  if (!expiresAt) return null
-
-  const totalSeconds = Math.max(0, Math.floor(expiresAt - now.value / 1000))
-  const m = Math.floor(totalSeconds / 60)
-  const s = totalSeconds % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-})
 </script>
 
 <template>
@@ -150,7 +126,7 @@ const countdown = computed(() => {
             </AppButton>
 
             <AppButton
-              v-else-if="!showQR"
+              v-else
               size="lg"
               class="w-full"
               :disabled="state === 'submitting'"
@@ -158,28 +134,6 @@ const countdown = computed(() => {
             >
               {{ state === 'submitting' ? 'Memproses…' : 'Bayar sekarang' }}
             </AppButton>
-
-            <!-- The QR itself. Shown once Midtrans hands back a real charge;
-                 the page polls in the background and leaves this page on its
-                 own once the payment lands (see useCheckout). -->
-            <div v-if="showQR" class="mt-4">
-              <div class="flex flex-col items-center gap-3 rounded-sm border border-hairline-strong bg-surface-alt px-5 py-6 text-center">
-                <img
-                  :src="purchase!.qrUrl!"
-                  alt="Kode QRIS untuk membayar"
-                  class="h-52 w-52 rounded-sm bg-white p-2"
-                >
-                <p class="text-[0.9rem] font-semibold">
-                  Scan dari aplikasi bank atau e-wallet apa pun
-                </p>
-                <p v-if="countdown" class="text-[0.86rem] text-muted">
-                  Kode berlaku sampai <span class="font-semibold tabular-nums text-ink">{{ countdown }}</span>
-                </p>
-              </div>
-              <p class="mt-3 text-center text-[0.82rem] text-muted">
-                Halaman ini otomatis lanjut begitu pembayaran diterima.
-              </p>
-            </div>
 
             <!-- Kode kedaluwarsa: yang lama sudah tidak bisa dipakai, ajak
                  buat yang baru lewat tombol di atas. -->
@@ -209,9 +163,10 @@ const countdown = computed(() => {
 
             <!-- Order created, but the backend has no Midtrans key configured
                  (local dev without MIDTRANS_SERVER_KEY) — pending with no QR
-                 to show. -->
+                 to show. A real QR never reaches this state on this page; it
+                 leaves for /pembayaran/:invoice instead (see useCheckout). -->
             <div
-              v-else-if="state === 'awaiting-payment' && !showQR"
+              v-else-if="state === 'awaiting-payment'"
               role="status"
               class="mt-4 rounded-sm border border-primary/30 bg-primary-soft/50 px-4 py-3.5 text-[0.86rem] text-ink"
             >
