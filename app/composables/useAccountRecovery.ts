@@ -12,10 +12,17 @@
  * Unlike checkout, a gated flow is simulated under NUXT_PUBLIC_USE_MOCK (no
  * money moves here); mock results carry `mocked: true` so pages can admit no
  * email was actually sent.
+ *
+ * Email verification is a 6-digit code entered on the page, not a link —
+ * password reset still is, so `verifyEmail` and `resendVerification` are the
+ * only calls here that never carry a `token`.
  */
 
 /** Token the mock always rejects, so the "expired" screen can be exercised. */
 export const MOCK_EXPIRED_TOKEN = 'kedaluwarsa'
+
+/** Code the mock always rejects as expired, so that screen can be exercised without a backend. */
+export const MOCK_EXPIRED_CODE = '000000'
 
 export type RecoveryFailure = 'not-connected' | 'invalid-token' | 'error'
 
@@ -23,11 +30,28 @@ export type RecoveryResult =
   | { ok: true, mocked: boolean }
   | { ok: false, reason: RecoveryFailure, message: string }
 
+/**
+ * Email verification now runs on a 6-digit code instead of a link, so its
+ * failures need to be told apart: a wrong code (still under the attempt cap)
+ * is fixable in place, while an expired/consumed/exhausted code (410) needs a
+ * fresh one from resend. Collapsing those into one "invalid" bucket, like the
+ * token flows do, would leave the form unable to tell a typo from a dead end.
+ */
+export type VerifyEmailFailure = 'invalid-code' | 'expired' | 'not-connected' | 'error'
+
+export type VerifyEmailResult =
+  | { ok: true, mocked: boolean }
+  | { ok: false, reason: VerifyEmailFailure, message: string }
+
 const NOT_CONNECTED_MESSAGE =
   'Pemulihan akun lewat email belum tersedia. Untuk sekarang, masuk dengan Google.'
 
 const INVALID_TOKEN_MESSAGE =
   'Tautan ini sudah kedaluwarsa atau pernah dipakai. Minta tautan baru untuk melanjutkan.'
+
+const EXPIRED_CODE_MESSAGE = 'Kode verifikasi sudah kedaluwarsa, minta kode baru.'
+
+const GENERIC_ERROR_MESSAGE = 'Gagal menghubungi server. Coba lagi sebentar lagi.'
 
 export function useAccountRecovery() {
   const { public: config } = useRuntimeConfig()
@@ -80,8 +104,38 @@ export function useAccountRecovery() {
     return post('/auth/password/reset', { token, password }, config.passwordResetEnabled)
   }
 
-  function verifyEmail(token: string) {
-    return post('/auth/email/verify', { token }, config.emailVerificationEnabled)
+  /**
+   * Verification is now a 6-digit code, not a link, and its failure shapes
+   * don't match the other recovery calls: a wrong code (400) is fixable in
+   * place, while an expired/consumed/exhausted code (410) is not — the
+   * generic `post` helper only knows how to collapse both into one bucket, so
+   * this talks to the endpoint directly.
+   */
+  async function verifyEmail(email: string, code: string): Promise<VerifyEmailResult> {
+    if (!config.emailVerificationEnabled) {
+      if (config.useMock) {
+        await pause()
+        if (code === MOCK_EXPIRED_CODE) {
+          return { ok: false, reason: 'expired', message: EXPIRED_CODE_MESSAGE }
+        }
+        return { ok: true, mocked: true }
+      }
+
+      return { ok: false, reason: 'not-connected', message: NOT_CONNECTED_MESSAGE }
+    }
+
+    try {
+      await $fetch('/auth/email/verify', {
+        baseURL: config.apiBase,
+        method: 'POST',
+        body: { email, code },
+        credentials: 'include',
+      })
+      return { ok: true, mocked: false }
+    }
+    catch (cause) {
+      return verifyFailureFor(cause)
+    }
   }
 
   /**
@@ -116,6 +170,30 @@ function failureFor(cause: unknown): RecoveryResult {
   return {
     ok: false,
     reason: 'error',
-    message: message || 'Gagal menghubungi server. Coba lagi sebentar lagi.',
+    message: message || GENERIC_ERROR_MESSAGE,
   }
+}
+
+/**
+ * The verify endpoint distinguishes a fixable mistake from a dead end: 400
+ * covers a wrong code (still under the attempt cap) and the rarer malformed
+ * inputs client-side validation should already catch; 410 means the code is
+ * gone (expired, consumed, or attempts exhausted) and only a resend fixes it.
+ * The server's own message is precise about which of those three 410 cases
+ * happened, so it is used as-is rather than flattened to one string.
+ */
+function verifyFailureFor(cause: unknown): VerifyEmailResult {
+  const status = (cause as { statusCode?: number, status?: number })?.statusCode
+    ?? (cause as { status?: number })?.status
+  const message = (cause as { data?: { error?: string } })?.data?.error
+
+  if (status === 410) {
+    return { ok: false, reason: 'expired', message: message || EXPIRED_CODE_MESSAGE }
+  }
+
+  if (status === 400) {
+    return { ok: false, reason: 'invalid-code', message: message || GENERIC_ERROR_MESSAGE }
+  }
+
+  return { ok: false, reason: 'error', message: message || GENERIC_ERROR_MESSAGE }
 }
