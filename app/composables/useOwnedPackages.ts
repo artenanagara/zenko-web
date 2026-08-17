@@ -1,3 +1,4 @@
+import type { Ref } from 'vue'
 import type { Attempt, OwnedPackage, RecordAttemptRequest } from '#shared/types/account'
 import type { TryoutResult } from '#shared/types/tryout'
 import type { AsyncResource } from '~/composables/useAccountResource'
@@ -141,4 +142,57 @@ export function useOwnedPackage(slug: string): AsyncResource<OwnedPackage | null
   }
 
   return useSessionItem<OwnedPackage>(`/me/packages/${slug}`, 'Paket ini tidak ada di akunmu')
+}
+
+/**
+ * Pre-purchase ownership guard for /checkout/:slug and /paket/:slug — catches
+ * an already-owned package before the buyer can attempt to pay for it again,
+ * rather than only after zenko-api answers 409 on POST /orders.
+ *
+ * Deliberately not `useOwnedPackage`: there, "not owned" is a data error (the
+ * account page only ever links to packages it owns) and 404s fatally. Here
+ * "not owned" is the ordinary outcome — most visitors haven't bought yet — so
+ * a 404 simply resolves `owned` to `false`. Any other failure resolves the
+ * same way: blocking a purchase because the ownership check itself broke
+ * would be worse than not checking at all.
+ *
+ * Fires from `onMounted`, same as useSessionItem/useSessionCollection above,
+ * and for the same reason: SSR never knows who is signed in (the session
+ * cookie isn't readable on the server), so the check has to wait for the
+ * client. Waiting specifically for the mount hook — rather than e.g. a watcher
+ * with `immediate: true`, which can settle mid-setup — matters here: it
+ * guarantees the fetch only starts once hydration has fully reconciled the
+ * server-rendered "guest" markup, so the eventual update to `owned` is an
+ * ordinary post-hydration patch instead of racing hydration and landing in
+ * Vue's mismatch handling, which (for already signed-in sessions resolving
+ * fast) can leave a stale `class` behind. `enabled` gates the fetch — pass
+ * `() => isSignedIn.value` so guests, who cannot own anything, never trigger
+ * a request.
+ */
+export function usePackageOwnershipGuard(slug: string, enabled: () => boolean): { owned: Readonly<Ref<boolean>> } {
+  const { public: config } = useRuntimeConfig()
+
+  const owned = ref(false)
+
+  onMounted(async () => {
+    if (!enabled()) return
+
+    if (config.useMock) {
+      owned.value = ownedPackages.some(item => item.slug === slug)
+      return
+    }
+
+    try {
+      await $fetch(`/me/packages/${slug}`, {
+        baseURL: config.apiBase,
+        credentials: 'include',
+      })
+      owned.value = true
+    }
+    catch {
+      owned.value = false
+    }
+  })
+
+  return { owned: owned as Readonly<Ref<boolean>> }
 }
