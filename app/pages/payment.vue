@@ -17,19 +17,34 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
+// Settlement is noticed by useCheckout's own background poll, which runs
+// against its own fetch rather than this page's `purchase` — so it cannot
+// just flip `purchase.value.status` itself. This flag is what lets the poll
+// hand the "paid" moment back to the page instead of leaving immediately
+// (see `startPolling`'s `onPaid`).
+const livePaid = ref(false)
+
 // Whichever way this page was reached — redirected straight from checkout, or
 // opened again later from a bookmark or "Riwayat pembelian" — a still-pending
 // order picks polling back up from here instead of only right after the
 // order was created.
 watch(purchase, (value) => {
-  if (value?.status === 'pending') resumeWaiting(value)
+  if (value?.status === 'pending') resumeWaiting(value, () => { livePaid.value = true })
 }, { immediate: true })
 
 // `pollState` only turns 'expired' via the client-side timer; the invoice can
 // just as well already be expired straight from the initial fetch.
 const isExpired = computed(() => pollState.value === 'expired' || purchase.value?.status === 'expired')
-const isPaid = computed(() => purchase.value?.status === 'paid')
+// True both when the poll just noticed settlement and when the page is
+// opened fresh on an invoice that was already paid (e.g. a bookmarked link
+// revisited later) — either way the same success screen applies.
+const isPaid = computed(() => livePaid.value || purchase.value?.status === 'paid')
 const showQR = computed(() => !isExpired.value && !isPaid.value && Boolean(purchase.value?.qrUrl))
+
+/** Best-effort link back to buy again — a purchase carries one package in practice. */
+const retrySlug = computed(() => purchase.value?.items[0]?.slug ?? null)
+/** Purchases carry one package in practice, but the shape allows for more. */
+const packageTitle = computed(() => purchase.value?.items[0]?.title ?? 'paket ini')
 
 // Countdown to the QR's own deadline, ticking once a second purely for
 // display — the flip to 'expired' is driven by useCheckout's own timer.
@@ -42,18 +57,56 @@ onUnmounted(() => {
   if (tickHandle !== null) clearInterval(tickHandle)
 })
 
-const countdown = computed(() => {
+const secondsLeft = computed(() => {
   const expiresAt = purchase.value?.expiresAt
-  if (!expiresAt) return null
+  if (!expiresAt) return 0
+  return Math.max(0, Math.floor(expiresAt - now.value / 1000))
+})
 
-  const totalSeconds = Math.max(0, Math.floor(expiresAt - now.value / 1000))
-  const m = Math.floor(totalSeconds / 60)
-  const s = totalSeconds % 60
+const countdown = computed(() => {
+  if (!purchase.value?.expiresAt) return null
+  const m = Math.floor(secondsLeft.value / 60)
+  const s = secondsLeft.value % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-/** Best-effort link back to buy again — a purchase carries one package in practice. */
-const retrySlug = computed(() => purchase.value?.items[0]?.slug ?? null)
+/** Fraction of the QR's own window still left, for the depleting ring — 1 at
+ * issue, 0 at the deadline. Falls back to "full" rather than dividing by
+ * zero if either timestamp is missing. */
+const countdownFraction = computed(() => {
+  const expiresAt = purchase.value?.expiresAt
+  const issuedAt = purchase.value?.date
+  if (!expiresAt || !issuedAt) return 1
+  const totalSeconds = Math.max(1, expiresAt - issuedAt)
+  return Math.min(1, Math.max(0, secondsLeft.value / totalSeconds))
+})
+
+const RING_RADIUS = 42
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+const ringOffset = computed(() => RING_CIRCUMFERENCE * (1 - countdownFraction.value))
+/** Under a minute left, the ring turns amber — same urgency colour as the
+ * expired state, so the shift itself is a cue before the code even runs out. */
+const ringUrgent = computed(() => secondsLeft.value > 0 && secondsLeft.value <= 60)
+
+const paySteps = [
+  'Buka aplikasi bank atau e-wallet yang mendukung QRIS.',
+  'Pilih menu "Scan QR" atau "Bayar", lalu arahkan kamera ke kode di sebelah.',
+  'Periksa nominalnya, lalu konfirmasi pembayaran di aplikasimu.',
+]
+
+// Courtesy auto-continue after the success screen shows, not a hard cutoff —
+// "Lihat paketku" below always wins if clicked first. useCooldown already
+// clears its own timer on unmount, so navigating away early (or the redirect
+// itself unmounting this page) never leaks it.
+const { remaining: redirectRemaining, isCoolingDown: isRedirecting, start: startRedirect } = useCooldown(5)
+
+watch(isPaid, (paid) => {
+  if (paid) startRedirect()
+}, { immediate: true })
+
+watch(isRedirecting, (active, wasActive) => {
+  if (!active && wasActive) navigateTo('/akun/paket')
+})
 </script>
 
 <template>
@@ -64,10 +117,14 @@ const retrySlug = computed(() => purchase.value?.items[0]?.slug ?? null)
       <span class="text-ink">Pembayaran</span>
     </nav>
 
-    <!-- Memuat: kerangka satu kartu. -->
-    <div v-if="pending" aria-busy="true" class="mx-auto max-w-md">
+    <!-- Memuat: kerangka dua kolom, meniru bentuk akhirnya supaya tidak ada
+         lompatan tata letak begitu datanya masuk. -->
+    <div v-if="pending" aria-busy="true">
       <p class="sr-only" role="status">Memuat status pembayaran…</p>
-      <div class="h-72 animate-pulse rounded-lg bg-surface-sunken" aria-hidden="true" />
+      <div class="grid grid-cols-1 gap-6 min-[901px]:grid-cols-[minmax(0,1fr)_360px] min-[901px]:gap-8" aria-hidden="true">
+        <div class="h-96 animate-pulse rounded-lg bg-surface-sunken" />
+        <div class="h-72 animate-pulse rounded-lg bg-surface-sunken" />
+      </div>
     </div>
 
     <AccountError v-else-if="error" class="mx-auto max-w-md" @retry="refresh">
@@ -78,77 +135,193 @@ const retrySlug = computed(() => purchase.value?.items[0]?.slug ?? null)
       <h1 class="text-[clamp(1.7rem,2.6vw,2.2rem)] leading-[1.14] tracking-[-0.04em]">
         Pembayaran {{ purchase.invoice }}
       </h1>
+      <p v-if="showQR" class="mt-2.5 text-muted">
+        Selesaikan pembayaran QRIS untuk mengaktifkan paketnya.
+      </p>
 
-      <div class="mt-8 max-w-md">
-        <!-- Sudah dibayar. -->
-        <div
-          v-if="isPaid"
-          class="grid justify-items-center gap-3 rounded-lg border border-hairline bg-surface px-6 py-10 text-center shadow-xs"
-        >
-          <span class="inline-flex h-13 w-13 items-center justify-center rounded-full bg-success-soft text-success-ink">
-            <IconCheck class="h-6.5 w-6.5" />
-          </span>
-          <p class="text-[1.1rem] font-bold tracking-[-0.02em]">Pembayaran diterima</p>
-          <DashboardBadge tone="success">{{ purchaseStatusLabel(purchase.status) }}</DashboardBadge>
-          <p class="max-w-sm text-[0.9rem] text-muted">
-            Paketnya sudah masuk ke akunmu dan siap dikerjakan.
-          </p>
-          <AppButton to="/akun/paket" size="lg" class="mt-2 w-full">Lihat paketku</AppButton>
-        </div>
-
-        <!-- Kode kedaluwarsa: yang lama sudah tidak bisa dipakai, ajak beli lagi. -->
-        <div
-          v-else-if="isExpired"
-          role="status"
-          class="grid justify-items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-6 py-10 text-center"
-        >
-          <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-            <IconAlert class="h-5 w-5" />
-          </span>
-          <p class="font-bold tracking-[-0.02em] text-amber-900">Kode QRIS kedaluwarsa</p>
-          <p class="max-w-sm text-[0.9rem] text-amber-800">
-            Belum sempat dibayar dalam waktunya. Buat kode baru untuk lanjut.
-          </p>
-          <AppButton v-if="retrySlug" :to="`/checkout/${retrySlug}`" size="lg" class="mt-2 w-full">
-            Buat kode QRIS baru
-          </AppButton>
-        </div>
-
-        <!-- Kode QRIS masih berlaku — halaman ini polling di latar dan lanjut
-             sendiri begitu pembayaran diterima (lihat useCheckout). -->
-        <div
-          v-else-if="showQR"
-          class="flex flex-col items-center gap-3 rounded-lg border border-hairline-strong bg-surface-alt px-5 py-8 text-center shadow-xs"
-        >
-          <img
-            :src="purchase.qrUrl!"
-            alt="Kode QRIS untuk membayar"
-            class="h-52 w-52 rounded-sm bg-white p-2"
+      <div class="mt-8 grid grid-cols-1 items-start gap-6 min-[901px]:grid-cols-[minmax(0,1fr)_360px] min-[901px]:gap-8">
+        <div>
+          <!-- Sudah dibayar. -->
+          <div
+            v-if="isPaid"
+            class="grid justify-items-center gap-4 rounded-lg border border-hairline bg-surface px-6 py-12 text-center shadow-xs"
           >
-          <p class="text-[0.9rem] font-semibold">Scan dari aplikasi bank atau e-wallet apa pun</p>
-          <p v-if="countdown" class="text-[0.86rem] text-muted">
-            Kode berlaku sampai <span class="font-semibold tabular-nums text-ink">{{ countdown }}</span>
-          </p>
-          <p class="mt-1 text-[0.82rem] text-muted">
-            Halaman ini otomatis lanjut begitu pembayaran diterima.
-          </p>
+            <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success-ink">
+              <IconCheckCircle class="h-9 w-9" />
+            </span>
+            <div>
+              <p class="text-[1.3rem] font-bold tracking-[-0.03em]">Pembayaran berhasil</p>
+              <p class="mt-2 max-w-sm text-[0.92rem] text-muted">
+                Paket <span class="font-semibold text-ink">{{ packageTitle }}</span> sudah masuk ke
+                akunmu dan siap dikerjakan.
+              </p>
+            </div>
+            <DashboardBadge tone="success">{{ purchaseStatusLabel(purchase.status) }}</DashboardBadge>
+
+            <div class="mt-2 grid w-full max-w-70 gap-3">
+              <AppButton to="/akun/paket" size="lg" class="w-full">Lihat paketku</AppButton>
+              <p class="text-[0.82rem] text-muted tabular-nums" role="status">
+                Otomatis diarahkan dalam {{ redirectRemaining }} detik…
+              </p>
+            </div>
+          </div>
+
+          <!-- Kode kedaluwarsa: yang lama sudah tidak bisa dipakai, ajak beli lagi. -->
+          <div
+            v-else-if="isExpired"
+            role="status"
+            class="grid justify-items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-6 py-10 text-center"
+          >
+            <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <IconAlert class="h-5 w-5" />
+            </span>
+            <p class="font-bold tracking-[-0.02em] text-amber-900">Kode QRIS kedaluwarsa</p>
+            <p class="max-w-sm text-[0.9rem] text-amber-800">
+              Belum sempat dibayar dalam waktunya. Buat kode baru untuk lanjut.
+            </p>
+            <AppButton v-if="retrySlug" :to="`/checkout/${retrySlug}`" size="lg" class="mt-2 w-full max-w-70">
+              Buat kode QRIS baru
+            </AppButton>
+          </div>
+
+          <!-- Kode QRIS masih berlaku — halaman ini polling di latar dan lanjut
+               sendiri begitu pembayaran diterima (lihat useCheckout). -->
+          <div
+            v-else-if="showQR"
+            class="rounded-lg border border-hairline-strong bg-surface-alt p-6 shadow-xs sm:p-8"
+          >
+            <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+              <img
+                :src="purchase.qrUrl!"
+                alt="Kode QRIS untuk membayar"
+                class="h-52 w-52 shrink-0 rounded-sm bg-white p-2 shadow-xs"
+              >
+
+              <div class="grid w-full gap-5 text-center sm:text-left">
+                <p class="text-[0.9rem] font-semibold">Scan dari aplikasi bank atau e-wallet apa pun</p>
+
+                <!-- Cincin countdown: lebih terlihat daripada teks polos, dan
+                     berubah amber begitu waktunya tinggal sedikit. -->
+                <div v-if="countdown" class="flex items-center justify-center gap-3.5 sm:justify-start">
+                  <div class="relative h-19 w-19 shrink-0" role="img" :aria-label="`Kode berlaku sampai pukul ${countdown}`">
+                    <svg viewBox="0 0 96 96" class="h-full w-full -rotate-90" aria-hidden="true">
+                      <circle cx="48" cy="48" r="42" fill="none" stroke-width="7" class="stroke-hairline-strong" />
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="42"
+                        fill="none"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        class="transition-[stroke-dashoffset,stroke] duration-1000 ease-linear"
+                        :class="ringUrgent ? 'stroke-amber-500' : 'stroke-primary'"
+                        :stroke-dasharray="RING_CIRCUMFERENCE"
+                        :stroke-dashoffset="ringOffset"
+                      />
+                    </svg>
+                    <span class="absolute inset-0 grid place-items-center text-[0.86rem] font-extrabold tabular-nums tracking-[-0.02em]">
+                      {{ countdown }}
+                    </span>
+                  </div>
+                  <p class="text-[0.86rem] text-muted">
+                    Kode berlaku sampai<br>
+                    <span class="font-semibold tabular-nums" :class="ringUrgent ? 'text-amber-700' : 'text-ink'">{{ countdown }}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <ol class="mt-7 grid gap-4 border-t border-hairline pt-6">
+              <li v-for="(step, index) in paySteps" :key="step" class="flex items-start gap-3.5">
+                <span
+                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[0.8rem] font-bold text-primary"
+                  aria-hidden="true"
+                >{{ index + 1 }}</span>
+                <span class="pt-0.5 text-[0.9rem] leading-[1.55] text-muted">{{ step }}</span>
+              </li>
+            </ol>
+
+            <p class="mt-6 flex items-center gap-2.5 rounded-sm border border-primary/20 bg-primary-soft/40 px-4 py-3.5 text-[0.84rem] text-ink">
+              <IconSpinner class="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden="true" />
+              Halaman ini otomatis lanjut begitu pembayaran diterima.
+            </p>
+          </div>
+
+          <!-- Pesanan pending tanpa QR (Midtrans belum dikonfigurasi di dev). -->
+          <div
+            v-else
+            role="status"
+            class="rounded-sm border border-primary/30 bg-primary-soft/50 px-4 py-3.5 text-[0.86rem] text-ink"
+          >
+            <p class="font-semibold">Pesanan dibuat — menunggu pembayaran</p>
+            <p class="mt-1 text-muted">
+              Pesananmu tercatat dan menunggu pembayaran. Statusnya bisa kamu
+              pantau di
+              <NuxtLink to="/akun/pembelian" class="font-semibold text-primary hover:underline">
+                Riwayat pembelian
+              </NuxtLink>.
+            </p>
+          </div>
         </div>
 
-        <!-- Pesanan pending tanpa QR (Midtrans belum dikonfigurasi di dev). -->
-        <div
-          v-else
-          role="status"
-          class="rounded-sm border border-primary/30 bg-primary-soft/50 px-4 py-3.5 text-[0.86rem] text-ink"
-        >
-          <p class="font-semibold">Pesanan dibuat — menunggu pembayaran</p>
-          <p class="mt-1 text-muted">
-            Pesananmu tercatat dan menunggu pembayaran. Statusnya bisa kamu
-            pantau di
-            <NuxtLink to="/akun/pembelian" class="font-semibold text-primary hover:underline">
-              Riwayat pembelian
-            </NuxtLink>.
+        <!-- Konteks pesanan — sebelumnya halaman ini tidak menunjukkan apa
+             yang sedang dibayar sama sekali. Versi ramping dari
+             checkout/OrderSummary: Purchase tidak membawa thumbnail/author
+             seperti PackageDetail, jadi hanya baris yang datanya tersedia. -->
+        <aside class="min-[901px]:sticky min-[901px]:top-24">
+          <div class="rounded-lg border border-hairline bg-surface p-6 shadow-xs">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-bold tracking-[-0.02em]">Ringkasan pesanan</h2>
+              <DashboardBadge :tone="purchaseStatusTone(purchase.status)">
+                {{ purchaseStatusLabel(purchase.status) }}
+              </DashboardBadge>
+            </div>
+
+            <ul class="mt-5 grid gap-4 border-t border-line pt-5">
+              <li v-for="item in purchase.items" :key="item.slug">
+                <p class="font-semibold tracking-[-0.02em]">{{ item.title }}</p>
+                <p class="mt-1 text-[0.78rem] font-bold tracking-[0.1em] text-faint uppercase">
+                  {{ item.category }}
+                </p>
+              </li>
+            </ul>
+
+            <dl class="mt-5 grid gap-2.5 border-t border-line pt-5 text-[0.9rem]">
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted">Subtotal</dt>
+                <dd class="tabular-nums">{{ formatRupiah(invoiceTotals(purchase).subtotal) }}</dd>
+              </div>
+              <div v-if="invoiceTotals(purchase).discount > 0" class="flex justify-between gap-4">
+                <dt class="text-muted">Diskon</dt>
+                <dd class="font-semibold text-success-ink tabular-nums">
+                  −{{ formatRupiah(invoiceTotals(purchase).discount) }}
+                </dd>
+              </div>
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted">Biaya layanan</dt>
+                <dd class="tabular-nums">{{ formatRupiah(invoiceTotals(purchase).serviceFee) }}</dd>
+              </div>
+            </dl>
+
+            <div class="mt-5 flex items-baseline justify-between gap-4 border-t border-line pt-5">
+              <span class="font-semibold">Total</span>
+              <span class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">
+                {{ formatRupiah(invoiceTotals(purchase).total) }}
+              </span>
+            </div>
+
+            <p class="mt-5 flex items-start gap-2.5 border-t border-line pt-5 text-[0.82rem] text-muted">
+              <IconSeal class="mt-px h-4.5 w-4.5 shrink-0" />
+              Pembayaran diproses lewat penyedia pembayaran berlisensi. Zenko
+              tidak menyimpan data kartu kamu.
+            </p>
+          </div>
+
+          <p class="mt-4 text-center text-[0.82rem] text-muted">
+            Invoice <span class="font-semibold text-ink">{{ purchase.invoice }}</span>
+            · Dibuat {{ formatDateLong(purchase.date) }}
           </p>
-        </div>
+        </aside>
       </div>
     </template>
   </main>
