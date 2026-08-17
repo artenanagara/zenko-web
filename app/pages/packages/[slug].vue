@@ -134,7 +134,7 @@ useHead({
                 size="lg"
                 class="w-full"
               >
-                {{ ownsPackage ? 'Sudah dimiliki — lihat paket saya' : 'Beli sekarang' }}
+                {{ ownsPackage ? 'Lihat paket saya' : 'Beli sekarang' }}
               </AppButton>
               <AppButton
                 :to="`/paket/${detail.slug}/coba`"
