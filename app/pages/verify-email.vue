@@ -1,5 +1,7 @@
 <script setup lang="ts">
 // English file name, Indonesian URL.
+import { OtpInput } from '#components'
+
 definePageMeta({ layout: 'auth', path: '/verifikasi-email' })
 
 useHead({
@@ -19,8 +21,12 @@ const { remaining, isCoolingDown, start: startCooldown } = useCooldown()
  * With a known address this is the code-entry room after registering (or
  * after "resend" from login/account). Without one there is nothing to check
  * a code against, so the page can't proceed at all.
+ *
+ * 'confirming' is a deliberate beat between the API saying yes and the
+ * success screen showing up — flipping straight over feels like the code
+ * was barely checked.
  */
-type Status = 'form' | 'success' | 'no-email'
+type Status = 'form' | 'confirming' | 'success' | 'no-email'
 
 /**
  * Verify target: the URL right after registering, the session once signed
@@ -33,7 +39,7 @@ const status = ref<Status>(address.value ? 'form' : 'no-email')
 const CODE_PATTERN = /^\d{6}$/
 
 const code = ref('')
-const codeInputRef = ref<HTMLInputElement | null>(null)
+const otpInputRef = ref<InstanceType<typeof OtpInput> | null>(null)
 const codeError = ref('')
 const isVerifying = ref(false)
 const isMocked = ref(false)
@@ -45,9 +51,8 @@ const isResending = ref(false)
 const notice = ref('')
 const noticeTone = ref<'warning' | 'error' | 'info'>('info')
 
-function onCodeInput(event: Event) {
-  const digitsOnly = (event.target as HTMLInputElement).value.replace(/\D/g, '').slice(0, 6)
-  code.value = digitsOnly
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
 
 async function onSubmit() {
@@ -65,8 +70,12 @@ async function onSubmit() {
     const result = await verifyEmail(address.value, code.value)
 
     if (result.ok) {
-      status.value = 'success'
       isMocked.value = result.mocked
+      // A beat of "checking…" before the success screen, so the confirmation
+      // doesn't feel like it skipped the check entirely.
+      status.value = 'confirming'
+      await delay(1000)
+      status.value = 'success'
       return
     }
 
@@ -82,7 +91,7 @@ async function onSubmit() {
       // put the cursor back so retyping doesn't need a manual select-all.
       codeError.value = result.message
       await nextTick()
-      codeInputRef.value?.select()
+      otpInputRef.value?.focusFirst()
       return
     }
 
@@ -157,6 +166,12 @@ function readQuery(raw: unknown): string {
     </div>
   </AuthPanel>
 
+  <AuthPanel v-else-if="status === 'confirming'" title="Memverifikasi kode…" tone="loading">
+    <template #description>
+      Sebentar, kami sedang mengonfirmasi kodenya.
+    </template>
+  </AuthPanel>
+
   <AuthPanel v-else-if="status === 'no-email'" title="Verifikasi belum bisa diproses" tone="danger">
     <template #description>
       Kami tidak tahu email mana yang perlu diverifikasi. Masuk atau daftar
@@ -183,31 +198,18 @@ function readQuery(raw: unknown): string {
 
     <form class="grid gap-5" novalidate @submit.prevent="onSubmit">
       <div>
-        <label for="code" class="mb-2 block text-[0.9rem] font-semibold">
+        <label for="code-0" class="mb-2 block text-[0.9rem] font-semibold">
           Kode verifikasi
         </label>
 
-        <input
-          id="code"
-          ref="codeInputRef"
-          :value="code"
-          type="text"
-          inputmode="numeric"
-          autocomplete="one-time-code"
-          pattern="[0-9]*"
-          maxlength="6"
-          placeholder="123456"
+        <OtpInput
+          id="code-0"
+          ref="otpInputRef"
+          v-model="code"
           :disabled="codeExpired"
-          class="w-full rounded-sm border bg-surface px-4 py-3 text-center text-[1.3rem] tracking-[0.5em] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:tracking-normal placeholder:text-placeholder focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-muted"
-          :class="
-            codeError
-              ? 'border-red-400 focus:shadow-[0_0_0_4px_rgba(248,113,113,0.16)]'
-              : 'border-line focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)]'
-          "
-          :aria-invalid="Boolean(codeError)"
-          :aria-describedby="codeError ? 'code-error' : undefined"
-          @input="onCodeInput"
-        >
+          :error="Boolean(codeError)"
+          :described-by="codeError ? 'code-error' : undefined"
+        />
 
         <p v-if="codeError" id="code-error" role="alert" class="mt-2 text-[0.82rem] text-red-600">
           {{ codeError }}

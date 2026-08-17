@@ -4,13 +4,14 @@
  * someone locked out just wants to finish — promo stats only add distance
  * to the one action they need.
  */
-type Tone = 'neutral' | 'pending' | 'success' | 'danger'
+type Tone = 'neutral' | 'pending' | 'loading' | 'success' | 'danger'
 
 withDefaults(defineProps<{ title: string, tone?: Tone }>(), { tone: 'neutral' })
 
 const TONE_RING: Record<Tone, string> = {
   neutral: '',
   pending: 'bg-primary-soft text-primary',
+  loading: 'bg-primary-soft text-primary',
   success: 'bg-success-soft text-success-ink',
   danger: 'bg-red-50 text-red-600',
 }
@@ -28,6 +29,7 @@ const TONE_RING: Record<Tone, string> = {
           :class="TONE_RING[tone]"
         >
           <IconMail v-if="tone === 'pending'" class="h-6.5 w-6.5" />
+          <IconSpinner v-else-if="tone === 'loading'" class="h-6.5 w-6.5 animate-spin" />
           <IconCheck v-else-if="tone === 'success'" class="h-6.5 w-6.5" />
           <IconAlert v-else class="h-6.5 w-6.5" />
         </span>
