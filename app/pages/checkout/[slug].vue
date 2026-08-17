@@ -22,6 +22,12 @@ useHead({
 // order without one regardless of what the browser allows.
 const { user, isSignedIn, isLoading } = useAuth()
 
+// Blocks a repeat purchase before the pay button rather than after the 409
+// POST /orders answers with — see usePackageOwnershipGuard for why "not
+// owned" (the common case, for guests and first-time buyers alike) never
+// blocks the ordinary flow below.
+const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.value)
+
 const { state, error, pay, reset } = useCheckout()
 
 const signInPath = computed(() => ({ path: '/masuk', query: { lanjut: route.fullPath } }))
@@ -55,7 +61,30 @@ function onSubmit() {
       Bayar sekali, akses paketnya selamanya. Tanpa langganan.
     </p>
 
-    <div class="mt-9 grid grid-cols-1 items-start gap-8 min-[901px]:grid-cols-[minmax(0,1fr)_380px] min-[901px]:gap-10">
+    <!-- Sudah dimiliki: tidak ada yang perlu dibayar, jadi form checkout dan
+         ringkasan pesanan tidak ditampilkan sama sekali — hanya satu ajakan
+         yang jelas ke paket yang sudah ada di akun. -->
+    <div
+      v-if="ownsPackage"
+      key="owned"
+      class="mt-9 grid justify-items-center gap-3 rounded-lg border border-hairline bg-surface px-6 py-16 text-center shadow-xs"
+    >
+      <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
+        <IconCheck class="h-6 w-6" />
+      </span>
+      <h2 class="text-[1.1rem] font-bold tracking-[-0.03em]">Kamu sudah punya paket ini</h2>
+      <p class="max-w-md text-[0.9rem] text-muted">
+        "{{ detail.title }}" sudah tercatat di akunmu. Tidak perlu membelinya
+        lagi — buka kapan saja dari halaman paketmu.
+      </p>
+      <AppButton to="/akun/paket" size="lg" class="mt-3">Lihat paket saya</AppButton>
+    </div>
+
+    <div
+      v-else
+      key="checkout-form"
+      class="mt-9 grid grid-cols-1 items-start gap-8 min-[901px]:grid-cols-[minmax(0,1fr)_380px] min-[901px]:gap-10"
+    >
       <div class="grid gap-6">
         <section class="rounded-lg border border-hairline bg-surface p-6 shadow-xs">
           <h2 class="mb-4 font-bold tracking-[-0.02em]">Data pembeli</h2>

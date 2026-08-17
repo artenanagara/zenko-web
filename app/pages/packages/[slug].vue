@@ -8,6 +8,12 @@ const slug = route.params.slug as string
 const detail = await usePackageDetail(slug)
 const related = useRelatedPackages(detail.value.category, slug)
 
+// Same pre-checkout guard as /checkout/:slug, applied to the "Beli sekarang"
+// CTA: an already-owned package points at the account instead of a checkout
+// page that would just redirect there anyway.
+const { isSignedIn } = useAuth()
+const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.value)
+
 const discountPercent = computed(() => {
   const { price, priceOriginal } = detail.value
   if (priceOriginal <= price) return 0
@@ -123,8 +129,12 @@ useHead({
             </p>
 
             <div class="mt-6 grid gap-3">
-              <AppButton :to="`/checkout/${detail.slug}`" size="lg" class="w-full">
-                Beli sekarang
+              <AppButton
+                :to="ownsPackage ? '/akun/paket' : `/checkout/${detail.slug}`"
+                size="lg"
+                class="w-full"
+              >
+                {{ ownsPackage ? 'Sudah dimiliki — lihat paket saya' : 'Beli sekarang' }}
               </AppButton>
               <AppButton
                 :to="`/paket/${detail.slug}/coba`"
