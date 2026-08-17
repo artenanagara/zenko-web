@@ -61,12 +61,7 @@ function print() {
       <article class="rounded-lg border border-hairline bg-surface shadow-xs print:rounded-none print:border-0 print:shadow-none">
         <header class="flex flex-wrap items-start justify-between gap-5 border-b border-hairline px-5 py-6 md:px-8">
           <div>
-            <span class="inline-flex items-center gap-2.5 font-extrabold tracking-[-0.04em]">
-              <span
-                class="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-linear-to-b from-primary-light to-primary text-[0.96rem] text-white"
-              >Z</span>
-              <span class="text-xl">Zenko</span>
-            </span>
+            <BrandMark to="/" img-class="h-10 w-auto object-contain" aria-label="Zenko" />
             <p class="mt-3 text-[0.82rem] leading-[1.6] text-muted">
               Marketplace try out<br>
               Jakarta, Indonesia<br>
