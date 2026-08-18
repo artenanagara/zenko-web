@@ -15,7 +15,7 @@ withDefaults(
     to?: string
     /** External or placeholder URL — renders a plain anchor. */
     href?: string
-    variant?: 'primary' | 'light' | 'outline'
+    variant?: 'primary' | 'light' | 'outline' | 'danger'
     size?: 'sm' | 'md' | 'lg'
     type?: 'button' | 'submit'
   }>(),
@@ -32,6 +32,8 @@ const variants = {
     'bg-surface text-primary font-bold shadow-[0_8px_20px_rgba(12,40,100,0.18)] hover:bg-[#f4f7ff]',
   outline:
     'bg-transparent border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
+  danger:
+    'bg-danger border-danger text-white shadow-xs hover:bg-danger-ink',
 }
 
 const sizes = {

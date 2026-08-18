@@ -39,11 +39,13 @@ function print() {
     </AccountError>
 
     <template v-else-if="purchase">
-      <nav class="flex flex-wrap items-center gap-2 text-[0.85rem] text-muted print:hidden" aria-label="Breadcrumb">
-        <NuxtLink to="/akun/pembelian" class="transition-colors hover:text-ink">Riwayat pembelian</NuxtLink>
-        <span aria-hidden="true">/</span>
-        <span class="text-ink">{{ purchase.invoice }}</span>
-      </nav>
+      <AppBreadcrumbs
+        class="print:hidden"
+        :items="[
+          { label: 'Riwayat pembelian', to: '/akun/pembelian' },
+          { label: purchase.invoice },
+        ]"
+      />
 
       <div class="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>

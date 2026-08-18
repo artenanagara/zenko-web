@@ -111,11 +111,13 @@ watch(isRedirecting, (active, wasActive) => {
 
 <template>
   <main class="container-page py-8 md:py-12">
-    <nav class="mb-7 flex flex-wrap items-center gap-2 text-[0.85rem] text-muted" aria-label="Breadcrumb">
-      <NuxtLink to="/akun/pembelian" class="transition-colors hover:text-ink">Riwayat pembelian</NuxtLink>
-      <span aria-hidden="true">/</span>
-      <span class="text-ink">Pembayaran</span>
-    </nav>
+    <AppBreadcrumbs
+      class="mb-7"
+      :items="[
+        { label: 'Riwayat pembelian', to: '/akun/pembelian' },
+        { label: 'Pembayaran' },
+      ]"
+    />
 
     <!-- Memuat: kerangka dua kolom, meniru bentuk akhirnya supaya tidak ada
          lompatan tata letak begitu datanya masuk. -->

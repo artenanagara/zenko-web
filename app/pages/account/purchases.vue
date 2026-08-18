@@ -31,10 +31,10 @@ const totalSpent = computed(() =>
 
 <template>
   <div class="grid gap-6">
-    <header>
-      <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Riwayat pembelian</h1>
-      <p class="mt-1.5 text-muted">Semua transaksi paket dari akun ini, lengkap dengan invoicenya.</p>
-    </header>
+    <AppPageHeader
+      title="Riwayat pembelian"
+      description="Semua transaksi paket dari akun ini, lengkap dengan invoicenya."
+    />
 
     <AccountNotice v-if="config.useMock">
       Transaksi di bawah masih contoh — mode mock menyala, jadi datanya dari

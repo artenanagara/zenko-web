@@ -113,11 +113,12 @@ function barTone(percent: number) {
     </AccountError>
 
     <template v-else-if="item">
-      <nav class="flex flex-wrap items-center gap-2 text-[0.85rem] text-muted" aria-label="Breadcrumb">
-        <NuxtLink to="/akun/paket" class="transition-colors hover:text-ink">Paket saya</NuxtLink>
-        <span aria-hidden="true">/</span>
-        <span class="text-ink">{{ item.title }}</span>
-      </nav>
+      <AppBreadcrumbs
+        :items="[
+          { label: 'Paket saya', to: '/akun/paket' },
+          { label: item.title },
+        ]"
+      />
 
       <!-- Identitas paket dan aksinya dalam satu baris: teks di kiri, CTA di
            kanan. Tanpa thumbnail — di halaman milik sendiri gambar katalog

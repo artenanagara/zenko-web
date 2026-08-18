@@ -12,6 +12,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ refresh: [] }>()
 
+const { confirm } = useConfirm()
+
 const uid = useId()
 
 interface Row {
@@ -74,12 +76,16 @@ function addRow() {
   })
 }
 
-function removeRow(index: number) {
+async function removeRow(index: number) {
   const row = rows.value[index]
   if (!row) return
-  if (row.questionCount > 0
-    && !window.confirm(`Subtes "${row.title}" berisi ${row.questionCount} soal yang ikut terhapus. Lanjutkan?`)) {
-    return
+  if (row.questionCount > 0) {
+    const ok = await confirm({
+      title: `Hapus subtes "${row.title}"?`,
+      description: `Subtes ini berisi ${row.questionCount} soal yang ikut terhapus.`,
+      confirmLabel: 'Hapus',
+    })
+    if (!ok) return
   }
   rows.value.splice(index, 1)
 }

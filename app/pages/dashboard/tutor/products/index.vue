@@ -13,6 +13,7 @@ useHead({
 })
 
 const { data: products, pending, error, refresh } = useTutorProducts()
+const { confirm } = useConfirm()
 
 // Client-only fetch: the session cookie never reaches the Nuxt server, so the
 // list resolves after hydration (see useTutorProducts).
@@ -85,7 +86,12 @@ async function submitProduct(product: TutorProductSummary) {
 }
 
 async function archiveProduct(product: TutorProductSummary) {
-  if (!window.confirm(`Arsipkan "${product.title}"? Produk tidak lagi tampil di katalog.`)) return
+  const ok = await confirm({
+    title: `Arsipkan "${product.title}"?`,
+    description: 'Produk tidak lagi tampil di katalog.',
+    confirmLabel: 'Arsipkan',
+  })
+  if (!ok) return
 
   actionError.value = ''
   submitProblems.value = null
@@ -103,7 +109,12 @@ async function archiveProduct(product: TutorProductSummary) {
 }
 
 async function deleteProduct(product: TutorProductSummary) {
-  if (!window.confirm(`Hapus "${product.title}" permanen? Tindakan ini tidak bisa dibatalkan.`)) return
+  const ok = await confirm({
+    title: `Hapus "${product.title}" permanen?`,
+    description: 'Tindakan ini tidak bisa dibatalkan.',
+    confirmLabel: 'Hapus Permanen',
+  })
+  if (!ok) return
 
   actionError.value = ''
   submitProblems.value = null

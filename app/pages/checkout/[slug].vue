@@ -44,15 +44,14 @@ function onSubmit() {
 
 <template>
   <main class="container-page py-8 md:py-12">
-    <nav class="mb-7 flex flex-wrap items-center gap-2 text-[0.85rem] text-muted" aria-label="Breadcrumb">
-      <NuxtLink to="/paket" class="transition-colors hover:text-ink">Paket</NuxtLink>
-      <span aria-hidden="true">/</span>
-      <NuxtLink :to="`/paket/${detail.slug}`" class="max-w-70 truncate transition-colors hover:text-ink">
-        {{ detail.title }}
-      </NuxtLink>
-      <span aria-hidden="true">/</span>
-      <span class="text-ink">Checkout</span>
-    </nav>
+    <AppBreadcrumbs
+      class="mb-7"
+      :items="[
+        { label: 'Paket', to: '/paket' },
+        { label: detail.title, to: `/paket/${detail.slug}`, truncate: true },
+        { label: 'Checkout' },
+      ]"
+    />
 
     <h1 class="text-[clamp(1.7rem,2.6vw,2.2rem)] leading-[1.14] tracking-[-0.04em]">
       Selesaikan pembelian

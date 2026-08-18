@@ -70,13 +70,10 @@ const hasFilter = computed(() => period.value !== 'all' || productId.value !== '
 
 <template>
   <div class="grid gap-6">
-    <header>
-      <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Penjualan</h1>
-      <p class="mt-1.5 text-muted">
-        Riwayat penjualan produkmu. Porsi 70% tertahan 7 hari setelah pembayaran,
-        lalu bisa dicairkan.
-      </p>
-    </header>
+    <AppPageHeader
+      title="Penjualan"
+      description="Riwayat penjualan produkmu. Porsi 70% tertahan 7 hari setelah pembayaran, lalu bisa dicairkan."
+    />
 
     <DashboardStats :items="stats" :columns="3" />
 

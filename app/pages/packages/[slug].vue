@@ -43,13 +43,14 @@ useHead({
     <!-- Header band, same treatment as the landing hero -->
     <section class="dot-grid relative overflow-hidden border-b border-line bg-linear-to-b from-white to-[#f1f3f7]">
       <div class="container-page relative z-1 py-8 md:py-12">
-        <nav class="mb-6 flex flex-wrap items-center gap-2 text-[0.85rem] text-muted" aria-label="Breadcrumb">
-          <NuxtLink to="/" class="transition-colors hover:text-ink">Beranda</NuxtLink>
-          <span aria-hidden="true">/</span>
-          <NuxtLink to="/#paket" class="transition-colors hover:text-ink">{{ detail.category }}</NuxtLink>
-          <span aria-hidden="true">/</span>
-          <span class="text-ink">{{ detail.title }}</span>
-        </nav>
+        <AppBreadcrumbs
+          class="mb-6"
+          :items="[
+            { label: 'Beranda', to: '/' },
+            { label: detail.category, to: '/#paket' },
+            { label: detail.title },
+          ]"
+        />
 
         <div class="max-w-190">
           <span class="inline-block rounded-pill bg-primary-soft px-3.5 py-1.5 text-[0.78rem] font-bold tracking-[0.06em] text-primary uppercase">
