@@ -27,14 +27,14 @@
     "@tiptap/extension-table-header": "^3.30.1",
     "@tiptap/extension-table-row": "^3.30.1",
     "@tiptap/extension-text-align": "^3.30.1",
+    "@artenanagara/zenko-design-system": "^1.0.0",
     "@tiptap/pm": "^3.30.1",
     "@tiptap/starter-kit": "^3.30.1",
     "@tiptap/vue-3": "^3.30.1",
     "katex": "^0.16.47",
     "nuxt": "^4.0.0",
     "vue": "^3.5.0",
-    "vue-router": "^5.2.0",
-    "zenko-design-system": "file:../zenko-design-system"
+    "vue-router": "^5.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

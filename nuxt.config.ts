@@ -9,7 +9,7 @@ import packageMetadata from './package.json'
 // directly (no `node:url` import) avoids needing @types/node, which this
 // project doesn't otherwise depend on.
 const designSystemComponentsDir = (subpath: string) =>
-  new URL(`./node_modules/zenko-design-system/app/components/${subpath}`, import.meta.url).pathname
+  new URL(`./node_modules/@artenanagara/zenko-design-system/app/components/${subpath}`, import.meta.url).pathname
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -23,7 +23,7 @@ export default defineNuxtConfig({
   // it stays <AppButton>, not <UiAppButton> — moving a file between folders
   // must not be a breaking change for every call site.
   //
-  // The zenko-design-system entries come first so `~/components` registers
+  // The @artenanagara/zenko-design-system entries come first so `~/components` registers
   // last and wins any name collision (this app already hand-rolls its own
   // AppSelect/AppCalendar/AppIcon/etc. — those must keep resolving to the
   // local, marketplace-tuned version, not the design system's generic one).
@@ -50,11 +50,11 @@ export default defineNuxtConfig({
     { path: '~/components', pathPrefix: false },
   ],
 
-  // zenko-design-system ships raw .vue/.ts source (no pre-build step) since
+  // @artenanagara/zenko-design-system ships raw .vue/.ts source (no pre-build step) since
   // both apps run the same Nuxt/Vue major versions — transpile so Nitro's
   // SSR bundling processes it instead of treating it as an opaque external.
   build: {
-    transpile: ['zenko-design-system'],
+    transpile: ['@artenanagara/zenko-design-system'],
   },
 
   vite: {

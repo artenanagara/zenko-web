@@ -10,7 +10,7 @@
    of just re-syncing it once. See zenko-design-system/tokens/README.md.
    ========================================================================== */
 
-@import 'zenko-design-system/theme.css';
+@import '@artenanagara/zenko-design-system/theme.css';
 
 /* Layout. The cap only bites on very wide displays — below it the 20px
    gutter governs, which is what keeps the hero panel near the edges.

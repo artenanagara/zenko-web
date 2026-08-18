@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: production-web
@@ -36,9 +37,16 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@artenanagara'
 
       - name: Install dependencies
         run: npm ci
+        env:
+          # Reads @artenanagara/zenko-design-system from GitHub Packages —
+          # the auto-generated token can read packages published by other
+          # repos under the same owner once this permission is granted.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build production server
         run: npm run build

@@ -29,6 +29,9 @@ jobs:
 
   quality:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -38,9 +41,16 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@artenanagara'
 
       - name: Install dependencies
         run: npm ci
+        env:
+          # Reads @artenanagara/zenko-design-system from GitHub Packages —
+          # the auto-generated token can read packages published by other
+          # repos under the same owner once this permission is granted.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Typecheck
         run: npm run typecheck

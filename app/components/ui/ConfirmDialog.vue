@@ -10,7 +10,7 @@ const { isOpen, options, handleConfirm, handleCancel } = useConfirm()
     :model-value="isOpen"
     :title="options.title"
     :description="options.description"
-    @update:model-value="(v) => !v && handleCancel()"
+    @update:model-value="(v: boolean) => !v && handleCancel()"
   >
     <template #footer>
       <AppButton variant="outline" size="sm" @click="handleCancel">
