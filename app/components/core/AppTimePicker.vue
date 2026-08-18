@@ -32,8 +32,8 @@ const updateTime = () => {
 
 const applyPreset = (val: string) => {
   const [h, m] = val.split(':')
-  selectedHour.value = h
-  selectedMinute.value = m
+  selectedHour.value = h ?? selectedHour.value
+  selectedMinute.value = m ?? selectedMinute.value
   emit('update:modelValue', val)
 }
 </script>

@@ -2,64 +2,39 @@
 
 /* ==========================================================================
    Design tokens
-   Every value here becomes a Tailwind utility, e.g.
-   --color-ink → text-ink / bg-ink, --shadow-lift → shadow-lift.
+   Single source of truth: zenko-design-system's tokens/tokens.json. This
+   used to be a hand-copied @theme block here and had already drifted (this
+   file's radius scale was 8/12/16/22/32px against the real 6/8/10/14/18px,
+   and it was missing the danger/warning color tokens entirely) — importing
+   the generated file directly makes that class of drift impossible instead
+   of just re-syncing it once. See zenko-design-system/tokens/README.md.
    ========================================================================== */
 
+@import 'zenko-design-system/theme.css';
+
+/* Layout. The cap only bites on very wide displays — below it the 20px
+   gutter governs, which is what keeps the hero panel near the edges.
+   Not part of the shared theme (web-layout-only, see tokens/tokens.json's
+   container.page $description) — stays hand-maintained here. */
 @theme {
-  /* Surfaces */
-  --color-surface: #ffffff;
-  --color-surface-alt: #f7f8fa;
-  --color-surface-sunken: #f4f5f8;
-  --color-skeleton: #e8eaef;
-
-  /* Text */
-  --color-ink: #16161a;
-  --color-muted: #6b7280;
-  --color-faint: #9aa2b1;
-  --color-placeholder: #98a2b3;
-
-  /* Lines */
-  --color-line: #e5e7eb;
-  --color-hairline: rgba(148, 163, 184, 0.18);
-  --color-hairline-strong: rgba(148, 163, 184, 0.28);
-
-  /* Brand */
-  --color-primary: #2f6feb;
-  --color-primary-light: #4c86f0;
-  --color-primary-dark: #2557c9;
-  --color-primary-soft: #eaf1ff;
-
-  /* Status */
-  --color-star: #f59e0b;
-  --color-success: #22c55e;
-  --color-success-ink: #15803d;
-  --color-success-soft: #e8f8ee;
-
-  /* Typography */
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
-
-  /* Radii */
-  --radius-xs: 8px;
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 32px;
-  --radius-pill: 999px;
-
-  /* Elevation */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-lift: 0 12px 26px rgba(15, 23, 42, 0.07);
-  --shadow-float: 0 14px 34px rgba(15, 23, 42, 0.07);
-  --shadow-brand: 0 26px 54px rgba(47, 111, 235, 0.22);
-
-  /* Motion */
-  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
-
-  /* Layout. The cap only bites on very wide displays — below it the 20px
-     gutter governs, which is what keeps the hero panel near the edges. */
   --container-page: 1720px;
+}
+
+/* Chart series — categorical palette for multi-series charts (e.g. per-
+   product revenue breakdown). Deliberately outside @theme: these are only
+   ever read via var(--color-chart-N) from an inline `style`, never as a
+   Tailwind utility class, and @theme entries Tailwind can't see referenced
+   as a literal utility elsewhere get tree-shaken out of the build. A plain
+   :root block is always emitted in full. */
+:root {
+  --color-chart-1: #2f6feb;
+  --color-chart-2: #f59e0b;
+  --color-chart-3: #22c55e;
+  --color-chart-4: #8b5cf6;
+  --color-chart-5: #f43f5e;
+  --color-chart-6: #06b6d4;
+  --color-chart-7: #f97316;
+  --color-chart-8: #14b8a6;
 }
 
 /* ==========================================================================

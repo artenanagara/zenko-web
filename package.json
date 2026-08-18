@@ -11,7 +11,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
-    "version:show": "node -p \"require('./package.json').version\""
+    "version:show": "node -p \"require('./package.json').version\"",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",
@@ -31,9 +33,11 @@
     "katex": "^0.16.47",
     "nuxt": "^4.0.0",
     "vue": "^3.5.0",
-    "vue-router": "^5.2.0"
+    "vue-router": "^5.2.0",
+    "zenko-design-system": "file:../zenko-design-system"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.0",

@@ -15,7 +15,7 @@ withDefaults(
     to?: string
     /** External or placeholder URL — renders a plain anchor. */
     href?: string
-    variant?: 'primary' | 'light'
+    variant?: 'primary' | 'light' | 'outline'
     size?: 'sm' | 'md' | 'lg'
     type?: 'button' | 'submit'
   }>(),
@@ -30,6 +30,8 @@ const variants = {
     'bg-linear-to-b from-primary-light to-primary border-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_1px_2px_rgba(47,111,235,0.25)] hover:from-[#5c93f5] hover:to-[#3878f0] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_rgba(47,111,235,0.18)]',
   light:
     'bg-surface text-primary font-bold shadow-[0_8px_20px_rgba(12,40,100,0.18)] hover:bg-[#f4f7ff]',
+  outline:
+    'bg-transparent border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
 }
 
 const sizes = {

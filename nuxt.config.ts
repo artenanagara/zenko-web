@@ -1,6 +1,16 @@
 import tailwindcss from '@tailwindcss/vite'
 import packageMetadata from './package.json'
 
+// Nuxt resolves relative `components[].path` entries against `srcDir`
+// (`<root>/app` by default in Nuxt 4), not the project root — a plain
+// './node_modules/...' string silently resolves to a nonexistent
+// `app/node_modules/...` and the scanner finds nothing. Resolve explicitly
+// from this config file's own location instead. Using `URL.pathname`
+// directly (no `node:url` import) avoids needing @types/node, which this
+// project doesn't otherwise depend on.
+const designSystemComponentsDir = (subpath: string) =>
+  new URL(`./node_modules/zenko-design-system/app/components/${subpath}`, import.meta.url).pathname
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -12,7 +22,40 @@ export default defineNuxtConfig({
   // for navigation. pathPrefix: false keeps the folder out of the tag name, so
   // it stays <AppButton>, not <UiAppButton> — moving a file between folders
   // must not be a breaking change for every call site.
-  components: [{ path: '~/components', pathPrefix: false }],
+  //
+  // The zenko-design-system entries come first so `~/components` registers
+  // last and wins any name collision (this app already hand-rolls its own
+  // AppSelect/AppCalendar/AppIcon/etc. — those must keep resolving to the
+  // local, marketplace-tuned version, not the design system's generic one).
+  // Listing the design system's own dirs here also resolves the internal
+  // cross-references its components make to each other (e.g. AppButton uses
+  // <AppIcon> without its own explicit import, relying on the same
+  // Nuxt-auto-import convention this app already uses).
+  components: [
+    {
+      path: designSystemComponentsDir('core'),
+      pathPrefix: false,
+      // These 12 names already exist as marketplace-tuned local components
+      // (different prop shapes in some cases, e.g. AppButton's variant enum)
+      // — excluding them here (rather than letting them lose a same-name
+      // registration race) keeps the console warning-free and makes the
+      // "local always wins" rule explicit instead of implicit in ordering.
+      ignore: [
+        '**/AppButton.vue', '**/AppCalendar.vue', '**/AppDateTimePicker.vue', '**/AppDropdownMenu.vue',
+        '**/AppIcon.vue', '**/AppRange.vue', '**/AppSelect.vue', '**/AppTimePicker.vue',
+        '**/BrandIcon.vue', '**/BrandMark.vue', '**/FormField.vue', '**/PackageCard.vue',
+      ],
+    },
+    { path: designSystemComponentsDir('primitives'), pathPrefix: false },
+    { path: '~/components', pathPrefix: false },
+  ],
+
+  // zenko-design-system ships raw .vue/.ts source (no pre-build step) since
+  // both apps run the same Nuxt/Vue major versions — transpile so Nitro's
+  // SSR bundling processes it instead of treating it as an opaque external.
+  build: {
+    transpile: ['zenko-design-system'],
+  },
 
   vite: {
     plugins: [tailwindcss()],
