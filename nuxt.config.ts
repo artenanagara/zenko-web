@@ -57,6 +57,19 @@ export default defineNuxtConfig({
     transpile: ['@artenanagara/zenko-design-system'],
   },
 
+  // Nuxt's auto-import transform excludes node_modules by default (sensible
+  // for prebuilt deps, but this one ships raw source that relies on the same
+  // auto-imported `ref`/`computed`/`watchEffect`/etc. its own dev server
+  // provides — e.g. AppModal.vue calls `watchEffect` with no explicit
+  // import). Opt this one package back in, or those calls throw
+  // "watchEffect is not defined" once installed for real (a `file:` link
+  // masked this, since its resolved path didn't read as node_modules).
+  imports: {
+    transform: {
+      include: [/node_modules\/@artenanagara\/zenko-design-system/],
+    },
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
