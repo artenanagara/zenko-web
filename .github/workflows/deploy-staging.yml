@@ -31,9 +31,16 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@artenanagara'
 
       - name: Install dependencies
         run: npm ci
+        env:
+          # GITHUB_TOKEN is scoped to this repo only and cannot read
+          # packages published by zenko-design-system, a different repo —
+          # PACKAGES_READ_TOKEN is a PAT with read:packages + repo scope.
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
       - name: Build production server
         run: npm run build

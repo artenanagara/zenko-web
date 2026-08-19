@@ -43,10 +43,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
         env:
-          # Reads @artenanagara/zenko-design-system from GitHub Packages —
-          # the auto-generated token can read packages published by other
-          # repos under the same owner once this permission is granted.
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN is scoped to this repo only and cannot read
+          # packages published by zenko-design-system, a different repo —
+          # PACKAGES_READ_TOKEN is a PAT with read:packages + repo scope.
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
       - name: Build production server
         run: npm run build
