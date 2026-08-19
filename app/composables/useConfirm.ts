@@ -1,6 +1,6 @@
 export interface ConfirmOptions {
   title: string
-  description?: string
+  description: string
   confirmLabel?: string
   cancelLabel?: string
 }
@@ -11,7 +11,7 @@ export interface ConfirmOptions {
 // aren't part of the SSR payload). One ConfirmDialog instance, mounted once
 // in app.vue, renders whatever this holds.
 const isOpen = ref(false)
-const options = ref<ConfirmOptions>({ title: '' })
+const options = ref<ConfirmOptions>({ title: '', description: '' })
 let resolver: ((value: boolean) => void) | null = null
 
 /**
@@ -20,7 +20,11 @@ let resolver: ((value: boolean) => void) | null = null
  *
  *   if (!window.confirm('Hapus ini?')) return
  *   →
- *   if (!(await confirm({ title: 'Hapus ini?' }))) return
+ *   if (!(await confirm({ title: 'Hapus ini?', description: 'Tindakan ini tidak bisa dibatalkan.' }))) return
+ *
+ * `description` is required so every confirm dialog explains the
+ * consequence, not just the action — a bare title reads as "delete this?"
+ * with no indication of what's lost or whether it's reversible.
  *
  * (the enclosing function needs to be `async`, same as any other `await`.)
  */
