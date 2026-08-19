@@ -1,44 +1,130 @@
 <script setup lang="ts">
 import type { QuestionDraft, TutorQuestion, TutorSection } from '#shared/types/tutor-product'
+import type { CompletionState } from '~/utils/questionCompletion'
+import type { MenuItem } from '~/components/core/AppDropdownMenu.vue'
 
 /**
- * Langkah Isi untuk produk single: accordion subtes dengan progres "20/35",
- * daftar soal, editor soal, dan impor CSV per subtes.
+ * Langkah Isi untuk produk single: dropdown subtes, grid navigasi soal
+ * berwarna, editor soal, dan tab impor CSV — mengikuti
+ * docs/tutor-flow-contract.md §6 dan §7.2.
+ *
+ * Subtes dipilih lewat AppDropdownMenu (bukan native `<select>`, bukan strip
+ * chip seperti sebelumnya — lihat tutor-dashboard-v2-tasks.md Task 5 /
+ * kontrak §7.2) — tiap item membawa status kelengkapan (progres + dot warna,
+ * logic sama dengan grid navigasi soal via ~/utils/questionCompletion.ts)
+ * supaya overview lintas-subtes yang tadinya didapat dari chip yang selalu
+ * terlihat tidak hilang total. Tidak ada pratinjau tampilan siswa langsung di
+ * langkah ini lagi — dianggap tidak perlu selagi masih menulis, cukup di
+ * langkah Review & ajukan (belum diimplementasikan di sana).
  *
  * Question writes hit their endpoints immediately (the contract gives each
- * question its own POST/PATCH/DELETE), then `refresh` asks the wizard to
- * reload the detail so counts and lists stay server-truth.
+ * question its own POST/PATCH/DELETE/reorder), then `refresh` asks the wizard
+ * to reload the detail so counts and lists stay server-truth.
  */
 const props = defineProps<{
   productId: string
   sections: TutorSection[]
+  /** Only "Custom" exam types mix question kinds across sections — the "Tipe soal" note in TutorQuestionForm is noise otherwise. */
+  isCustom?: boolean
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
 
-const openId = ref('')
+const orderedSections = computed(() =>
+  props.sections.slice().sort((a, b) => a.position - b.position),
+)
+
+/** Never empty while there's at least one subtes — reassigned, never toggled shut. */
+const activeSectionId = ref('')
+
+watch(orderedSections, (sections) => {
+  if (sections.length === 0) return
+  if (!sections.some(section => section.id === activeSectionId.value)) {
+    activeSectionId.value = sections[0]!.id
+  }
+}, { immediate: true })
+
+const activeSection = computed(() =>
+  orderedSections.value.find(section => section.id === activeSectionId.value) ?? null,
+)
 
 /** '' = tidak ada editor terbuka; 'new' = tambah soal; selain itu id soal. */
 const editorFor = ref('')
 const saving = ref(false)
 const errorMessage = ref('')
 
-const orderedSections = computed(() =>
-  props.sections.slice().sort((a, b) => a.position - b.position),
-)
+/**
+ * Bumped every time a *fresh* blank form should open. `editorFor` alone can't
+ * key the form (see below): it stays the literal string 'new' across several
+ * consecutive "Simpan & Buat Soal Berikutnya" clicks, so `:key="editorFor"`
+ * would never change and Vue would keep reusing the same TutorQuestionForm
+ * instance — leaving the just-submitted question's text sitting in the
+ * "next" form instead of a clean slate.
+ */
+const newFormNonce = ref(0)
 
-function toggleSection(id: string) {
-  openId.value = openId.value === id ? '' : id
+/** Tab aktif saat tidak sedang mengedit soal — pemisah manual/CSV yang eksplisit. */
+const activeTab = ref<'manual' | 'csv'>('manual')
+
+const ENTRY_TABS: { id: 'manual' | 'csv', label: string }[] = [
+  { id: 'manual', label: 'Input Manual per Soal' },
+  { id: 'csv', label: 'Impor File CSV' },
+]
+
+// AppTabs works in plain strings; narrow its `update:modelValue` back onto
+// the entry-mode union instead of casting.
+function selectEntryTab(id: string) {
+  if (id === 'manual' || id === 'csv') activeTab.value = id
+}
+
+const formKey = computed(() => editorFor.value === 'new' ? `new-${newFormNonce.value}` : editorFor.value)
+
+function selectSection(id: string) {
+  if (id === activeSectionId.value) return
+  activeSectionId.value = id
   editorFor.value = ''
   errorMessage.value = ''
+  activeTab.value = 'manual'
 }
+
+function openNewQuestion() {
+  newFormNonce.value += 1
+  editorFor.value = 'new'
+}
+
+function selectQuestion(id: string) {
+  if (id === 'new') openNewQuestion()
+  else editorFor.value = id
+}
+
+/**
+ * Pindah subtes aktif lewat panah prev/next di bar mode-menulis. Sengaja
+ * memakai `selectSection` apa adanya (bukan membawa `editorFor` ke subtes
+ * berikutnya): itu selalu menutup editor yang terbuka, sama seperti klik
+ * chip subtes hari ini — tidak ada risiko baru soal draft yang hilang diam-
+ * diam, dan tutor mendarat di grid pilih-soal subtes barunya.
+ */
+function stepSection(delta: number) {
+  const index = orderedSections.value.findIndex(section => section.id === activeSectionId.value)
+  const next = orderedSections.value[index + delta]
+  if (!next) return
+  selectSection(next.id)
+}
+
+const canStepSectionPrev = computed(() =>
+  orderedSections.value.findIndex(section => section.id === activeSectionId.value) > 0,
+)
+const canStepSectionNext = computed(() => {
+  const index = orderedSections.value.findIndex(section => section.id === activeSectionId.value)
+  return index !== -1 && index < orderedSections.value.length - 1
+})
 
 function questionBeingEdited(section: TutorSection): TutorQuestion | null {
   if (!editorFor.value || editorFor.value === 'new') return null
   return section.questions.find(question => question.id === editorFor.value) ?? null
 }
 
-async function saveQuestion(section: TutorSection, draft: QuestionDraft) {
+async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext: boolean) {
   saving.value = true
   errorMessage.value = ''
   try {
@@ -48,7 +134,8 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft) {
     else {
       await createTutorQuestion(props.productId, section.id, draft)
     }
-    editorFor.value = ''
+    if (andNext) openNewQuestion()
+    else editorFor.value = ''
     emit('refresh')
   }
   catch (cause) {
@@ -73,127 +160,197 @@ async function removeQuestion(section: TutorSection, question: TutorQuestion) {
   }
 }
 
-function progressTone(section: TutorSection) {
-  return section.questions.length >= section.questionTarget ? 'success' : 'neutral'
+async function reorderQuestions(section: TutorSection, questionIds: string[]) {
+  errorMessage.value = ''
+  try {
+    await reorderTutorQuestions(props.productId, section.id, questionIds)
+    emit('refresh')
+  }
+  catch (cause) {
+    errorMessage.value = tutorApiMessage(cause, 'Gagal mengubah urutan soal. Coba lagi.')
+  }
 }
+
+/*
+ * Ringkasan lintas subtes. Pertanyaan tutor di langkah ini adalah "berapa lagi
+ * sampai bisa diajukan?", dan tanpa ini ia harus membuka dropdown lalu
+ * menjumlahkan angka tiap opsi sendiri.
+ */
+const totals = computed(() => {
+  const written = orderedSections.value.reduce((sum, s) => sum + s.questions.length, 0)
+  const target = orderedSections.value.reduce((sum, s) => sum + s.questionTarget, 0)
+  return { written, target, percent: target === 0 ? 0 : Math.round((written / target) * 100) }
+})
+
+/**
+ * Item dropdown per subtes — warna dot memakai kosakata varian yang sama
+ * dengan AppBadge/AppDropdownMenu (bukan emoji), tapi state-nya tetap dari
+ * ~/utils/questionCompletion.ts, sama persis dengan grid navigasi soal.
+ */
+const SECTION_STATE_DOT: Record<CompletionState, 'success' | 'warning' | 'danger'> = {
+  complete: 'success',
+  'no-explanation': 'warning',
+  incomplete: 'danger',
+}
+
+const sectionMenuItems = computed<MenuItem[]>(() => orderedSections.value.map(section => ({
+  id: section.id,
+  label: `${section.title} — ${section.questions.length}/${section.questionTarget}`,
+  dot: SECTION_STATE_DOT[sectionCompletionState(section)],
+})))
+
+/** Full literal class names — Tailwind's scanner can't discover a `bg-${variable}` template string. */
+const DOT_BG_CLASS = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  neutral: 'bg-muted',
+} as const
+
+const activeSectionDotClass = computed(() =>
+  DOT_BG_CLASS[activeSection.value ? SECTION_STATE_DOT[sectionCompletionState(activeSection.value)] : 'neutral'],
+)
 </script>
 
 <template>
   <DashboardPanel
     title="Soal per subtes"
-    description="Buka satu subtes untuk menyusun soalnya — tulis satu per satu atau impor CSV."
+    description="Pilih subtes lalu susun soalnya — tulis satu per satu atau impor CSV."
   >
     <p v-if="orderedSections.length === 0" class="py-6 text-center text-muted">
       Belum ada subtes. Tambahkan subtes dulu untuk mulai menyusun soal.
     </p>
 
-    <div v-else class="grid gap-3">
-      <p
-        v-if="errorMessage"
-        role="alert"
-        class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-      >
-        {{ errorMessage }}
-      </p>
+    <div v-else class="grid gap-4">
+      <AppSectionMessage v-if="errorMessage" appearance="warning">{{ errorMessage }}</AppSectionMessage>
 
-      <section
-        v-for="section in orderedSections"
-        :key="section.id"
-        class="overflow-hidden rounded-md border border-hairline-strong"
+      <!--
+        Bar subtes ringkas — selalu tampil begitu ada subtes, terlepas dari
+        sedang menulis soal atau tidak. AppDropdownMenu (bukan native
+        `<select>`, bukan strip chip — lihat tutor-dashboard-v2-tasks.md Task
+        5 / kontrak §7.2) dipakai supaya pindah subtes tetap satu aksi, dan
+        tiap item membawa status kelengkapan (progres + dot warna) supaya
+        overview lintas-subtes yang tadinya didapat dari chip tidak hilang
+        total.
+      -->
+      <div
+        v-if="activeSection"
+        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-sm border border-hairline bg-surface-alt px-3 py-2"
       >
-        <h3>
-          <button
-            type="button"
-            class="flex w-full flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3.5 text-left transition-colors hover:bg-surface-alt"
-            :aria-expanded="openId === section.id"
-            @click="toggleSection(section.id)"
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          <AppDropdownMenu :items="sectionMenuItems" label="Pilih subtes" @select="selectSection">
+            <!-- Matches AppSelect's own trigger size (this IS a select, in
+                 effect) — not AppButton, which reads as a CTA-sized button
+                 next to it. -->
+            <template #trigger="{ open, isOpen }">
+              <button
+                type="button"
+                class="flex min-h-11 items-center gap-2 rounded-xs border border-line bg-surface px-3.5 text-xs shadow-xs transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none sm:text-sm"
+                @click="open"
+              >
+                <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="activeSectionDotClass" />
+                <span class="truncate font-semibold text-ink">{{ activeSection.title }} — {{ activeSection.questions.length }}/{{ activeSection.questionTarget }}</span>
+                <AppIcon name="caret-down" :size="14" class="shrink-0 text-muted transition-transform" :class="isOpen ? 'rotate-180 text-primary' : ''" />
+              </button>
+            </template>
+          </AppDropdownMenu>
+
+          <span class="hidden shrink-0 text-[0.82rem] font-semibold tabular-nums text-muted sm:inline">
+            · {{ totals.written }}/{{ totals.target }} total ({{ totals.percent }}%)
+          </span>
+        </div>
+
+        <span class="inline-flex items-center gap-0.5" role="group" aria-label="Pindah subtes">
+          <AppIconButton
+            variant="ghost"
+            size="md"
+            ariaLabel="Subtes sebelumnya"
+            :disabled="!canStepSectionPrev"
+            @click="stepSection(-1)"
           >
-            <span class="flex min-w-0 items-center gap-3">
-              <IconChevron
-                class="h-4 w-4 shrink-0 text-muted transition-transform"
-                :class="openId === section.id ? 'rotate-180' : ''"
-              />
-              <span class="truncate font-bold tracking-[-0.02em]">{{ section.title }}</span>
-            </span>
-            <span class="flex shrink-0 items-center gap-3">
-              <span class="text-[0.82rem] text-muted">{{ section.durationMinutes }} menit</span>
-              <DashboardBadge :tone="progressTone(section)">
-                {{ section.questions.length }}/{{ section.questionTarget }} soal
-              </DashboardBadge>
-            </span>
-          </button>
-        </h3>
+            <AppIcon name="caret-left" :size="16" />
+          </AppIconButton>
+          <AppIconButton
+            variant="ghost"
+            size="md"
+            ariaLabel="Subtes berikutnya"
+            :disabled="!canStepSectionNext"
+            @click="stepSection(1)"
+          >
+            <AppIcon name="caret-right" :size="16" />
+          </AppIconButton>
+        </span>
+      </div>
 
-        <div v-if="openId === section.id" class="border-t border-hairline bg-surface-alt/60 px-4 py-4">
-          <!-- Daftar soal -->
-          <p v-if="section.questions.length === 0 && editorFor === ''" class="py-2 text-[0.9rem] text-muted">
-            Belum ada soal di subtes ini.
-          </p>
-
-          <ul v-else-if="editorFor === ''" class="grid gap-2">
-            <li
-              v-for="(question, index) in section.questions"
-              :key="question.id"
-              class="flex flex-wrap items-center gap-3 rounded-sm border border-hairline bg-surface px-3.5 py-2.5"
-            >
-              <span class="w-6 shrink-0 text-[0.82rem] font-bold text-faint tabular-nums">{{ index + 1 }}.</span>
-              <span class="min-w-0 flex-1 truncate text-[0.9rem]">{{ stripHtmlToText(question.prompt) }}</span>
-              <DashboardBadge tone="neutral">{{ QUESTION_KIND_LABEL[question.kind] }}</DashboardBadge>
-              <span class="flex shrink-0 items-center gap-3">
-                <button
-                  type="button"
-                  class="text-[0.84rem] font-semibold text-primary hover:underline"
-                  @click="editorFor = question.id"
-                >
-                  Ubah
-                </button>
-                <button
-                  type="button"
-                  class="text-[0.84rem] font-semibold text-red-600 hover:underline"
-                  @click="removeQuestion(section, question)"
-                >
-                  Hapus
-                </button>
-              </span>
-            </li>
-          </ul>
-
-          <!-- Editor -->
+      <div v-if="activeSection" class="grid gap-4 lg:grid-cols-[1fr_16rem] lg:items-start lg:gap-5">
+        <div>
+          <!-- Editor. Pratinjau tampilan siswa dipindah ke langkah Review &
+               ajukan — tidak perlu dobel di sini saat masih menulis. -->
           <TutorQuestionForm
             v-if="editorFor !== ''"
-            :key="editorFor"
-            :initial="questionBeingEdited(section)"
-            :default-kind="section.defaultKind"
+            :key="formKey"
+            :initial="questionBeingEdited(activeSection!)"
+            :default-kind="activeSection!.defaultKind"
+            :is-custom="isCustom"
             :saving="saving"
-            class="mt-1"
-            @save="draft => saveQuestion(section, draft)"
+            :product-id="productId"
+            :section-id="activeSection!.id"
+            @save="draft => saveQuestion(activeSection!, draft, false)"
+            @save-and-next="draft => saveQuestion(activeSection!, draft, true)"
             @cancel="editorFor = ''"
           />
 
-          <div v-else class="mt-4 flex flex-wrap items-center gap-4">
-            <AppButton
-              v-if="section.questions.length < section.questionTarget"
-              type="button"
-              size="sm"
-              @click="editorFor = 'new'"
-            >
-              Tambah soal
-            </AppButton>
-            <p v-else class="text-[0.86rem] font-semibold text-success-ink">
-              Target soal subtes ini terpenuhi.
-            </p>
-          </div>
+          <template v-else>
+            <AppTabs :tabs="ENTRY_TABS" :model-value="activeTab" aria-label="Mode isi soal" @update:model-value="selectEntryTab" />
 
-          <!-- Impor CSV -->
-          <TutorCsvImport
-            v-if="editorFor === ''"
-            class="mt-5"
-            :product-id="productId"
-            :section="section"
-            @refresh="emit('refresh')"
-          />
+            <div v-if="activeTab === 'manual'" class="mt-4">
+              <p v-if="activeSection!.questions.length === 0" class="py-2 text-[0.9rem] text-muted">
+                Belum ada soal di subtes ini.
+              </p>
+              <AppButton
+                v-if="activeSection!.questions.length < activeSection!.questionTarget"
+                type="button"
+                size="sm"
+                @click="openNewQuestion"
+              >
+                Tambah soal
+              </AppButton>
+              <AppInlineMessage v-else type="confirmation">
+                Target soal subtes ini terpenuhi — klik kotak di grid untuk mengubah soal, atau hapus salah satu dulu untuk menambah.
+              </AppInlineMessage>
+            </div>
+
+            <TutorCsvImport
+              v-else
+              class="mt-4"
+              :product-id="productId"
+              :section="activeSection!"
+              :sections="orderedSections"
+              @refresh="emit('refresh')"
+            />
+          </template>
         </div>
-      </section>
+
+        <!--
+          Grid navigasi nomor soal — di samping kanan konten (bukan di
+          atasnya), selalu tampil begitu ada minimal satu soal, bahkan saat
+          sebuah soal sedang diedit, supaya "aktif" dan tombol pindah depan/
+          belakang di dalamnya (fallback non-drag untuk reorder) punya soal
+          yang benar-benar terpilih untuk dirujuk. Subtes kosong tidak dapat
+          grid sama sekali — kotak "+" tunggal akan terasa berlebihan
+          berdampingan dengan tombol "Tambah soal" yang sudah ada di kolom
+          kiri.
+        -->
+        <TutorQuestionGrid
+          v-if="activeSection!.questions.length > 0"
+          :questions="activeSection!.questions"
+          :question-target="activeSection!.questionTarget"
+          :active-id="editorFor"
+          :compact="editorFor !== ''"
+          @select="selectQuestion"
+          @reorder="ids => reorderQuestions(activeSection!, ids)"
+        />
+      </div>
     </div>
   </DashboardPanel>
 </template>

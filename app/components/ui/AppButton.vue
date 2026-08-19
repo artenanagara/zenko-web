@@ -15,28 +15,34 @@ withDefaults(
     to?: string
     /** External or placeholder URL — renders a plain anchor. */
     href?: string
-    variant?: 'primary' | 'light' | 'outline' | 'danger'
-    size?: 'sm' | 'md' | 'lg'
+    variant?: 'primary' | 'secondary' | 'light' | 'outline' | 'ghost' | 'danger'
+    /** 'xs' is for cramped spots — toolbar popovers — not general UI. */
+    size?: 'xs' | 'sm' | 'md' | 'lg'
     type?: 'button' | 'submit'
   }>(),
   { variant: 'primary', size: 'md', type: 'button' },
 )
 
 const base =
-  'inline-flex items-center justify-center border border-transparent font-semibold transition-[transform,box-shadow,background] duration-200 ease-smooth hover:-translate-y-px focus-visible:-translate-y-px'
+  'inline-flex items-center justify-center gap-2 border border-transparent font-semibold transition-[transform,box-shadow,background] duration-200 ease-smooth hover:-translate-y-px focus-visible:-translate-y-px cursor-pointer'
 
 const variants = {
   primary:
     'bg-linear-to-b from-primary-light to-primary border-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_1px_2px_rgba(47,111,235,0.25)] hover:from-[#5c93f5] hover:to-[#3878f0] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_rgba(47,111,235,0.18)]',
+  secondary:
+    'bg-ink border-ink text-white shadow-xs hover:bg-[#27272e] hover:border-[#27272e]',
   light:
     'bg-surface text-primary font-bold shadow-[0_8px_20px_rgba(12,40,100,0.18)] hover:bg-[#f4f7ff]',
   outline:
     'bg-transparent border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
+  ghost:
+    'bg-transparent text-muted hover:text-ink hover:bg-surface-alt',
   danger:
     'bg-danger border-danger text-white shadow-xs hover:bg-danger-ink',
 }
 
 const sizes = {
+  xs: 'min-h-8 px-3 text-[0.8rem]',
   sm: 'min-h-10 px-4',
   md: 'min-h-12 px-7',
   lg: 'min-h-13 px-8',

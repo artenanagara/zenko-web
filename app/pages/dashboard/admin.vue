@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { AdminPayout, AdminProductDetail, AdminProductSummary } from '#shared/types/admin-moderation'
+import type {
+  AdminBankAccount,
+  AdminBankAccountChangeRequest,
+  AdminPayout,
+  AdminProductDetail,
+  AdminProductSummary,
+} from '#shared/types/admin-moderation'
 import { adminOverview } from '~/mocks/dashboard'
 
 definePageMeta({
@@ -19,12 +25,16 @@ useHead({
 const { data: applications, pending, error, refresh } = useAdminTutorApplications()
 const { data: productQueue, pending: queuePending, error: queueError, refresh: refreshQueue } = useAdminProductQueue()
 const { data: payoutQueue, pending: payoutsPending, error: payoutsError, refresh: refreshPayouts } = useAdminPayoutQueue()
+const { data: bankAccounts, pending: bankAccountsPending, error: bankAccountsError, refresh: refreshBankAccounts } = useAdminBankAccounts()
+const { data: bankChangeRequests, pending: bankChangePending, error: bankChangeError, refresh: refreshBankChanges } = useAdminBankAccountChangeRequests()
 
 // Client-only fetches — the session cookie is HttpOnly on the API origin
 // (see useAdminModeration).
 onMounted(() => {
   refreshQueue()
   refreshPayouts()
+  refreshBankAccounts()
+  refreshBankChanges()
 })
 
 const stats = computed(() => [
@@ -130,7 +140,7 @@ function openPayoutReject(payout: AdminPayout) {
   payoutActionError.value = ''
 }
 
-function closePayoutReject() {
+function closePayoutReject() {  
   payoutRejectingId.value = ''
   payoutRejectReason.value = ''
 }
@@ -153,6 +163,73 @@ async function decidePayout(payout: AdminPayout, action: 'process' | 'transfer' 
   }
   finally {
     payoutBusyId.value = ''
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Rekening bank tutor — verifikasi manual, satu tombol per baris belum
+ * terverifikasi.
+ * ------------------------------------------------------------------------ */
+
+const bankVerifyBusyId = ref('')
+const bankVerifyActionError = ref('')
+
+async function verifyBankAccount(account: AdminBankAccount) {
+  bankVerifyActionError.value = ''
+  bankVerifyBusyId.value = account.accountId
+  try {
+    await verifyAdminBankAccount(account.accountId)
+    await refreshBankAccounts()
+  }
+  catch (cause) {
+    bankVerifyActionError.value = tutorApiMessage(cause, 'Gagal memverifikasi rekening. Coba lagi sebentar lagi.')
+  }
+  finally {
+    bankVerifyBusyId.value = ''
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Pengajuan perubahan rekening — rekening tutor terkunci setelah tersimpan
+ * pertama kali, jadi perubahan lewat sini. Setujui langsung, tolak wajib
+ * alasan (sama seperti pencairan).
+ * ------------------------------------------------------------------------ */
+
+const bankChangeBusyId = ref('')
+const bankChangeActionError = ref('')
+/** Baris yang sedang membuka form alasan penolakan. */
+const bankChangeRejectingId = ref('')
+const bankChangeRejectReason = ref('')
+
+function openBankChangeReject(request: AdminBankAccountChangeRequest) {
+  bankChangeRejectingId.value = request.id
+  bankChangeRejectReason.value = ''
+  bankChangeActionError.value = ''
+}
+
+function closeBankChangeReject() {
+  bankChangeRejectingId.value = ''
+  bankChangeRejectReason.value = ''
+}
+
+async function decideBankChange(request: AdminBankAccountChangeRequest, approve: boolean) {
+  if (!approve && bankChangeRejectReason.value.trim() === '') return
+
+  bankChangeActionError.value = ''
+  bankChangeBusyId.value = request.id
+  try {
+    await decideAdminBankAccountChange(request.id, {
+      approve,
+      reason: approve ? undefined : bankChangeRejectReason.value.trim(),
+    })
+    closeBankChangeReject()
+    await refreshBankChanges()
+  }
+  catch (cause) {
+    bankChangeActionError.value = tutorApiMessage(cause, 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.')
+  }
+  finally {
+    bankChangeBusyId.value = ''
   }
 }
 
@@ -538,6 +615,214 @@ async function decidePayout(payout: AdminPayout, action: 'process' | 'transfer' 
                         type="button"
                         class="inline-flex min-h-10 items-center justify-center rounded-xs border border-line px-4 text-[0.86rem] font-semibold text-muted transition-colors hover:text-ink"
                         @click="closePayoutReject"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </DashboardPanel>
+
+    <DashboardPanel
+      id="rekening-bank"
+      title="Rekening bank tutor"
+      description="Rekening yang disimpan tutor untuk pencairan. Verifikasi setelah dicocokkan secara manual."
+    >
+      <template #action>
+        <button
+          type="button"
+          class="rounded-xs border border-line px-3 py-1.5 text-[0.82rem] font-semibold transition-colors hover:bg-surface-alt"
+          @click="refreshBankAccounts()"
+        >
+          Muat ulang
+        </button>
+      </template>
+
+      <p v-if="bankAccountsPending" class="py-6 text-center text-muted">Memuat rekening bank…</p>
+
+      <p v-else-if="bankAccountsError" role="alert" class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900">
+        {{ bankAccountsError }}
+      </p>
+
+      <p v-else-if="!bankAccounts.length" class="py-6 text-center text-muted">
+        Belum ada rekening bank tersimpan.
+      </p>
+
+      <div v-else class="overflow-x-auto">
+        <p v-if="bankVerifyActionError" role="alert" class="mb-3 text-[0.82rem] text-red-600">
+          {{ bankVerifyActionError }}
+        </p>
+
+        <table class="w-full min-w-160 border-collapse text-left">
+          <thead>
+            <tr class="text-[0.78rem] tracking-widest text-faint uppercase">
+              <th class="pb-3 font-bold">Tutor</th>
+              <th class="pb-3 font-bold">Rekening</th>
+              <th class="pb-3 font-bold">Status</th>
+              <th class="pb-3 text-right font-bold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="account in bankAccounts" :key="account.accountId" class="border-t border-hairline align-top">
+              <td class="py-3.5 pr-4">
+                <span class="block font-semibold tracking-[-0.02em]">{{ account.tutor.name }}</span>
+                <span class="block text-[0.82rem] text-muted">{{ account.tutor.email }}</span>
+              </td>
+              <td class="py-3.5 pr-4">
+                <span class="block text-[0.9rem]">{{ account.bankAccount.bankLabel }} · {{ account.bankAccount.accountNumber }}</span>
+                <span class="block text-[0.82rem] text-muted">a.n. {{ account.bankAccount.holderName }}</span>
+              </td>
+              <td class="py-3.5 pr-4">
+                <DashboardBadge :tone="account.bankAccount.verifiedAt ? 'success' : 'warning'">
+                  {{ account.bankAccount.verifiedAt ? 'Terverifikasi' : 'Belum diverifikasi' }}
+                </DashboardBadge>
+              </td>
+              <td class="py-3.5 text-right">
+                <button
+                  v-if="!account.bankAccount.verifiedAt"
+                  type="button"
+                  class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
+                  :disabled="bankVerifyBusyId === account.accountId"
+                  @click="verifyBankAccount(account)"
+                >
+                  {{ bankVerifyBusyId === account.accountId ? 'Menyimpan…' : 'Verifikasi' }}
+                </button>
+                <span v-else class="text-[0.86rem] text-muted">—</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </DashboardPanel>
+
+    <DashboardPanel
+      id="perubahan-rekening"
+      title="Pengajuan perubahan rekening"
+      description="Rekening tutor terkunci setelah tersimpan pertama kali; perubahan butuh persetujuanmu."
+    >
+      <template #action>
+        <button
+          type="button"
+          class="rounded-xs border border-line px-3 py-1.5 text-[0.82rem] font-semibold transition-colors hover:bg-surface-alt"
+          @click="refreshBankChanges()"
+        >
+          Muat ulang
+        </button>
+      </template>
+
+      <p v-if="bankChangePending" class="py-6 text-center text-muted">Memuat pengajuan perubahan rekening…</p>
+
+      <p v-else-if="bankChangeError" role="alert" class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900">
+        {{ bankChangeError }}
+      </p>
+
+      <p v-else-if="!bankChangeRequests.length" class="py-6 text-center text-muted">
+        Tidak ada pengajuan perubahan rekening yang menunggu.
+      </p>
+
+      <div v-else class="overflow-x-auto">
+        <p v-if="bankChangeActionError" role="alert" class="mb-3 text-[0.82rem] text-red-600">
+          {{ bankChangeActionError }}
+        </p>
+
+        <table class="w-full min-w-200 border-collapse text-left">
+          <thead>
+            <tr class="text-[0.78rem] tracking-widest text-faint uppercase">
+              <th class="pb-3 font-bold">Tutor</th>
+              <th class="pb-3 font-bold">Rekening saat ini</th>
+              <th class="pb-3 font-bold">Rekening baru</th>
+              <th class="pb-3 font-bold">Diajukan</th>
+              <th class="pb-3 font-bold">Status</th>
+              <th class="pb-3 text-right font-bold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-for="request in bankChangeRequests" :key="request.id">
+              <tr class="border-t border-hairline align-top">
+                <td class="py-3.5 pr-4">
+                  <span class="block font-semibold tracking-[-0.02em]">{{ request.tutor.name }}</span>
+                  <span class="block text-[0.82rem] text-muted">{{ request.tutor.email }}</span>
+                </td>
+                <td class="py-3.5 pr-4">
+                  <span class="block text-[0.9rem]">{{ request.currentAccount.bankLabel }} · {{ request.currentAccount.accountNumber }}</span>
+                  <span class="block text-[0.82rem] text-muted">a.n. {{ request.currentAccount.holderName }}</span>
+                </td>
+                <td class="py-3.5 pr-4">
+                  <span class="block text-[0.9rem]">{{ request.newAccount.bankLabel }} · {{ request.newAccount.accountNumber }}</span>
+                  <span class="block text-[0.82rem] text-muted">a.n. {{ request.newAccount.holderName }}</span>
+                </td>
+                <td class="py-3.5 pr-4 text-[0.9rem] whitespace-nowrap text-muted">{{ formatDate(request.requestedAt) }}</td>
+                <td class="py-3.5 pr-4">
+                  <DashboardBadge :tone="STATUS_TONE[request.status]">
+                    {{ STATUS_LABEL[request.status] }}
+                  </DashboardBadge>
+                  <span
+                    v-if="request.status === 'rejected' && request.rejectReason"
+                    class="mt-1 block max-w-56 text-[0.82rem] text-muted"
+                  >
+                    {{ request.rejectReason }}
+                  </span>
+                </td>
+                <td class="py-3.5 text-right">
+                  <span v-if="request.status === 'pending'" class="inline-flex items-center gap-3 whitespace-nowrap">
+                    <button
+                      type="button"
+                      class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
+                      :disabled="bankChangeBusyId === request.id"
+                      @click="decideBankChange(request, true)"
+                    >
+                      {{ bankChangeBusyId === request.id ? 'Menyimpan…' : 'Setujui' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="text-[0.86rem] font-semibold text-red-600 hover:underline disabled:opacity-50"
+                      :disabled="bankChangeBusyId === request.id"
+                      @click="bankChangeRejectingId === request.id ? closeBankChangeReject() : openBankChangeReject(request)"
+                    >
+                      Tolak…
+                    </button>
+                  </span>
+                  <span v-else class="text-[0.86rem] text-muted">—</span>
+                </td>
+              </tr>
+
+              <!-- Alasan penolakan, inline di bawah baris yang bersangkutan. -->
+              <tr v-if="bankChangeRejectingId === request.id">
+                <td colspan="6" class="pb-4">
+                  <form
+                    class="grid gap-3 rounded-sm border border-hairline bg-surface-alt p-4"
+                    @submit.prevent="decideBankChange(request, false)"
+                  >
+                    <div>
+                      <label :for="`bank-change-reject-${request.id}`" :class="FIELD_LABEL_CLASS">
+                        Alasan penolakan
+                      </label>
+                      <textarea
+                        :id="`bank-change-reject-${request.id}`"
+                        v-model="bankChangeRejectReason"
+                        rows="2"
+                        :class="FIELD_CLASS"
+                        placeholder="Mis. nama pemilik rekening tidak cocok."
+                        required
+                      />
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                      <button
+                        type="submit"
+                        class="inline-flex min-h-10 items-center justify-center rounded-xs bg-red-600 px-4 text-[0.86rem] font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                        :disabled="bankChangeBusyId === request.id || bankChangeRejectReason.trim() === ''"
+                      >
+                        {{ bankChangeBusyId === request.id ? 'Menyimpan…' : 'Tolak pengajuan' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="inline-flex min-h-10 items-center justify-center rounded-xs border border-line px-4 text-[0.86rem] font-semibold text-muted transition-colors hover:text-ink"
+                        @click="closeBankChangeReject"
                       >
                         Batal
                       </button>

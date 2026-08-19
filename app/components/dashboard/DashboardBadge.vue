@@ -1,23 +1,27 @@
 <script setup lang="ts">
-/** Status pill. `tone` maps onto the semantic colours in main.css. */
-withDefaults(defineProps<{ tone?: 'neutral' | 'success' | 'warning' | 'brand' | 'danger' }>(), {
+/**
+ * Status pill. Thin semantic-name wrapper around the design system's
+ * AppBadge — `tone` is this app's own vocabulary (kept as-is since many
+ * call sites depend on these exact 5 values), mapped onto AppBadge's
+ * `variant` prop.
+ */
+const props = withDefaults(defineProps<{ tone?: 'neutral' | 'success' | 'warning' | 'brand' | 'danger' }>(), {
   tone: 'neutral',
 })
 
-const TONES = {
-  neutral: 'bg-surface-sunken text-muted',
-  success: 'bg-success-soft text-success-ink',
-  warning: 'bg-amber-50 text-amber-800',
-  brand: 'bg-primary-soft text-primary',
-  danger: 'bg-red-50 text-red-700',
+const VARIANTS = {
+  neutral: 'neutral',
+  success: 'success',
+  warning: 'warning',
+  brand: 'primary',
+  danger: 'danger',
 } as const
+
+const variant = computed(() => VARIANTS[props.tone])
 </script>
 
 <template>
-  <span
-    class="inline-flex items-center rounded-pill px-2.5 py-1 text-[0.74rem] font-bold whitespace-nowrap"
-    :class="TONES[tone]"
-  >
+  <AppBadge :variant="variant">
     <slot />
-  </span>
+  </AppBadge>
 </template>

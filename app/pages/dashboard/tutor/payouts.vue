@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { TutorPayout } from '#shared/types/tutor-earnings'
+
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
@@ -11,8 +13,11 @@ useHead({
 })
 
 const { data: balance, pending: balancePending, error: balanceError, refresh: refreshBalance } = useTutorBalance()
+// Read-only here — editing moved to /dashboard/tutor/settings. Still needed
+// for the last-4 reference on the card and to gate the payout modal.
 const { data: bankAccount, pending: bankPending, refresh: refreshBankAccount } = useTutorBankAccount()
 const { data: payouts, pending: payoutsPending, error: payoutsError, refresh: refreshPayouts } = useTutorPayouts()
+const { user } = useAuth()
 
 // Client-only fetches: the session cookie never reaches the Nuxt server, so
 // everything resolves after hydration (see useTutorEarnings).
@@ -22,76 +27,59 @@ onMounted(() => {
   refreshPayouts()
 })
 
-const stats = computed(() => [
-  { label: 'Saldo tersedia', value: formatRupiah(balance.value.available), hint: 'Bisa diajukan untuk dicairkan.' },
-  { label: 'Tertahan', value: formatRupiah(balance.value.held), hint: 'Cair otomatis 7 hari setelah pembayaran.' },
-  { label: 'Total dicairkan', value: formatRupiah(balance.value.totalPaidOut), hint: 'Sepanjang waktu.' },
-])
+const tutorName = computed(() => user.value?.name.trim() || 'Tutor')
 
-/* --------------------------------------------------------------------------
- * Rekening bank — GET menampilkan yang tersimpan, PUT menyimpan.
- * ------------------------------------------------------------------------ */
+const payoutColumns = [
+  { key: 'requestedAt', label: 'Diajukan' },
+  { key: 'amount', label: 'Nominal' },
+  { key: 'status', label: 'Status' },
+  { key: 'keterangan', label: 'Keterangan' },
+]
 
-const bankForm = reactive({ bankCode: '', accountNumber: '', holderName: '' })
-const bankSaving = ref(false)
-const bankError = ref('')
-const bankSaved = ref(false)
-
-// Isi form begitu rekening tersimpan tiba (fetch resolves after mount).
-watch(bankAccount, (account) => {
-  if (!account) return
-  bankForm.bankCode = account.bankCode
-  bankForm.accountNumber = account.accountNumber
-  bankForm.holderName = account.holderName
-})
-
-const bankFormValid = computed(() =>
-  bankForm.bankCode !== ''
-  && bankForm.accountNumber.trim() !== ''
-  && bankForm.holderName.trim() !== '',
-)
-
-async function saveBankAccount() {
-  bankError.value = ''
-  bankSaved.value = false
-
-  const bank = BANK_OPTIONS.find(option => option.code === bankForm.bankCode)
-  if (!bank) {
-    bankError.value = 'Pilih bank terlebih dahulu.'
-    return
-  }
-
-  bankSaving.value = true
-  try {
-    await saveTutorBankAccount({
-      bankCode: bank.code,
-      bankLabel: bank.label,
-      accountNumber: bankForm.accountNumber.trim(),
-      holderName: bankForm.holderName.trim(),
-    })
-    bankSaved.value = true
-    await refreshBankAccount()
-  }
-  catch (cause) {
-    bankError.value = tutorApiMessage(cause, 'Gagal menyimpan rekening. Coba lagi sebentar lagi.')
-  }
-  finally {
-    bankSaving.value = false
-  }
+// AppTable's cell slots hand back `item` as Record<string, any> (it isn't a
+// generic component), so the tone/label lookup goes through this typed
+// accessor instead of indexing the `any` value directly.
+function payoutStatusTone(status: TutorPayout['status']) {
+  return PAYOUT_STATUS_TONE[status]
 }
+function payoutStatusLabel(status: TutorPayout['status']): string {
+  return PAYOUT_STATUS_LABEL[status]
+}
+
+// Account-number-visibility toggle on the card — masks the reference for
+// shoulder-surfing privacy, reveals the full account number on demand.
+// Local-only, no need to persist across visits.
+const accountNumberRevealed = ref(false)
+
+// Last 4 digits of the saved bank account, shown as a reference on the
+// balance card — never a card number. Nothing to show until a bank account
+// is on file.
+const bankAccountLast4 = computed(() => {
+  const digits = bankAccount.value?.accountNumber.trim() ?? ''
+  return digits.length >= 4 ? digits.slice(-4) : null
+})
 
 /* --------------------------------------------------------------------------
  * Ajukan pencairan — minimum Rp100.000, maksimum saldo tersedia, dan rekening
- * harus sudah tersimpan. The server re-validates all three.
+ * harus sudah tersimpan. The server re-validates all three. Lives in
+ * PayoutModal now; this page just owns the state and the request.
  * ------------------------------------------------------------------------ */
 
-const amount = ref<number | ''>('')
+const payoutModalOpen = ref(false)
+const amount = ref<number | null>(null)
 const payoutSubmitting = ref(false)
 const payoutError = ref('')
 const payoutSuccess = ref('')
 
+function openPayoutModal() {
+  payoutError.value = ''
+  payoutSuccess.value = ''
+  amount.value = null
+  payoutModalOpen.value = true
+}
+
 const amountError = computed(() => {
-  if (amount.value === '') return ''
+  if (amount.value === null) return ''
   if (amount.value < PAYOUT_MINIMUM) {
     return `Minimum pencairan ${formatRupiah(PAYOUT_MINIMUM)}.`
   }
@@ -103,13 +91,13 @@ const amountError = computed(() => {
 
 const canRequestPayout = computed(() =>
   bankAccount.value !== null
-  && amount.value !== ''
+  && amount.value !== null
   && amountError.value === ''
   && !payoutSubmitting.value,
 )
 
 async function submitPayout() {
-  if (!canRequestPayout.value || amount.value === '') return
+  if (!canRequestPayout.value || amount.value === null) return
 
   payoutError.value = ''
   payoutSuccess.value = ''
@@ -117,8 +105,13 @@ async function submitPayout() {
   try {
     await requestTutorPayout(amount.value)
     payoutSuccess.value = 'Pengajuan pencairan terkirim. Kami memprosesnya dalam 1–3 hari kerja.'
-    amount.value = ''
+    amount.value = null
     await Promise.all([refreshBalance(), refreshPayouts()])
+    // Brief success state so the confirmation actually registers, then close
+    // — the balance card and history table behind it are already live.
+    setTimeout(() => {
+      payoutModalOpen.value = false
+    }, 1400)
   }
   catch (cause) {
     payoutError.value = tutorApiMessage(cause, 'Gagal mengajukan pencairan. Coba lagi sebentar lagi.')
@@ -131,123 +124,128 @@ async function submitPayout() {
 
 <template>
   <div class="grid gap-6">
-    <header>
-      <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Pencairan</h1>
-      <p class="mt-1.5 text-muted">
-        Saldo penghasilanmu, rekening tujuan, dan riwayat pencairan.
-      </p>
-    </header>
+    <AppPageHeader
+      title="Pencairan"
+      description="Saldo penghasilanmu, rekening tujuan, dan riwayat pencairan."
+    />
 
-    <p
-      v-if="balanceError"
-      role="alert"
-      class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-    >
-      {{ balanceError }}
-    </p>
+    <AppInlineMessage v-if="balanceError" type="error">{{ balanceError }}</AppInlineMessage>
 
-    <DashboardSkeleton v-if="balancePending" variant="stats" :count="3" :columns="3" label="Memuat saldo..." />
-    <DashboardStats v-else :items="stats" :columns="3" />
+    <div v-if="balancePending" class="flex flex-col gap-4 md:flex-row md:items-stretch" role="status">
+      <span class="sr-only">Memuat saldo...</span>
+      <!-- Sized wrapper + AppSkeleton filling it: AppSkeleton's own default
+           size classes can't be reliably overridden by trailing utility
+           classes (this app has no tailwind-merge), so the wrapper owns the
+           exact dimensions and the skeleton just fills it. -->
+      <div class="w-full rounded-xl md:flex-1" style="min-height: 17rem;" aria-hidden="true">
+        <AppSkeleton type="rect" className="!h-full !w-full !rounded-xl" />
+      </div>
+      <div class="min-h-32 flex-1" aria-hidden="true">
+        <AppSkeleton type="rect" className="!h-full !w-full !rounded-lg" />
+      </div>
+    </div>
 
-    <div class="grid gap-6 xl:grid-cols-2">
-      <DashboardPanel
-        id="rekening"
-        title="Rekening bank"
-        description="Tujuan transfer pencairan. Pastikan nama pemilik sesuai buku tabungan."
+    <div v-else class="flex flex-col gap-4 md:flex-row md:items-stretch">
+      <!-- Balance-card banner. Earlier draft used a debit-card-style chip +
+           texture; this reads better against the dashboard's flat surfaces and
+           matches the "merchant balance" pattern (brand gradient + panel-inset
+           3D depth per the Zenko style guide's CTA Depth Treatment, subtle
+           decorative rings, one primary action). -->
+      <div
+        class="panel-inset relative flex w-full flex-col gap-6 overflow-hidden rounded-xl bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark px-6 py-7 text-white min-h-[17rem] md:flex-1"
       >
-        <DashboardSkeleton v-if="bankPending" :count="3" label="Memuat rekening..." />
+        <!-- Decorative rings: subtle, concentric, bleeding off the right edge. -->
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute top-1/2 right-0 h-72 w-72 -translate-y-1/2 translate-x-1/3 rounded-full border border-white/10"
+        />
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute top-1/2 right-0 h-44 w-44 -translate-y-1/2 translate-x-1/4 rounded-full border border-white/10"
+        />
 
-        <form v-else class="grid gap-5" @submit.prevent="saveBankAccount">
-          <div>
-            <label for="bank-code" :class="FIELD_LABEL_CLASS">Bank</label>
-            <select id="bank-code" v-model="bankForm.bankCode" :class="FIELD_CLASS" required>
-              <option value="" disabled>Pilih bank</option>
-              <option v-for="option in BANK_OPTIONS" :key="option.code" :value="option.code">
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-
-          <FormField
-            id="bank-account-number"
-            v-model="bankForm.accountNumber"
-            label="Nomor rekening"
-            type="tel"
-            placeholder="1234567890"
-            autocomplete="off"
-          />
-
-          <FormField
-            id="bank-holder-name"
-            v-model="bankForm.holderName"
-            label="Nama pemilik rekening"
-            placeholder="Sesuai buku tabungan"
-            autocomplete="name"
-          />
-
-          <p v-if="bankError" role="alert" class="text-[0.82rem] text-red-600">{{ bankError }}</p>
-          <p v-else-if="bankSaved" role="status" class="text-[0.82rem] font-semibold text-success-ink">
-            Rekening tersimpan.
-          </p>
-
-          <div>
-            <AppButton type="submit" size="sm" :disabled="!bankFormValid || bankSaving">
-              {{ bankSaving ? 'Menyimpan...' : bankAccount ? 'Perbarui rekening' : 'Simpan rekening' }}
-            </AppButton>
-          </div>
-        </form>
-      </DashboardPanel>
-
-      <DashboardPanel
-        id="ajukan"
-        title="Ajukan pencairan"
-        :description="`Minimum ${formatRupiah(PAYOUT_MINIMUM)}. Saldo tersedia berkurang begitu pengajuan dibuat.`"
-      >
-        <!-- No bank account yet: explain instead of a silently dead form. -->
-        <p
-          v-if="!bankPending && !bankAccount"
-          class="mb-5 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-        >
-          Simpan rekening bank terlebih dahulu — pencairan butuh rekening tujuan
-          transfer.
+        <p class="relative w-fit text-[0.76rem] font-bold tracking-[0.12em] text-white/75 uppercase">
+          Saldo tersedia
         </p>
 
-        <form class="grid gap-5" @submit.prevent="submitPayout">
-          <div>
-            <label for="payout-amount" :class="FIELD_LABEL_CLASS">Nominal (Rp)</label>
-            <input
-              id="payout-amount"
-              v-model.number="amount"
-              type="number"
-              :min="PAYOUT_MINIMUM"
-              step="1000"
-              placeholder="100000"
-              :class="FIELD_CLASS"
-              :disabled="!bankAccount"
-              :aria-invalid="Boolean(amountError)"
-              :aria-describedby="amountError ? 'payout-amount-error' : undefined"
-            >
-            <p v-if="amountError" id="payout-amount-error" class="mt-2 text-[0.82rem] text-red-600">
-              {{ amountError }}
-            </p>
-            <p v-else class="mt-2 text-[0.82rem] text-muted">
-              Saldo tersedia: {{ formatRupiah(balance.available) }}
-            </p>
-          </div>
+        <p class="relative text-[2.75rem] leading-none font-extrabold tracking-[-0.045em] tabular-nums">
+          {{ formatRupiah(balance.available) }}
+        </p>
 
-          <p v-if="payoutError" role="alert" class="text-[0.82rem] text-red-600">{{ payoutError }}</p>
-          <p v-else-if="payoutSuccess" role="status" class="text-[0.82rem] font-semibold text-success-ink">
-            {{ payoutSuccess }}
-          </p>
+        <div class="relative flex items-center justify-between gap-3">
+          <p class="truncate text-[0.9rem] font-semibold tracking-[-0.02em]">{{ tutorName }}</p>
+          <button
+            v-if="bankAccountLast4"
+            type="button"
+            class="inline-flex shrink-0 items-center gap-1.5 rounded-xs text-[0.82rem] tracking-[0.08em] text-white/75 tabular-nums transition-colors hover:text-white focus-visible:text-white focus-visible:outline-white"
+            :aria-pressed="accountNumberRevealed"
+            :aria-label="accountNumberRevealed ? 'Sembunyikan nomor rekening' : 'Tampilkan nomor rekening'"
+            @click="accountNumberRevealed = !accountNumberRevealed"
+          >
+            {{ accountNumberRevealed ? (bankAccount?.accountNumber ?? '') : `•••• ${bankAccountLast4}` }}
+            <IconEye :off="accountNumberRevealed" class="h-4 w-4 shrink-0" />
+          </button>
+        </div>
 
-          <div>
-            <AppButton type="submit" size="sm" :disabled="!canRequestPayout">
-              {{ payoutSubmitting ? 'Mengajukan...' : 'Ajukan pencairan' }}
-            </AppButton>
-          </div>
-        </form>
-      </DashboardPanel>
+        <AppButton
+          type="button"
+          variant="light"
+          class="relative mt-1 w-full rounded-pill"
+          @click="openPayoutModal"
+        >
+          <IconWallet class="mr-2 h-4.5 w-4.5 shrink-0" />
+          Tarik Dana
+        </AppButton>
+      </div>
+
+      <div class="flex flex-1 flex-col gap-4">
+        <div class="flex flex-1 flex-col justify-between rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs">
+          <AppMetricText :value="formatRupiah(balance.totalPaidOut)" label="Total dicairkan" />
+          <p class="mt-2 text-[0.78rem] text-muted">Sepanjang waktu.</p>
+        </div>
+
+        <!-- Held balance now lives here as its own matrix card, same white
+             surface as "Total dicairkan" — kept visually consistent per the
+             matrix, not singled out. -->
+        <div class="flex flex-1 flex-col justify-between rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs">
+          <AppMetricText :value="formatRupiah(balance.held)" label="Saldo tertahan" />
+          <p class="mt-2 text-[0.78rem] text-muted">Cair otomatis 7 hari setelah pembayaran.</p>
+        </div>
+      </div>
     </div>
+
+    <!-- Bank account is read-only here now — editing lives in Settings. -->
+    <p v-if="!bankPending" class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.86rem] text-muted">
+      <template v-if="bankAccount">
+        <span>
+          Rekening: <span class="font-semibold text-ink">{{ bankAccount.bankLabel }} •••• {{ bankAccountLast4 }}</span>
+        </span>
+        <span>·</span>
+        <NuxtLink to="/dashboard/tutor/settings#rekening" class="font-semibold text-primary hover:underline">
+          Kelola di Pengaturan
+        </NuxtLink>
+      </template>
+      <template v-else>
+        <span>Belum ada rekening bank tersimpan.</span>
+        <NuxtLink to="/dashboard/tutor/settings#rekening" class="font-semibold text-primary hover:underline">
+          Tambahkan di Pengaturan
+        </NuxtLink>
+      </template>
+    </p>
+
+    <PayoutModal
+      v-model:open="payoutModalOpen"
+      v-model:amount="amount"
+      :has-bank-account="bankAccount !== null"
+      :available-balance="balance.available"
+      :minimum="PAYOUT_MINIMUM"
+      :amount-error="amountError"
+      :payout-error="payoutError"
+      :payout-success="payoutSuccess"
+      :submitting="payoutSubmitting"
+      :can-submit="canRequestPayout"
+      @submit="submitPayout"
+    />
 
     <DashboardPanel
       id="riwayat"
@@ -257,7 +255,7 @@ async function submitPayout() {
       <DashboardSkeleton v-if="payoutsPending" :count="4" label="Memuat riwayat pencairan..." />
 
       <div v-else-if="payoutsError" class="py-6 text-center">
-        <p class="text-muted">{{ payoutsError }}</p>
+        <AppInlineMessage type="error">{{ payoutsError }}</AppInlineMessage>
         <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="refreshPayouts">
           Coba lagi
         </button>
@@ -268,42 +266,28 @@ async function submitPayout() {
         {{ formatRupiah(PAYOUT_MINIMUM) }}.
       </p>
 
-      <div v-else class="overflow-x-auto">
-        <table class="w-full min-w-140 border-collapse text-left">
-          <thead>
-            <tr class="text-[0.78rem] tracking-widest text-faint uppercase">
-              <th class="pb-3 font-bold">Diajukan</th>
-              <th class="pb-3 font-bold">Nominal</th>
-              <th class="pb-3 font-bold">Status</th>
-              <th class="pb-3 font-bold">Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="payout in payouts" :key="payout.id" class="border-t border-hairline align-top">
-              <td class="py-3.5 pr-4 text-[0.9rem] whitespace-nowrap text-muted">
-                {{ formatDate(payout.requestedAt) }}
-              </td>
-              <td class="py-3.5 pr-4 text-[0.9rem] font-semibold tabular-nums">
-                {{ formatRupiah(payout.amount) }}
-              </td>
-              <td class="py-3.5 pr-4">
-                <DashboardBadge :tone="PAYOUT_STATUS_TONE[payout.status]">
-                  {{ PAYOUT_STATUS_LABEL[payout.status] }}
-                </DashboardBadge>
-              </td>
-              <td class="max-w-80 py-3.5 text-[0.86rem] text-muted">
-                <template v-if="payout.status === 'rejected' && payout.rejectReason">
-                  {{ payout.rejectReason }}
-                </template>
-                <template v-else-if="payout.processedAt">
-                  Diproses {{ formatDate(payout.processedAt) }}
-                </template>
-                <template v-else>—</template>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <AppTable v-else :columns="payoutColumns" :data="payouts">
+        <template #cell(requestedAt)="{ value }">
+          <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
+        </template>
+        <template #cell(amount)="{ value }">
+          <span class="font-semibold tabular-nums">{{ formatRupiah(value) }}</span>
+        </template>
+        <template #cell(status)="{ item }">
+          <DashboardBadge :tone="payoutStatusTone(item.status)">
+            {{ payoutStatusLabel(item.status) }}
+          </DashboardBadge>
+        </template>
+        <template #cell(keterangan)="{ item }">
+          <template v-if="item.status === 'rejected' && item.rejectReason">
+            {{ item.rejectReason }}
+          </template>
+          <template v-else-if="item.processedAt">
+            Diproses {{ formatDate(item.processedAt) }}
+          </template>
+          <template v-else>—</template>
+        </template>
+      </AppTable>
     </DashboardPanel>
   </div>
 </template>

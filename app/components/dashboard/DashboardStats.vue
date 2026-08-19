@@ -16,17 +16,17 @@ const wideCols = computed(() => WIDE_COLS[props.columns])
 </script>
 
 <template>
-  <dl class="grid gap-4 sm:grid-cols-2" :class="wideCols">
+  <!-- AppMetricText renders value+label as a plain div (no dt/dd of its
+       own), so the outer list uses div rather than dl/dt/dd — a bare dl
+       with no dt/dd children would be invalid markup. -->
+  <div class="grid gap-4 sm:grid-cols-2" :class="wideCols">
     <div
       v-for="item in items"
       :key="item.label"
       class="rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs"
     >
-      <dt class="text-[0.82rem] text-muted">{{ item.label }}</dt>
-      <dd class="mt-1.5 text-[1.6rem] leading-none font-extrabold tracking-[-0.04em] tabular-nums">
-        {{ item.value }}
-      </dd>
+      <AppMetricText :value="item.value" :label="item.label" />
       <p v-if="item.hint" class="mt-2 text-[0.78rem] text-muted">{{ item.hint }}</p>
     </div>
-  </dl>
+  </div>
 </template>

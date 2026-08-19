@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  ProductMode,
   ProductType,
   TutorProductDetail,
   UpdateProductRequest,
@@ -19,6 +20,15 @@ import type {
 const props = defineProps<{ productId?: string }>()
 
 const isEdit = computed(() => Boolean(props.productId))
+
+/**
+ * Same cookie key the dashboard layout keys its rail width off (see
+ * app/layouts/dashboard.vue) — `useCookie` shares reactive state by key, so
+ * reading it here (rather than threading a prop through the layout) is
+ * enough to keep the fixed step footer's left edge in sync with the rail
+ * without coupling this component to the layout.
+ */
+const sidebarCollapsed = useCookie<boolean>('zenko-sidebar-collapsed', { default: () => false })
 
 /* ------------------------------------------------------------------ data */
 
@@ -44,12 +54,15 @@ const ownRequested = ref(false)
 const form = reactive({
   type: 'single' as ProductType,
   examTypeSlug: '',
+  mode: 'simulasi' as ProductMode,
+  sectionTitle: '',
   title: '',
   description: '',
   thumbnailUrl: '',
   category: '',
   price: null as number | null,
   priceOriginal: null as number | null,
+  shuffleQuestions: false,
 })
 
 /** Bundle membership, in display order. */
@@ -73,6 +86,45 @@ watch(() => form.examTypeSlug, (slug) => {
   if (exam) form.category = exam.label
 })
 
+// A stale subtest choice from a previous exam type (or from switching back to
+// Simulasi) must never leak into a later mini-tryout submission.
+watch([() => form.examTypeSlug, () => form.mode], () => {
+  form.sectionTitle = ''
+})
+
+const PRODUCT_TYPE_OPTIONS: { value: ProductType, label: string }[] = [
+  { value: 'single', label: 'Try-out tunggal' },
+  { value: 'bundle', label: 'Bundling' },
+]
+
+const examTypeOptions = computed(() =>
+  examTypes.value.map(exam => ({ value: exam.slug, label: exam.label })),
+)
+
+// Iterated as a fixed literal list (not Object.entries(PRODUCT_MODE_LABEL)):
+// Object.entries always widens keys back to `string`, which would need an
+// `as ProductMode` to recover — this keeps the option values honestly typed.
+const PRODUCT_MODE_VALUES: ProductMode[] = ['simulasi', 'mini_tryout']
+const productModeOptions = computed<{ value: ProductMode, label: string }[]>(() =>
+  PRODUCT_MODE_VALUES.map(value => ({ value, label: PRODUCT_MODE_LABEL[value] })),
+)
+
+const sectionTitleOptions = computed(() =>
+  (selectedExamType.value?.sections ?? []).map(section => ({
+    value: section.title,
+    label: `${section.title} — ${section.questionTarget} soal · ${section.durationMinutes} mnt`,
+  })),
+)
+
+// AppSelect works in plain string|number; narrow its `update:modelValue`
+// back onto these typed fields instead of casting.
+function isProductType(value: string | number): value is ProductType {
+  return value === 'single' || value === 'bundle'
+}
+function isProductMode(value: string | number): value is ProductMode {
+  return value === 'simulasi' || value === 'mini_tryout'
+}
+
 watch(() => form.type, (type) => {
   if (type === 'bundle' && !ownRequested.value && import.meta.client) {
     ownRequested.value = true
@@ -91,6 +143,7 @@ const savedFields = ref<{
   price: number
   priceOriginal: number
   items: string[]
+  shuffleQuestions: boolean
 } | null>(null)
 
 // Only the first load hydrates the form: refreshDetail() runs after every
@@ -101,12 +154,14 @@ watch(detail, (loaded) => {
 
   form.type = loaded.type
   form.examTypeSlug = loaded.examType ?? ''
+  form.mode = loaded.mode ?? 'simulasi'
   form.title = loaded.title
   form.description = loaded.description ?? ''
   form.thumbnailUrl = loaded.thumbnailUrl ?? ''
   form.category = loaded.category ?? ''
   form.price = loaded.price > 0 ? loaded.price : null
   form.priceOriginal = loaded.priceOriginal > 0 ? loaded.priceOriginal : null
+  form.shuffleQuestions = loaded.shuffleQuestions ?? false
   selectedItems.value = (loaded.items ?? [])
     .slice()
     .sort((a, b) => a.position - b.position)
@@ -120,6 +175,7 @@ watch(detail, (loaded) => {
     price: loaded.price,
     priceOriginal: loaded.priceOriginal,
     items: [...selectedItems.value],
+    shuffleQuestions: loaded.shuffleQuestions ?? false,
   }
 })
 
@@ -163,6 +219,9 @@ function buildPatch(): UpdateProductRequest {
   if (form.type === 'bundle' && selectedItems.value.join('|') !== saved.items.join('|')) {
     patch.items = [...selectedItems.value]
   }
+  if (isSingle.value && form.shuffleQuestions !== saved.shuffleQuestions) {
+    patch.shuffleQuestions = form.shuffleQuestions
+  }
   return patch
 }
 
@@ -191,6 +250,7 @@ async function persist(): Promise<boolean> {
         price: form.price ?? 0,
         priceOriginal: form.priceOriginal ?? 0,
         items: [...selectedItems.value],
+        shuffleQuestions: form.shuffleQuestions,
       }
     }
     saveState.value = 'saved'
@@ -209,7 +269,7 @@ const STEPS = [
   { n: 1, label: 'Tipe & jenis' },
   { n: 2, label: 'Info produk' },
   { n: 3, label: 'Isi' },
-  { n: 4, label: 'Harga & ajukan' },
+  { n: 4, label: 'Review & ajukan' },
 ] as const
 
 const route = useRoute()
@@ -233,6 +293,17 @@ function syncQuery() {
 function validateThrough(target: number): boolean {
   if (target > 1 && isSingle.value && !form.examTypeSlug) {
     stepError.value = 'Pilih jenis ujian dulu sebelum lanjut.'
+    return false
+  }
+  if (
+    target > 1
+    && !isEdit.value
+    && isSingle.value
+    && form.mode === 'mini_tryout'
+    && form.examTypeSlug !== 'custom'
+    && !form.sectionTitle
+  ) {
+    stepError.value = 'Pilih subtes dulu sebelum lanjut.'
     return false
   }
   if (target > 2 && !form.title.trim()) {
@@ -272,12 +343,17 @@ async function createAndContinue() {
       type: form.type,
       title: form.title.trim(),
       examTypeSlug: isSingle.value ? form.examTypeSlug : undefined,
+      mode: form.mode,
+      ...(form.mode === 'mini_tryout' ? { sectionTitle: form.sectionTitle } : {}),
     })
 
     const patch: UpdateProductRequest = {}
     if (form.description.trim()) patch.description = form.description.trim()
     if (form.thumbnailUrl.trim()) patch.thumbnailUrl = form.thumbnailUrl.trim()
     if (form.category.trim()) patch.category = form.category.trim()
+    if (form.price) patch.price = form.price
+    if (form.priceOriginal) patch.priceOriginal = form.priceOriginal
+    if (isSingle.value && form.shuffleQuestions) patch.shuffleQuestions = form.shuffleQuestions
     if (Object.keys(patch).length) await updateTutorProduct(created.id, patch)
 
     saveState.value = 'saved'
@@ -382,6 +458,35 @@ const checklist = computed<CheckItem[]>(() => {
 
 const allComplete = computed(() => checklist.value.every(item => item.ok))
 
+/* ------------------------------------------------------ step 4: ringkasan */
+
+const summarySections = computed(() =>
+  (detail.value?.sections ?? []).slice().sort((a, b) => a.position - b.position),
+)
+
+/**
+ * Durasi dijumlah dari tiap subtes, bukan dibaca dari `detail.durationMinutes`:
+ * itu field agregat yang hanya diisi saat produk dibuat (jumlah durasi
+ * template jenis ujian) — `rebuiltSections` di server tidak menghitungnya
+ * ulang saat subtes custom ditambah/diubah/dihapus, jadi bisa basi. Menjumlah
+ * langsung dari `sections` (yang sudah dipakai langkah Isi) selalu akurat.
+ */
+const totalDurationMinutes = computed(() =>
+  summarySections.value.reduce((sum, section) => sum + section.durationMinutes, 0),
+)
+
+/** Sama seperti `totals` di TutorSectionEditor.vue, lintas semua subtes. */
+const summaryQuestionTotals = computed(() => {
+  const written = summarySections.value.reduce((sum, s) => sum + s.questions.length, 0)
+  const target = summarySections.value.reduce((sum, s) => sum + s.questionTarget, 0)
+  return { written, target, percent: target === 0 ? 0 : Math.round((written / target) * 100) }
+})
+
+/** Hanya subtes dengan ambang batas (mis. TWK/TIU/TKP) — sisanya tidak punya. */
+const passingGradeSections = computed(() =>
+  summarySections.value.filter(section => section.passingGrade != null),
+)
+
 /* --------------------------------------------------------------- submit */
 
 const submitting = ref(false)
@@ -423,27 +528,25 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
 </script>
 
 <template>
-  <div class="grid gap-6">
-    <header class="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">
-          {{ isEdit ? 'Edit produk' : 'Buat produk' }}
-        </h1>
-        <p class="mt-1.5 text-muted">
-          Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog.
+  <!-- pb-24 clears the fixed step footer below, so the last panel's content
+       never sits hidden behind it while scrolled to the bottom. -->
+  <div class="grid gap-6 pb-24">
+    <AppPageHeader
+      :title="isEdit ? 'Edit produk' : 'Buat produk'"
+      description="Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog."
+    >
+      <template #actions>
+        <p
+          v-if="saveIndicator"
+          aria-live="polite"
+          class="flex items-center gap-1.5 text-[0.86rem] font-semibold"
+          :class="saveState === 'error' ? 'text-danger' : 'text-muted'"
+        >
+          <IconCheck v-if="saveState === 'saved'" class="h-4 w-4 text-success-ink" />
+          {{ saveIndicator }}
         </p>
-      </div>
-
-      <p
-        v-if="saveIndicator"
-        aria-live="polite"
-        class="flex items-center gap-1.5 text-[0.86rem] font-semibold"
-        :class="saveState === 'error' ? 'text-red-600' : 'text-muted'"
-      >
-        <IconCheck v-if="saveState === 'saved'" class="h-4 w-4 text-success-ink" />
-        {{ saveIndicator }}
-      </p>
-    </header>
+      </template>
+    </AppPageHeader>
 
     <!-- Edit mode: the wizard cannot render before the draft arrives. -->
     <template v-if="isEdit && !detail">
@@ -483,14 +586,9 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
     </DashboardPanel>
 
     <template v-else>
-      <p
-        v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason"
-        role="alert"
-        class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-      >
-        <strong>Produk ini ditolak:</strong> {{ detail.rejectReason }} —
-        perbaiki lalu ajukan lagi.
-      </p>
+      <AppAlert v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason" variant="warning" title="Produk ini ditolak">
+        {{ detail.rejectReason }} — perbaiki lalu ajukan lagi.
+      </AppAlert>
 
       <!-- Step nav -->
       <ol class="flex flex-wrap gap-2" aria-label="Langkah wizard">
@@ -521,80 +619,82 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
         title="Tipe & jenis"
         :description="isEdit
           ? 'Tipe dan jenis ujian terkunci setelah produk dibuat.'
-          : 'Pilih bentuk produk, lalu jenis ujiannya.'"
+          : 'Pilih bentuk produk, jenis ujian, dan mode pengerjaannya.'"
       >
-        <div class="grid gap-6">
-          <fieldset :disabled="isEdit" class="grid gap-3 sm:grid-cols-2">
-            <legend class="sr-only">Tipe produk</legend>
-            <button
-              v-for="option in ([
-                { type: 'single', title: 'Try-out tunggal', description: 'Satu try-out utuh dengan subtes dan soal yang kamu susun sendiri.' },
-                { type: 'bundle', title: 'Bundling', description: 'Gabungan beberapa try-out tunggal milikmu yang sudah tayang, dijual satu harga.' },
-              ] as const)"
-              :key="option.type"
-              type="button"
-              class="rounded-md border p-5 text-left transition-[border-color,box-shadow] disabled:cursor-not-allowed"
-              :class="form.type === option.type
-                ? 'border-primary/40 bg-primary-soft/40 shadow-[0_0_0_3px_rgba(47,111,235,0.08)]'
-                : 'border-hairline-strong bg-surface hover:border-primary/25'"
-              :aria-pressed="form.type === option.type"
-              @click="form.type = option.type"
-            >
-              <span class="block font-bold tracking-[-0.02em]">{{ option.title }}</span>
-              <span class="mt-1.5 block text-[0.88rem] leading-[1.6] text-muted">{{ option.description }}</span>
-            </button>
-          </fieldset>
-
-          <div v-if="isSingle" class="grid gap-3">
-            <h3 class="text-[0.9rem] font-semibold">Jenis ujian</h3>
-
-            <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat jenis ujian...</p>
-            <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
-              Gagal memuat jenis ujian. Muat ulang halaman untuk mencoba lagi.
+        <div class="grid max-w-160 gap-5">
+          <div>
+            <AppSelect
+              :options="PRODUCT_TYPE_OPTIONS"
+              :model-value="form.type"
+              :disabled="isEdit"
+              label="Tipe"
+              @update:model-value="(value) => { if (isProductType(value)) form.type = value }"
+            />
+            <p class="mt-2 text-[0.82rem] text-muted">
+              {{ isSingle
+                ? 'Satu try-out utuh dengan subtes dan soal yang kamu susun sendiri.'
+                : 'Gabungan beberapa try-out tunggal milikmu yang sudah tayang, dijual satu harga.' }}
             </p>
-
-            <fieldset v-else :disabled="isEdit" class="grid gap-3 lg:grid-cols-3">
-              <legend class="sr-only">Jenis ujian</legend>
-              <button
-                v-for="exam in examTypes"
-                :key="exam.slug"
-                type="button"
-                class="rounded-md border p-5 text-left transition-[border-color,box-shadow] disabled:cursor-not-allowed"
-                :class="form.examTypeSlug === exam.slug
-                  ? 'border-primary/40 bg-primary-soft/40 shadow-[0_0_0_3px_rgba(47,111,235,0.08)]'
-                  : 'border-hairline-strong bg-surface hover:border-primary/25'"
-                :aria-pressed="form.examTypeSlug === exam.slug"
-                @click="form.examTypeSlug = exam.slug"
-              >
-                <span class="block font-bold tracking-[-0.02em]">{{ exam.label }}</span>
-                <span class="mt-1 block text-[0.85rem] leading-[1.6] text-muted">{{ exam.description }}</span>
-
-                <template v-if="exam.sections.length">
-                  <span class="mt-3 block text-[0.78rem] font-semibold text-primary">
-                    {{ summarizeSections(exam) }}
-                  </span>
-                  <span class="mt-2 grid gap-1">
-                    <span
-                      v-for="section in exam.sections"
-                      :key="section.title"
-                      class="flex items-baseline justify-between gap-3 text-[0.8rem] text-muted"
-                    >
-                      <span class="truncate">{{ section.title }}</span>
-                      <span class="shrink-0 tabular-nums">{{ section.questionTarget }} soal · {{ section.durationMinutes }} mnt</span>
-                    </span>
-                  </span>
-                </template>
-                <span v-else class="mt-3 block text-[0.78rem] font-semibold text-primary">
-                  Susun subtes sendiri di langkah Isi
-                </span>
-              </button>
-            </fieldset>
           </div>
 
-          <p v-else class="rounded-sm border border-hairline-strong bg-surface-alt px-4 py-3 text-[0.86rem] text-muted">
+          <template v-if="isSingle">
+            <div>
+              <span :class="FIELD_LABEL_CLASS">Jenis ujian</span>
+
+              <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat jenis ujian...</p>
+              <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
+                Gagal memuat jenis ujian. Muat ulang halaman untuk mencoba lagi.
+              </p>
+              <AppSelect
+                v-else
+                :options="examTypeOptions"
+                :model-value="form.examTypeSlug"
+                :disabled="isEdit"
+                placeholder="Pilih jenis ujian"
+                @update:model-value="(value) => { form.examTypeSlug = String(value) }"
+              />
+
+              <p v-if="selectedExamType" class="mt-2 text-[0.82rem] text-muted">
+                {{ selectedExamType.sections.length ? summarizeSections(selectedExamType) : 'Susun subtes sendiri di langkah Isi' }}
+              </p>
+            </div>
+
+            <div v-if="selectedExamType?.sections.length">
+              <AppSelect
+                :options="productModeOptions"
+                :model-value="form.mode"
+                :disabled="isEdit"
+                label="Simulasi / Mini Try Out"
+                @update:model-value="(value) => { if (isProductMode(value)) form.mode = value }"
+              />
+            </div>
+
+            <div v-if="form.mode === 'mini_tryout' && selectedExamType?.sections.length">
+              <template v-if="isEdit">
+                <label for="product-section-title" :class="FIELD_LABEL_CLASS">Sub jenis ujian</label>
+                <input
+                  id="product-section-title"
+                  type="text"
+                  :value="detail?.sections?.[0]?.title ?? ''"
+                  readonly
+                  :class="[FIELD_CLASS, 'bg-surface-sunken text-muted']"
+                >
+              </template>
+              <AppSelect
+                v-else
+                :options="sectionTitleOptions"
+                :model-value="form.sectionTitle"
+                label="Sub jenis ujian"
+                placeholder="Pilih subtes"
+                @update:model-value="(value) => { form.sectionTitle = String(value) }"
+              />
+            </div>
+          </template>
+
+          <AppSectionMessage v-else appearance="information">
             Bundling berisi produk try-out tunggal milikmu yang berstatus Tayang.
             Anggotanya dipilih di langkah Isi.
-          </p>
+          </AppSectionMessage>
         </div>
       </DashboardPanel>
 
@@ -624,14 +724,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             />
           </div>
 
-          <FormField
-            id="product-thumbnail"
-            v-model="form.thumbnailUrl"
-            label="URL thumbnail"
-            type="url"
-            placeholder="https://..."
-            hint="Opsional. Gambar sampul produk di katalog."
-          />
+          <TutorThumbnailField v-model="form.thumbnailUrl" />
 
           <div>
             <label for="product-category" :class="FIELD_LABEL_CLASS">Kategori</label>
@@ -647,6 +740,56 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             <p v-if="categoryLocked" id="product-category-hint" class="mt-2 text-[0.82rem] text-muted">
               Otomatis mengikuti jenis ujian yang dipilih.
             </p>
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="product-price" :class="FIELD_LABEL_CLASS">Harga</label>
+              <AppCurrencyField id="product-price" v-model="form.price" placeholder="149.000" />
+            </div>
+            <div>
+              <label for="product-price-original" :class="FIELD_LABEL_CLASS">Harga coret</label>
+              <AppCurrencyField
+                id="product-price-original"
+                v-model="form.priceOriginal"
+                placeholder="199.000"
+                ariaDescribedby="product-price-original-hint"
+              />
+              <p id="product-price-original-hint" class="mt-2 text-[0.82rem] text-muted">
+                Opsional. Tampil tercoret di samping harga jual.
+              </p>
+            </div>
+          </div>
+
+          <div
+            v-if="isSingle"
+            class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5"
+          >
+            <div>
+              <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
+                Acak urutan soal saat dikerjakan siswa
+              </label>
+              <p class="mt-1 text-[0.82rem] text-muted">
+                Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
+                selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
+                soal ini tidak berubah.
+              </p>
+            </div>
+            <button
+              id="product-shuffle-questions"
+              type="button"
+              role="switch"
+              :aria-checked="form.shuffleQuestions"
+              aria-labelledby="product-shuffle-questions-label"
+              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors"
+              :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
+              @click="form.shuffleQuestions = !form.shuffleQuestions"
+            >
+              <span
+                class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
+                :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
+              />
+            </button>
           </div>
         </div>
       </DashboardPanel>
@@ -664,6 +807,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             v-if="productId && detail"
             :product-id="productId"
             :sections="detail.sections ?? []"
+            :is-custom="isCustom"
             @refresh="refreshDetail"
           />
           <DashboardPanel v-else title="Isi" description="Soal disusun setelah draft tersimpan.">
@@ -680,44 +824,112 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
         />
       </template>
 
-      <!-- ============================================ Langkah 4: Harga & ajukan -->
+      <!-- ============================================ Langkah 4: Review & ajukan -->
       <DashboardPanel
         v-else
-        title="Harga & ajukan"
-        description="Tentukan harga, cek kelengkapan, lalu ajukan untuk ditinjau."
+        title="Review & ajukan"
+        description="Cek ringkasan dan kelengkapan produk, lalu ajukan untuk ditinjau."
       >
         <div class="grid gap-6">
-          <div class="grid max-w-160 gap-5 sm:grid-cols-2">
-            <div>
-              <label for="product-price" :class="FIELD_LABEL_CLASS">Harga (Rp)</label>
-              <input
-                id="product-price"
-                v-model.number="form.price"
-                type="number"
-                min="0"
-                step="1000"
-                inputmode="numeric"
-                placeholder="149000"
-                :class="FIELD_CLASS"
-              >
-            </div>
-            <div>
-              <label for="product-price-original" :class="FIELD_LABEL_CLASS">Harga coret (Rp)</label>
-              <input
-                id="product-price-original"
-                v-model.number="form.priceOriginal"
-                type="number"
-                min="0"
-                step="1000"
-                inputmode="numeric"
-                placeholder="199000"
-                :class="FIELD_CLASS"
-                aria-describedby="product-price-original-hint"
-              >
-              <p id="product-price-original-hint" class="mt-2 text-[0.82rem] text-muted">
-                Opsional. Tampil tercoret di samping harga jual.
-              </p>
-            </div>
+          <div class="rounded-md border border-hairline bg-surface-alt p-5">
+            <h3 class="text-[0.9rem] font-semibold">Ringkasan</h3>
+            <dl class="mt-3 grid gap-4 sm:grid-cols-2">
+              <div>
+                <dt class="text-[0.8rem] text-muted">Tipe</dt>
+                <dd class="mt-0.5 font-semibold">{{ PRODUCT_TYPE_LABEL[form.type] }}</dd>
+              </div>
+              <div v-if="isSingle">
+                <dt class="text-[0.8rem] text-muted">Jenis ujian</dt>
+                <dd class="mt-0.5 font-semibold">
+                  {{ selectedExamType?.label || form.examTypeSlug || '—' }}
+                  <span class="block text-[0.82rem] font-normal text-muted">
+                    {{ form.mode === 'mini_tryout'
+                      ? `${PRODUCT_MODE_LABEL.mini_tryout} — ${isEdit ? (detail?.sections?.[0]?.title ?? '—') : (form.sectionTitle || '—')}`
+                      : PRODUCT_MODE_LABEL.simulasi }}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-[0.8rem] text-muted">Judul</dt>
+                <dd class="mt-0.5 font-semibold">{{ form.title || '—' }}</dd>
+              </div>
+              <div v-if="isSingle">
+                <dt class="text-[0.8rem] text-muted">Kategori</dt>
+                <dd class="mt-0.5 font-semibold">{{ form.category || '—' }}</dd>
+              </div>
+              <div v-if="isSingle">
+                <dt class="text-[0.8rem] text-muted">Durasi</dt>
+                <dd class="mt-0.5 font-semibold">
+                  {{ totalDurationMinutes > 0 ? formatDuration(totalDurationMinutes) : '—' }}
+                </dd>
+              </div>
+
+              <div v-if="isSingle && summarySections.length" class="sm:col-span-2">
+                <dt class="text-[0.8rem] text-muted">Progres Soal</dt>
+                <dd class="mt-1.5">
+                  <div class="flex items-center justify-between text-[0.88rem] font-semibold">
+                    <span>{{ summaryQuestionTotals.written }}/{{ summaryQuestionTotals.target }} soal</span>
+                    <span class="tabular-nums text-muted">{{ summaryQuestionTotals.percent }}%</span>
+                  </div>
+                  <div
+                    class="mt-1.5 h-2 w-full overflow-hidden rounded-pill bg-surface-sunken"
+                    role="progressbar"
+                    :aria-valuenow="summaryQuestionTotals.percent"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    :aria-label="`Progres soal: ${summaryQuestionTotals.written} dari ${summaryQuestionTotals.target}`"
+                  >
+                    <div
+                      class="h-full rounded-pill bg-primary transition-[width]"
+                      :style="{ width: `${summaryQuestionTotals.percent}%` }"
+                    />
+                  </div>
+
+                  <ul class="mt-3 grid gap-1.5 sm:grid-cols-2">
+                    <li
+                      v-for="section in summarySections"
+                      :key="section.id"
+                      class="flex items-center justify-between gap-2 rounded-sm px-2.5 py-1.5 text-[0.82rem] font-semibold"
+                      :class="COMPLETION_STATE_CLASS[sectionCompletionState(section)]"
+                    >
+                      <span class="truncate">{{ section.title }}</span>
+                      <span class="shrink-0 tabular-nums">{{ section.questions.length }}/{{ section.questionTarget }}</span>
+                    </li>
+                  </ul>
+                </dd>
+              </div>
+
+              <div v-if="isSingle && passingGradeSections.length" class="sm:col-span-2">
+                <dt class="text-[0.8rem] text-muted">Ambang Lulus</dt>
+                <dd class="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
+                  <span v-for="section in passingGradeSections" :key="section.id">
+                    {{ section.title }}: {{ section.passingGrade }}
+                  </span>
+                </dd>
+              </div>
+
+              <div class="sm:col-span-2">
+                <dt class="text-[0.8rem] text-muted">Thumbnail</dt>
+                <dd class="mt-1.5">
+                  <img
+                    v-if="form.thumbnailUrl"
+                    :src="form.thumbnailUrl"
+                    alt=""
+                    class="aspect-[16/10] h-24 w-auto rounded-sm border border-hairline object-cover"
+                  >
+                  <span v-else class="text-[0.88rem] text-muted">—</span>
+                </dd>
+              </div>
+              <div class="sm:col-span-2">
+                <dt class="text-[0.8rem] text-muted">Deskripsi</dt>
+                <dd class="mt-0.5 whitespace-pre-line text-[0.88rem]">{{ form.description || '—' }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div v-if="isSingle" class="rounded-md border border-hairline bg-surface-alt p-5">
+            <h3 class="text-[0.9rem] font-semibold">Daftar Soal</h3>
+            <TutorQuestionSummaryTable class="mt-3" :sections="detail?.sections ?? []" />
           </div>
 
           <div class="rounded-md border border-hairline bg-surface-alt p-5">
@@ -727,77 +939,77 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 v-for="item in checklist"
                 :key="item.label"
                 class="flex items-start gap-2.5 text-[0.9rem]"
-                :class="item.ok ? 'text-muted' : 'text-amber-800'"
+                :class="item.ok ? 'text-muted' : 'text-warning-ink'"
               >
                 <IconCheck v-if="item.ok" class="mt-0.5 h-4 w-4 shrink-0 text-success-ink" />
-                <IconAlert v-else class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <IconAlert v-else class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
                 {{ item.label }}
               </li>
             </ul>
           </div>
 
-          <div
-            v-if="submitProblems.length"
-            role="alert"
-            class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-          >
-            <p class="font-semibold">Produk belum bisa diajukan:</p>
-            <ul class="mt-2 grid list-disc gap-1 pl-5">
+          <AppSectionMessage v-if="submitProblems.length" appearance="warning" title="Produk belum bisa diajukan:">
+            <ul class="grid list-disc gap-1 pl-5">
               <li v-for="problem in submitProblems" :key="problem">{{ problem }}</li>
             </ul>
-          </div>
+          </AppSectionMessage>
 
-          <p
-            v-if="submitError"
-            role="alert"
-            class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-          >
-            {{ submitError }}
+          <AppSectionMessage v-if="submitError" appearance="warning">{{ submitError }}</AppSectionMessage>
+
+          <!-- Tombol "Ajukan untuk tayang" sendiri ada di step footer fixed
+               di bawah, di sebelah Kembali — bukan lagi di sini. -->
+          <p v-if="!allComplete" class="text-[0.82rem] text-muted">
+            Lengkapi daftar di atas dulu — tombol Ajukan aktif setelah semuanya terpenuhi.
           </p>
-
-          <div>
-            <AppButton type="button" :disabled="submitting || !allComplete" @click="submitForReview">
-              {{ submitting ? 'Mengajukan...' : 'Ajukan untuk tayang' }}
-            </AppButton>
-            <p v-if="!allComplete" class="mt-2.5 text-[0.82rem] text-muted">
-              Lengkapi daftar di atas dulu — tombol aktif setelah semuanya terpenuhi.
-            </p>
-          </div>
         </div>
       </DashboardPanel>
 
-      <p v-if="stepError" role="alert" class="text-[0.86rem] font-semibold text-red-600">
-        {{ stepError }}
-      </p>
+      <AppInlineMessage v-if="stepError" type="error">{{ stepError }}</AppInlineMessage>
 
-      <!-- Step footer -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <button
-          v-if="step > 1"
-          type="button"
-          :class="SECONDARY_BUTTON_CLASS"
-          @click="goTo(step - 1)"
-        >
-          Kembali
-        </button>
-        <span v-else aria-hidden="true" />
+      <!-- Step footer — fixed to the viewport bottom so Kembali/Lanjut stay
+           reachable on long steps without scrolling. Left edge tracks the
+           dashboard rail's width/collapse state (see sidebarCollapsed
+           above) so it lines up with the content column, not the sidebar. -->
+      <div
+        class="fixed inset-x-0 bottom-0 z-20 border-t border-hairline bg-surface/95 backdrop-blur-md transition-[left] duration-200 ease-smooth"
+        :class="sidebarCollapsed ? 'md:left-18' : 'md:left-66'"
+      >
+        <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 md:px-8">
+          <AppButton
+            v-if="step > 1"
+            type="button"
+            variant="outline"
+            @click="goTo(step - 1)"
+          >
+            Kembali
+          </AppButton>
+          <span v-else aria-hidden="true" />
 
-        <AppButton
-          v-if="step < 4 && stepReachable(step + 1)"
-          type="button"
-          :disabled="creating || saveState === 'saving'"
-          @click="goTo(step + 1)"
-        >
-          {{ creating ? 'Menyimpan draft...' : 'Lanjut' }}
-        </AppButton>
-        <AppButton
-          v-else-if="step === 2 && !isEdit"
-          type="button"
-          :disabled="creating"
-          @click="goTo(3)"
-        >
-          {{ creating ? 'Menyimpan draft...' : 'Simpan draft & lanjut' }}
-        </AppButton>
+          <AppButton
+            v-if="step < 4 && stepReachable(step + 1)"
+            type="button"
+            :disabled="creating || saveState === 'saving'"
+            @click="goTo(step + 1)"
+          >
+            {{ creating ? 'Menyimpan draft...' : 'Lanjut' }}
+          </AppButton>
+          <AppButton
+            v-else-if="step === 2 && !isEdit"
+            type="button"
+            :disabled="creating"
+            @click="goTo(3)"
+          >
+            {{ creating ? 'Menyimpan draft...' : 'Simpan draft & lanjut' }}
+          </AppButton>
+          <AppButton
+            v-else-if="step === 4"
+            type="button"
+            :disabled="submitting || !allComplete"
+            @click="submitForReview"
+          >
+            {{ submitting ? 'Mengajukan...' : 'Ajukan untuk tayang' }}
+          </AppButton>
+        </div>
       </div>
     </template>
   </div>

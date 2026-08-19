@@ -4,7 +4,7 @@
  */
 
 export const FIELD_CLASS
-  = 'w-full rounded-sm border border-line bg-surface px-4 py-3 transition-[border-color,box-shadow] '
+  = 'w-full rounded-sm border border-line bg-surface px-3.5 py-2.5 text-[0.9rem] transition-[border-color,box-shadow] '
     + 'duration-200 ease-smooth placeholder:text-placeholder focus:border-primary/40 '
     + 'focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)] focus:outline-none'
 

@@ -63,6 +63,11 @@ const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
   { value: 'short_answer', label: 'Isian singkat' },
 ]
 
+const SCORING_MODE_OPTIONS: { value: ScoringMode, label: string }[] = [
+  { value: 'flat', label: 'Flat (benar = poin tetap)' },
+  { value: 'weighted', label: 'Berbobot (per opsi)' },
+]
+
 function addRow() {
   rows.value.push({
     title: '',
@@ -74,6 +79,15 @@ function addRow() {
     defaultKind: 'single_choice',
     questionCount: 0,
   })
+}
+
+// AppSelect works in plain string|number; narrow its `update:modelValue`
+// back onto the row's typed field instead of casting.
+function isScoringMode(value: string | number): value is ScoringMode {
+  return value === 'flat' || value === 'weighted'
+}
+function isQuestionKind(value: string | number): value is QuestionKind {
+  return KIND_OPTIONS.some(option => option.value === value)
 }
 
 async function removeRow(index: number) {
@@ -160,7 +174,7 @@ async function save() {
           </div>
           <button
             type="button"
-            class="mb-3 shrink-0 text-[0.86rem] font-semibold text-red-600 hover:underline"
+            class="mb-3 shrink-0 text-[0.86rem] font-semibold text-danger hover:underline"
             @click="removeRow(index)"
           >
             Hapus subtes
@@ -188,13 +202,13 @@ async function save() {
               :class="FIELD_CLASS"
             >
           </div>
-          <div>
-            <label :for="`${uid}-scoring-${index}`" :class="FIELD_LABEL_CLASS">Penilaian</label>
-            <select :id="`${uid}-scoring-${index}`" v-model="row.scoringMode" :class="FIELD_CLASS">
-              <option value="flat">Flat (benar = poin tetap)</option>
-              <option value="weighted">Berbobot (per opsi)</option>
-            </select>
-          </div>
+          <AppSelect
+            :options="SCORING_MODE_OPTIONS"
+            :model-value="row.scoringMode"
+            label="Penilaian"
+            size="sm"
+            @update:model-value="(value) => { if (isScoringMode(value)) row.scoringMode = value }"
+          />
           <div>
             <label :for="`${uid}-points-${index}`" :class="FIELD_LABEL_CLASS">Poin benar</label>
             <input
@@ -220,18 +234,17 @@ async function save() {
         </div>
 
         <div class="max-w-72">
-          <label :for="`${uid}-kind-${index}`" :class="FIELD_LABEL_CLASS">Tipe soal bawaan</label>
-          <select :id="`${uid}-kind-${index}`" v-model="row.defaultKind" :class="FIELD_CLASS">
-            <option v-for="option in KIND_OPTIONS" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
+          <AppSelect
+            :options="KIND_OPTIONS"
+            :model-value="row.defaultKind"
+            label="Tipe soal bawaan"
+            size="sm"
+            @update:model-value="(value) => { if (isQuestionKind(value)) row.defaultKind = value }"
+          />
         </div>
       </div>
 
-      <p v-if="errorMessage" role="alert" class="text-[0.86rem] font-semibold text-red-600">
-        {{ errorMessage }}
-      </p>
+      <AppInlineMessage v-if="errorMessage" type="error">{{ errorMessage }}</AppInlineMessage>
 
       <div class="flex flex-wrap items-center gap-3">
         <button

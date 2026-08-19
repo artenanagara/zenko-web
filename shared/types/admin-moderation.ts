@@ -52,3 +52,40 @@ export interface PayoutDecisionRequest {
   action: PayoutAction
   reason?: string
 }
+
+/**
+ * Row shape of GET /admin/bank-accounts — satu baris per rekening tersimpan.
+ * `verifiedAt` kosong/absen sampai admin memverifikasi secara manual.
+ */
+export interface AdminBankAccount {
+  accountId: string
+  tutor: AdminAuthor
+  bankAccount: BankAccount & { verifiedAt?: number }
+}
+
+/** requested via /jadi-tutor's account form, then pending admin review. */
+export type BankAccountChangeStatus = 'pending' | 'approved' | 'rejected'
+
+/**
+ * Row shape of GET /admin/bank-account-change-requests?status=. Rekening
+ * tutor terkunci setelah tersimpan pertama kali, jadi perubahan berikutnya
+ * lewat alur ini dan butuh persetujuan admin.
+ */
+export interface AdminBankAccountChangeRequest {
+  id: string
+  tutor: AdminAuthor
+  currentAccount: BankAccount
+  newAccount: BankAccount
+  status: BankAccountChangeStatus
+  /** Unix seconds. */
+  requestedAt: number
+  /** Unix seconds; present once approved/rejected. */
+  decidedAt?: number
+  rejectReason?: string
+}
+
+/** POST /admin/bank-account-change-requests/:id/decision — reason wajib saat reject. */
+export interface BankAccountChangeDecisionRequest {
+  approve: boolean
+  reason?: string
+}

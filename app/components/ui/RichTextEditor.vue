@@ -11,8 +11,8 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
 import Image from '@tiptap/extension-image'
 import { MathExtension } from '@aarkue/tiptap-math-extension'
-import katex from 'katex'
 import 'katex/dist/katex.min.css'
+import type { MenuItem } from '~/components/core/AppDropdownMenu.vue'
 
 /**
  * Moodle-style question editor: formatting, headings, lists, alignment,
@@ -26,6 +26,16 @@ const props = defineProps<{
   modelValue: string
   placeholder?: string
   ariaLabel?: string
+  /**
+   * Toolbar ringkas + tanpa min-height besar — untuk ditanam di dalam baris
+   * opsi jawaban (TutorOptionField.vue), bukan field pertanyaan/pembahasan
+   * penuh. Menyisakan hanya yang masuk akal untuk frasa pendek: tebal/
+   * miring/garis bawah, sub/superskrip, rumus, dan gambar — heading, tabel,
+   * kutipan, daftar, perataan, tautan, dan urungkan/ulangi dilepas (riwayat
+   * urungkan bawaan ProseMirror tetap jalan lewat Ctrl/Cmd+Z biar tanpa
+   * tombolnya, cuma UI-nya yang disembunyikan).
+   */
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -119,6 +129,15 @@ const headingValue = computed<HeadingValue>(() => {
   return 'p'
 })
 
+const HEADING_ITEMS: MenuItem[] = [
+  { id: 'p', label: 'Teks biasa' },
+  { id: '1', label: 'Judul 1' },
+  { id: '2', label: 'Judul 2' },
+  { id: '3', label: 'Judul 3' },
+]
+
+const headingLabel = computed(() => HEADING_ITEMS.find(item => item.id === headingValue.value)?.label ?? 'Teks biasa')
+
 function setHeading(value: string) {
   const instance = editor.value
   if (!instance) return
@@ -164,20 +183,6 @@ function insertTable() {
  * and clicking an existing formula (see handleClickOn above) reopens this
  * same popover pre-filled, applying an update instead of an insert.
  */
-interface MathTemplate {
-  label: string
-  title: string
-  latex: string
-}
-
-const MATH_TEMPLATES: MathTemplate[] = [
-  { label: 'a⁄b', title: 'Pecahan', latex: '\\frac{a}{b}' },
-  { label: 'Σ', title: 'Sigma (penjumlahan)', latex: '\\sum_{i=1}^{n}' },
-  { label: '√', title: 'Akar', latex: '\\sqrt{x}' },
-  { label: 'xⁿ', title: 'Pangkat', latex: 'x^{n}' },
-  { label: 'xₙ', title: 'Indeks bawah', latex: 'x_{n}' },
-]
-
 const mathPopoverOpen = ref(false)
 const mathLatex = ref('')
 /** null while inserting a new formula; the node's doc position while editing an existing one. */
@@ -185,17 +190,6 @@ const mathEditPos = ref<number | null>(null)
 
 const mathDropdownTitle = computed(() => mathEditPos.value === null ? 'Sisipkan rumus' : 'Ubah rumus')
 const mathSubmitLabel = computed(() => mathEditPos.value === null ? 'Sisipkan' : 'Terapkan')
-
-const mathPreviewHtml = computed(() => {
-  const value = mathLatex.value.trim()
-  if (!value) return ''
-  try {
-    return katex.renderToString(value, { throwOnError: false, displayMode: false })
-  }
-  catch {
-    return ''
-  }
-})
 
 function openMathPopover() {
   mathLatex.value = ''
@@ -207,10 +201,6 @@ function openMathEditor(latex: string, pos: number) {
   mathLatex.value = latex
   mathEditPos.value = pos
   mathPopoverOpen.value = true
-}
-
-function useMathTemplate(latex: string) {
-  mathLatex.value = latex
 }
 
 function submitMath() {
@@ -280,14 +270,18 @@ async function onImageFileSelected(event: Event) {
 
 interface ToolbarButton {
   title: string
-  label: string
+  /** Dipakai kalau tidak ada `icon` — huruf B/I/U/S dan x₂/x² memang lebih
+   *  terbaca sebagai label tipografis daripada sebagai ikon. */
+  label?: string
+  /** Nama ikon Phosphor (lihat AppIcon.vue). */
+  icon?: string
   run: () => void
   active: () => boolean
 }
 
 const markButtons = computed<ToolbarButton[]>(() => {
   const instance = editor.value
-  return [
+  const all: ToolbarButton[] = [
     { title: 'Tebal', label: 'B', run: () => instance?.chain().focus().toggleBold().run(), active: () => instance?.isActive('bold') ?? false },
     { title: 'Miring', label: 'I', run: () => instance?.chain().focus().toggleItalic().run(), active: () => instance?.isActive('italic') ?? false },
     { title: 'Garis bawah', label: 'U', run: () => instance?.chain().focus().toggleUnderline().run(), active: () => instance?.isActive('underline') ?? false },
@@ -295,15 +289,18 @@ const markButtons = computed<ToolbarButton[]>(() => {
     { title: 'Subskrip', label: 'x₂', run: () => instance?.chain().focus().toggleSubscript().run(), active: () => instance?.isActive('subscript') ?? false },
     { title: 'Superskrip', label: 'x²', run: () => instance?.chain().focus().toggleSuperscript().run(), active: () => instance?.isActive('superscript') ?? false },
   ]
+  // Coret dilepas di mode compact — opsi jawaban jarang butuh coret, dan
+  // ruangnya lebih berharga untuk sub/superskrip yang jauh lebih sering dipakai.
+  return props.compact ? all.filter(btn => btn.label !== 'S') : all
 })
 
 const blockButtons = computed<ToolbarButton[]>(() => {
   const instance = editor.value
   return [
-    { title: 'Daftar poin', label: '•', run: () => instance?.chain().focus().toggleBulletList().run(), active: () => instance?.isActive('bulletList') ?? false },
-    { title: 'Daftar bernomor', label: '1.', run: () => instance?.chain().focus().toggleOrderedList().run(), active: () => instance?.isActive('orderedList') ?? false },
-    { title: 'Kutipan', label: '❝', run: () => instance?.chain().focus().toggleBlockquote().run(), active: () => instance?.isActive('blockquote') ?? false },
-    { title: 'Garis pemisah', label: '—', run: () => instance?.chain().focus().setHorizontalRule().run(), active: () => false },
+    { title: 'Daftar poin', icon: 'list-bullets', run: () => instance?.chain().focus().toggleBulletList().run(), active: () => instance?.isActive('bulletList') ?? false },
+    { title: 'Daftar bernomor', icon: 'list-numbers', run: () => instance?.chain().focus().toggleOrderedList().run(), active: () => instance?.isActive('orderedList') ?? false },
+    { title: 'Kutipan', icon: 'quotes', run: () => instance?.chain().focus().toggleBlockquote().run(), active: () => instance?.isActive('blockquote') ?? false },
+    { title: 'Garis pemisah', icon: 'minus', run: () => instance?.chain().focus().setHorizontalRule().run(), active: () => false },
   ]
 })
 
@@ -314,25 +311,45 @@ const ALIGN_OPTIONS = [
 ]
 
 onBeforeUnmount(() => editor.value?.destroy())
+
+/**
+ * Dipakai TutorOptionField.vue supaya Tab bisa loncat antar-opsi lewat ref
+ * (bukan lagi query DOM `<textarea>` — ProseMirror bukan textarea, lihat
+ * jumpBetweenOptions di TutorQuestionForm.vue) tanpa memaksa pemanggil tahu
+ * cara kerja instance Tiptap di dalamnya.
+ */
+defineExpose({
+  focus: () => { editor.value?.chain().focus().run() },
+})
 </script>
 
 <template>
-  <div class="rte overflow-hidden rounded-sm border border-line bg-surface">
-    <div class="flex flex-wrap items-center gap-1 border-b border-line bg-surface-alt px-2 py-1.5">
-      <select
-        :value="headingValue"
-        class="h-8 shrink-0 rounded-xs border border-line bg-surface px-1.5 text-[0.8rem] font-semibold"
-        aria-label="Format teks"
-        @change="setHeading(($event.target as HTMLSelectElement).value)"
-        @mousedown="editor?.chain().focus()"
-      >
-        <option value="p">Teks biasa</option>
-        <option value="1">Judul 1</option>
-        <option value="2">Judul 2</option>
-        <option value="3">Judul 3</option>
-      </select>
+  <!--
+    Sengaja TANPA overflow-hidden: popover toolbar (tautan/rumus/gambar)
+    digantung dari tombolnya dan menjulur ke luar kotak editor, jadi meng-clip
+    di sini akan memotongnya — sudut atas dibulatkan lewat toolbar itu sendiri.
+  -->
+  <div class="rte rounded-sm border border-line bg-surface" :class="{ 'rte-compact': compact }">
+    <div class="rte-toolbar flex flex-wrap items-center gap-1 rounded-t-[11px] border-b border-line bg-surface-alt px-2 py-1.5">
+      <template v-if="!compact">
+        <AppDropdownMenu :items="HEADING_ITEMS" label="Format teks" @select="setHeading">
+          <template #trigger="{ open, isOpen }">
+            <button
+              type="button"
+              title="Format teks"
+              aria-label="Format teks"
+              class="rte-btn gap-1 !px-2.5"
+              @mousedown.prevent
+              @click="open"
+            >
+              {{ headingLabel }}
+              <AppIcon name="caret-down" :size="10" class="shrink-0 transition-transform" :class="isOpen ? 'rotate-180' : ''" />
+            </button>
+          </template>
+        </AppDropdownMenu>
 
-      <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
+        <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
+      </template>
 
       <button
         v-for="mark in markButtons"
@@ -348,118 +365,92 @@ onBeforeUnmount(() => editor.value?.destroy())
         {{ mark.label }}
       </button>
 
-      <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
+      <template v-if="!compact">
+        <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
 
-      <button
-        v-for="block in blockButtons"
-        :key="block.title"
-        type="button"
-        :title="block.title"
-        :aria-pressed="block.active()"
-        class="rte-btn"
-        :class="{ 'rte-btn-active': block.active() }"
-        @mousedown.prevent
-        @click="block.run"
-      >
-        {{ block.label }}
-      </button>
+        <button
+          v-for="block in blockButtons"
+          :key="block.title"
+          type="button"
+          :title="block.title"
+          :aria-pressed="block.active()"
+          class="rte-btn"
+          :class="{ 'rte-btn-active': block.active() }"
+          @mousedown.prevent
+          @click="block.run"
+        >
+          <AppIcon v-if="block.icon" :name="block.icon" :size="16" />
+          <template v-else>{{ block.label }}</template>
+        </button>
 
-      <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
+        <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
 
-      <button
-        v-for="align in ALIGN_OPTIONS"
-        :key="align.value"
-        type="button"
-        :title="align.title"
-        :aria-pressed="editor?.isActive({ textAlign: align.value })"
-        class="rte-btn"
-        :class="{ 'rte-btn-active': editor?.isActive({ textAlign: align.value }) }"
-        @mousedown.prevent
-        @click="editor?.chain().focus().setTextAlign(align.value).run()"
-      >
-        <IconAlign :variant="align.value" class="h-4 w-4" />
-      </button>
+        <button
+          v-for="align in ALIGN_OPTIONS"
+          :key="align.value"
+          type="button"
+          :title="align.title"
+          :aria-pressed="editor?.isActive({ textAlign: align.value })"
+          class="rte-btn"
+          :class="{ 'rte-btn-active': editor?.isActive({ textAlign: align.value }) }"
+          @mousedown.prevent
+          @click="editor?.chain().focus().setTextAlign(align.value).run()"
+        >
+          <IconAlign :variant="align.value" class="h-4 w-4" />
+        </button>
 
-      <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
+        <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
 
-      <RteDropdown v-model="linkPopoverOpen" title="Sisipkan tautan" :width="260">
-        <template #trigger>
-          <button
-            type="button"
-            title="Tautan"
-            class="rte-btn"
-            :class="{ 'rte-btn-active': editor?.isActive('link') }"
-            @mousedown.prevent
-            @click="openLinkPopover"
-          >
-            <IconLink class="h-4 w-4" />
-          </button>
-        </template>
-        <template #panel>
-          <input
-            v-model="linkUrl"
-            type="url"
-            placeholder="https://…"
-            class="rte-dropdown-input"
-            @keydown.enter.prevent="applyLink"
-          >
-          <AppButton type="button" size="sm" class="w-full" @click="applyLink">
-            Terapkan
-          </AppButton>
-          <button
-            v-if="editor?.isActive('link')"
-            type="button"
-            class="rte-dropdown-remove justify-self-start"
-            @click="removeLink"
-          >
-            Hapus tautan
-          </button>
-        </template>
-      </RteDropdown>
+        <RteDropdown v-model="linkPopoverOpen" title="Sisipkan tautan" :width="260">
+          <template #trigger>
+            <button
+              type="button"
+              title="Tautan"
+              class="rte-btn"
+              :class="{ 'rte-btn-active': editor?.isActive('link') }"
+              @mousedown.prevent
+              @click="openLinkPopover"
+            >
+              <IconLink class="h-4 w-4" />
+            </button>
+          </template>
+          <template #panel>
+            <input
+              v-model="linkUrl"
+              type="url"
+              placeholder="https://…"
+              class="rte-dropdown-input"
+              @keydown.enter.prevent="applyLink"
+            >
+            <AppButton type="button" size="xs" class="w-full" @click="applyLink">
+              Terapkan
+            </AppButton>
+            <AppButton
+              v-if="editor?.isActive('link')"
+              type="button"
+              variant="outline"
+              size="xs"
+              class="w-full"
+              @click="removeLink"
+            >
+              Hapus tautan
+            </AppButton>
+          </template>
+        </RteDropdown>
 
-      <button type="button" title="Sisipkan tabel" class="rte-btn" @mousedown.prevent @click="insertTable">
-        <IconTableInsert class="h-4 w-4" />
-      </button>
+        <button type="button" title="Sisipkan tabel" class="rte-btn" @mousedown.prevent @click="insertTable">
+          <IconTableInsert class="h-4 w-4" />
+        </button>
+      </template>
 
-      <RteDropdown v-model="mathPopoverOpen" :title="mathDropdownTitle" :width="272">
+      <RteDropdown v-model="mathPopoverOpen" :title="mathDropdownTitle" :width="340">
         <template #trigger>
           <button type="button" title="Sisipkan rumus (LaTeX)" class="rte-btn" @mousedown.prevent @click="openMathPopover">
             ∑
           </button>
         </template>
         <template #panel>
-          <div class="grid gap-1.5">
-            <span class="text-[0.8rem] font-semibold text-muted">Templat cepat</span>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                v-for="tpl in MATH_TEMPLATES"
-                :key="tpl.title"
-                type="button"
-                :title="tpl.title"
-                class="rte-chip"
-                @click="useMathTemplate(tpl.latex)"
-              >
-                {{ tpl.label }}
-              </button>
-            </div>
-          </div>
-
-          <label class="grid gap-1.5 text-[0.8rem] font-semibold text-muted">
-            Kode LaTeX
-            <input
-              v-model="mathLatex"
-              type="text"
-              placeholder="\frac{1}{2} + \sqrt{x}"
-              class="rte-dropdown-input font-mono"
-              @keydown.enter.prevent="submitMath"
-            >
-          </label>
-
-          <div v-if="mathPreviewHtml" class="rte-dropdown-preview" v-html="mathPreviewHtml" />
-
-          <AppButton type="button" size="sm" class="w-full" :disabled="!mathLatex.trim()" @click="submitMath">
-            {{ mathSubmitLabel }}
-          </AppButton>
+          <MathPanel v-model="mathLatex" :submit-label="mathSubmitLabel" @submit="submitMath" />
           <p class="text-[0.76rem] text-muted">Klik rumus yang sudah ada untuk mengubahnya.</p>
         </template>
       </RteDropdown>
@@ -476,30 +467,38 @@ onBeforeUnmount(() => editor.value?.destroy())
             <IconImage class="h-4 w-4" />
           </button>
         </template>
+        <!--
+          Unggah dulu, URL belakangan: tutor jauh lebih sering punya file
+          gambar di perangkatnya daripada URL yang sudah terhosting.
+        -->
         <template #panel>
+          <AppButton type="button" size="xs" class="w-full" :disabled="imageUploading" @click="triggerImageUpload">
+            {{ imageUploading ? 'Mengunggah…' : 'Unggah dari perangkat' }}
+          </AppButton>
+          <p class="-mt-1.5 text-[0.76rem] text-muted">JPG, PNG, WEBP, atau GIF — maksimal 5 MB.</p>
+          <div class="flex items-center gap-2">
+            <span class="h-px flex-1 bg-line" aria-hidden="true" />
+            <span class="text-[0.76rem] text-muted">atau tempel URL</span>
+            <span class="h-px flex-1 bg-line" aria-hidden="true" />
+          </div>
           <input
             v-model="imageUrl"
             type="url"
-            placeholder="URL gambar…"
+            placeholder="https://…"
+            aria-label="URL gambar"
             class="rte-dropdown-input"
             @keydown.enter.prevent="applyImageUrl"
           >
-          <AppButton type="button" size="sm" class="w-full" @click="applyImageUrl">
+          <AppButton
+            type="button"
+            variant="outline"
+            size="xs"
+            class="w-full"
+            :disabled="!imageUrl.trim()"
+            @click="applyImageUrl"
+          >
             Sisipkan URL
           </AppButton>
-          <div class="flex items-center gap-2">
-            <span class="h-px flex-1 bg-line" aria-hidden="true" />
-            <span class="text-[0.76rem] text-muted">atau</span>
-            <span class="h-px flex-1 bg-line" aria-hidden="true" />
-          </div>
-          <button
-            type="button"
-            class="rte-dropdown-secondary w-full"
-            :disabled="imageUploading"
-            @click="triggerImageUpload"
-          >
-            {{ imageUploading ? 'Mengunggah…' : 'Unggah dari perangkat' }}
-          </button>
           <p v-if="imageError" role="alert" class="text-[0.78rem] font-semibold text-red-600">
             {{ imageError }}
           </p>
@@ -513,32 +512,34 @@ onBeforeUnmount(() => editor.value?.destroy())
         @change="onImageFileSelected"
       >
 
-      <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
+      <template v-if="!compact">
+        <span class="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden="true" />
 
-      <button
-        type="button"
-        title="Urungkan"
-        class="rte-btn"
-        :disabled="!editor?.can().undo()"
-        @mousedown.prevent
-        @click="editor?.chain().focus().undo().run()"
-      >
-        <IconUndo class="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        title="Ulangi"
-        class="rte-btn"
-        :disabled="!editor?.can().redo()"
-        @mousedown.prevent
-        @click="editor?.chain().focus().redo().run()"
-      >
-        <IconRedo class="h-4 w-4" />
-      </button>
+        <button
+          type="button"
+          title="Urungkan"
+          class="rte-btn"
+          :disabled="!editor?.can().undo()"
+          @mousedown.prevent
+          @click="editor?.chain().focus().undo().run()"
+        >
+          <IconUndo class="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          title="Ulangi"
+          class="rte-btn"
+          :disabled="!editor?.can().redo()"
+          @mousedown.prevent
+          @click="editor?.chain().focus().redo().run()"
+        >
+          <IconRedo class="h-4 w-4" />
+        </button>
+      </template>
     </div>
 
     <!-- Toolbar tabel kontekstual — muncul hanya saat kursor ada di dalam tabel. -->
-    <div v-if="inTable" class="flex flex-wrap items-center gap-1 border-b border-line bg-primary-soft/60 px-2 py-1.5 text-[0.8rem]">
+    <div v-if="inTable && !compact" class="flex flex-wrap items-center gap-1 border-b border-line bg-primary-soft/60 px-2 py-1.5 text-[0.8rem]">
       <span class="mr-1 shrink-0 font-semibold text-primary">Tabel</span>
       <button type="button" class="rte-chip" @mousedown.prevent @click="editor?.chain().focus().addColumnBefore().run()">
         + Kolom kiri
@@ -659,37 +660,6 @@ onBeforeUnmount(() => editor.value?.destroy())
   box-shadow: 0 0 0 4px rgba(47, 111, 235, 0.1);
 }
 
-.rte-dropdown-secondary {
-  display: inline-flex;
-  height: 2.25rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--color-line);
-  padding-inline: 1rem;
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--color-muted);
-  background: var(--color-surface);
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-.rte-dropdown-secondary:hover:not(:disabled) {
-  color: var(--color-ink);
-  border-color: var(--color-hairline-strong);
-}
-.rte-dropdown-secondary:disabled {
-  opacity: 0.5;
-}
-
-.rte-dropdown-remove {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #dc2626;
-}
-.rte-dropdown-remove:hover {
-  text-decoration: underline;
-}
-
 .rte-dropdown-preview {
   display: flex;
   min-height: 2.75rem;
@@ -708,9 +678,31 @@ onBeforeUnmount(() => editor.value?.destroy())
 }
 
 :deep(.rte-content) {
-  min-height: 8rem;
+  min-height: 14rem;
   padding: 0.85rem 1rem;
   outline: none;
+}
+
+/* Mode compact (TutorOptionField.vue): toolbar & area edit menyusut supaya
+   satu baris opsi A–E tidak membengkak jadi blok rich-text setinggi field
+   pertanyaan. */
+.rte-compact .rte-toolbar {
+  padding-block: 0.3rem;
+  gap: 0.15rem;
+}
+.rte-compact .rte-btn {
+  height: 1.6rem;
+  min-width: 1.6rem;
+  padding-inline: 0.3rem;
+  font-size: 0.72rem;
+}
+.rte-compact .rte-scroll {
+  max-height: 10rem;
+}
+.rte-compact :deep(.rte-content) {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.94rem;
 }
 :deep(.rte-content p) {
   margin: 0 0 0.6em;
@@ -735,10 +727,29 @@ onBeforeUnmount(() => editor.value?.destroy())
   font-size: 1.02rem;
   font-weight: 700;
 }
+/* Preflight Tailwind mematikan list-style pada ul/ol, jadi tanpa ini butir
+   daftar kehilangan bulatan/angkanya dan hanya tampak sebagai baris menjorok. */
 :deep(.rte-content ul),
 :deep(.rte-content ol) {
   margin: 0.4em 0;
   padding-left: 1.4em;
+}
+:deep(.rte-content ul) {
+  list-style: disc;
+}
+:deep(.rte-content ul ul) {
+  list-style: circle;
+}
+:deep(.rte-content ol) {
+  list-style: decimal;
+}
+:deep(.rte-content li) {
+  margin: 0.15em 0;
+}
+/* Tiptap membungkus isi tiap butir dalam <p>; margin bawaannya membuat daftar
+   terlihat renggang dan bulatannya tidak sejajar dengan barisnya. */
+:deep(.rte-content li > p) {
+  margin: 0;
 }
 :deep(.rte-content blockquote) {
   margin: 0.5em 0;

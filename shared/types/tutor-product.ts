@@ -6,6 +6,9 @@
 
 export type ProductType = 'single' | 'bundle'
 
+/** simulasi = semua subtes diisi (default). mini_tryout = satu subtes saja. */
+export type ProductMode = 'simulasi' | 'mini_tryout'
+
 /** draft → review → live | rejected (→ draft again after edits) → archived */
 export type ProductStatus = 'draft' | 'review' | 'live' | 'rejected' | 'archived'
 
@@ -39,11 +42,15 @@ export interface QuestionOption {
   isCorrect?: boolean
   /** weighted only: integer ≥ 0 (typically 1–5). */
   weight?: number
+  /** Figural/pattern options (e.g. TIU visual series); most options have none. */
+  imageUrl?: string
 }
 
 export interface TutorQuestion {
   id: string
   kind: QuestionKind
+  /** Shared reading passage for literacy/case-study question groups. */
+  stimulus?: string
   prompt: string
   /** Pembahasan — must be non-empty before submit. */
   explanation: string
@@ -56,10 +63,28 @@ export interface TutorQuestion {
 /** Wire shape for creating/replacing a question; id/position are server-assigned. */
 export interface QuestionDraft {
   kind: QuestionKind
+  stimulus?: string
   prompt: string
   explanation: string
   options?: QuestionOption[]
   answers?: string[]
+}
+
+/**
+ * One row of the combined cross-subtes CSV import — a QuestionDraft plus the
+ * subtes name it belongs to. POST /tutor/products/:id/questions/import
+ * matches `subtes` (trim, case-insensitive) to this product's section
+ * titles server-side; rows that don't match land in the response's
+ * `problems` list instead of failing the whole batch.
+ */
+export interface QuestionImportDraft extends QuestionDraft {
+  subtes: string
+}
+
+/** Response of POST /tutor/products/:id/questions/import. */
+export interface QuestionImportResult {
+  imported: number
+  problems: string[]
 }
 
 export interface TutorSection extends SectionTemplate {
@@ -107,6 +132,14 @@ export interface TutorProductDetail extends TutorProductSummary {
   durationMinutes?: number
   sections?: TutorSection[]
   items?: BundleItem[]
+  /** single only: defaults to `simulasi` when omitted by the server. */
+  mode?: ProductMode
+  /**
+   * single only: randomises each section's question order per student at
+   * attempt time (seeded by account + product, stable across reloads).
+   * Editor order (`position`) is unaffected. Defaults to `false`.
+   */
+  shuffleQuestions?: boolean
 }
 
 /** POST /tutor/products — examTypeSlug wajib untuk single. */
@@ -114,6 +147,10 @@ export interface CreateProductRequest {
   type: ProductType
   title: string
   examTypeSlug?: string
+  /** single only: defaults to `simulasi` server-side when omitted. */
+  mode?: ProductMode
+  /** Wajib saat mode `mini_tryout` — judul template subtes yang dipilih. */
+  sectionTitle?: string
 }
 
 /** Editable shape of one subtes for custom exam types; no id = new. */
@@ -134,4 +171,6 @@ export interface UpdateProductRequest {
   sections?: SectionInput[]
   /** bundle only: member product IDs in display order. */
   items?: string[]
+  /** single only: see TutorProductDetail.shuffleQuestions. */
+  shuffleQuestions?: boolean
 }

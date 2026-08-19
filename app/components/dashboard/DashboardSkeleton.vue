@@ -25,8 +25,14 @@ const props = withDefaults(defineProps<{
 const WIDE_COLS = { 2: 'xl:grid-cols-2', 3: 'xl:grid-cols-3', 4: 'xl:grid-cols-4' } as const
 const wideCols = computed(() => WIDE_COLS[props.columns])
 
-/** Deterministic width variation, so rows read as content, not as stripes. */
-const ROW_WIDTHS = ['w-3/5', 'w-2/5', 'w-1/2', 'w-2/3'] as const
+/**
+ * Deterministic width variation, so rows read as content, not as stripes.
+ * `!`-prefixed (important) because AppSkeleton's `type="text"` already
+ * ships its own `w-full` default — plain utility classes can't reliably
+ * out-rank that from a parent without a merge helper (this app has none),
+ * so `!w-*` is the only dependable override here.
+ */
+const ROW_WIDTHS = ['!w-3/5', '!w-2/5', '!w-1/2', '!w-2/3'] as const
 function rowWidth(index: number): string {
   return ROW_WIDTHS[(index - 1) % ROW_WIDTHS.length] as string
 }
@@ -42,8 +48,8 @@ function rowWidth(index: number): string {
         :key="n"
         class="rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs"
       >
-        <span class="block h-3.5 w-24 animate-pulse rounded-pill bg-skeleton" />
-        <span class="mt-2.5 block h-7 w-32 animate-pulse rounded-pill bg-skeleton" />
+        <AppSkeleton type="text" className="!h-3.5 !w-24 !rounded-pill" />
+        <AppSkeleton type="text" className="mt-2.5 !h-7 !w-32 !rounded-pill" />
       </div>
     </div>
 
@@ -53,8 +59,8 @@ function rowWidth(index: number): string {
         :key="n"
         class="flex min-h-12 items-center gap-4 border-t border-hairline first:border-0"
       >
-        <span class="h-4 animate-pulse rounded-pill bg-skeleton" :class="rowWidth(n)" />
-        <span class="ml-auto h-6 w-20 shrink-0 animate-pulse rounded-pill bg-skeleton" />
+        <AppSkeleton type="text" :className="`!h-4 !rounded-pill ${rowWidth(n)}`" />
+        <AppSkeleton type="text" className="ml-auto !h-6 !w-20 shrink-0 !rounded-pill" />
       </li>
     </ul>
   </div>

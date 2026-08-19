@@ -1,9 +1,12 @@
 import type {
   CreateProductRequest,
   ExamType,
+  ProductMode,
   ProductStatus,
   ProductType,
   QuestionDraft,
+  QuestionImportDraft,
+  QuestionImportResult,
   QuestionKind,
   TutorProductDetail,
   TutorProductSummary,
@@ -127,8 +130,9 @@ export async function createTutorQuestion(
 }
 
 /**
- * POST multipart /tutor/uploads/image — gambar yang disisipkan lewat toolbar
- * editor soal (Pertanyaan/Pembahasan). Mengembalikan URL publiknya.
+ * POST multipart /tutor/uploads — gambar yang disisipkan lewat toolbar editor
+ * soal (Pertanyaan/Pembahasan/Wacana) atau lewat unggah gambar per opsi
+ * jawaban. Mengembalikan URL publiknya.
  */
 export async function uploadTutorImage(file: File): Promise<string> {
   const { public: config } = useRuntimeConfig()
@@ -136,7 +140,7 @@ export async function uploadTutorImage(file: File): Promise<string> {
   const body = new FormData()
   body.append('image', file)
 
-  const result = await $fetch<{ url: string }>('/tutor/uploads/image', {
+  const result = await $fetch<{ url: string }>('/tutor/uploads', {
     baseURL: config.apiBase,
     method: 'POST',
     body,
@@ -154,6 +158,27 @@ export async function createTutorQuestionBatch(
   const { public: config } = useRuntimeConfig()
 
   await $fetch(`/tutor/products/${productId}/sections/${sectionId}/questions`, {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body: { questions },
+    credentials: 'include',
+  })
+}
+
+/**
+ * POST /tutor/products/:id/questions/import — impor gabungan lintas subtes:
+ * tiap baris bawa `subtes` sendiri, dicocokkan ke section produk ini di
+ * server (trim, case-insensitive). Baris yang gagal cocok/valid masuk ke
+ * `problems` di response, tidak melempar — hanya network/auth error yang
+ * throw di sini.
+ */
+export async function importTutorQuestions(
+  productId: string,
+  questions: QuestionImportDraft[],
+): Promise<QuestionImportResult> {
+  const { public: config } = useRuntimeConfig()
+
+  return await $fetch<QuestionImportResult>(`/tutor/products/${productId}/questions/import`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { questions },
@@ -186,6 +211,26 @@ export async function deleteTutorQuestion(
   await $fetch(`/tutor/products/${productId}/sections/${sectionId}/questions/${questionId}`, {
     baseURL: config.apiBase,
     method: 'DELETE',
+    credentials: 'include',
+  })
+}
+
+/**
+ * PUT .../questions/reorder — grid navigator kirim seluruh urutan baru soal
+ * dalam satu subtes (id lengkap, bukan delta). Server menolak kalau daftar id
+ * tidak persis sama dengan isi subtes saat ini.
+ */
+export async function reorderTutorQuestions(
+  productId: string,
+  sectionId: string,
+  questionIds: string[],
+): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  await $fetch(`/tutor/products/${productId}/sections/${sectionId}/questions/reorder`, {
+    baseURL: config.apiBase,
+    method: 'PUT',
+    body: { questionIds },
     credentials: 'include',
   })
 }
@@ -271,6 +316,11 @@ export const PRODUCT_STATUS_TONE: Record<ProductStatus, BadgeTone> = {
 export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
   single: 'Tunggal',
   bundle: 'Bundling',
+}
+
+export const PRODUCT_MODE_LABEL: Record<ProductMode, string> = {
+  simulasi: 'Simulasi (semua subtes)',
+  mini_tryout: 'Mini Try Out (satu subtes)',
 }
 
 export const QUESTION_KIND_LABEL: Record<QuestionKind, string> = {

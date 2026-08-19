@@ -1,5 +1,7 @@
 import type {
   BankAccount,
+  BankAccountChangeRequest,
+  BankAccountInput,
   PayoutStatus,
   ShareStatus,
   TutorBalance,
@@ -116,13 +118,66 @@ export function useTutorBankAccount() {
   return { data, pending, refresh }
 }
 
-/** PUT /tutor/bank-account — simpan/ubah. Throws on any non-2xx. */
-export async function saveTutorBankAccount(account: BankAccount): Promise<void> {
+/**
+ * PUT /tutor/bank-account — simpan rekening pertama kali. Hanya berhasil
+ * sekali; panggilan berikutnya (terverifikasi atau belum) ditolak 409 — sejak
+ * itu perubahan lewat requestTutorBankAccountChange. Throws on any non-2xx.
+ */
+export async function saveTutorBankAccount(account: BankAccountInput): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
   await $fetch('/tutor/bank-account', {
     baseURL: config.apiBase,
     method: 'PUT',
+    body: account,
+    credentials: 'include',
+  })
+}
+
+/**
+ * GET /tutor/bank-account/change-request — pengajuan perubahan yang masih
+ * pending, kalau ada. 404 adalah jawaban normal "tidak ada yang pending", jadi
+ * resolve ke null alih-alih error (mirrors useTutorBankAccount).
+ */
+export function useTutorBankAccountChangeRequest() {
+  const { public: config } = useRuntimeConfig()
+
+  const data = ref<BankAccountChangeRequest | null>(null)
+  const pending = ref(false)
+
+  async function refresh() {
+    pending.value = true
+    try {
+      data.value = await $fetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
+        baseURL: config.apiBase,
+        credentials: 'include',
+      })
+    }
+    catch {
+      data.value = null
+    }
+    finally {
+      pending.value = false
+    }
+  }
+
+  return { data, pending, refresh }
+}
+
+/**
+ * POST /tutor/bank-account/change-request — ajukan perubahan rekening yang
+ * sudah tersimpan, menunggu persetujuan admin. 422 kalau belum ada rekening
+ * tersimpan (pakai saveTutorBankAccount untuk itu), 409 kalau sudah ada
+ * pengajuan pending. Throws on any non-2xx.
+ */
+export async function requestTutorBankAccountChange(
+  account: BankAccountInput,
+): Promise<BankAccountChangeRequest> {
+  const { public: config } = useRuntimeConfig()
+
+  return await $fetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
+    baseURL: config.apiBase,
+    method: 'POST',
     body: account,
     credentials: 'include',
   })

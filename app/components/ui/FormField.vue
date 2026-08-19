@@ -28,12 +28,33 @@ const resolvedType = computed(() =>
   isPassword.value && showPassword.value ? 'text' : props.type,
 )
 
-/** Nudges mobile keyboards toward the right layout per field type. */
-const INPUT_MODES = { email: 'email', tel: 'tel', url: 'url' } as const
+/**
+ * Nudges mobile keyboards toward the right layout per field type. `tel`
+ * gets the pure digit pad (`numeric`), not the phone-style one (`tel`,
+ * which includes `+`/`*`/`#`) — every `type="tel"` field in this app is a
+ * WhatsApp number or a bank account number, always digits-only.
+ */
+const INPUT_MODES = { email: 'email', tel: 'numeric', url: 'url' } as const
 
 const inputMode = computed(() =>
   INPUT_MODES[props.type as keyof typeof INPUT_MODES] ?? undefined,
 )
+
+/**
+ * `type="tel"` accepts any character natively (it exists for phone-number
+ * *formatting*, not digit validation) — strip non-digits as they're typed
+ * rather than only at submit time.
+ */
+function onInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (props.type !== 'tel') {
+    model.value = input.value
+    return
+  }
+  const digitsOnly = input.value.replace(/\D/g, '')
+  model.value = digitsOnly
+  if (input.value !== digitsOnly) input.value = digitsOnly
+}
 
 const errorId = computed(() => `${props.id}-error`)
 const hintId = computed(() => `${props.id}-hint`)
@@ -53,20 +74,21 @@ const describedBy = computed(() => {
     <div class="relative">
       <input
         :id="id"
-        v-model="model"
+        :value="model"
         :type="resolvedType"
         :placeholder="placeholder"
         :autocomplete="autocomplete"
         :inputmode="inputMode"
-        class="w-full rounded-sm border bg-surface py-3 pl-4 transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:outline-none"
+        class="w-full rounded-sm border bg-surface py-2.5 pl-3.5 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:outline-none"
         :class="[
-          isPassword ? 'pr-12' : 'pr-4',
+          isPassword ? 'pr-12' : 'pr-3.5',
           error
             ? 'border-red-400 focus:shadow-[0_0_0_4px_rgba(248,113,113,0.16)]'
             : 'border-line focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)]',
         ]"
         :aria-invalid="Boolean(error)"
         :aria-describedby="describedBy"
+        @input="onInput"
       >
 
       <button

@@ -4,8 +4,18 @@ export interface MenuItem {
   label: string
   icon?: string
   badge?: string
+  /** Small colored status dot before the label — same vocabulary as AppBadge's variants. */
+  dot?: 'primary' | 'success' | 'warning' | 'danger' | 'neutral'
   danger?: boolean
   divider?: boolean
+}
+
+const DOT_COLORS: Record<NonNullable<MenuItem['dot']>, string> = {
+  primary: 'bg-primary',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  neutral: 'bg-muted',
 }
 
 const props = withDefaults(
@@ -59,7 +69,7 @@ onUnmounted(() => {
     <!-- Floating Action Menu -->
     <div
       v-if="isOpen"
-      class="absolute top-[calc(100%+6px)] z-50 min-w-48 rounded-md border border-line bg-surface p-1.5 shadow-float"
+      class="absolute top-[calc(100%+6px)] z-50 w-full min-w-48 rounded-md border border-line bg-surface p-1.5 shadow-float"
       :class="align === 'right' ? 'right-0' : 'left-0'"
     >
       <template v-for="item in items" :key="item.id">
@@ -76,6 +86,7 @@ onUnmounted(() => {
           @click="handleSelect(item.id)"
         >
           <div class="flex items-center gap-2">
+            <span v-if="item.dot" class="h-1.5 w-1.5 shrink-0 rounded-full" :class="DOT_COLORS[item.dot]" />
             <AppIcon v-if="item.icon" :name="item.icon" :size="14" />
             <span>{{ item.label }}</span>
           </div>

@@ -56,15 +56,13 @@ const total = computed(() =>
     description="Pilih minimal 2 produk try-out tunggal milikmu yang sudah tayang."
   >
     <p v-if="pending" class="py-6 text-center text-muted">Memuat produkmu...</p>
-    <p v-else-if="error" class="py-6 text-center text-muted">{{ error }}</p>
+    <AppInlineMessage v-else-if="error" type="error">{{ error }}</AppInlineMessage>
 
-    <div v-else-if="eligible.length === 0" class="py-8 text-center">
-      <h3 class="text-[1.1rem] font-bold tracking-[-0.03em]">Belum ada produk yang bisa dibundel</h3>
-      <p class="mx-auto mt-2 max-w-105 leading-[1.7] text-muted">
-        Bundling berisi produk try-out tunggal berstatus Tayang. Terbitkan
-        minimal dua produk tunggal dulu, lalu kembali ke sini.
-      </p>
-    </div>
+    <AppEmptyState
+      v-else-if="eligible.length === 0"
+      title="Belum ada produk yang bisa dibundel"
+      description="Bundling berisi produk try-out tunggal berstatus Tayang. Terbitkan minimal dua produk tunggal dulu, lalu kembali ke sini."
+    />
 
     <div v-else class="grid gap-6">
       <!-- Urutan anggota terpilih -->

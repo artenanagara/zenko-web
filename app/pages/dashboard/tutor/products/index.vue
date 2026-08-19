@@ -44,12 +44,56 @@ function countFor(key: FilterKey): number {
     : products.value.filter(product => product.status === key).length
 }
 
+// AppTabs works in plain strings; narrow its `update:modelValue` back onto
+// FilterKey instead of casting.
+const filterTabs = computed(() => FILTERS.map(filter => ({
+  id: filter.key,
+  label: filter.label,
+  count: pending.value ? undefined : countFor(filter.key),
+})))
+function isFilterKey(id: string): id is FilterKey {
+  return FILTERS.some(filter => filter.key === id)
+}
+function selectFilter(id: string) {
+  if (isFilterKey(id)) activeFilter.value = id
+}
+
+const productColumns = [
+  { key: 'title', label: 'Produk' },
+  { key: 'type', label: 'Tipe' },
+  { key: 'category', label: 'Kategori' },
+  { key: 'price', label: 'Harga' },
+  { key: 'questionCount', label: 'Soal' },
+  { key: 'status', label: 'Status' },
+  { key: 'aksi', label: 'Aksi', align: 'right' as const },
+]
+
+// AppTable's cell slots hand back `item`/`value` as Record<string, any>/any
+// (it isn't a generic component). Label/tone lookups go through these typed
+// accessors instead of indexing the `any` value directly...
+function productTypeLabel(type: TutorProductSummary['type']): string {
+  return PRODUCT_TYPE_LABEL[type]
+}
+function productStatusTone(status: TutorProductSummary['status']) {
+  return PRODUCT_STATUS_TONE[status]
+}
+function productStatusLabel(status: TutorProductSummary['status']): string {
+  return PRODUCT_STATUS_LABEL[status]
+}
+// ...and the action column (which needs the *whole* typed row, not just a
+// field) looks the row back up in the already-typed `filtered` array by id
+// rather than trusting AppTable's erased `item`.
+function findProduct(id: string): TutorProductSummary | undefined {
+  return filtered.value.find(product => product.id === id)
+}
+
 /** Which row's action is in flight, so only that row's buttons lock. */
 const busyId = ref('')
 const actionError = ref('')
 
 /** 422 dari submit: judul produk + daftar masalahnya, dirender sebagai list. */
 const submitProblems = ref<{ title: string, problems: string[] } | null>(null)
+const submitProblemsTitle = computed(() => submitProblems.value ? `"${submitProblems.value.title}" belum bisa diajukan:` : '')
 
 const canEdit = (product: TutorProductSummary) =>
   product.status === 'draft' || product.status === 'rejected'
@@ -134,57 +178,38 @@ async function deleteProduct(product: TutorProductSummary) {
 
 <template>
   <div class="grid gap-6">
-    <header class="flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Produk saya</h1>
-        <p class="mt-1.5 text-muted">Try-out tunggal dan bundling yang kamu jual di Zenko.</p>
-      </div>
-      <AppButton to="/dashboard/tutor/products/new" size="sm">Buat produk</AppButton>
-    </header>
+    <AppPageHeader title="Produk saya" description="Try-out tunggal dan bundling yang kamu jual di Zenko.">
+      <template #actions>
+        <AppButton to="/dashboard/tutor/products/new" size="sm">Buat produk</AppButton>
+      </template>
+    </AppPageHeader>
 
-    <p
-      v-if="actionError"
-      role="alert"
-      class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-    >
-      {{ actionError }}
-    </p>
+    <AppInlineMessage v-if="actionError" type="error">{{ actionError }}</AppInlineMessage>
 
-    <div
+    <AppSectionMessage
       v-if="submitProblems"
-      role="alert"
-      class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
+      appearance="error"
+      :title="submitProblemsTitle"
     >
-      <p class="font-semibold">"{{ submitProblems.title }}" belum bisa diajukan:</p>
-      <ul class="mt-2 grid list-disc gap-1 pl-5">
+      <ul class="grid list-disc gap-1 pl-5">
         <li v-for="problem in submitProblems.problems" :key="problem">{{ problem }}</li>
       </ul>
-    </div>
+    </AppSectionMessage>
 
     <DashboardPanel title="Daftar produk" description="Kelola draft, ajukan untuk tayang, atau arsipkan.">
       <template #action>
-        <div class="flex flex-wrap gap-1.5" role="group" aria-label="Filter status produk">
-          <button
-            v-for="filter in FILTERS"
-            :key="filter.key"
-            type="button"
-            class="rounded-pill px-3 py-1.5 text-[0.8rem] font-semibold whitespace-nowrap transition-colors"
-            :class="activeFilter === filter.key
-              ? 'bg-primary-soft text-primary'
-              : 'text-muted hover:bg-surface-sunken hover:text-ink'"
-            :aria-pressed="activeFilter === filter.key"
-            @click="activeFilter = filter.key"
-          >
-            {{ filter.label }}
-            <span v-if="!pending" class="tabular-nums">({{ countFor(filter.key) }})</span>
-          </button>
-        </div>
+        <AppTabs
+          :tabs="filterTabs"
+          :model-value="activeFilter"
+          aria-label="Filter status produk"
+          @update:model-value="selectFilter"
+        />
       </template>
 
       <DashboardSkeleton v-if="pending" :count="5" label="Memuat produk..." />
 
       <div v-else-if="error" class="py-8 text-center">
-        <p class="text-muted">{{ error }}</p>
+        <AppInlineMessage type="error">{{ error }}</AppInlineMessage>
         <button
           type="button"
           class="mt-3 font-semibold text-primary hover:underline"
@@ -195,107 +220,93 @@ async function deleteProduct(product: TutorProductSummary) {
       </div>
 
       <!-- Empty state: friendly and pointed straight at the wizard. -->
-      <div v-else-if="products.length === 0" class="py-10 text-center">
-        <h2 class="text-[1.2rem] font-bold tracking-[-0.03em]">Belum ada produk</h2>
-        <p class="mx-auto mt-2 max-w-105 leading-[1.7] text-muted">
-          Mulai dari satu try-out tunggal: pilih jenis ujian, susun soal per
-          subtes, lalu ajukan untuk tayang di katalog Zenko.
-        </p>
-        <AppButton to="/dashboard/tutor/products/new" class="mt-6">Buat produk</AppButton>
-      </div>
+      <AppEmptyState
+        v-else-if="products.length === 0"
+        title="Belum ada produk"
+        description="Mulai dari satu try-out tunggal: pilih jenis ujian, susun soal per subtes, lalu ajukan untuk tayang di katalog Zenko."
+        action-label="Buat produk"
+        @action="() => navigateTo('/dashboard/tutor/products/new')"
+      />
 
       <p v-else-if="filtered.length === 0" class="py-8 text-center text-muted">
         Tidak ada produk dengan status ini.
       </p>
 
-      <div v-else class="overflow-x-auto">
-        <table class="w-full min-w-200 border-collapse text-left">
-          <thead>
-            <tr class="text-[0.78rem] tracking-widest text-faint uppercase">
-              <th class="pb-3 font-bold">Produk</th>
-              <th class="pb-3 font-bold">Tipe</th>
-              <th class="pb-3 font-bold">Kategori</th>
-              <th class="pb-3 font-bold">Harga</th>
-              <th class="pb-3 font-bold">Soal</th>
-              <th class="pb-3 font-bold">Status</th>
-              <th class="pb-3 text-right font-bold">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="product in filtered" :key="product.id" class="border-t border-hairline align-top">
-              <td class="max-w-72 py-3.5 pr-4">
-                <span class="block font-semibold tracking-[-0.02em]">{{ product.title }}</span>
-                <span
-                  v-if="product.status === 'rejected' && product.rejectReason"
-                  class="mt-1 block text-[0.82rem] text-red-700"
-                >
-                  Alasan penolakan: {{ product.rejectReason }}
-                </span>
-              </td>
-              <td class="py-3.5 pr-4 text-[0.9rem] text-muted">
-                {{ PRODUCT_TYPE_LABEL[product.type] }}
-              </td>
-              <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ product.category || '—' }}</td>
-              <td class="py-3.5 pr-4 text-[0.9rem] tabular-nums">
-                {{ product.price > 0 ? formatRupiah(product.price) : '—' }}
-              </td>
-              <td class="py-3.5 pr-4 text-[0.9rem] tabular-nums">
-                <template v-if="product.type === 'single'">
-                  {{ product.questionCount }}/{{ product.questionTarget }} soal
-                </template>
-                <span v-else class="text-muted">—</span>
-              </td>
-              <td class="py-3.5 pr-4">
-                <DashboardBadge :tone="PRODUCT_STATUS_TONE[product.status]">
-                  {{ PRODUCT_STATUS_LABEL[product.status] }}
-                </DashboardBadge>
-              </td>
-              <td class="py-3.5 text-right">
-                <span class="inline-flex items-center gap-3 whitespace-nowrap">
-                  <NuxtLink
-                    v-if="canEdit(product)"
-                    :to="`/dashboard/tutor/products/${product.id}/edit`"
-                    class="text-[0.86rem] font-semibold text-primary hover:underline"
-                  >
-                    Edit
-                  </NuxtLink>
-                  <button
-                    v-if="canSubmit(product)"
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                    :disabled="busyId === product.id"
-                    @click="submitProduct(product)"
-                  >
-                    {{ busyId === product.id ? 'Mengajukan...' : 'Ajukan tayang' }}
-                  </button>
-                  <button
-                    v-if="product.status === 'live'"
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-red-600 hover:underline disabled:opacity-50"
-                    :disabled="busyId === product.id"
-                    @click="archiveProduct(product)"
-                  >
-                    Arsipkan
-                  </button>
-                  <button
-                    v-if="canDelete(product)"
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-red-600 hover:underline disabled:opacity-50"
-                    :disabled="busyId === product.id"
-                    @click="deleteProduct(product)"
-                  >
-                    {{ busyId === product.id ? 'Menghapus...' : 'Hapus' }}
-                  </button>
-                  <span
-                    v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
-                    class="text-[0.86rem] text-muted"
-                  >—</span>
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <AppTable v-else :columns="productColumns" :data="filtered">
+        <template #cell(title)="{ item }">
+          <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
+          <span
+            v-if="item.status === 'rejected' && item.rejectReason"
+            class="mt-1 block text-[0.82rem] text-danger-ink"
+          >
+            Alasan penolakan: {{ item.rejectReason }}
+          </span>
+        </template>
+        <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
+        <template #cell(category)="{ value }">{{ value || '—' }}</template>
+        <template #cell(price)="{ value }">
+          <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+        </template>
+        <template #cell(questionCount)="{ item }">
+          <span v-if="item.type === 'single'" class="tabular-nums">
+            {{ item.questionCount }}/{{ item.questionTarget }} soal
+          </span>
+          <span v-else class="text-muted">—</span>
+        </template>
+        <template #cell(status)="{ item }">
+          <DashboardBadge :tone="productStatusTone(item.status)">
+            {{ productStatusLabel(item.status) }}
+          </DashboardBadge>
+        </template>
+        <template #cell(aksi)="{ item }">
+          <!-- v-for over a one-item array recovers the typed row from
+               `findProduct` as a template-scoped variable, narrowed by the
+               v-if below — avoids passing AppTable's untyped `item` straight
+               into functions that expect the real TutorProductSummary shape. -->
+          <template v-for="product in [findProduct(item.id)]" :key="item.id">
+            <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
+              <NuxtLink
+                v-if="canEdit(product)"
+                :to="`/dashboard/tutor/products/${product.id}/edit`"
+                class="text-[0.86rem] font-semibold text-primary hover:underline"
+              >
+                Edit
+              </NuxtLink>
+              <button
+                v-if="canSubmit(product)"
+                type="button"
+                class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
+                :disabled="busyId === product.id"
+                @click="submitProduct(product)"
+              >
+                {{ busyId === product.id ? 'Mengajukan...' : 'Ajukan tayang' }}
+              </button>
+              <button
+                v-if="product.status === 'live'"
+                type="button"
+                class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
+                :disabled="busyId === product.id"
+                @click="archiveProduct(product)"
+              >
+                Arsipkan
+              </button>
+              <button
+                v-if="canDelete(product)"
+                type="button"
+                class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
+                :disabled="busyId === product.id"
+                @click="deleteProduct(product)"
+              >
+                {{ busyId === product.id ? 'Menghapus...' : 'Hapus' }}
+              </button>
+              <span
+                v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
+                class="text-[0.86rem] text-muted"
+              >—</span>
+            </span>
+          </template>
+        </template>
+      </AppTable>
     </DashboardPanel>
   </div>
 </template>

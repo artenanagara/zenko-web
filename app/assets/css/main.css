@@ -1,5 +1,14 @@
 @import 'tailwindcss';
 
+/* Tailwind's default content scan excludes node_modules, but this package
+   ships its component .vue source (not precompiled CSS) — any utility class
+   used only inside those files (and nowhere in this app's own source) would
+   otherwise never be generated and silently no-op at runtime. Bug found via
+   AppSectionMessage's "information" appearance: border-blue-200/bg-blue-50/
+   text-slate-800 rendered as a plain black-bordered box because none of
+   those classes existed in the build. */
+@source '../../../node_modules/@artenanagara/zenko-design-system';
+
 /* ==========================================================================
    Design tokens
    Single source of truth: zenko-design-system's tokens/tokens.json. This

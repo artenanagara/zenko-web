@@ -50,6 +50,39 @@ export interface BankAccount {
   bankLabel: string
   accountNumber: string
   holderName: string
+  /**
+   * Unix seconds; null/absent sampai admin memverifikasi manual. Murni
+   * informasional — tidak memengaruhi apakah rekening bisa diubah.
+   */
+  verifiedAt?: number | null
+}
+
+/** Bentuk field yang sama dipakai PUT /tutor/bank-account dan POST change-request. */
+export interface BankAccountInput {
+  bankCode: string
+  bankLabel: string
+  accountNumber: string
+  holderName: string
+}
+
+/** pending → approved | rejected, hasil review admin atas perubahan rekening. */
+export type BankAccountChangeRequestStatus = 'pending' | 'approved' | 'rejected'
+
+/**
+ * GET/POST /tutor/bank-account/change-request. Setelah rekening pertama kali
+ * tersimpan, PUT dikunci (409) — perubahan berikutnya lewat alur ini dan
+ * menunggu persetujuan admin. GET menjawab 404 bila tidak ada yang pending.
+ */
+export interface BankAccountChangeRequest {
+  id: string
+  newAccount: BankAccountInput
+  status: BankAccountChangeRequestStatus
+  /** Unix seconds. */
+  requestedAt: number
+  /** Unix seconds; hadir setelah disetujui/ditolak. */
+  decidedAt?: number
+  /** Hadir bila status `rejected`. */
+  rejectReason?: string
 }
 
 /** requested → processing → transferred | rejected */

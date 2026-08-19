@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { StackedBarPoint, StackedBarSeries } from '~/components/dashboard/DashboardStackedBarChart.vue'
+import type { TutorProductSummary } from '#shared/types/tutor-product'
+
 definePageMeta({
   path: '/dashboard/tutor',
   layout: 'dashboard',
@@ -11,8 +14,8 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-// Satu fetch tanpa filter: "paket terjual" butuh semua waktu, "pendapatan
-// bulan ini" cukup disaring dari paidAt di sisi client.
+// Satu fetch tanpa filter: kartu metrik & kedua chart di bawah semuanya
+// dihitung dari respons yang sama, tidak ada fetch tambahan per widget.
 const { summary, sales, pending: salesPending, error: salesError, refresh: refreshSales } = useTutorSales()
 const { data: balance, refresh: refreshBalance } = useTutorBalance()
 const { data: products, pending: productsPending, error: productsError, refresh: refreshProducts } = useTutorProducts()
@@ -25,18 +28,9 @@ onMounted(() => {
   refreshProducts()
 })
 
-const monthStart = computed(() => {
-  const now = new Date()
-  return Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000)
-})
-
-const monthShare = computed(() =>
-  sales.value
-    .filter(sale => sale.paidAt >= monthStart.value)
-    .reduce((sum, sale) => sum + sale.share, 0),
-)
-
-const liveCount = computed(() => products.value.filter(product => product.status === 'live').length)
+// Total pendapatan: semua waktu, bukan cuma bulan berjalan — beda dari
+// halaman Penjualan yang menyaring per periode.
+const totalShare = computed(() => sales.value.reduce((sum, sale) => sum + sale.share, 0))
 
 // "Perlu perhatian": moderation outcomes surface on the overview, so a
 // rejection is visible without having to open Produk Saya first.
@@ -44,115 +38,194 @@ const rejectedCount = computed(() => products.value.filter(product => product.st
 const reviewCount = computed(() => products.value.filter(product => product.status === 'review').length)
 
 const stats = computed(() => [
-  { label: 'Pendapatan bulan ini', value: formatRupiah(monthShare.value), hint: 'Porsi 70% dari penjualan bulan berjalan.' },
-  { label: 'Paket terjual', value: String(summary.value.count), hint: 'Sepanjang waktu' },
-  { label: 'Produk tayang', value: String(liveCount.value) },
-  { label: 'Menunggu pencairan', value: formatRupiah(balance.value.available), hint: `Tertahan: ${formatRupiah(balance.value.held)}` },
+  { label: 'Total pendapatan', value: formatRupiah(totalShare.value), hint: 'Porsi 70% dari seluruh penjualan.' },
+  { label: 'Total produk', value: String(products.value.length) },
+  { label: 'Produk terjual', value: String(summary.value.count), hint: 'Sepanjang waktu' },
 ])
 
 const recentSales = computed(() => sales.value.slice(0, 5))
+
+const productColumns = [
+  { key: 'title', label: 'Produk' },
+  { key: 'type', label: 'Tipe' },
+  { key: 'category', label: 'Kategori' },
+  { key: 'price', label: 'Harga', align: 'right' as const },
+  { key: 'status', label: 'Status', align: 'right' as const },
+]
+
+// AppTable's cell slots hand back `item`/`value` as Record<string, any>/any
+// (it isn't a generic component), so lookups against the strictly-typed
+// label/tone records go through these typed accessors instead of indexing
+// the `any` value directly.
+function productTypeLabel(type: TutorProductSummary['type']): string {
+  return PRODUCT_TYPE_LABEL[type]
+}
+function productStatusTone(status: TutorProductSummary['status']) {
+  return PRODUCT_STATUS_TONE[status]
+}
+function productStatusLabel(status: TutorProductSummary['status']): string {
+  return PRODUCT_STATUS_LABEL[status]
+}
+
+/* --------------------------------------------------------------------------
+ * Chart data — computed client-side from `sales`, already fetched above.
+ * No extra requests.
+ * ------------------------------------------------------------------------ */
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** YYYY-MM-DD in the Jakarta calendar day, matching how formatDate anchors dates. */
+function dayKey(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+}
+
+/**
+ * Pendapatan harian, ditumpuk per produk — 30 hari terakhir (hari ini
+ * inklusif). Produk diurutkan dari total pendapatan terbanyak; top 8 jadi
+ * series sendiri, sisanya digabung ke satu series "Lainnya", sama seperti
+ * batas lama di chart per-produk yang terpisah.
+ */
+const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: StackedBarSeries[] }>(() => {
+  const byProduct = new Map<string, { title: string, total: number }>()
+  for (const sale of sales.value) {
+    const existing = byProduct.get(sale.productId)
+    if (existing) existing.total += sale.share
+    else byProduct.set(sale.productId, { title: sale.productTitle, total: sale.share })
+  }
+
+  const sortedIds = [...byProduct.entries()].sort((a, b) => b[1].total - a[1].total).map(([id]) => id)
+  const topIds = sortedIds.slice(0, 8)
+  const hasOthers = sortedIds.length > topIds.length
+
+  const series: StackedBarSeries[] = topIds.map((id, index) => ({
+    key: id,
+    label: byProduct.get(id)!.title,
+    color: `var(--color-chart-${index + 1})`,
+  }))
+  if (hasOthers) {
+    series.push({ key: 'lainnya', label: 'Lainnya', color: 'var(--color-faint)' })
+  }
+  const topIdSet = new Set(topIds)
+
+  const byDayThenProduct = new Map<string, Map<string, number>>()
+  for (const sale of sales.value) {
+    const day = dayKey(sale.paidAt)
+    const seriesKey = topIdSet.has(sale.productId) ? sale.productId : 'lainnya'
+    const dayMap = byDayThenProduct.get(day) ?? new Map<string, number>()
+    dayMap.set(seriesKey, (dayMap.get(seriesKey) ?? 0) + sale.share)
+    byDayThenProduct.set(day, dayMap)
+  }
+
+  const now = Date.now()
+  const points: StackedBarPoint[] = []
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(now - i * DAY_MS)
+    const key = date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+    const dayMap = byDayThenProduct.get(key)
+    points.push({
+      key,
+      label: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }),
+      segments: series.map(item => ({ key: item.key, value: dayMap?.get(item.key) ?? 0 })),
+    })
+  }
+
+  return { points, series }
+})
 </script>
 
 <template>
   <div class="grid gap-6">
-    <header>
-      <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Ringkasan</h1>
-      <p class="mt-1.5 text-muted">Performa produkmu dan penghasilan yang menunggu dicairkan.</p>
-    </header>
+    <AppPageHeader
+      title="Ringkasan"
+      description="Performa produkmu dan penghasilan yang menunggu dicairkan."
+    />
 
     <!-- Perlu perhatian: rejected is loud (needs action), review is quiet
          (just a status). Both link nowhere new — the detail lives in Produk
          saya, this only makes sure it gets seen. -->
     <div v-if="rejectedCount > 0 || reviewCount > 0" class="grid gap-3">
-      <div
-        v-if="rejectedCount > 0"
-        role="alert"
-        class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-      >
-        <IconAlert class="h-4 w-4 shrink-0" />
-        <p class="min-w-0 flex-1">
-          <strong class="font-bold">{{ rejectedCount }} produk ditolak</strong>
-          — perlu revisi sebelum bisa diajukan ulang.
-        </p>
-        <NuxtLink
-          to="/dashboard/tutor/products"
-          class="font-semibold underline underline-offset-2 transition-colors duration-200 hover:text-amber-950"
-        >
+      <AppAlert v-if="rejectedCount > 0" variant="warning" :title="`${rejectedCount} produk ditolak`">
+        Perlu revisi sebelum bisa diajukan ulang.
+        <NuxtLink to="/dashboard/tutor/products" class="font-semibold underline underline-offset-2">
           Lihat produk
         </NuxtLink>
-      </div>
+      </AppAlert>
 
-      <p
-        v-if="reviewCount > 0"
-        role="status"
-        class="flex items-center gap-3 rounded-sm border border-hairline-strong bg-surface px-4 py-3 text-[0.86rem] text-muted"
-      >
-        <IconEye class="h-4 w-4 shrink-0" />
+      <AppInlineMessage v-if="reviewCount > 0" type="info">
         {{ reviewCount }} produk sedang ditinjau moderator — kami mengabarimu begitu selesai.
-      </p>
+      </AppInlineMessage>
     </div>
 
-    <DashboardStats :items="stats" />
+    <DashboardStats :items="stats" :columns="3" />
+
+    <!-- Saldo pencairan sudah punya halaman sendiri; ini cuma info sekunder
+         supaya tautannya tetap kelihatan dari ringkasan. -->
+    <p class="-mt-2 text-[0.86rem] text-muted">
+      Saldo tersedia untuk dicairkan: <strong class="font-semibold text-ink">{{ formatRupiah(balance.available) }}</strong>
+      <NuxtLink to="/dashboard/tutor/payouts" class="ml-1.5 font-semibold text-primary hover:underline">
+        Kelola pencairan
+      </NuxtLink>
+    </p>
+
+    <DashboardPanel
+      id="pendapatan"
+      title="Pendapatan harian per produk"
+      description="30 hari terakhir, ditumpuk per produk (maksimal 8 + Lainnya)."
+    >
+      <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat pendapatan..." />
+
+      <AppInlineMessage v-else-if="salesError" type="error">{{ salesError }}</AppInlineMessage>
+
+      <p v-else-if="sales.length === 0" class="py-6 text-center text-muted">
+        Belum ada penjualan untuk ditampilkan.
+      </p>
+
+      <DashboardStackedBarChart
+        v-else
+        :points="dailyProductRevenue.points"
+        :series="dailyProductRevenue.series"
+        :value-formatter="formatRupiah"
+        ariaLabel="Pendapatan harian per produk, 30 hari terakhir"
+      />
+    </DashboardPanel>
 
     <DashboardPanel id="paket" title="Paket saya" description="Produk yang kamu jual di Zenko.">
       <template #action>
-        <NuxtLink
-          to="/dashboard/tutor/products"
-          class="rounded-xs border border-line px-3 py-1.5 text-[0.82rem] font-semibold transition-colors hover:bg-surface-alt"
-        >
-          Kelola produk
-        </NuxtLink>
+        <AppButton to="/dashboard/tutor/products" variant="outline" size="sm">Kelola produk</AppButton>
       </template>
 
       <DashboardSkeleton v-if="productsPending" :count="3" label="Memuat produk..." />
 
-      <p v-else-if="productsError" role="alert" class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900">
-        {{ productsError }}
-      </p>
+      <AppInlineMessage v-else-if="productsError" type="error">{{ productsError }}</AppInlineMessage>
 
-      <div v-else-if="products.length === 0" class="py-8 text-center">
-        <p class="mx-auto max-w-105 leading-[1.7] text-muted">
-          Belum ada produk. Mulai dari satu try-out tunggal dan ajukan untuk
-          tayang di katalog Zenko.
-        </p>
-        <AppButton to="/dashboard/tutor/products/new" class="mt-5" size="sm">Buat produk</AppButton>
-      </div>
+      <AppEmptyState
+        v-else-if="products.length === 0"
+        title="Belum ada produk"
+        description="Mulai dari satu try-out tunggal dan ajukan untuk tayang di katalog Zenko."
+        action-label="Buat produk"
+        @action="() => navigateTo('/dashboard/tutor/products/new')"
+      />
 
-      <div v-else class="overflow-x-auto">
-        <table class="w-full min-w-160 border-collapse text-left">
-          <thead>
-            <tr class="text-[0.78rem] tracking-widest text-faint uppercase">
-              <th class="pb-3 font-bold">Produk</th>
-              <th class="pb-3 font-bold">Tipe</th>
-              <th class="pb-3 font-bold">Kategori</th>
-              <th class="pb-3 font-bold">Harga</th>
-              <th class="pb-3 font-bold">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="product in products" :key="product.id" class="border-t border-hairline">
-              <td class="max-w-72 py-3.5 pr-4">
-                <NuxtLink
-                  to="/dashboard/tutor/products"
-                  class="font-semibold tracking-[-0.02em] hover:text-primary hover:underline"
-                >
-                  {{ product.title }}
-                </NuxtLink>
-              </td>
-              <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ PRODUCT_TYPE_LABEL[product.type] }}</td>
-              <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ product.category || '—' }}</td>
-              <td class="py-3.5 pr-4 text-[0.9rem] tabular-nums">
-                {{ product.price > 0 ? formatRupiah(product.price) : '—' }}
-              </td>
-              <td class="py-3.5">
-                <DashboardBadge :tone="PRODUCT_STATUS_TONE[product.status]">
-                  {{ PRODUCT_STATUS_LABEL[product.status] }}
-                </DashboardBadge>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <AppTable v-else :columns="productColumns" :data="products">
+        <template #cell(title)="{ item }">
+          <NuxtLink
+            to="/dashboard/tutor/products"
+            class="font-semibold tracking-[-0.02em] hover:text-primary hover:underline"
+          >
+            {{ item.title }}
+          </NuxtLink>
+        </template>
+        <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
+        <template #cell(category)="{ value }">{{ value || '—' }}</template>
+        <template #cell(price)="{ value }">
+          <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+        </template>
+        <template #cell(status)="{ item }">
+          <DashboardBadge :tone="productStatusTone(item.status)">
+            {{ productStatusLabel(item.status) }}
+          </DashboardBadge>
+        </template>
+      </AppTable>
     </DashboardPanel>
 
     <DashboardPanel
@@ -161,19 +234,12 @@ const recentSales = computed(() => sales.value.slice(0, 5))
       description="Bagi hasil 70:30 — porsi yang tercatat di sini sudah bagianmu."
     >
       <template #action>
-        <NuxtLink
-          to="/dashboard/tutor/sales"
-          class="rounded-xs border border-line px-3 py-1.5 text-[0.82rem] font-semibold transition-colors hover:bg-surface-alt"
-        >
-          Lihat semua
-        </NuxtLink>
+        <AppButton to="/dashboard/tutor/sales" variant="outline" size="sm">Lihat semua</AppButton>
       </template>
 
       <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat penjualan..." />
 
-      <p v-else-if="salesError" role="alert" class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900">
-        {{ salesError }}
-      </p>
+      <AppInlineMessage v-else-if="salesError" type="error">{{ salesError }}</AppInlineMessage>
 
       <p v-else-if="recentSales.length === 0" class="py-6 text-center text-muted">
         Belum ada penjualan. Transaksi pertama produkmu akan tampil di sini.
