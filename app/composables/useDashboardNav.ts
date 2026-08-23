@@ -83,19 +83,44 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
   },
 }
 
+/** Rendered while the session is still resolving — see the empty-fallback note below. */
+const EMPTY_NAV: DashboardNav = { title: '', items: [] }
+
 /**
  * Resolves the sidebar for the signed-in user.
  *
- * Falls back to the tutor sidebar while the session is still resolving: the
- * dashboard pages are guarded by `roles`, so only a tutor or admin ever gets
- * far enough to see one.
+ * Empty while the session is still resolving, rather than guessing a role:
+ * SSR can never read the (HttpOnly, API-origin) session cookie, so every
+ * server render hits this branch — previously it guessed the tutor sidebar,
+ * on the reasoning that the dashboard pages are guarded by `roles` and only
+ * a tutor or admin ever gets this far. That guess was silently wrong for
+ * every admin, and Vue's hydration does not fully repair the damage: once
+ * the client resolves the real role and the guess turns out wrong, hydration
+ * adopts the server-rendered <a> nodes and — for reasons that sit in Vue's
+ * hydration internals rather than this app's code — patches their label and
+ * active-state class reactively but never repatches their already-adopted
+ * `href` attribute, since nothing about `item.to` changes again afterwards
+ * to trigger a further update. The visible label always ends up correct;
+ * the underlying link silently keeps pointing at the tutor route it was
+ * guessed to be. A plain click still lands correctly (Vue Router navigates
+ * off the live `to` prop, not the stale DOM attribute), but the rendered
+ * href is what a screen reader announces, what "copy link" copies, and what
+ * an assistive tool or crawler would follow.
+ *
+ * An empty nav sidesteps this rather than papering over it: SSR renders no
+ * items, so the client has nothing stale to adopt — every real item is
+ * freshly created once the role resolves, with the correct href from the
+ * moment it exists. The tutor sidebar's previous instant, guess-right SSR
+ * paint is the one trade-off (it now fills in a beat after mount, same as
+ * admin's), in exchange for an admin's sidebar never lying about where its
+ * links go.
  */
 export function useDashboardNav() {
   const { user } = useAuth()
 
   return computed<DashboardNav>(() => {
     const role = user.value?.role
-    return role === 'admin' || role === 'tutor' ? NAV_BY_ROLE[role] : NAV_BY_ROLE.tutor
+    return role === 'admin' || role === 'tutor' ? NAV_BY_ROLE[role] : EMPTY_NAV
   })
 }
 
