@@ -170,16 +170,12 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
   <div class="grid gap-6">
     <AppPageHeader
       title="Penjualan"
-      description="Riwayat penjualan produkmu. Porsi 70% tertahan 7 hari setelah pembayaran, lalu bisa dicairkan."
+      description="Riwayat penjualan produkmu. Porsi 70% tertahan 7 hari setelah pembayaran, lalu bisa dicairkan. Nama pembeli disamarkan demi privasi."
     />
 
     <DashboardStats :items="stats" :columns="3" />
 
-    <DashboardPanel
-      id="riwayat"
-      title="Riwayat penjualan"
-      description="Terbaru di atas. Nama pembeli disamarkan demi privasi."
-    >
+    <DashboardPanel id="riwayat">
       <!-- The toolbar sits above the loading and error states: changing the
            period or the product fires a refetch, and the control that fired it
            has to stay put (and stay resettable) while that fetch runs or

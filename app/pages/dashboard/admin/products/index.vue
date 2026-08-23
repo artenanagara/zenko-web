@@ -247,10 +247,7 @@ async function decide(approve: boolean, reason?: string) {
     </AppAlert>
     <AppInlineMessage v-else-if="notice" type="warning">{{ notice.text }}</AppInlineMessage>
 
-    <DashboardPanel
-      title="Antrean moderasi"
-      description="Terbuka pada produk berstatus Ditinjau — ganti filter untuk melihat status lain."
-    >
+    <DashboardPanel>
       <!-- Skeleton on first load only; refetches keep the stale table rendered. -->
       <DashboardSkeleton
         v-if="firstLoadPending"

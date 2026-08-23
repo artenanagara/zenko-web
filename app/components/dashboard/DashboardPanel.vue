@@ -1,7 +1,14 @@
 <script setup lang="ts">
-/** Titled surface for a table or list. `id` is the sidebar's anchor target. */
+/**
+ * Surface for a table or list. `id` is the sidebar's anchor target.
+ *
+ * `title` is optional: on a page whose panel is its only content, the page
+ * header already names the thing, and a panel heading restating it just
+ * stacks two headers. Such a panel renders as a plain card — the header
+ * appears only when there is a title or an action to put in it.
+ */
 defineProps<{
-  title: string
+  title?: string
   description?: string
   id?: string
 }>()
@@ -21,8 +28,11 @@ defineProps<{
        clip those too. The header gets its own top radius instead, so its
        flush background still respects the card's rounded corners. -->
   <section :id="id" class="scroll-mt-20 rounded-md border border-line bg-surface shadow-xs">
-    <header class="flex flex-wrap items-start justify-between gap-3 rounded-t-md border-b border-line bg-surface-alt px-5 py-4 md:px-6">
-      <div>
+    <header
+      v-if="title || $slots.action"
+      class="flex flex-wrap items-start justify-between gap-3 rounded-t-md border-b border-line bg-surface-alt px-5 py-4 md:px-6"
+    >
+      <div v-if="title">
         <h2 class="text-[1.05rem] font-bold tracking-[-0.03em] text-ink">{{ title }}</h2>
         <p v-if="description" class="mt-1 text-[0.86rem] text-muted">{{ description }}</p>
       </div>

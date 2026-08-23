@@ -287,10 +287,7 @@ async function confirmReject(reason: string) {
     <AppInlineMessage v-if="conflictMessage" type="warning">{{ conflictMessage }}</AppInlineMessage>
     <AppInlineMessage v-if="actionError" type="error">{{ actionError }}</AppInlineMessage>
 
-    <DashboardPanel
-      title="Permintaan pencairan"
-      description="Alur: Diajukan → Proses → transfer manual → Tandai ditransfer. Pencairan ditolak mengembalikan saldo tutor otomatis."
-    >
+    <DashboardPanel>
       <DashboardSkeleton v-if="pending && !loaded" :count="5" label="Memuat pencairan..." />
 
       <div v-else-if="error" class="py-8 text-center">

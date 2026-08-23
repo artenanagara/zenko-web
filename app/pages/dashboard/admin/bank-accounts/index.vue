@@ -178,10 +178,7 @@ async function confirmVerify() {
       {{ successMessage }}
     </AppAlert>
 
-    <DashboardPanel
-      title="Rekening tutor"
-      description="Cocokkan nama pemilik dengan rekening sebelum memverifikasi — verifikasi tidak bisa dibatalkan."
-    >
+    <DashboardPanel>
       <DashboardSkeleton v-if="pending && !loaded" :count="4" label="Memuat rekening..." />
 
       <div v-else-if="error" class="py-8 text-center">

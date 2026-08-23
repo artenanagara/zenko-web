@@ -228,7 +228,7 @@ async function deleteProduct(product: TutorProductSummary) {
       </ul>
     </AppSectionMessage>
 
-    <DashboardPanel title="Daftar produk" description="Kelola draft, ajukan untuk tayang, atau arsipkan.">
+    <DashboardPanel>
       <DashboardSkeleton v-if="pending" :count="5" label="Memuat produk..." />
 
       <div v-else-if="error" class="py-8 text-center">

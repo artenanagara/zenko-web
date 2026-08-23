@@ -277,10 +277,7 @@ async function confirmReject(reason: string) {
     </AppAlert>
     <AppInlineMessage v-if="conflictMessage" type="warning">{{ conflictMessage }}</AppInlineMessage>
 
-    <DashboardPanel
-      title="Pengajuan perubahan"
-      description="Menyetujui perubahan mengganti rekening lama dan me-reset status verifikasinya."
-    >
+    <DashboardPanel>
       <DashboardSkeleton v-if="pending && !loaded" :count="4" label="Memuat pengajuan perubahan..." />
 
       <div v-else-if="error" class="py-8 text-center">

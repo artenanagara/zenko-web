@@ -234,10 +234,7 @@ async function submitDecision() {
     </AppAlert>
     <AppInlineMessage v-if="conflictNotice" type="warning">{{ conflictNotice }}</AppInlineMessage>
 
-    <DashboardPanel
-      title="Daftar pengajuan"
-      description="Terbuka pada pengajuan yang menunggu keputusan — ganti filter untuk melihat yang sudah diputuskan."
-    >
+    <DashboardPanel>
       <!-- Skeleton on first load only; refetches keep the stale table rendered. -->
       <DashboardSkeleton
         v-if="pending && applications.length === 0"
