@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/artenanagara/zenko-web/compare/v0.3.0...v0.4.0) (2026-08-23)
+
+
+### Features
+
+* make the invoice the durable home for a purchase ([b7d20d5](https://github.com/artenanagara/zenko-web/commit/b7d20d552a8c5e284b28f1a30f07c7ee81cb0eb2))
+
 ## [0.3.0](https://github.com/artenanagara/zenko-web/compare/v0.2.0...v0.3.0) (2026-08-23)
 
 
