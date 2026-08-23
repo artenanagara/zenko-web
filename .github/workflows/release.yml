@@ -66,6 +66,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # The bundle below archives .output, which only exists once Nuxt has
+      # built. Without this the tar step fails on a missing directory.
+      - name: Build
+        run: npm run build
+
       - name: Build release bundle
         env:
           VERSION: ${{ needs.release-please.outputs.version }}
