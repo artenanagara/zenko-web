@@ -31,6 +31,85 @@ const ROLE_TONE: Record<Role, 'neutral' | 'brand'> = {
   admin: 'neutral',
 }
 
+/* --------------------------------------------------------------------------
+ * Foto profil — pilih file langsung mengunggah dan menerapkannya, tanpa
+ * tombol simpan terpisah: ini satu-satunya isi form, jadi tidak ada konteks
+ * form yang lebih besar untuk menunggu sebelum diterapkan.
+ * ------------------------------------------------------------------------ */
+
+const avatarInputRef = useTemplateRef('avatarInputRef')
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
+function pickAvatar() {
+  avatarInputRef.value?.click()
+}
+
+async function onAvatarSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  avatarError.value = ''
+  avatarUploading.value = true
+  try {
+    await uploadAccountAvatar(file)
+  }
+  catch (cause) {
+    avatarError.value = accountApiMessage(cause, 'Gagal mengunggah foto. Coba lagi sebentar lagi.')
+  }
+  finally {
+    avatarUploading.value = false
+    // Supaya memilih file yang sama dua kali berturut-turut tetap memicu @change.
+    input.value = ''
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Nama tampilan. Email sengaja tidak ada di sini — itu identitas
+ * terverifikasi akun, dan mengubahnya butuh alur verifikasi ulang yang belum
+ * ada.
+ * ------------------------------------------------------------------------ */
+
+const name = ref(user.value?.name ?? '')
+const nameSaving = ref(false)
+const nameError = ref('')
+const nameSaved = ref(false)
+
+// Sinkron begitu /auth/me tuntas resolve setelah hydration — user.value
+// masih null saat name di-init di atas.
+watch(() => user.value?.name, (value) => {
+  if (value !== undefined) name.value = value
+})
+
+const nameChanged = computed(() => {
+  const trimmed = name.value.trim()
+  return trimmed !== '' && trimmed !== user.value?.name
+})
+
+async function saveName() {
+  nameError.value = ''
+  nameSaved.value = false
+
+  const trimmed = name.value.trim()
+  if (!trimmed) {
+    nameError.value = 'Nama tidak boleh kosong.'
+    return
+  }
+
+  nameSaving.value = true
+  try {
+    await updateAccountName(trimmed)
+    nameSaved.value = true
+  }
+  catch (cause) {
+    nameError.value = accountApiMessage(cause, 'Gagal menyimpan nama. Coba lagi sebentar lagi.')
+  }
+  finally {
+    nameSaving.value = false
+  }
+}
+
 const { state, error, mocked, change, reset } = useAccountPassword()
 
 const form = reactive({
@@ -87,7 +166,7 @@ async function onSubmit() {
       <p class="mt-1.5 text-muted">Data akun dan keamanan masuk ke Zenko.</p>
     </header>
 
-    <DashboardPanel title="Profil" description="Diambil dari akun Google yang kamu pakai untuk masuk.">
+    <DashboardPanel title="Profil" description="Foto, nama, dan status verifikasi akunmu.">
       <div v-if="user" class="grid gap-5">
         <!-- Identity as one card, not a stack of label/value rows: avatar with
              a brand ring and verified seal, name, role and email together. -->
@@ -114,6 +193,24 @@ async function onSubmit() {
             >
               <IconSeal class="h-4.5 w-4.5" />
             </span>
+
+            <button
+              type="button"
+              class="absolute -bottom-1 -left-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-surface shadow-xs transition-colors hover:bg-surface-alt disabled:pointer-events-none disabled:opacity-60"
+              aria-label="Ganti foto profil"
+              :disabled="avatarUploading"
+              @click="pickAvatar"
+            >
+              <IconSpinner v-if="avatarUploading" class="h-3.5 w-3.5 animate-spin text-muted" />
+              <AppIcon v-else name="camera" :size="14" />
+            </button>
+            <input
+              ref="avatarInputRef"
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              class="hidden"
+              @change="onAvatarSelected"
+            >
           </span>
 
           <div class="min-w-0 flex-1">
@@ -134,10 +231,30 @@ async function onSubmit() {
           </div>
         </div>
 
-        <p class="text-[0.82rem] text-muted">
-          Nama dan foto masih mengikuti akun Google. Mengubahnya dari sini
-          menunggu endpoint profil di zenko-api.
-        </p>
+        <AppInlineMessage v-if="avatarError" type="error">{{ avatarError }}</AppInlineMessage>
+
+        <form class="grid max-w-100 gap-4 border-t border-hairline pt-5" @submit.prevent="saveName">
+          <FormField
+            id="account-name"
+            v-model="name"
+            label="Nama lengkap"
+            placeholder="Nama kamu"
+            autocomplete="name"
+            :error="nameError"
+          />
+
+          <AppInlineMessage v-if="nameSaved" type="confirmation">Nama tersimpan.</AppInlineMessage>
+
+          <div>
+            <AppButton type="submit" size="sm" :disabled="!nameChanged || nameSaving" :loading="nameSaving">
+              Simpan nama
+            </AppButton>
+          </div>
+
+          <p class="text-[0.82rem] text-muted">
+            Email tidak dapat diubah di sini — itu identitas terverifikasi akunmu.
+          </p>
+        </form>
       </div>
 
       <!-- Skeleton mirrors the profile's shape, so the panel does not jump from
