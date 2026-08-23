@@ -66,6 +66,10 @@ const columns = computed(() => [
   { key: 'no', label: '#' },
   ...(showSubtesColumn.value ? [{ key: 'sectionTitle', label: 'Subtes' }] : []),
   { key: 'prompt', label: 'Soal' },
+  // Its own trailing column rather than an icon trailing the prompt text: the
+  // prompt truncates at varying widths, so an inline icon landed at a
+  // different spot on every row.
+  { key: 'preview', label: '', align: 'right' as const },
 ])
 </script>
 
@@ -83,11 +87,21 @@ const columns = computed(() => [
       <template #cell(prompt)="{ item, value }">
         <button
           type="button"
-          class="flex max-w-120 items-center gap-2 text-left transition-colors hover:text-primary"
+          class="block max-w-120 truncate text-left transition-colors hover:text-primary"
+          :title="value"
           @click="openPreview(Number(item.no))"
         >
-          <span class="truncate" :title="value">{{ value }}</span>
-          <AppIcon name="eye" :size="14" class="shrink-0 text-faint" />
+          {{ value }}
+        </button>
+      </template>
+      <template #cell(preview)="{ item }">
+        <button
+          type="button"
+          class="inline-flex items-center rounded-xs p-1 text-faint transition-colors hover:text-primary"
+          :aria-label="`Lihat soal nomor ${item.no}`"
+          @click="openPreview(Number(item.no))"
+        >
+          <AppIcon name="eye" :size="16" />
         </button>
       </template>
     </AppTable>

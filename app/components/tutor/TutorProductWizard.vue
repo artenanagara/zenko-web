@@ -614,14 +614,14 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
       </ol>
 
       <!-- ============================================= Langkah 1: Tipe & jenis -->
-      <DashboardPanel
-        v-if="step === 1"
-        title="Tipe & jenis"
-        :description="isEdit
-          ? 'Tipe dan jenis ujian terkunci setelah produk dibuat.'
-          : 'Pilih bentuk produk, jenis ujian, dan mode pengerjaannya.'"
-      >
+      <DashboardPanel v-if="step === 1">
         <div class="grid max-w-160 gap-5">
+          <!-- The selects below are disabled in edit mode; without this the
+               only cue is that they don't respond. -->
+          <AppInlineMessage v-if="isEdit" type="info">
+            Tipe dan jenis ujian terkunci setelah produk dibuat.
+          </AppInlineMessage>
+
           <div>
             <AppSelect
               :options="PRODUCT_TYPE_OPTIONS"
@@ -699,11 +699,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
       </DashboardPanel>
 
       <!-- ================================================ Langkah 2: Info produk -->
-      <DashboardPanel
-        v-else-if="step === 2"
-        title="Info produk"
-        description="Info yang tampil di katalog dan halaman produk."
-      >
+      <DashboardPanel v-else-if="step === 2">
         <div class="grid max-w-160 gap-5">
           <FormField
             id="product-title"
@@ -810,7 +806,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             :is-custom="isCustom"
             @refresh="refreshDetail"
           />
-          <DashboardPanel v-else title="Isi" description="Soal disusun setelah draft tersimpan.">
+          <DashboardPanel v-else>
             <p class="text-muted">Memuat subtes...</p>
           </DashboardPanel>
         </template>
@@ -825,11 +821,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
       </template>
 
       <!-- ============================================ Langkah 4: Review & ajukan -->
-      <DashboardPanel
-        v-else
-        title="Review & ajukan"
-        description="Cek ringkasan dan kelengkapan produk, lalu ajukan untuk ditinjau."
-      >
+      <DashboardPanel v-else>
         <div class="grid gap-6">
           <div class="rounded-md border border-hairline bg-surface-alt p-5">
             <h3 class="text-[0.9rem] font-semibold">Ringkasan</h3>
