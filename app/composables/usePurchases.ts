@@ -1,13 +1,8 @@
 import type { OrderStatus, Purchase } from '#shared/types/account'
 import type { AsyncResource } from '~/composables/useAccountResource'
-import { purchases } from '~/mocks/account'
 
 /**
- * Purchase history.
- *
- * Live it reads zenko-api's /me/purchases; with NUXT_PUBLIC_USE_MOCK on it
- * falls back to fixtures. Like useOwnedPackages, the calculations work on the
- * `Purchase` type so they do not care which source answered.
+ * Purchase history, read from zenko-api's /me/purchases.
  */
 
 export interface InvoiceTotals {
@@ -32,29 +27,11 @@ export function invoiceTotals(purchase: Purchase): InvoiceTotals {
 }
 
 export function usePurchases(): AsyncResource<Purchase[]> {
-  const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) return settledResource<Purchase[]>(purchases)
-
   return useSessionCollection<Purchase>('/me/purchases')
 }
 
 /** One invoice; an unknown number 404s. */
 export function usePurchase(invoice: string): AsyncResource<Purchase | null> {
-  const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) {
-    const item = purchases.find(purchase => purchase.invoice === invoice)
-    if (!item) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'Invoice tidak ditemukan',
-        fatal: true,
-      })
-    }
-    return settledResource<Purchase | null>(item)
-  }
-
   return useSessionItem<Purchase>(`/me/purchases/${invoice}`, 'Invoice tidak ditemukan')
 }
 

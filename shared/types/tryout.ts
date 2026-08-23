@@ -1,8 +1,8 @@
 /**
  * The try out workspace: sitting a purchased package as a timed CBT session.
  *
- * Live packages are served by zenko-api's owned-package tryout endpoint;
- * app/mocks/tryout.ts implements the same contract for fixture mode.
+ * Packages are served by zenko-api's owned-package tryout endpoint, which is
+ * the only source for these shapes.
  */
 
 export type OptionLabel = 'A' | 'B' | 'C' | 'D' | 'E'

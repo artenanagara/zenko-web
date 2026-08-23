@@ -110,7 +110,7 @@ async function saveName() {
   }
 }
 
-const { state, error, mocked, change, reset } = useAccountPassword()
+const { state, error, change, reset } = useAccountPassword()
 
 const form = reactive({
   current: '',
@@ -338,13 +338,7 @@ async function onSubmit() {
           class="rounded-sm border border-success/30 bg-success-soft px-4 py-3 text-[0.86rem] text-success-ink"
           role="status"
         >
-          <template v-if="mocked">
-            Kata sandi “diganti” dalam mode contoh — tidak ada yang benar-benar
-            berubah karena endpointnya belum ada.
-          </template>
-          <template v-else>
-            Kata sandi berhasil diganti. Pakai yang baru saat masuk berikutnya.
-          </template>
+          Kata sandi berhasil diganti. Pakai yang baru saat masuk berikutnya.
         </p>
 
         <!-- "Belum tersambung" is an amber notice, not a failure. -->

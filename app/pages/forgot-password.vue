@@ -21,7 +21,6 @@ const isSubmitting = ref(false)
 
 /** The address actually mailed, not the field's possibly-edited contents. */
 const sentTo = ref('')
-const isMocked = ref(false)
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -48,7 +47,6 @@ async function submit(address: string) {
     }
 
     sentTo.value = address
-    isMocked.value = result.mocked
     startCooldown()
   }
   finally {
@@ -119,14 +117,6 @@ function editAddress() {
     </template>
 
     <div class="grid gap-5">
-      <AuthNotice v-if="isMocked" tone="info">
-        Mode contoh: tidak ada email yang benar-benar dikirim. Buka
-        <NuxtLink to="/password-baru?token=contoh" class="font-semibold underline">
-          /password-baru?token=contoh
-        </NuxtLink>
-        untuk melihat langkah berikutnya.
-      </AuthNotice>
-
       <AuthNotice v-if="notice" :tone="noticeTone">{{ notice }}</AuthNotice>
 
       <div class="rounded-sm bg-surface-alt px-4 py-4 text-[0.88rem] text-muted">

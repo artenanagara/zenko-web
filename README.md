@@ -11,9 +11,9 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-`.env.example` menyalakan mode mock, jadi katalog langsung terisi tanpa backend.
-Kalau ingin memakai data sungguhan, jalankan `zenko-api` di terminal terpisah
-lalu set `NUXT_PUBLIC_USE_MOCK=false`.
+Semua data datang dari `zenko-api`, jadi jalankan backend itu di terminal
+terpisah sebelum membuka halaman apa pun — tanpa itu katalog dan halaman akun
+akan kosong.
 
 | Script              | Keterangan                          |
 | ------------------- | ----------------------------------- |
@@ -54,19 +54,16 @@ environment `production`.
 | ------------------------- | ------------------------------ | ----------------------------------- |
 | `NUXT_PUBLIC_APP_VERSION` | versi dari `package.json`      | Versi build untuk diagnosis         |
 | `NUXT_PUBLIC_API_BASE`    | `http://localhost:8080/api/v1` | Base URL zenko-api                  |
-| `NUXT_PUBLIC_USE_MOCK`    | `false`                        | `true` = katalog dari fixture lokal |
 
 Dibaca lewat `runtimeConfig.public` di `nuxt.config.ts`, jadi bisa diganti saat
 runtime tanpa build ulang.
 
-## Mode mock
+## Data
 
-`NUXT_PUBLIC_USE_MOCK=true` membuat `useCatalog` mengambil data dari
-[app/mocks/catalog.ts](app/mocks/catalog.ts) alih-alih memanggil API — berguna
-saat mengerjakan tampilan tanpa menyalakan backend, atau saat Go belum
-terpasang. Isinya 12 paket dan 3 testimoni, cerminan dari
-`zenko-api/internal/store/seed.go`; **ubah keduanya bersamaan** kalau data seed
-berubah.
+Tidak ada fixture lokal: setiap halaman memanggil `zenko-api`. Data contoh
+untuk pengembangan berasal dari seed backend
+(`zenko-api/internal/store/seed.go`), jadi katalog di layar selalu mencerminkan
+apa yang benar-benar dilayani API.
 
 Tab urutan tetap berfungsi di mode ini: `sortMockPackages` menyalin logika
 `sortPackages` di service backend, jadi Pilihan/Terlaris/Terbaru menghasilkan
@@ -143,7 +140,6 @@ app/
   layouts/                default (header+footer), auth (polos), dashboard,
                           account (header+footer+sidebar akun)
   middleware/auth.ts      guard sesi + peran, dibaca dari meta.roles
-  mocks/                  fixture katalog, dashboard, dan akun
   types/router.d.ts       augmentasi RouteMeta (meta.roles)
   assets/css/main.css     design token (@theme) + component class
   plugins/auth.client.ts  memuat sesi sekali saat aplikasi start
@@ -200,10 +196,8 @@ component class di file yang sama: `.dot-grid` (pola titik latar),
 - **Menu mobile** belum ada — di bawah 768px link nav disembunyikan.
 - **Login/daftar dengan email** belum tersambung; hanya Google yang berfungsi.
   Formulirnya memvalidasi input lalu mengarahkan pengguna ke tombol Google.
-- **Isi dashboard tutor dan siswa masih contoh** — lihat
-  [app/mocks/dashboard.ts](app/mocks/dashboard.ts). zenko-api belum punya
-  endpoint penjualan, pencairan, pembelian, maupun riwayat try out. Dashboard
-  admin sudah memakai data sungguhan untuk daftar pengajuan tutor; panel
-  moderasi paket di halaman yang sama masih contoh.
+- **Semua dashboard memakai data sungguhan.** Penjualan, pencairan, pembelian,
+  moderasi paket, dan riwayat try out masing-masing punya endpoint di
+  zenko-api; tidak ada lagi fixture lokal di mana pun.
 - **Peran hanya berubah setelah masuk ulang**, karena peran ikut ditandatangani
   ke dalam cookie sesi.

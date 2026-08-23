@@ -9,25 +9,15 @@
  * in zenko-api, password reset is not — so a flow that exists is never held
  * back by one that does not.
  *
- * Unlike checkout, a gated flow is simulated under NUXT_PUBLIC_USE_MOCK (no
- * money moves here); mock results carry `mocked: true` so pages can admit no
- * email was actually sent.
- *
  * Email verification is a 6-digit code entered on the page, not a link —
  * password reset still is, so `verifyEmail` and `resendVerification` are the
  * only calls here that never carry a `token`.
  */
 
-/** Token the mock always rejects, so the "expired" screen can be exercised. */
-export const MOCK_EXPIRED_TOKEN = 'kedaluwarsa'
-
-/** Code the mock always rejects as expired, so that screen can be exercised without a backend. */
-export const MOCK_EXPIRED_CODE = '000000'
-
 export type RecoveryFailure = 'not-connected' | 'invalid-token' | 'error'
 
 export type RecoveryResult =
-  | { ok: true, mocked: boolean }
+  | { ok: true }
   | { ok: false, reason: RecoveryFailure, message: string }
 
 /**
@@ -40,7 +30,7 @@ export type RecoveryResult =
 export type VerifyEmailFailure = 'invalid-code' | 'expired' | 'not-connected' | 'error'
 
 export type VerifyEmailResult =
-  | { ok: true, mocked: boolean }
+  | { ok: true }
   | { ok: false, reason: VerifyEmailFailure, message: string }
 
 const NOT_CONNECTED_MESSAGE =
@@ -56,25 +46,12 @@ const GENERIC_ERROR_MESSAGE = 'Gagal menghubungi server. Coba lagi sebentar lagi
 export function useAccountRecovery() {
   const { public: config } = useRuntimeConfig()
 
-  /** Artificial delay in mock mode; without it the pending state just flickers. */
-  function pause(ms = 700) {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
   async function post(
     path: string,
     body: Record<string, string>,
     enabled: boolean,
   ): Promise<RecoveryResult> {
     if (!enabled) {
-      if (config.useMock) {
-        await pause()
-        if (body.token === MOCK_EXPIRED_TOKEN) {
-          return { ok: false, reason: 'invalid-token', message: INVALID_TOKEN_MESSAGE }
-        }
-        return { ok: true, mocked: true }
-      }
-
       return { ok: false, reason: 'not-connected', message: NOT_CONNECTED_MESSAGE }
     }
 
@@ -85,7 +62,7 @@ export function useAccountRecovery() {
         body,
         credentials: 'include',
       })
-      return { ok: true, mocked: false }
+      return { ok: true }
     }
     catch (cause) {
       return failureFor(cause)
@@ -113,14 +90,6 @@ export function useAccountRecovery() {
    */
   async function verifyEmail(email: string, code: string): Promise<VerifyEmailResult> {
     if (!config.emailVerificationEnabled) {
-      if (config.useMock) {
-        await pause()
-        if (code === MOCK_EXPIRED_CODE) {
-          return { ok: false, reason: 'expired', message: EXPIRED_CODE_MESSAGE }
-        }
-        return { ok: true, mocked: true }
-      }
-
       return { ok: false, reason: 'not-connected', message: NOT_CONNECTED_MESSAGE }
     }
 
@@ -131,7 +100,7 @@ export function useAccountRecovery() {
         body: { email, code },
         credentials: 'include',
       })
-      return { ok: true, mocked: false }
+      return { ok: true }
     }
     catch (cause) {
       return verifyFailureFor(cause)

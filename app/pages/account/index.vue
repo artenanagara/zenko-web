@@ -13,7 +13,6 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { public: config } = useRuntimeConfig()
 const { user } = useAuth()
 const { data: items, pending, error, refresh } = useOwnedPackages()
 
@@ -114,10 +113,6 @@ const summary = computed(() => {
         </div>
       </div>
     </section>
-
-    <AccountNotice v-if="config.useMock">
-      Angka di halaman ini masih contoh — mode mock menyala, jadi datanya dari fixture, bukan zenko-api.
-    </AccountNotice>
 
     <!-- Memuat: kerangka empat metrik dan panel, bukan angka nol yang keliru. -->
     <div v-if="pending" class="grid gap-6" aria-busy="true">

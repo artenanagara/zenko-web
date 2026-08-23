@@ -9,7 +9,6 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { public: config } = useRuntimeConfig()
 const { data: item, pending, error, refresh } = useOwnedPackage(route.params.slug as string)
 
 useHead({
@@ -191,10 +190,6 @@ function barTone(percent: number) {
             <template #icon><IconRepeat class="h-[1.15rem] w-[1.15rem]" /></template>
           </AccountStat>
         </div>
-
-        <AccountNotice v-if="config.useMock">
-          Riwayat ini masih contoh — mode mock menyala, jadi percobaan hanya tersimpan selama tab ini terbuka.
-        </AccountNotice>
 
         <DashboardPanel
           id="subtes"
