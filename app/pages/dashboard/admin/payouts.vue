@@ -305,7 +305,7 @@ async function confirmReject(reason: string) {
       </div>
 
       <div v-else class="grid gap-4">
-        <AdminTableToolbar
+        <DashboardTableToolbar
           v-model:search="search"
           v-model:filter="statusFilter"
           v-model:sort="sortOrder"

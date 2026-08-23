@@ -5,7 +5,7 @@ import type { TableControlOption } from '~/composables/useTableControls'
 /**
  * Rekening bank › Pengajuan — antrean verifikasi rekening tutor (satu arah,
  * idempoten, admin_bank_accounts.go Verify). Satu tabel, satu dataset;
- * AdminTableToolbar yang memfilter, persis pola
+ * DashboardTableToolbar yang memfilter, persis pola
  * applications/products/payouts.
  *
  * Halaman saudaranya (Perubahan) menyetujui penggantian rekening, dan itu
@@ -196,7 +196,7 @@ async function confirmVerify() {
       </div>
 
       <div v-else class="grid gap-4">
-        <AdminTableToolbar
+        <DashboardTableToolbar
           v-model:search="search"
           v-model:filter="statusFilter"
           v-model:sort="sortOrder"

@@ -1,17 +1,19 @@
 /**
  * Search + filter + sort for a dashboard table, in one place.
  *
- * Every admin queue used to filter with AppTabs, which could only ever express
- * one axis (and hid the rest of the rows behind a second click). The five admin
- * tables now share this composable and AdminTableToolbar instead, so they
- * behave identically: the page supplies the searchable fields, the filter
- * predicates and the sort comparators, and gets back the rows to render plus
- * the state the toolbar needs.
+ * Every dashboard table used to filter with AppTabs, which could only ever
+ * express one axis (and hid the rest of the rows behind a second click). The
+ * admin queues and the tutor's own lists now share this composable and
+ * DashboardTableToolbar instead, so they behave identically: the page supplies
+ * the searchable fields, the filter predicates and the sort comparators, and
+ * gets back the rows to render plus the state the toolbar needs.
  *
  * Filtering runs in the browser over the list the page already fetched — same
- * reasoning as usePackageFilters: the admin datasets fit in a single response,
- * and local filtering keeps typing instant. Move it server-side once a queue
- * outgrows one response.
+ * reasoning as usePackageFilters: these datasets fit in a single response, and
+ * local filtering keeps typing instant. Move it server-side once a table
+ * outgrows one response. Where the server already owns an axis (tutor
+ * Penjualan's period), the matching predicates are `() => true` and the page
+ * watches the filter ref to refetch.
  */
 
 /** One option in the toolbar's filter or sort dropdown (AppSelect's shape). */
@@ -31,9 +33,12 @@ export interface TableControlsConfig<T> {
   /** Sort value → comparator. Needs an entry for every sort option. */
   sorts: Record<string, (a: T, b: T) => number>
   /**
-   * What the page lands on. Must be the actionable subset (Menunggu, Antrean,
-   * Belum diverifikasi …), never "Semua": an admin opening the page still sees
-   * only what needs deciding, exactly like the old default tab.
+   * What the page lands on. For a queue this must be the actionable subset
+   * (Menunggu, Antrean, Belum diverifikasi …), never "Semua": an admin opening
+   * the page still sees only what needs deciding, exactly like the old default
+   * tab. An inventory table with no queue behind it (tutor "Produk saya") is
+   * the exception — it lands on every row, because that is what its owner came
+   * to see; the actionable count then rides in the toolbar summary instead.
    */
   defaultFilter: string
   /** The page's default ordering. */

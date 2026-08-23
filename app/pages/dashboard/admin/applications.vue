@@ -4,7 +4,7 @@ import type { TableControlOption } from '~/composables/useTableControls'
 
 /**
  * Pengajuan tutor — antrean keputusan pengajuan calon tutor (product spec
- * §4.2, design spec §4.2). Satu tabel dengan AdminTableToolbar di atasnya:
+ * §4.2, design spec §4.2). Satu tabel dengan DashboardTableToolbar di atasnya:
  * filter berhenti di "Menunggu" saat halaman dibuka, jadi yang tampil pertama
  * tetap yang butuh keputusan. Keputusan lewat AdminConfirmModal untuk KEDUA
  * arah — API keputusan hanya menerima { status }, tanpa alasan, jadi
@@ -257,7 +257,7 @@ async function submitDecision() {
       </div>
 
       <div v-else class="grid gap-4">
-        <AdminTableToolbar
+        <DashboardTableToolbar
           v-model:search="search"
           v-model:filter="statusFilter"
           v-model:sort="sortOrder"

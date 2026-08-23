@@ -4,7 +4,7 @@ import type { TableControlOption } from '~/composables/useTableControls'
 
 /**
  * Moderasi produk — antrean review (design spec §4.3). Satu tabel dengan
- * AdminTableToolbar di atasnya: filter berhenti di "Ditinjau" saat halaman
+ * DashboardTableToolbar di atasnya: filter berhenti di "Ditinjau" saat halaman
  * dibuka, jadi yang tampil pertama tetap antrean keputusan. "Tinjau" membuka
  * halaman detail; baris antrean juga bisa langsung disetujui/ditolak lewat
  * modal keputusan yang sama dengan halaman detail.
@@ -263,7 +263,7 @@ async function decide(approve: boolean, reason?: string) {
            the full-list fetch, and the control that fired it has to stay put
            (and stay resettable) while that fetch runs or fails. -->
       <div v-else class="grid gap-4">
-        <AdminTableToolbar
+        <DashboardTableToolbar
           v-model:search="search"
           v-model:filter="statusFilter"
           v-model:sort="sortOrder"

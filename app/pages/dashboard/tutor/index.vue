@@ -43,12 +43,35 @@ const stats = computed(() => [
   { label: 'Produk terjual', value: String(summary.value.count), hint: 'Sepanjang waktu' },
 ])
 
-const recentSales = computed(() => sales.value.slice(0, 5))
+/**
+ * How many rows a preview panel shows. Both panels here are previews of a page
+ * that owns the full, filterable table (Penjualan and Produk saya) — the
+ * overview's job is to say "here's the latest, go there for the rest", not to
+ * reprint either table.
+ */
+const PREVIEW_ROWS = 5
 
+const recentSales = computed(() => sales.value.slice(0, PREVIEW_ROWS))
+
+/**
+ * Produk terbaru diperbarui, dipotong ke PREVIEW_ROWS. Sorted here rather than
+ * trusting the list order, so "terbaru diperbarui" in the panel description is
+ * actually true — and it matches the default sort of Produk saya.
+ */
+const previewProducts = computed(() =>
+  [...products.value].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, PREVIEW_ROWS),
+)
+
+/** How many products the preview is not showing — stated under the table. */
+const hiddenProductCount = computed(() => Math.max(products.value.length - PREVIEW_ROWS, 0))
+
+// Preview columns, deliberately narrower than Produk saya's: no Kategori (a
+// catalogue taxonomy detail that never decides whether to open the full page)
+// and no Soal/Aksi (the full table owns every action). Title, type, price and
+// status are what "how are my products doing" actually asks.
 const productColumns = [
   { key: 'title', label: 'Produk' },
   { key: 'type', label: 'Tipe' },
-  { key: 'category', label: 'Kategori' },
   { key: 'price', label: 'Harga', align: 'right' as const },
   { key: 'status', label: 'Status', align: 'right' as const },
 ]
@@ -189,7 +212,11 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
       />
     </DashboardPanel>
 
-    <DashboardPanel id="paket" title="Paket saya" description="Produk yang kamu jual di Zenko.">
+    <DashboardPanel
+      id="paket"
+      title="Paket saya"
+      description="Maksimal lima produk yang paling baru kamu perbarui. Daftar lengkapnya ada di Produk saya."
+    >
       <template #action>
         <AppButton to="/dashboard/tutor/products" variant="outline" size="sm">Kelola produk</AppButton>
       </template>
@@ -206,26 +233,33 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />
 
-      <AppTable v-else :columns="productColumns" :data="products">
-        <template #cell(title)="{ item }">
-          <NuxtLink
-            to="/dashboard/tutor/products"
-            class="font-semibold tracking-[-0.02em] hover:text-primary hover:underline"
-          >
-            {{ item.title }}
-          </NuxtLink>
-        </template>
-        <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
-        <template #cell(category)="{ value }">{{ value || '—' }}</template>
-        <template #cell(price)="{ value }">
-          <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
-        </template>
-        <template #cell(status)="{ item }">
-          <DashboardBadge :tone="productStatusTone(item.status)">
-            {{ productStatusLabel(item.status) }}
-          </DashboardBadge>
-        </template>
-      </AppTable>
+      <template v-else>
+        <AppTable :columns="productColumns" :data="previewProducts">
+          <template #cell(title)="{ item }">
+            <NuxtLink
+              to="/dashboard/tutor/products"
+              class="font-semibold tracking-[-0.02em] hover:text-primary hover:underline"
+            >
+              {{ item.title }}
+            </NuxtLink>
+          </template>
+          <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
+          <template #cell(price)="{ value }">
+            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+          </template>
+          <template #cell(status)="{ item }">
+            <DashboardBadge :tone="productStatusTone(item.status)">
+              {{ productStatusLabel(item.status) }}
+            </DashboardBadge>
+          </template>
+        </AppTable>
+
+        <!-- Says out loud that the table is cut off, so the panel is never
+             mistaken for the whole list. -->
+        <p v-if="hiddenProductCount > 0" class="mt-3 text-[0.82rem] text-muted">
+          <span class="tabular-nums">+{{ hiddenProductCount }}</span> produk lainnya di Produk saya.
+        </p>
+      </template>
     </DashboardPanel>
 
     <DashboardPanel

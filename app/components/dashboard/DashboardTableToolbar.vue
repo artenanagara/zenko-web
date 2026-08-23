@@ -2,15 +2,16 @@
 import type { TableControlOption } from '~/composables/useTableControls'
 
 /**
- * The one toolbar above every admin queue table: search, status filter, sort
+ * The one toolbar above every dashboard table: search, status filter, sort
  * order, a result summary, and a Reset that only appears once something is off
  * its default.
  *
- * Deliberately generic — it knows nothing about any single queue, so the five
- * admin tables read and behave identically. It replaces AppTabs, which could
- * only express one axis and turned "look at the decided ones" into a second
- * click; the counts the tabs used to carry live in the summary line instead
- * (the sidebar and Ringkasan badges still carry the pending counts too).
+ * Deliberately generic — it knows nothing about any single table, so every
+ * dashboard table (admin queues and the tutor's own lists alike) reads and
+ * behaves identically. It replaces AppTabs, which could only express one axis
+ * and turned "look at the decided ones" into a second click; the counts the
+ * tabs used to carry live in the summary line instead (the sidebar and
+ * Ringkasan badges still carry the pending counts too).
  *
  * Quiet on purpose: this is a utility bar, not a hero — hence AppTextField
  * rather than AppSearchInput (the catalogue's big shadowed form with its own
@@ -93,6 +94,12 @@ defineEmits<{
           @update:model-value="filter = String($event)"
         />
       </div>
+
+      <!-- Optional extra control, rendered between filter and sort. Only used
+           where a table has a second filtering axis the server owns (tutor
+           Penjualan filters by product); every other table leaves it empty and
+           keeps the canonical search + filter + sort shape. -->
+      <slot name="filter-extra" />
 
       <div class="sm:w-52 sm:shrink-0">
         <AppSelect
