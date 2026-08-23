@@ -3,9 +3,8 @@
  * and the purchases behind them. Wire format returned by zenko-api's /me and
  * /me/purchases endpoints — keep in sync with zenko-api's model package.
  *
- * These shapes previously lived in app/mocks/account.ts as the fixture's own
- * types. They are the contract now; the fixtures merely satisfy it, so the
- * live API and the mock fallback agree on one definition.
+ * These interfaces are the contract: they are written out here in full and
+ * derive from nothing else, so `shared/` never depends on app-side fixtures.
  */
 
 /** One subtest inside an attempt, mirroring "Materi yang dibahas" in the catalogue. */

@@ -1,8 +1,7 @@
 /**
  * Password change from inside the account — the signed-in counterpart of
  * useAccountRecovery: proof is the current password, not an email token.
- * Gated by its own NUXT_PUBLIC_PASSWORD_CHANGE_ENABLED, with the same mock
- * behaviour as recovery.
+ * Gated by its own NUXT_PUBLIC_PASSWORD_CHANGE_ENABLED.
  */
 
 export type PasswordChangeState = 'idle' | 'submitting' | 'success' | 'not-connected' | 'error'
@@ -15,23 +14,11 @@ export function useAccountPassword() {
 
   const state = ref<PasswordChangeState>('idle')
   const error = ref('')
-  /** True when the change was only simulated, so the page can say so. */
-  const mocked = ref(false)
 
   async function change(currentPassword: string, newPassword: string) {
     error.value = ''
-    mocked.value = false
 
     if (!config.passwordChangeEnabled) {
-      if (config.useMock) {
-        state.value = 'submitting'
-        // Artificial delay; without it the pending state just flickers.
-        await new Promise(resolve => setTimeout(resolve, 700))
-        mocked.value = true
-        state.value = 'success'
-        return
-      }
-
       state.value = 'not-connected'
       error.value = NOT_CONNECTED_MESSAGE
       return
@@ -57,10 +44,9 @@ export function useAccountPassword() {
   function reset() {
     state.value = 'idle'
     error.value = ''
-    mocked.value = false
   }
 
-  return { state, error, mocked, change, reset }
+  return { state, error, change, reset }
 }
 
 /** zenko-api renders every error as { error, requestId }. */

@@ -1,5 +1,8 @@
 import { expect, gotoHydrated, test } from './support/fixtures'
 import { mockSignedOut } from './support/auth'
+import { FIRST_BY_SORT, PACKAGES, PACKAGE_COUNT } from './support/catalog'
+
+const CPNS = PACKAGES['cpns-2026-intensif']!
 
 test.describe('catalog (/paket)', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,41 +10,46 @@ test.describe('catalog (/paket)', () => {
     await gotoHydrated(page, '/paket')
   })
 
-  test('renders mock packages from app/mocks/catalog.ts', async ({ page }) => {
+  test('renders the packages the API returns', async ({ page }) => {
     const heading = page.getByRole('heading', { name: 'Semua paket' })
     await expect(heading).toBeVisible()
 
-    // 12 mock packages per the fixture; the counter next to the heading
-    // reflects the filtered (here: unfiltered) count.
-    await expect(heading.getByText('(12)')).toBeVisible()
+    // The counter next to the heading reflects the filtered count; nothing is
+    // filtered here, so it is the whole fixture catalogue.
+    await expect(heading.getByText(`(${PACKAGE_COUNT})`)).toBeVisible()
 
-    await expect(page.getByRole('link', { name: /Latihan CPNS 2026 Intensif/ })).toBeVisible()
+    await expect(page.getByRole('link', { name: new RegExp(CPNS.title) })).toBeVisible()
   })
 
-  test('sort tabs change the result order', async ({ page }) => {
+  test('sort tabs re-request the catalogue and render the new order', async ({ page }) => {
     const firstCardTitle = () => page.locator('a[href^="/paket/"] h3').first().innerText()
 
-    // Default sort is "featured" (Pilihan) — curated flag first, then
-    // popularity. See sortMockPackages in app/mocks/catalog.ts.
-    const featuredFirst = await firstCardTitle()
+    // Default sort is "featured" (Pilihan). The expected orderings are fixed
+    // in support/catalog.ts — the API ranks on fields it never serialises
+    // (soldCount, publishedAt, featured), so the browser has nothing to sort
+    // with and the order it shows must be the order it was served.
+    expect(await firstCardTitle()).toBe(FIRST_BY_SORT.featured)
 
     await page.getByRole('button', { name: /Urutkan/ }).click()
     await page.getByRole('menuitemradio', { name: 'Terlaris' }).click()
 
     await expect(page.getByRole('button', { name: /Terlaris/ })).toBeVisible()
 
-    const bestsellerFirst = await firstCardTitle()
-
-    // "Terlaris" (bestseller) orders purely by soldCount; the featured-first
-    // package (2.1rb sold) is not the top seller (3.4rb, Paket Hemat SKD
-    // Kedinasan), so the leading card must change.
-    expect(bestsellerFirst).not.toBe(featuredFirst)
+    // "Terlaris" (bestseller) orders purely by units sold, so the curated
+    // package that leads the default view is displaced by the actual top
+    // seller. Asserting on both the change and the specific title keeps the
+    // test honest: a page that simply failed to re-render would pass the
+    // first check alone.
+    expect(FIRST_BY_SORT.bestseller).not.toBe(FIRST_BY_SORT.featured)
+    await expect
+      .poll(firstCardTitle, { message: 'first card after switching to Terlaris' })
+      .toBe(FIRST_BY_SORT.bestseller)
   })
 
   test('clicking a package navigates to its detail page', async ({ page }) => {
-    await page.getByRole('link', { name: /Latihan CPNS 2026 Intensif/ }).click()
+    await page.getByRole('link', { name: new RegExp(CPNS.title) }).click()
 
-    await expect(page).toHaveURL('/paket/cpns-2026-intensif')
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Latihan CPNS 2026 Intensif')
+    await expect(page).toHaveURL(`/paket/${CPNS.slug}`)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(CPNS.title)
   })
 })

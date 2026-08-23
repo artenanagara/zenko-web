@@ -1,16 +1,13 @@
 import type { Ref } from 'vue'
 import type { Attempt, OwnedPackage, RecordAttemptRequest } from '#shared/types/account'
-import type { TryoutResult } from '#shared/types/tryout'
+import type { TryoutBlueprint, TryoutResult } from '#shared/types/tryout'
 import type { AsyncResource } from '~/composables/useAccountResource'
-import { ownedPackages } from '~/mocks/account'
 
 /**
- * Packages this account owns.
+ * Packages this account owns, read from zenko-api's /me/packages.
  *
- * Live it reads zenko-api's /me/packages; with NUXT_PUBLIC_USE_MOCK on it
- * falls back to fixtures, the same switch the catalogue uses. The calculations
- * below work on the `OwnedPackage` type, not on either source, so they are
- * untouched by which one answers.
+ * The calculations below work on the `OwnedPackage` type rather than on the
+ * response itself, so they stay independent of the transport.
  *
  * One package is one try out, as the catalogue describes it. Progress is
  * therefore not "3 of 5 done" but "worked through 3 times, best score 412".
@@ -70,20 +67,15 @@ export function accuracyOf(attempt: Attempt): Accuracy {
 }
 
 export function useOwnedPackages(): AsyncResource<OwnedPackage[]> {
-  const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) return settledResource<OwnedPackage[]>(ownedPackages)
-
   return useSessionCollection<OwnedPackage>('/me/packages')
 }
 
 /**
  * Persists a finished try out sitting and returns the stored attempt.
  *
- * Live it posts the result — score and per-section tallies — to
+ * Posts the result — score and per-section tallies — to
  * POST /me/packages/:slug/attempts; the questions are not sent, only the
- * outcome. In mock mode it appends to the fixture in place, which lasts for
- * the tab's session and resets on reload, the same trade every mock makes.
+ * outcome.
  */
 export async function recordAttempt(slug: string, result: TryoutResult): Promise<Attempt | null> {
   const { public: config } = useRuntimeConfig()
@@ -98,25 +90,6 @@ export async function recordAttempt(slug: string, result: TryoutResult): Promise
     })),
   }
 
-  if (config.useMock) {
-    const item = ownedPackages.find(owned => owned.slug === slug)
-    if (!item) return null
-
-    const attempt: Attempt = {
-      id: `${slug}-${item.attempts.length + 1}`,
-      number: item.attempts.length + 1,
-      finishedAt: body.finishedAt ?? Math.floor(Date.now() / 1000),
-      score: body.score,
-      // No cohort to rank against outside a real batch test — honest about it
-      // rather than inventing a placement.
-      rank: '—',
-      sections: body.sections,
-    }
-
-    item.attempts = [attempt, ...item.attempts]
-    return attempt
-  }
-
   return await $fetch<Attempt>(`/me/packages/${slug}/attempts`, {
     baseURL: config.apiBase,
     method: 'POST',
@@ -127,21 +100,19 @@ export async function recordAttempt(slug: string, result: TryoutResult): Promise
 
 /** One owned package; a slug the account doesn't own 404s instead of rendering empty. */
 export function useOwnedPackage(slug: string): AsyncResource<OwnedPackage | null> {
-  const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) {
-    const item = ownedPackages.find(owned => owned.slug === slug)
-    if (!item) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'Paket ini tidak ada di akunmu',
-        fatal: true,
-      })
-    }
-    return settledResource<OwnedPackage | null>(item)
-  }
-
   return useSessionItem<OwnedPackage>(`/me/packages/${slug}`, 'Paket ini tidak ada di akunmu')
+}
+
+/**
+ * Questions and scoring rules for one package the signed-in account owns.
+ * The live endpoint performs its own ownership check, so this is the only
+ * resource the work area needs before starting a sitting.
+ */
+export function useTryoutBlueprint(slug: string): AsyncResource<TryoutBlueprint | null> {
+  return useSessionItem<TryoutBlueprint>(
+    `/me/packages/${slug}/tryout`,
+    'Try out ini tidak ada di akunmu',
+  )
 }
 
 /**
@@ -176,11 +147,6 @@ export function usePackageOwnershipGuard(slug: string, enabled: () => boolean): 
 
   onMounted(async () => {
     if (!enabled()) return
-
-    if (config.useMock) {
-      owned.value = ownedPackages.some(item => item.slug === slug)
-      return
-    }
 
     try {
       await $fetch(`/me/packages/${slug}`, {

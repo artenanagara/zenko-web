@@ -1,5 +1,4 @@
 import type { TutorApplication, TutorApplicationDraft } from '#shared/types/tutor-application'
-import { adminApplications } from '~/mocks/dashboard'
 
 /**
  * Tutor applications: submitting one, reading your own, and the admin review
@@ -7,23 +6,11 @@ import { adminApplications } from '~/mocks/dashboard'
  *
  * Every call carries the session cookie — applying requires an account, since
  * approval grants the tutor role to one.
- *
- * Mirrors useCatalog — when NUXT_PUBLIC_USE_MOCK is on, the admin list resolves
- * from fixtures so the dashboard can be worked on without the backend running.
  */
 
 /** Admin-only list. The API rejects this with 403 for any other role. */
 export function useAdminTutorApplications() {
   const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) {
-    return {
-      data: computed(() => adminApplications),
-      pending: ref(false),
-      error: ref<unknown>(null),
-      refresh: async () => {},
-    }
-  }
 
   const { data, pending, error, refresh } = useFetch<TutorApplication[]>('/admin/tutor-applications', {
     baseURL: config.apiBase,

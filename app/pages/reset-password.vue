@@ -30,7 +30,6 @@ const errors = reactive<{ password?: string, confirm?: string }>({})
 const notice = ref('')
 const noticeTone = ref<'warning' | 'error'>('error')
 const isSubmitting = ref(false)
-const isMocked = ref(false)
 
 const strength = usePasswordStrength(toRef(form, 'password'))
 
@@ -59,7 +58,6 @@ async function onSubmit() {
 
     if (result.ok) {
       status.value = 'success'
-      isMocked.value = result.mocked
       // No reason to keep the password in memory once used.
       form.password = ''
       form.confirm = ''
@@ -142,13 +140,7 @@ async function onSubmit() {
       Mulai sekarang gunakan kata sandi baru itu untuk masuk ke Zenko.
     </template>
 
-    <div class="grid gap-5">
-      <AuthNotice v-if="isMocked" tone="info">
-        Mode contoh: tidak ada kata sandi yang benar-benar disimpan di server.
-      </AuthNotice>
-
-      <AppButton to="/masuk" size="lg" class="w-full">Masuk sekarang</AppButton>
-    </div>
+    <AppButton to="/masuk" size="lg" class="w-full">Masuk sekarang</AppButton>
   </AuthPanel>
 
   <AuthPanel v-else-if="status === 'invalid'" title="Tautan ini tidak berlaku lagi" tone="danger">

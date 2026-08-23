@@ -1,3 +1,4 @@
+import type { MaybeRefOrGetter } from 'vue'
 import type {
   OptionLabel,
   TryoutAnswerState,
@@ -6,7 +7,7 @@ import type {
   TryoutResult,
   TryoutSectionResult,
 } from '#shared/types/tryout'
-import { getTryoutBlueprint } from '~/mocks/tryout'
+import { toValue } from 'vue'
 
 export type TryoutPhase = 'intro' | 'running' | 'section-break' | 'finished'
 
@@ -70,14 +71,17 @@ function scoreQuestion(question: TryoutQuestion, answer: TryoutAnswerState | und
  * the same question, answers, and remaining time instead of losing the
  * sitting — the one thing worse than a strict timer is one that resets itself.
  *
- * `blueprintOverride` swaps the package's full blueprint for another one run
- * under the same rules — the free-sample page passes a trimmed five-question
- * blueprint. Its `slug` must then be unique (e.g. `${slug}--coba`), because
+ * `blueprintSource` may resolve asynchronously for a purchased package or be
+ * a static trimmed blueprint for the free-sample page. The session `slug`
+ * must be unique (e.g. `${slug}--coba` for a sample), because
  * slug keys both the persisted state and every useState below; sharing the
  * real slug would let a sample sitting resume someone's real sitting.
  */
-export function useTryoutSession(slug: string, blueprintOverride?: TryoutBlueprint | null) {
-  const blueprint: TryoutBlueprint | null = blueprintOverride ?? getTryoutBlueprint(slug)
+export function useTryoutSession(
+  slug: string,
+  blueprintSource: MaybeRefOrGetter<TryoutBlueprint | null | undefined>,
+) {
+  const blueprint = computed<TryoutBlueprint | null>(() => toValue(blueprintSource) ?? null)
   const key = storageKey(slug)
 
   const phase = useState<TryoutPhase>(`tryout-phase-${slug}`, () => 'intro')
@@ -92,17 +96,17 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   // Every question, flattened once with the section it belongs to — the one
   // list both pacing modes navigate, just with a different allowed range.
   const allQuestions = computed<FlatQuestion[]>(() => {
-    if (!blueprint) return []
-    return blueprint.sections.flatMap((section, sectionIndex) =>
+    if (!blueprint.value) return []
+    return blueprint.value.sections.flatMap((section, sectionIndex) =>
       section.questions.map(question => ({ question, sectionIndex })),
     )
   })
 
   // Absolute index each section starts at, e.g. [0, 6, 14] for sections of 6/8/6.
   const sectionOffsets = computed<number[]>(() => {
-    if (!blueprint) return []
+    if (!blueprint.value) return []
     let offset = 0
-    return blueprint.sections.map((section) => {
+    return blueprint.value.sections.map((section) => {
       const start = offset
       offset += section.questions.length
       return start
@@ -121,7 +125,7 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   }
 
   function restore() {
-    if (!import.meta.client || !blueprint) return
+    if (!import.meta.client || !blueprint.value) return
     const raw = sessionStorage.getItem(key)
     if (!raw) return
 
@@ -157,22 +161,22 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   const currentEntry = computed(() => allQuestions.value[currentIndex.value] ?? null)
   const currentQuestion = computed(() => currentEntry.value?.question ?? null)
   const currentSectionIndex = computed(() => currentEntry.value?.sectionIndex ?? 0)
-  const currentSection = computed(() => blueprint?.sections[currentSectionIndex.value] ?? null)
+  const currentSection = computed(() => blueprint.value?.sections[currentSectionIndex.value] ?? null)
 
   // The range of absolute indices navigation is allowed to touch right now:
   // the whole exam in flat mode, only the current subtest in sequential mode.
   const bounds = computed<[number, number]>(() => {
-    if (!blueprint) return [0, -1]
-    if (blueprint.mode === 'flat') return [0, allQuestions.value.length - 1]
+    if (!blueprint.value) return [0, -1]
+    if (blueprint.value.mode === 'flat') return [0, allQuestions.value.length - 1]
     const start = sectionOffsets.value[currentSectionIndex.value] ?? 0
-    const end = start + (blueprint.sections[currentSectionIndex.value]?.questions.length ?? 1) - 1
+    const end = start + (blueprint.value.sections[currentSectionIndex.value]?.questions.length ?? 1) - 1
     return [start, end]
   })
 
   const navigatorGroups = computed<TryoutNavigatorGroup[]>(() => {
-    if (!blueprint) return []
-    if (blueprint.mode === 'flat') {
-      return blueprint.sections.map((section, index) => {
+    if (!blueprint.value) return []
+    if (blueprint.value.mode === 'flat') {
+      return blueprint.value.sections.map((section, index) => {
         const start = sectionOffsets.value[index] ?? 0
         return { code: section.code, title: section.title, startIndex: start, numberOffset: start, questions: section.questions }
       })
@@ -183,18 +187,18 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   })
 
   const isLastSection = computed(() => {
-    if (!blueprint) return true
-    if (blueprint.mode === 'flat') return true
-    return currentSectionIndex.value === blueprint.sections.length - 1
+    if (!blueprint.value) return true
+    if (blueprint.value.mode === 'flat') return true
+    return currentSectionIndex.value === blueprint.value.sections.length - 1
   })
   const isLastQuestion = computed(() => currentIndex.value === bounds.value[1])
   const isFirstQuestion = computed(() => currentIndex.value === bounds.value[0])
 
   const displayIndex = computed(() =>
-    blueprint?.mode === 'flat' ? currentIndex.value + 1 : currentIndex.value - bounds.value[0] + 1,
+    blueprint.value?.mode === 'flat' ? currentIndex.value + 1 : currentIndex.value - bounds.value[0] + 1,
   )
   const displayTotal = computed(() =>
-    blueprint?.mode === 'flat' ? allQuestions.value.length : bounds.value[1] - bounds.value[0] + 1,
+    blueprint.value?.mode === 'flat' ? allQuestions.value.length : bounds.value[1] - bounds.value[0] + 1,
   )
 
   const remainingSeconds = computed(() => Math.max(0, Math.round((sectionEndsAt.value - now.value) / 1000)))
@@ -222,12 +226,13 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   }
 
   function start() {
-    if (!blueprint) return
+    const currentBlueprint = blueprint.value
+    if (!currentBlueprint) return
     currentIndex.value = 0
     answers.value = {}
-    const totalMinutes = blueprint.mode === 'flat'
-      ? blueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0)
-      : blueprint.sections[0]!.durationMinutes
+    const totalMinutes = currentBlueprint.mode === 'flat'
+      ? currentBlueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0)
+      : currentBlueprint.sections[0]!.durationMinutes
     sectionEndsAt.value = Date.now() + totalMinutes * 60_000
     phase.value = 'running'
     startTicker()
@@ -275,8 +280,9 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
    * through and, unless it was the last one, hands off to a break screen.
    */
   function endSection() {
-    if (!blueprint) return
-    if (blueprint.mode === 'flat' || isLastSection.value) {
+    const currentBlueprint = blueprint.value
+    if (!currentBlueprint) return
+    if (currentBlueprint.mode === 'flat' || isLastSection.value) {
       finish()
       return
     }
@@ -285,9 +291,10 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   }
 
   function startNextSection() {
-    if (!blueprint) return
+    const currentBlueprint = blueprint.value
+    if (!currentBlueprint) return
     const nextIndex = currentSectionIndex.value + 1
-    const nextSection = blueprint.sections[nextIndex]
+    const nextSection = currentBlueprint.sections[nextIndex]
     if (!nextSection) return
     currentIndex.value = sectionOffsets.value[nextIndex] ?? currentIndex.value
     sectionEndsAt.value = Date.now() + nextSection.durationMinutes * 60_000
@@ -296,10 +303,11 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
   }
 
   function finish() {
-    if (!blueprint) return
+    const currentBlueprint = blueprint.value
+    if (!currentBlueprint) return
     stopTicker()
 
-    const sections: TryoutSectionResult[] = blueprint.sections.map((section) => {
+    const sections: TryoutSectionResult[] = currentBlueprint.sections.map((section) => {
       let score = 0
       let maxScore = 0
       let correct = 0
@@ -333,9 +341,21 @@ export function useTryoutSession(slug: string, blueprintOverride?: TryoutBluepri
     event.preventDefault()
   }
 
-  onMounted(() => {
+  let mounted = false
+  let restored = false
+
+  function restoreWhenReady() {
+    if (!mounted || restored || !blueprint.value) return
+    restored = true
     restore()
     if (phase.value === 'running') startTicker()
+  }
+
+  watch(blueprint, restoreWhenReady)
+
+  onMounted(() => {
+    mounted = true
+    restoreWhenReady()
     window.addEventListener('beforeunload', warnBeforeUnload)
   })
 

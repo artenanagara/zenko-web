@@ -42,7 +42,6 @@ const code = ref('')
 const otpInputRef = ref<InstanceType<typeof OtpInput> | null>(null)
 const codeError = ref('')
 const isVerifying = ref(false)
-const isMocked = ref(false)
 
 /** Set once a code comes back invalidated (410) — only a resend fixes this. */
 const codeExpired = ref(false)
@@ -70,7 +69,6 @@ async function onSubmit() {
     const result = await verifyEmail(address.value, code.value)
 
     if (result.ok) {
-      isMocked.value = result.mocked
       // A beat of "checking…" before the success screen, so the confirmation
       // doesn't feel like it skipped the check entirely.
       status.value = 'confirming'
@@ -130,9 +128,7 @@ async function onResend() {
     codeError.value = ''
     codeExpired.value = false
     noticeTone.value = 'info'
-    notice.value = result.mocked
-      ? 'Mode contoh: tidak ada email yang benar-benar dikirim.'
-      : 'Kode verifikasi baru sudah dikirim.'
+    notice.value = 'Kode verifikasi baru sudah dikirim.'
   }
   finally {
     isResending.value = false
@@ -152,10 +148,6 @@ function readQuery(raw: unknown): string {
     </template>
 
     <div class="grid gap-5">
-      <AuthNotice v-if="isMocked" tone="info">
-        Mode contoh: tidak ada kode yang benar-benar diperiksa di server.
-      </AuthNotice>
-
       <AppButton to="/masuk" size="lg" class="w-full">Lanjut masuk</AppButton>
       <NuxtLink
         to="/paket"

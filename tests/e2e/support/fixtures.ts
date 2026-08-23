@@ -7,12 +7,13 @@ const TRANSPARENT_PNG = Buffer.from(
 )
 
 /**
- * Package/testimonial fixtures in app/mocks point at real hosts
- * (images.unsplash.com, i.pravatar.cc) for thumbnails and avatars, and
- * nuxt.config.ts loads Google Fonts on every page. None of that is
- * mockable through NUXT_PUBLIC_USE_MOCK — it's plain <img>/<link> markup —
- * so every test would otherwise depend on outbound network it doesn't
- * control. Block it here instead, once, for every spec.
+ * The catalogue fixtures in support/catalog.ts carry thumbnail and avatar URLs
+ * on real hosts (images.unsplash.com, i.pravatar.cc), because that is what
+ * zenko-api's own payloads carry, and nuxt.config.ts loads Google Fonts on
+ * every page. None of it is reachable through the stub API — it is plain
+ * <img>/<link> markup the browser resolves itself — so every test would
+ * otherwise depend on outbound network it doesn't control. Block it here
+ * instead, once, for every spec.
  */
 async function blockExternalAssets(page: Page): Promise<void> {
   await page.route(/^https:\/\/(images\.unsplash\.com|i\.pravatar\.cc)\//, (route) =>

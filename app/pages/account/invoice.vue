@@ -6,7 +6,6 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { public: config } = useRuntimeConfig()
 const { data: purchase, pending, error, refresh } = usePurchase(route.params.invoice as string)
 
 const { user } = useAuth()
@@ -101,10 +100,6 @@ function print() {
           <AppButton variant="outline" size="sm" @click="print">Cetak / simpan PDF</AppButton>
         </div>
       </div>
-
-      <AccountNotice v-if="config.useMock" class="print:hidden">
-        Invoice ini masih contoh — mode mock menyala, jadi tidak ada transaksi sungguhan di baliknya.
-      </AccountNotice>
 
       <!-- The document itself. On paper, the frame and shadow are just ink. -->
       <article class="rounded-lg border border-hairline bg-surface shadow-xs print:rounded-none print:border-0 print:shadow-none">

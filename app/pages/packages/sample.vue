@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { getSampleBlueprint } from '~/mocks/tryout'
-
 /**
  * "Coba gratis 5 soal": lima soal asli paket ini di ruang pengerjaan yang
  * sama persis dengan sesi berbayar — header berjalan, navigasi soal, tombol
@@ -15,11 +13,8 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const detail = await usePackageDetail(slug)
-
-const blueprint = getSampleBlueprint(slug)
-if (!blueprint) {
-  throw createError({ statusCode: 404, statusMessage: 'Contoh soal untuk paket ini belum tersedia', fatal: true })
-}
+const blueprintRef = await useSampleBlueprint(slug)
+const blueprint = blueprintRef.value
 
 // Kunci sesi dibedakan dari sesi asli (`slug` polos), supaya coba-coba di
 // katalog tidak pernah me-resume atau menimpa pengerjaan sungguhan.

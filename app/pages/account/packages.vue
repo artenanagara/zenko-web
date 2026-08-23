@@ -10,7 +10,6 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { public: config } = useRuntimeConfig()
 const { data: items, pending, error, refresh } = useOwnedPackages()
 
 /**
@@ -48,10 +47,6 @@ const summary = computed(() => {
       <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Paket saya</h1>
       <p class="mt-1.5 text-muted">Setiap paket adalah satu try out yang bisa kamu kerjakan berulang.</p>
     </header>
-
-    <AccountNotice v-if="config.useMock">
-      Isi halaman ini masih contoh — mode mock menyala, jadi datanya dari fixture, bukan zenko-api.
-    </AccountNotice>
 
     <!-- Memuat: kerangka statistik dan kartu, bukan halaman kosong. -->
     <div v-if="pending" class="grid gap-6" aria-busy="true">

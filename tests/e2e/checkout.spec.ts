@@ -1,18 +1,22 @@
 import { expect, gotoHydrated, test } from './support/fixtures'
-import { buildUser, mockSignedIn } from './support/auth'
+import { buildUser, mockPackageNotOwned, mockSignedIn, mockSignedOut } from './support/auth'
+import { PACKAGE_DETAILS } from './support/catalog'
 
-// Not owned by the mock account fixture (app/mocks/account.ts) — using an
-// already-owned slug here would render the "you already own this" branch
-// instead of the checkout form, per usePackageOwnershipGuard.
-const SLUG = 'paket-hemat-skd-kedinasan'
+// Any slug with a detail fixture works here; what matters is that the account
+// does NOT own it — an owned package renders the "you already own this" branch
+// instead of the checkout form, per usePackageOwnershipGuard. Ownership is a
+// separate call, stubbed explicitly per test below.
+const SLUG = PACKAGE_DETAILS['paket-hemat-skd-kedinasan']!.slug
 
 test.describe('checkout (/checkout/[slug])', () => {
   test('signed-in buyer sees "payment not connected" instead of an order being placed, with paymentEnabled off', async ({ page }) => {
     await mockSignedIn(page, buildUser())
+    await mockPackageNotOwned(page, SLUG)
 
-    // No route registered for **/orders: if the app ever called it despite
-    // paymentEnabled being off, the test would fail on an unhandled request
-    // rather than silently passing.
+    // Registered only to catch a call that should never happen: with
+    // paymentEnabled off the page must not reach POST /orders at all, and a
+    // 500 here would surface as a visible error state rather than a silent
+    // pass.
     let orderCalled = false
     await page.route('**/orders', async (route) => {
       orderCalled = true
@@ -35,8 +39,9 @@ test.describe('checkout (/checkout/[slug])', () => {
   })
 
   test('signed-out visitor is prompted to sign in instead of seeing a pay button', async ({ page }) => {
-    await page.route('**/auth/me', (route) =>
-      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'unauthorized' }) }))
+    // No ownership stub needed: usePackageOwnershipGuard never fires for a
+    // guest, since nobody signed out can own anything.
+    await mockSignedOut(page)
 
     await gotoHydrated(page, `/checkout/${SLUG}`)
 

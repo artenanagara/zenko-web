@@ -1,16 +1,11 @@
 import type { Package, PackageDetail, SortKey, Testimonial } from '#shared/types/catalog'
-import { mockPackages, mockTestimonials, sortMockPackages } from '~/mocks/catalog'
-import { findMockDetail } from '~/mocks/detail'
+import type { TryoutBlueprint } from '#shared/types/tryout'
 
 /**
  * Thin wrappers around the zenko-api endpoints.
- *
- * When NUXT_PUBLIC_USE_MOCK=true they resolve from local fixtures instead, so
- * the UI can be developed without the backend running. The flag defaults to
- * false, so a production build never serves mock data by accident.
  */
 
-/** The shape both the live and mock paths expose to components. */
+/** The shape these wrappers expose to components. */
 interface CatalogSource<T> {
   data: Ref<T>
   pending: Ref<boolean>
@@ -19,14 +14,6 @@ interface CatalogSource<T> {
 
 export function usePackages(sort: Ref<SortKey>): CatalogSource<Package[]> {
   const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) {
-    return {
-      data: computed(() => sortMockPackages(mockPackages, sort.value)),
-      pending: ref(false),
-      error: ref(null),
-    }
-  }
 
   // `sort` is reactive, so switching tabs refetches automatically.
   const { data, pending, error } = useFetch<Package[]>('/packages', {
@@ -40,14 +27,6 @@ export function usePackages(sort: Ref<SortKey>): CatalogSource<Package[]> {
 
 export function useTestimonials(): CatalogSource<Testimonial[]> {
   const { public: config } = useRuntimeConfig()
-
-  if (config.useMock) {
-    return {
-      data: computed(() => mockTestimonials),
-      pending: ref(false),
-      error: ref(null),
-    }
-  }
 
   const { data, pending, error } = useFetch<Testimonial[]>('/testimonials', {
     baseURL: config.apiBase,
@@ -64,13 +43,6 @@ export function useTestimonials(): CatalogSource<Testimonial[]> {
 export async function usePackageDetail(slug: string): Promise<Ref<PackageDetail>> {
   const { public: config } = useRuntimeConfig()
 
-  if (config.useMock) {
-    const detail = findMockDetail(slug)
-    if (!detail) throw notFound()
-
-    return ref(detail)
-  }
-
   const { data, error } = await useFetch<PackageDetail>(`/packages/${slug}`, {
     baseURL: config.apiBase,
   })
@@ -80,18 +52,37 @@ export async function usePackageDetail(slug: string): Promise<Ref<PackageDetail>
   return data as Ref<PackageDetail>
 }
 
+/**
+ * The free sample: a handful of the package's real questions, served without a
+ * session so the catalogue can show what is inside. The API answers 404 for a
+ * package that is not live or has no questions yet, which surfaces as the same
+ * Nuxt error page as an unknown slug.
+ *
+ * The payload carries no answer keys — it is a showcase, and anything a public
+ * endpoint returns is published.
+ */
+export async function useSampleBlueprint(slug: string): Promise<Ref<TryoutBlueprint>> {
+  const { public: config } = useRuntimeConfig()
+
+  const { data, error } = await useFetch<TryoutBlueprint>(`/packages/${slug}/sample`, {
+    baseURL: config.apiBase,
+  })
+
+  if (error.value || !data.value) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Contoh soal untuk paket ini belum tersedia',
+      fatal: true,
+    })
+  }
+
+  return data as Ref<TryoutBlueprint>
+}
+
 /** Other packages in the same category, excluding the one being viewed. */
 export function useRelatedPackages(category: string, excludeSlug: string) {
   const { public: config } = useRuntimeConfig()
   const limit = 4
-
-  if (config.useMock) {
-    return computed(() =>
-      mockPackages
-        .filter((item) => item.category === category && item.slug !== excludeSlug)
-        .slice(0, limit),
-    )
-  }
 
   const { data } = useFetch<Package[]>('/packages', {
     baseURL: config.apiBase,
