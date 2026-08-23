@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/artenanagara/zenko-web/compare/v0.4.1...v0.4.2) (2026-08-23)
+
+
+### Bug Fixes
+
+* build before archiving .output in the release bundle ([70e4e59](https://github.com/artenanagara/zenko-web/commit/70e4e59144b8054c844193cf80b91976617f2502))
+
 ## [0.4.1](https://github.com/artenanagara/zenko-web/compare/v0.4.0...v0.4.1) (2026-08-23)
 
 
