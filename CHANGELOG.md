@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/artenanagara/zenko-web/compare/v0.4.0...v0.4.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* authenticate the release job to GitHub Packages ([8decade](https://github.com/artenanagara/zenko-web/commit/8decade28fd6dcc4e93d9b7a0252a18182bcea48))
+
 ## [0.4.0](https://github.com/artenanagara/zenko-web/compare/v0.3.0...v0.4.0) (2026-08-23)
 
 
