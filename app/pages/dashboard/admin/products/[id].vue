@@ -1,0 +1,319 @@
+<script setup lang="ts">
+import type { AdminProductDetail } from '#shared/types/admin-moderation'
+
+/**
+ * Tinjau produk — halaman review penuh satu produk (design spec §4.4).
+ * Status `review` memunculkan action bar setujui/tolak; status lain (dibuka
+ * dari tab Semua, atau kalah cepat dari admin lain) tampil read-only dengan
+ * badge status dan alasan penolakan tersimpan.
+ */
+definePageMeta({
+  layout: 'dashboard',
+  middleware: 'auth',
+  roles: ['admin'],
+})
+
+const route = useRoute()
+const productId = computed(() => String(route.params.id ?? ''))
+
+const authors = useAdminProductAuthors()
+const notice = useAdminProductsNotice()
+const { refresh: refreshSummary } = useAdminSummary()
+
+const detail = ref<AdminProductDetail | null>(null)
+// Starts true so SSR and first client paint both show the skeleton — the
+// fetch itself only runs after mount (HttpOnly session cookie).
+const detailPending = ref(true)
+const detailError = ref('')
+
+useHead({
+  title: () => detail.value ? `${detail.value.title} — Zenko` : 'Tinjau produk — Zenko',
+  meta: [{ name: 'robots', content: 'noindex' }],
+})
+
+async function loadDetail() {
+  detailPending.value = true
+  detailError.value = ''
+  try {
+    const product = await fetchAdminProduct(productId.value)
+    // Kalau detail tidak menyertakan author, pakai punya baris antrean.
+    const rememberedAuthor = authors.value[product.id]
+    if (!product.author && rememberedAuthor) product.author = rememberedAuthor
+    detail.value = product
+  }
+  catch (cause) {
+    detailError.value = tutorApiMessage(cause, 'Produk tidak ditemukan atau gagal dimuat.')
+  }
+  finally {
+    detailPending.value = false
+  }
+}
+
+onMounted(loadDetail)
+
+const breadcrumbs = computed(() => [
+  { label: 'Moderasi produk', to: '/dashboard/admin/products' },
+  { label: detail.value?.title ?? 'Tinjau produk', truncate: true },
+])
+
+/** "{Tipe} · {Kategori} · {author} ({email})" — segmen yang kosong dilewati. */
+const headerDescription = computed(() => {
+  const product = detail.value
+  if (!product) return ''
+  return [
+    PRODUCT_TYPE_LABEL[product.type],
+    product.category,
+    product.author ? `${product.author.name} (${product.author.email})` : '',
+  ].filter(Boolean).join(' · ')
+})
+
+const inReview = computed(() => detail.value?.status === 'review')
+const hasDiscount = computed(() =>
+  detail.value !== null && detail.value.priceOriginal > detail.value.price,
+)
+
+/* --------------------------------------------------------------------------
+ * Isi panel kedua — single: subtes + kelengkapan soal; bundle: isi bundling
+ * dengan status per item (item non-live adalah red flag).
+ * ------------------------------------------------------------------------ */
+
+const SECTION_COLUMNS = [
+  { key: 'title', label: 'Subtes' },
+  { key: 'soal', label: 'Soal' },
+  { key: 'durasi', label: 'Durasi' },
+]
+
+const sectionRows = computed(() => (detail.value?.sections ?? []).map(section => ({
+  id: section.id,
+  title: section.title,
+  soal: `${section.questions.length}/${section.questionTarget} soal`,
+  incomplete: section.questions.length < section.questionTarget,
+  durasi: formatDuration(section.durationMinutes),
+})))
+
+const BUNDLE_COLUMNS = [
+  { key: 'title', label: 'Produk' },
+  { key: 'price', label: 'Harga', align: 'right' as const },
+  { key: 'status', label: 'Status' },
+]
+
+const bundleRows = computed(() => (detail.value?.items ?? []).map(item => ({
+  id: item.productId,
+  title: item.title,
+  price: item.price,
+  status: item.status,
+})))
+
+function statusLabel(status: AdminProductDetail['status']): string {
+  return PRODUCT_STATUS_LABEL[status]
+}
+function statusTone(status: AdminProductDetail['status']) {
+  return PRODUCT_STATUS_TONE[status]
+}
+
+/* --------------------------------------------------------------------------
+ * Keputusan — modal konfirmasi (setujui) / modal alasan (tolak). Sukses
+ * kembali ke antrean dan menaruh banner di sana (design spec §3.5).
+ * ------------------------------------------------------------------------ */
+
+const approveOpen = ref(false)
+const rejectOpen = ref(false)
+const decisionBusy = ref(false)
+const decisionError = ref('')
+/** 409: keputusan keburu diambil admin lain — halaman jadi read-only. */
+const conflictText = ref('')
+
+function openApprove() {
+  decisionError.value = ''
+  approveOpen.value = true
+}
+
+function openReject() {
+  decisionError.value = ''
+  rejectOpen.value = true
+}
+
+async function decide(approve: boolean, reason?: string) {
+  const product = detail.value
+  if (!product || decisionBusy.value) return
+
+  decisionError.value = ''
+  decisionBusy.value = true
+  try {
+    await decideAdminProduct(product.id, { approve, reason })
+    approveOpen.value = false
+    rejectOpen.value = false
+    notice.value = {
+      type: 'success',
+      text: approve
+        ? `Produk «${product.title}» disetujui dan tayang di katalog.`
+        : `Produk «${product.title}» ditolak — alasan terkirim ke tutor.`,
+    }
+    refreshSummary()
+    await navigateTo('/dashboard/admin/products')
+  }
+  catch (cause) {
+    if (isAdminProductConflict(cause)) {
+      approveOpen.value = false
+      rejectOpen.value = false
+      conflictText.value = ADMIN_PRODUCT_CONFLICT_TEXT
+      refreshSummary()
+      await loadDetail()
+    }
+    else {
+      decisionError.value = tutorApiMessage(cause, 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.')
+    }
+  }
+  finally {
+    decisionBusy.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="grid gap-6">
+    <!-- Loading: skeletons that hold the page shape (header zone + panel). -->
+    <template v-if="detailPending">
+      <DashboardSkeleton variant="stats" :count="2" :columns="2" label="Memuat produk..." />
+      <div class="rounded-md border border-line bg-surface px-5 py-4 shadow-xs md:px-6 md:py-5">
+        <DashboardSkeleton :count="4" />
+      </div>
+    </template>
+
+    <!-- 404 / load failure: message + way back, no panels. -->
+    <template v-else-if="detailError || !detail">
+      <AppPageHeader title="Tinjau produk">
+        <template #breadcrumbs>
+          <AppBreadcrumbs :items="breadcrumbs" />
+        </template>
+      </AppPageHeader>
+      <div class="flex flex-wrap items-center gap-3">
+        <AppInlineMessage type="error">Produk tidak ditemukan atau gagal dimuat.</AppInlineMessage>
+        <NuxtLink
+          to="/dashboard/admin/products"
+          class="text-[0.86rem] font-semibold text-primary hover:underline"
+        >
+          Kembali ke Moderasi produk
+        </NuxtLink>
+      </div>
+    </template>
+
+    <template v-else>
+      <AppPageHeader :title="detail.title" :description="headerDescription">
+        <template #breadcrumbs>
+          <AppBreadcrumbs :items="breadcrumbs" />
+        </template>
+      </AppPageHeader>
+
+      <AppInlineMessage v-if="conflictText" type="warning">{{ conflictText }}</AppInlineMessage>
+
+      <DashboardPanel title="Ringkasan produk">
+        <div class="grid gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <p class="text-[1.05rem] font-bold tabular-nums">
+              {{ formatRupiah(detail.price) }}
+              <s v-if="hasDiscount" class="ml-1.5 text-[0.86rem] font-normal text-muted">
+                {{ formatRupiah(detail.priceOriginal) }}
+              </s>
+            </p>
+            <DashboardBadge v-if="!inReview" :tone="statusTone(detail.status)">
+              {{ statusLabel(detail.status) }}
+            </DashboardBadge>
+          </div>
+
+          <p v-if="detail.description" class="max-w-prose text-sm leading-[1.7] whitespace-pre-line text-muted">
+            {{ detail.description }}
+          </p>
+          <p v-else class="text-sm text-muted">Tidak ada deskripsi.</p>
+
+          <AppAlert
+            v-if="detail.status === 'rejected' && detail.rejectReason"
+            variant="warning"
+            title="Alasan penolakan sebelumnya"
+          >
+            {{ detail.rejectReason }}
+          </AppAlert>
+        </div>
+      </DashboardPanel>
+
+      <DashboardPanel
+        v-if="detail.type === 'single'"
+        title="Subtes"
+        description="Kelengkapan soal per subtes — target yang belum terpenuhi ditandai."
+      >
+        <p v-if="sectionRows.length === 0" class="py-6 text-center text-muted">
+          Belum ada subtes pada produk ini.
+        </p>
+        <AppTable v-else :columns="SECTION_COLUMNS" :data="sectionRows">
+          <template #cell(title)="{ value }">
+            <span class="font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
+          </template>
+          <template #cell(soal)="{ item }">
+            <DashboardBadge v-if="item.incomplete" tone="warning">
+              <span class="tabular-nums">{{ item.soal }}</span>
+            </DashboardBadge>
+            <span v-else class="tabular-nums">{{ item.soal }}</span>
+          </template>
+          <template #cell(durasi)="{ value }">
+            <span class="whitespace-nowrap text-muted">{{ value }}</span>
+          </template>
+        </AppTable>
+      </DashboardPanel>
+
+      <DashboardPanel
+        v-else
+        title="Isi bundling"
+        description="Item yang belum Tayang adalah red flag sebelum bundling disetujui."
+      >
+        <p v-if="bundleRows.length === 0" class="py-6 text-center text-muted">
+          Bundling ini belum punya isi.
+        </p>
+        <AppTable v-else :columns="BUNDLE_COLUMNS" :data="bundleRows">
+          <template #cell(title)="{ value }">
+            <span class="font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
+          </template>
+          <template #cell(price)="{ value }">
+            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+          </template>
+          <template #cell(status)="{ value }">
+            <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>
+          </template>
+        </AppTable>
+      </DashboardPanel>
+
+      <!-- Sticky action bar — only while the product still awaits a decision. -->
+      <div
+        v-if="inReview"
+        class="sticky bottom-0 z-10 -mx-4 border-t border-hairline bg-surface/95 px-4 py-3 backdrop-blur-md md:-mx-8 md:px-8"
+      >
+        <div class="flex flex-wrap items-center justify-end gap-3">
+          <AppButton variant="danger" size="sm" @click="openReject">Tolak…</AppButton>
+          <AppButton variant="primary" size="sm" @click="openApprove">Setujui & tayangkan</AppButton>
+        </div>
+      </div>
+    </template>
+
+    <AdminConfirmModal
+      v-model:open="approveOpen"
+      title="Tayangkan produk ini?"
+      description="Produk langsung muncul di katalog publik dan bisa dibeli siswa."
+      confirm-label="Setujui & tayangkan"
+      confirm-variant="primary"
+      :busy="decisionBusy"
+      :error="decisionError"
+      @confirm="decide(true)"
+    />
+
+    <AdminReasonModal
+      v-model:open="rejectOpen"
+      title="Tolak produk ini?"
+      description="Tutor melihat alasanmu di dashboard-nya dan bisa memperbaiki lalu mengajukan ulang."
+      placeholder="Jelaskan apa yang perlu diperbaiki tutor."
+      hint="Alasan ini tampil di dashboard tutor."
+      confirm-label="Tolak produk"
+      :busy="decisionBusy"
+      :error="decisionError"
+      @confirm="reason => decide(false, reason)"
+    />
+  </div>
+</template>

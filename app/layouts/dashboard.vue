@@ -30,23 +30,45 @@ const activeLabel = computed(() =>
 )
 
 /**
- * Sidebar badge: rejected products deserve a signal on every dashboard page,
- * not just the overview. One client fetch per layout mount, tutors only;
- * failures simply mean no badge — the overview callout and the products page
- * carry the real message. Reuses useTutorProducts, so its cached error
- * handling applies and no error ever surfaces from here.
+ * Sidebar badges. One client fetch per layout mount, role-gated; failures
+ * simply mean no badge — the pages behind each entry carry the real message.
+ *
+ * - Tutor: rejected products deserve a signal on every dashboard page, not
+ *   just the overview. Reuses useTutorProducts, so its cached error handling
+ *   applies and no error ever surfaces from here.
+ * - Admin: pending counts per queue from GET /admin/summary (shared state
+ *   with the Ringkasan page, so the numbers always agree and the endpoint is
+ *   hit once). Rekening bank is a sub-menu, so each child page gets its own
+ *   count keyed by its path; the sidebar sums them onto the parent itself.
+ *
+ * DashboardSidebar hides badges at 0, so zeroes can be assigned freely.
  */
 const { data: badgeProducts, refresh: refreshBadgeProducts } = useTutorProducts()
+const { data: adminSummary, refresh: refreshAdminSummary } = useAdminSummary()
 
 const sidebarBadges = computed<Record<string, number>>(() => {
-  const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
   const badges: Record<string, number> = {}
+
+  if (user.value?.role === 'admin') {
+    const summary = adminSummary.value
+    if (summary) {
+      badges['/dashboard/admin/applications'] = summary.pendingTutorApplications
+      badges['/dashboard/admin/products'] = summary.pendingProducts
+      badges['/dashboard/admin/payouts'] = summary.pendingPayouts
+      badges['/dashboard/admin/bank-accounts'] = summary.pendingBankVerifications
+      badges['/dashboard/admin/bank-accounts/changes'] = summary.pendingBankChangeRequests
+    }
+    return badges
+  }
+
+  const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
   if (rejected > 0) badges['/dashboard/tutor/products'] = rejected
   return badges
 })
 
 onMounted(() => {
   if (user.value?.role === 'tutor') refreshBadgeProducts()
+  if (user.value?.role === 'admin') refreshAdminSummary()
 })
 
 /* --------------------------------------------------------------------------

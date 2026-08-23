@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DashboardNav, DashboardNavItem } from '~/composables/useDashboardNav'
+import type { DashboardNav, DashboardNavChild, DashboardNavItem } from '~/composables/useDashboardNav'
 
 /**
  * Sidebar body shared by the desktop rail and the mobile drawer, so the nav
@@ -10,6 +10,11 @@ import type { DashboardNav, DashboardNavItem } from '~/composables/useDashboardN
  *   gains a `title` tooltip, so the icons never become unlabeled buttons.
  * - `drawer` (mobile): always shows labels; the header swaps the toggle for
  *   a close button. Focus and scroll handling live in the layout.
+ *
+ * A nav item with `children` renders as a group header (a button, not a link
+ * — the children own the routes) over a nested list. Children carry no icon
+ * by construction; they are indented so their labels line up under the
+ * parent's.
  */
 const props = withDefaults(defineProps<{
   nav: DashboardNav
@@ -24,23 +29,99 @@ const props = withDefaults(defineProps<{
   badges?: Record<string, number>
 }>(), { collapsed: false, variant: 'rail', badges: undefined })
 
-function badgeFor(item: DashboardNavItem): number {
+/** Badges are keyed by path, so top-level items and children look the same up. */
+function badgeFor(item: DashboardNavChild): number {
   return props.badges?.[item.to] ?? 0
+}
+
+/** A group's aggregate: the sum of what its children are asking for. */
+function groupBadge(item: DashboardNavItem): number {
+  return item.children?.reduce((total, child) => total + badgeFor(child), 0) ?? 0
+}
+
+/** What a top-level row shows: its own count, or its children's total. */
+function rowBadge(item: DashboardNavItem): number {
+  return item.children?.length ? groupBadge(item) : badgeFor(item)
 }
 
 const emit = defineEmits<{ toggle: [], close: [] }>()
 
 const route = useRoute()
 
-/** One place for the item look, since nav links and footer actions match. */
-function itemClass(active = false): string[] {
+/* --------------------------------------------------------------------------
+ * Sub-menu expansion
+ * ------------------------------------------------------------------------ */
+
+function hasChildren(item: DashboardNavItem): boolean {
+  return (item.children?.length ?? 0) > 0
+}
+
+/** True while the user is inside this group — the parent's "you are here". */
+function isGroupActive(item: DashboardNavItem): boolean {
+  return item.children?.some(child => isDashboardItemActive(child, route)) ?? false
+}
+
+/**
+ * Expansion is derived, not stored: a group is open because its section is
+ * active. `manual` only records a deliberate override, so the default stays
+ * identical on the server and the client (no hydration mismatch).
+ */
+const manual = ref<Record<string, boolean>>({})
+
+function isExpanded(item: DashboardNavItem): boolean {
+  return manual.value[item.to] ?? isGroupActive(item)
+}
+
+function toggleGroup(item: DashboardNavItem) {
+  manual.value = { ...manual.value, [item.to]: !isExpanded(item) }
+}
+
+/** Which group the current route belongs to — '' when none does. */
+const activeGroup = computed(() =>
+  props.nav.items.find(item => hasChildren(item) && isGroupActive(item))?.to ?? '',
+)
+
+// Moving into a different section drops the overrides: the group you just
+// entered auto-expands even if you had collapsed it on an earlier visit.
+watch(activeGroup, () => {
+  manual.value = {}
+})
+
+/* --------------------------------------------------------------------------
+ * Look
+ * ------------------------------------------------------------------------ */
+
+/**
+ * One place for the item look, since nav links, group headers, sub-menu
+ * entries and footer actions all match.
+ *
+ * - `child`: no icon, so the label is padded to where the parent's starts
+ *   (px-3.5 + icon 1.1rem + gap-2.5) and set a step lighter.
+ * - `within`: parent of the active child. Deliberately not the full selected
+ *   pill — the child carries that; this is only a "you are in here" cue.
+ */
+function itemClass(active = false, look: { child?: boolean, within?: boolean } = {}): string[] {
+  const idleWeight = look.child ? 'font-normal' : 'font-medium'
+
   return [
-    'relative flex min-h-11 items-center gap-2.5 rounded-sm text-[0.92rem] font-medium transition-colors duration-200 ease-smooth',
-    props.collapsed ? 'justify-center px-0' : 'px-3.5',
+    'relative flex min-h-11 items-center rounded-sm transition-colors duration-200 ease-smooth',
+    look.child ? 'gap-2 text-[0.88rem]' : 'gap-2.5 text-[0.92rem]',
+    look.child
+      ? 'pr-3.5 pl-[2.6rem]'
+      : props.collapsed ? 'justify-center px-0' : 'px-3.5',
     active
       ? 'bg-primary-soft font-semibold text-primary'
-      : 'text-muted hover:bg-surface-alt hover:text-ink',
+      : look.within
+        ? `${idleWeight} text-ink hover:bg-surface-alt`
+        : `${idleWeight} text-muted hover:bg-surface-alt hover:text-ink`,
   ]
+}
+
+// One id per component instance (the rail and the drawer both render this
+// tree), suffixed per group so `aria-controls` never collides.
+const uid = useId()
+function submenuId(item: DashboardNavItem): string {
+  return `${uid}-submenu-${item.to.replace(/[^a-z0-9]+/gi, '-')}`
 }
 </script>
 
@@ -77,27 +158,57 @@ function itemClass(active = false): string[] {
 
       <ul class="grid gap-1">
         <li v-for="item in nav.items" :key="item.to">
+          <!-- Group: a button over a nested list. Only when there is room for
+               the list — the icon-only rail falls through to the link below. -->
+          <template v-if="hasChildren(item) && !collapsed">
+            <button
+              type="button"
+              class="w-full"
+              :class="itemClass(false, { within: isGroupActive(item) })"
+              :aria-expanded="isExpanded(item)"
+              :aria-controls="submenuId(item)"
+              @click="toggleGroup(item)"
+            >
+              <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
+              <span class="truncate">{{ item.label }}</span>
+
+              <span class="ml-auto flex shrink-0 items-center gap-1.5">
+                <!-- Aggregate only while collapsed: an open sub-menu already
+                     shows each child's number, and showing both double-counts. -->
+                <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
+                <IconChevron
+                  class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
+                  :class="isExpanded(item) ? '' : '-rotate-90'"
+                />
+              </span>
+            </button>
+
+            <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
+              <li v-for="child in item.children ?? []" :key="child.to">
+                <NuxtLink
+                  :to="child.to"
+                  :class="itemClass(isDashboardItemActive(child, route), { child: true })"
+                  :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
+                >
+                  <span class="truncate">{{ child.label }}</span>
+                  <DashboardNavBadge :count="badgeFor(child)" />
+                </NuxtLink>
+              </li>
+            </ul>
+          </template>
+
+          <!-- Leaf — and the icon-only rail's stand-in for a group, which
+               points at its first child since a sub-menu cannot render here. -->
           <NuxtLink
-            :to="item.to"
+            v-else
+            :to="item.children?.[0]?.to ?? item.to"
             :class="itemClass(isDashboardItemActive(item, route))"
             :title="collapsed ? item.label : undefined"
             :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
           >
             <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
             <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
-
-            <template v-if="badgeFor(item) > 0">
-              <span
-                v-if="!collapsed"
-                class="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-pill bg-amber-50 px-1.5 text-[0.72rem] font-bold text-amber-800"
-              >
-                {{ badgeFor(item) }}<span class="sr-only"> perlu perhatian</span>
-              </span>
-              <!-- Collapsed rail: a dot on the icon, since a number would not fit. -->
-              <span v-else class="absolute top-2 right-2 h-2 w-2 rounded-full bg-amber-500">
-                <span class="sr-only">{{ badgeFor(item) }} perlu perhatian</span>
-              </span>
-            </template>
+            <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
           </NuxtLink>
         </li>
       </ul>

@@ -56,11 +56,14 @@ export interface PayoutDecisionRequest {
 /**
  * Row shape of GET /admin/bank-accounts — satu baris per rekening tersimpan.
  * `verifiedAt` kosong/absen sampai admin memverifikasi secara manual.
+ *
+ * Flat, bukan `{ bankAccount: {...} }`: Go's model.AdminBankAccount EMBEDS
+ * BankAccount, so bankLabel/accountNumber/holderName/verifiedAt serialise at
+ * the top level next to accountId and tutor.
  */
-export interface AdminBankAccount {
+export interface AdminBankAccount extends BankAccount {
   accountId: string
   tutor: AdminAuthor
-  bankAccount: BankAccount & { verifiedAt?: number }
 }
 
 /** requested via /jadi-tutor's account form, then pending admin review. */
@@ -88,4 +91,17 @@ export interface AdminBankAccountChangeRequest {
 export interface BankAccountChangeDecisionRequest {
   approve: boolean
   reason?: string
+}
+
+/**
+ * GET /admin/summary — jumlah antrean per halaman admin, dipakai badge
+ * sidebar dan kartu Ringkasan. Badge "Rekening bank" =
+ * pendingBankVerifications + pendingBankChangeRequests.
+ */
+export interface AdminSummary {
+  pendingTutorApplications: number
+  pendingProducts: number
+  pendingPayouts: number
+  pendingBankVerifications: number
+  pendingBankChangeRequests: number
 }
