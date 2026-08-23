@@ -54,6 +54,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
     items: [
       { label: 'Ringkasan', to: '/dashboard/admin', icon: IconHome, exact: true },
       { label: 'Pengajuan tutor', to: '/dashboard/admin/applications', icon: IconUser },
+      { label: 'Tutor', to: '/dashboard/admin/tutors', icon: IconGrid },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
       { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet },
       {
