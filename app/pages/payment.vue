@@ -1,7 +1,11 @@
 <script setup lang="ts">
 // English file name, Indonesian URL; `path` keeps a bookmarked/shared QR link
 // alive after the buyer navigates away and comes back.
-definePageMeta({ path: '/pembayaran/:invoice()', middleware: 'auth' })
+definePageMeta({
+  path: '/pembayaran/:invoice()',
+  layout: 'payment',
+  middleware: 'auth',
+})
 
 const route = useRoute()
 const invoice = route.params.invoice as string
@@ -28,8 +32,18 @@ const livePaid = ref(false)
 // opened again later from a bookmark or "Riwayat pembelian" — a still-pending
 // order picks polling back up from here instead of only right after the
 // order was created.
-watch(purchase, (value) => {
-  if (value?.status === 'pending') resumeWaiting(value, () => { livePaid.value = true })
+watch(purchase, async (value) => {
+  if (!value) return
+
+  // A payment page is only useful while its QR is actionable. Reopening a
+  // settled/expired URL (including via browser Back) lands on the durable
+  // invoice instead, so payment history has one canonical destination.
+  if (value.status !== 'pending') {
+    await navigateTo(`/akun/pembelian/${value.invoice}`, { replace: true })
+    return
+  }
+
+  resumeWaiting(value, () => { livePaid.value = true })
 }, { immediate: true })
 
 // `pollState` only turns 'expired' via the client-side timer; the invoice can
@@ -39,6 +53,7 @@ const isExpired = computed(() => pollState.value === 'expired' || purchase.value
 // opened fresh on an invoice that was already paid (e.g. a bookmarked link
 // revisited later) — either way the same success screen applies.
 const isPaid = computed(() => livePaid.value || purchase.value?.status === 'paid')
+const displayStatus = computed(() => isPaid.value ? 'paid' : (purchase.value?.status ?? 'pending'))
 const showQR = computed(() => !isExpired.value && !isPaid.value && Boolean(purchase.value?.qrUrl))
 
 /** Best-effort link back to buy again — a purchase carries one package in practice. */
@@ -105,20 +120,12 @@ watch(isPaid, (paid) => {
 }, { immediate: true })
 
 watch(isRedirecting, (active, wasActive) => {
-  if (!active && wasActive) navigateTo('/akun/paket')
+  if (!active && wasActive) navigateTo('/akun/paket', { replace: true })
 })
 </script>
 
 <template>
   <main class="container-page py-8 md:py-12">
-    <AppBreadcrumbs
-      class="mb-7"
-      :items="[
-        { label: 'Riwayat pembelian', to: '/akun/pembelian' },
-        { label: 'Pembayaran' },
-      ]"
-    />
-
     <!-- Memuat: kerangka dua kolom, meniru bentuk akhirnya supaya tidak ada
          lompatan tata letak begitu datanya masuk. -->
     <div v-if="pending" aria-busy="true">
@@ -158,10 +165,16 @@ watch(isRedirecting, (active, wasActive) => {
                 akunmu dan siap dikerjakan.
               </p>
             </div>
-            <DashboardBadge tone="success">{{ purchaseStatusLabel(purchase.status) }}</DashboardBadge>
+            <DashboardBadge tone="success">{{ purchaseStatusLabel(displayStatus) }}</DashboardBadge>
 
             <div class="mt-2 grid w-full max-w-70 gap-3">
-              <AppButton to="/akun/paket" size="lg" class="w-full">Lihat paketku</AppButton>
+              <AppButton
+                size="lg"
+                class="w-full"
+                @click="navigateTo('/akun/paket', { replace: true })"
+              >
+                Lihat paketku
+              </AppButton>
               <p class="text-[0.82rem] text-muted tabular-nums" role="status">
                 Otomatis diarahkan dalam {{ redirectRemaining }} detik…
               </p>
@@ -196,7 +209,7 @@ watch(isRedirecting, (active, wasActive) => {
               <img
                 :src="purchase.qrUrl!"
                 alt="Kode QRIS untuk membayar"
-                class="h-52 w-52 shrink-0 rounded-sm bg-white p-2 shadow-xs"
+                class="h-56 w-56 shrink-0 rounded-sm bg-white p-2 object-contain shadow-xs sm:h-64 sm:w-64"
               >
 
               <div class="grid w-full gap-5 text-center sm:text-left">
@@ -272,10 +285,13 @@ watch(isRedirecting, (active, wasActive) => {
              seperti PackageDetail, jadi hanya baris yang datanya tersedia. -->
         <aside class="min-[901px]:sticky min-[901px]:top-24">
           <div class="rounded-lg border border-hairline bg-surface p-6 shadow-xs">
-            <div class="flex items-center justify-between gap-3">
-              <h2 class="font-bold tracking-[-0.02em]">Ringkasan pesanan</h2>
-              <DashboardBadge :tone="purchaseStatusTone(purchase.status)">
-                {{ purchaseStatusLabel(purchase.status) }}
+            <div class="flex flex-nowrap items-center justify-between gap-3">
+              <h2 class="shrink-0 font-bold whitespace-nowrap tracking-[-0.02em]">Ringkasan pesanan</h2>
+              <DashboardBadge
+                class="shrink-0 whitespace-nowrap"
+                :tone="purchaseStatusTone(displayStatus)"
+              >
+                {{ purchaseStatusLabel(displayStatus) }}
               </DashboardBadge>
             </div>
 

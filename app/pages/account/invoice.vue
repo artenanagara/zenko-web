@@ -11,6 +11,44 @@ const { data: purchase, pending, error, refresh } = usePurchase(route.params.inv
 
 const { user } = useAuth()
 
+// Keep the invoice as the durable entry point from purchase history. A pending
+// QRIS invoice may resume its existing payment session, but never creates a
+// second order. Once the QR deadline passes, the action disappears locally
+// even if the expiry webhook has not refreshed the invoice status yet.
+const currentTime = ref(Date.now())
+const canResumePayment = computed(() => {
+  const value = purchase.value
+  if (!value || value.status !== 'pending' || !value.qrUrl) return false
+  return value.expiresAt === null || value.expiresAt * 1000 > currentTime.value
+})
+
+let expiryHandle: ReturnType<typeof setTimeout> | null = null
+
+function scheduleResumeExpiry() {
+  if (expiryHandle !== null) {
+    clearTimeout(expiryHandle)
+    expiryHandle = null
+  }
+
+  currentTime.value = Date.now()
+  const expiresAt = purchase.value?.expiresAt
+  if (!expiresAt || !canResumePayment.value) return
+
+  const msLeft = expiresAt * 1000 - currentTime.value
+  expiryHandle = setTimeout(() => {
+    currentTime.value = Date.now()
+    expiryHandle = null
+  }, msLeft)
+}
+
+watch(purchase, () => {
+  if (import.meta.client) scheduleResumeExpiry()
+}, { immediate: true })
+
+onBeforeUnmount(() => {
+  if (expiryHandle !== null) clearTimeout(expiryHandle)
+})
+
 useHead({
   title: computed(() => (purchase.value ? `Invoice ${purchase.value.invoice} — Zenko` : 'Invoice — Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
@@ -52,7 +90,16 @@ function print() {
           <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Invoice {{ purchase.invoice }}</h1>
           <p class="mt-1.5 text-muted">Bukti pembelian yang bisa kamu simpan atau cetak.</p>
         </div>
-        <AppButton size="sm" @click="print">Cetak / simpan PDF</AppButton>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <AppButton
+            v-if="canResumePayment"
+            :to="`/pembayaran/${purchase.invoice}`"
+            size="sm"
+          >
+            Lanjutkan pembayaran
+          </AppButton>
+          <AppButton variant="outline" size="sm" @click="print">Cetak / simpan PDF</AppButton>
+        </div>
       </div>
 
       <AccountNotice v-if="config.useMock" class="print:hidden">
