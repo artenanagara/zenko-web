@@ -24,13 +24,96 @@ const {
   pending: changeRequestPending,
   refresh: refreshChangeRequest,
 } = useTutorBankAccountChangeRequest()
+const { data: tutorProfile, pending: tutorProfilePending, refresh: refreshTutorProfile } = useTutorProfile()
 
 // Client-only fetch: the session cookie never reaches the Nuxt server, so
 // this resolves after hydration (see useTutorEarnings).
 onMounted(() => {
   refreshBankAccount()
   refreshChangeRequest()
+  refreshTutorProfile()
 })
+
+/* --------------------------------------------------------------------------
+ * Profil publik tutor — bio, pengalaman, spesialisasi, pendidikan, tautan.
+ * Terpisah dari nama/foto (lihat panel "Profil tutor" di template), yang
+ * diedit lewat /akun/profil bareng akun student — field di bawah ini
+ * khusus tutor.
+ * ------------------------------------------------------------------------ */
+
+const profileForm = reactive({
+  bio: '',
+  experience: '',
+  specializations: [] as string[],
+  education: '',
+  portfolioUrl: '',
+  instagramUrl: '',
+  tiktokUrl: '',
+  linkedinUrl: '',
+  youtubeUrl: '',
+  websiteUrl: '',
+})
+const profileSaving = ref(false)
+const profileError = ref('')
+const profileSaved = ref(false)
+const specializationInput = ref('')
+
+// Salin ke form lokal begitu profil tersimpan tiba — bukan binding langsung,
+// supaya draft yang sedang diketik tidak ketimpa kalau refresh datang lagi.
+watch(tutorProfile, (profile) => {
+  if (!profile) return
+  profileForm.bio = profile.bio
+  profileForm.experience = profile.experience
+  profileForm.specializations = [...profile.specializations]
+  profileForm.education = profile.education
+  profileForm.portfolioUrl = profile.portfolioUrl
+  profileForm.instagramUrl = profile.instagramUrl
+  profileForm.tiktokUrl = profile.tiktokUrl
+  profileForm.linkedinUrl = profile.linkedinUrl
+  profileForm.youtubeUrl = profile.youtubeUrl
+  profileForm.websiteUrl = profile.websiteUrl
+}, { immediate: true })
+
+function addSpecialization() {
+  const tag = specializationInput.value.trim()
+  specializationInput.value = ''
+  if (!tag) return
+  if (profileForm.specializations.some(existing => existing.toLowerCase() === tag.toLowerCase())) return
+  if (profileForm.specializations.length >= 10) return
+  profileForm.specializations.push(tag)
+}
+
+function removeSpecialization(index: number) {
+  profileForm.specializations.splice(index, 1)
+}
+
+/** Enter atau koma menambah tag; Backspace di input kosong menghapus yang terakhir. */
+function onSpecializationKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ',') {
+    event.preventDefault()
+    addSpecialization()
+  }
+  else if (event.key === 'Backspace' && specializationInput.value === '' && profileForm.specializations.length > 0) {
+    removeSpecialization(profileForm.specializations.length - 1)
+  }
+}
+
+async function saveProfile() {
+  profileError.value = ''
+  profileSaved.value = false
+  profileSaving.value = true
+  try {
+    await saveTutorProfile({ ...profileForm })
+    await refreshTutorProfile()
+    profileSaved.value = true
+  }
+  catch (cause) {
+    profileError.value = tutorApiMessage(cause, 'Gagal menyimpan profil. Coba lagi sebentar lagi.')
+  }
+  finally {
+    profileSaving.value = false
+  }
+}
 
 /* --------------------------------------------------------------------------
  * Rekening bank — tiga state:
@@ -149,7 +232,7 @@ async function submitChangeRequest() {
       description="Profil tutor dan rekening bank untuk pencairan."
     />
 
-    <DashboardPanel title="Profil tutor" description="Nama dan foto ikut akun Google yang dipakai untuk masuk.">
+    <DashboardPanel title="Profil tutor" description="Nama dan foto tampil di seluruh Zenko, termasuk katalog paketmu.">
       <div v-if="user" class="flex items-center gap-4">
         <img
           v-if="user.avatarUrl"
@@ -170,10 +253,108 @@ async function submitChangeRequest() {
         </div>
       </div>
 
-      <AppSectionMessage appearance="warning" class="mt-5">
-        Bio singkat dan spesialisasi (mis. "SKD & SNBT") belum bisa diisi di sini — baru sebatas
-        nama dan foto dari Google. Bagian ini menyusul.
+      <AppSectionMessage appearance="information" class="mt-5">
+        Nama dan foto profil diubah lewat
+        <NuxtLink to="/akun/profil" class="font-semibold underline">Akun saya</NuxtLink>. Bio,
+        pengalaman, dan tautan sosial media ada di bawah ini.
       </AppSectionMessage>
+    </DashboardPanel>
+
+    <DashboardPanel
+      title="Profil publik tutor"
+      description="Ditampilkan di halaman paket dan katalogmu."
+    >
+      <DashboardSkeleton v-if="tutorProfilePending && !tutorProfile" :count="4" label="Memuat profil..." />
+
+      <form v-else class="grid gap-5" @submit.prevent="saveProfile">
+        <div>
+          <label for="tutor-bio" class="mb-2 block text-[0.9rem] font-semibold">Bio singkat</label>
+          <textarea
+            id="tutor-bio"
+            v-model="profileForm.bio"
+            rows="3"
+            maxlength="2000"
+            placeholder="Ceritakan singkat siapa kamu dan apa yang kamu ajarkan"
+            class="w-full resize-y rounded-sm border border-line bg-surface px-4 py-3 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)] focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label for="tutor-experience" class="mb-2 block text-[0.9rem] font-semibold">Pengalaman mengajar</label>
+          <textarea
+            id="tutor-experience"
+            v-model="profileForm.experience"
+            rows="3"
+            maxlength="4000"
+            placeholder="Contoh: 3 tahun mengajar SKD di bimbel, lulus SNBT 2022"
+            class="w-full resize-y rounded-sm border border-line bg-surface px-4 py-3 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)] focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label for="tutor-specializations" class="mb-2 block text-[0.9rem] font-semibold">Spesialisasi</label>
+          <div class="flex flex-wrap items-center gap-2 rounded-sm border border-line bg-surface px-3 py-2 focus-within:border-primary/40 focus-within:shadow-[0_0_0_4px_rgba(47,111,235,0.1)]">
+            <span
+              v-for="(tag, index) in profileForm.specializations"
+              :key="tag"
+              class="inline-flex items-center gap-1.5 rounded-pill bg-primary-soft px-3 py-1 text-[0.82rem] font-semibold text-primary"
+            >
+              {{ tag }}
+              <button
+                type="button"
+                class="text-primary/70 transition-colors hover:text-primary"
+                :aria-label="`Hapus ${tag}`"
+                @click="removeSpecialization(index)"
+              >
+                <IconClose class="h-3 w-3" />
+              </button>
+            </span>
+            <input
+              id="tutor-specializations"
+              v-model="specializationInput"
+              type="text"
+              :placeholder="profileForm.specializations.length === 0 ? 'Contoh: SKD, SNBT — tekan Enter' : 'Tambah lagi'"
+              class="min-w-32 flex-1 border-0 bg-transparent p-1.5 text-[0.9rem] placeholder:text-placeholder focus:outline-none"
+              @keydown="onSpecializationKeydown"
+              @blur="addSpecialization"
+            >
+          </div>
+          <p class="mt-2 text-[0.82rem] text-muted">Tekan Enter atau koma untuk menambah. Maksimal 10.</p>
+        </div>
+
+        <FormField
+          id="tutor-education"
+          v-model="profileForm.education"
+          label="Pendidikan"
+          placeholder="Contoh: S1 Pendidikan Matematika, Universitas Indonesia"
+        />
+
+        <FormField
+          id="tutor-portfolio"
+          v-model="profileForm.portfolioUrl"
+          type="url"
+          label="Portofolio"
+          placeholder="https://..."
+        />
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <FormField id="tutor-instagram" v-model="profileForm.instagramUrl" type="url" label="Instagram" placeholder="https://instagram.com/..." />
+          <FormField id="tutor-tiktok" v-model="profileForm.tiktokUrl" type="url" label="TikTok" placeholder="https://tiktok.com/@..." />
+          <FormField id="tutor-linkedin" v-model="profileForm.linkedinUrl" type="url" label="LinkedIn" placeholder="https://linkedin.com/in/..." />
+          <FormField id="tutor-youtube" v-model="profileForm.youtubeUrl" type="url" label="YouTube" placeholder="https://youtube.com/@..." />
+        </div>
+
+        <FormField id="tutor-website" v-model="profileForm.websiteUrl" type="url" label="Website" placeholder="https://..." />
+
+        <AppInlineMessage v-if="profileError" type="error">{{ profileError }}</AppInlineMessage>
+        <AppInlineMessage v-if="profileSaved" type="confirmation">Profil tersimpan.</AppInlineMessage>
+
+        <div>
+          <AppButton type="submit" size="sm" :disabled="profileSaving" :loading="profileSaving">
+            Simpan profil
+          </AppButton>
+        </div>
+      </form>
     </DashboardPanel>
 
     <DashboardPanel
