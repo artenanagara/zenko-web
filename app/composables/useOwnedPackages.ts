@@ -1,8 +1,9 @@
 import type { Ref } from 'vue'
 import type { Attempt, OwnedPackage, RecordAttemptRequest } from '#shared/types/account'
-import type { TryoutResult } from '#shared/types/tryout'
+import type { TryoutBlueprint, TryoutResult } from '#shared/types/tryout'
 import type { AsyncResource } from '~/composables/useAccountResource'
 import { ownedPackages } from '~/mocks/account'
+import { getTryoutBlueprint } from '~/mocks/tryout'
 
 /**
  * Packages this account owns.
@@ -142,6 +143,33 @@ export function useOwnedPackage(slug: string): AsyncResource<OwnedPackage | null
   }
 
   return useSessionItem<OwnedPackage>(`/me/packages/${slug}`, 'Paket ini tidak ada di akunmu')
+}
+
+/**
+ * Questions and scoring rules for one package the signed-in account owns.
+ * The live endpoint performs its own ownership check, so this is the only
+ * resource the work area needs before starting a sitting.
+ */
+export function useTryoutBlueprint(slug: string): AsyncResource<TryoutBlueprint | null> {
+  const { public: config } = useRuntimeConfig()
+
+  if (config.useMock) {
+    const isOwned = ownedPackages.some(item => item.slug === slug)
+    const blueprint = isOwned ? getTryoutBlueprint(slug) : null
+    if (!blueprint) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Try out ini tidak ada di akunmu',
+        fatal: true,
+      })
+    }
+    return settledResource<TryoutBlueprint | null>(blueprint)
+  }
+
+  return useSessionItem<TryoutBlueprint>(
+    `/me/packages/${slug}/tryout`,
+    'Try out ini tidak ada di akunmu',
+  )
 }
 
 /**

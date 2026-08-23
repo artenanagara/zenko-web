@@ -1,9 +1,8 @@
 /**
  * The try out workspace: sitting a purchased package as a timed CBT session.
  *
- * Nothing here is served by zenko-api yet — app/mocks/tryout.ts builds a
- * blueprint client-side from the catalogue fixtures. The shapes live here
- * anyway so the mock and the eventual endpoint agree on one contract.
+ * Live packages are served by zenko-api's owned-package tryout endpoint;
+ * app/mocks/tryout.ts implements the same contract for fixture mode.
  */
 
 export type OptionLabel = 'A' | 'B' | 'C' | 'D' | 'E'
@@ -11,6 +10,8 @@ export type OptionLabel = 'A' | 'B' | 'C' | 'D' | 'E'
 export interface TryoutOption {
   label: OptionLabel
   text: string
+  /** Optional figure or diagram uploaded by the tutor. */
+  imageUrl?: string
 }
 
 /**
@@ -23,6 +24,7 @@ export type TryoutQuestion =
   | {
     id: string
     kind: 'objective'
+    stimulus?: string
     text: string
     options: TryoutOption[]
     correct: OptionLabel
@@ -31,6 +33,7 @@ export type TryoutQuestion =
   | {
     id: string
     kind: 'situational'
+    stimulus?: string
     text: string
     options: TryoutOption[]
     scores: Record<OptionLabel, number>

@@ -26,9 +26,17 @@ const emit = defineEmits<{ select: [label: OptionLabel] }>()
       </span>
     </div>
 
-    <p class="mt-4 text-[1.05rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink whitespace-pre-line">
-      {{ question.text }}
-    </p>
+    <div
+      v-if="question.stimulus"
+      class="mt-4 rounded-sm border border-hairline bg-surface-alt p-4 text-[0.94rem] leading-[1.65] text-muted [&_img]:my-3 [&_img]:max-h-80 [&_img]:rounded-xs"
+      v-html="question.stimulus"
+    />
+
+    <!-- Product question HTML is sanitized by zenko-api when the tutor saves it. -->
+    <div
+      class="mt-4 text-[1.05rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink [&_img]:my-3 [&_img]:max-h-96 [&_img]:rounded-xs"
+      v-html="question.text"
+    />
 
     <div class="mt-6 grid gap-2.5" role="radiogroup" :aria-label="`Pilihan jawaban soal ${index}`">
       <button
@@ -55,7 +63,15 @@ const emit = defineEmits<{ select: [label: OptionLabel] }>()
         >
           {{ option.label }}
         </span>
-        <span class="pt-0.5 text-[0.94rem] leading-[1.55]">{{ option.text }}</span>
+        <span class="min-w-0 flex-1 pt-0.5 text-[0.94rem] leading-[1.55]">
+          <img
+            v-if="option.imageUrl"
+            :src="option.imageUrl"
+            alt=""
+            class="mb-2 max-h-52 max-w-full rounded-xs object-contain"
+          >
+          <span class="[&_img]:my-2 [&_img]:max-h-52 [&_img]:rounded-xs" v-html="option.text" />
+        </span>
       </button>
     </div>
   </div>

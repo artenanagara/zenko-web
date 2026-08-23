@@ -8,27 +8,28 @@ definePageMeta({
 const route = useRoute()
 const slug = route.params.slug as string
 
-// 404s if this account never bought the package — the workspace is not a free
-// preview of someone else's package. Async when live, so the page renders a
-// loading state until ownership is confirmed.
-const { data: owned, pending: ownedPending, error: ownedError, refresh: ownedRefresh } = useOwnedPackage(slug)
+// The endpoint returns the real tutor-authored questions only after confirming
+// this account owns the package. Keeping that check and the blueprint in one
+// request avoids briefly throwing a mock-data 404 while live data is loading.
+const {
+  data: blueprint,
+  pending: blueprintPending,
+  error: blueprintError,
+  refresh: blueprintRefresh,
+} = useTryoutBlueprint(slug)
 
-const session = useTryoutSession(slug)
-const blueprint = session.blueprint
-if (!blueprint) {
-  throw createError({ statusCode: 404, statusMessage: 'Try out untuk paket ini belum tersedia', fatal: true })
-}
-const isFlat = blueprint.mode === 'flat'
+const session = useTryoutSession(slug, blueprint)
+const isFlat = computed(() => blueprint.value?.mode === 'flat')
 
 useHead({
-  title: computed(() => (owned.value ? `Kerjakan — ${owned.value.title} — Zenko` : 'Kerjakan — Zenko')),
+  title: computed(() => (blueprint.value ? `Kerjakan — ${blueprint.value.title} — Zenko` : 'Kerjakan — Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const totalQuestions = computed(() => blueprint.sections.reduce((sum, s) => sum + s.questions.length, 0))
-const totalMinutes = computed(() => blueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0))
+const totalQuestions = computed(() => blueprint.value?.sections.reduce((sum, s) => sum + s.questions.length, 0) ?? 0)
+const totalMinutes = computed(() => blueprint.value?.sections.reduce((sum, s) => sum + s.durationMinutes, 0) ?? 0)
 
-const nextSection = computed(() => blueprint.sections[session.sectionIndex.value + 1] ?? null)
+const nextSection = computed(() => blueprint.value?.sections[session.sectionIndex.value + 1] ?? null)
 
 const showEndConfirm = ref(false)
 
@@ -65,8 +66,8 @@ function retry() {
 
 <template>
   <div>
-    <!-- Memuat: pastikan kepemilikan dulu (async saat live) sebelum ruang kerja tampil. -->
-    <div v-if="ownedPending" class="container-page grid min-h-screen place-items-center py-10">
+    <!-- Memuat: endpoint sedang memeriksa kepemilikan sekaligus mengambil soal. -->
+    <div v-if="blueprintPending" class="container-page grid min-h-screen place-items-center py-10">
       <div class="grid w-full max-w-3xl gap-6" aria-busy="true">
         <p class="sr-only" role="status">Memuat paket…</p>
         <div class="h-8 w-48 animate-pulse rounded-sm bg-surface-sunken" aria-hidden="true" />
@@ -75,15 +76,15 @@ function retry() {
       </div>
     </div>
 
-    <div v-else-if="ownedError" class="container-page grid min-h-screen place-items-center py-10">
+    <div v-else-if="blueprintError" class="container-page grid min-h-screen place-items-center py-10">
       <div class="w-full max-w-md">
-        <AccountError @retry="ownedRefresh">
-          Paket ini belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.
+        <AccountError @retry="blueprintRefresh">
+          Soal try out belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.
         </AccountError>
       </div>
     </div>
 
-    <template v-else-if="owned">
+    <template v-else-if="blueprint">
     <!-- Pra-ujian: tata tertib dan komposisi subtes, sebelum timer berjalan. -->
     <div v-if="session.phase.value === 'intro'" class="container-page grid max-w-3xl gap-6 py-10 md:py-14">
       <nav class="text-[0.85rem] text-muted">
@@ -95,7 +96,7 @@ function retry() {
       <div>
         <p class="text-[0.78rem] font-bold tracking-[0.12em] text-primary uppercase">{{ blueprint.theme.system }}</p>
         <h1 class="mt-2 text-[1.6rem] leading-tight font-extrabold tracking-[-0.03em] md:text-[2rem]">
-          {{ owned.title }}
+          {{ blueprint.title }}
         </h1>
         <p class="mt-2 text-muted">
           {{ totalQuestions }} soal · {{ formatDuration(totalMinutes) }} ·
@@ -148,7 +149,7 @@ function retry() {
 
     <!-- Sesi berjalan. -->
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
-      <TryoutHeader :package-title="owned.title" :remaining-seconds="session.remainingSeconds.value" />
+      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value" />
 
       <main class="container-page grid gap-5 pt-22 pb-24 md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
         <TryoutQuestion
@@ -243,7 +244,7 @@ function retry() {
       v-else-if="session.phase.value === 'finished' && session.result.value"
       :result="session.result.value"
       :theme="blueprint.theme"
-      :package-title="owned.title"
+      :package-title="blueprint.title"
       :package-slug="slug"
       @retry="retry"
     />
