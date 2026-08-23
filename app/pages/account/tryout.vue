@@ -151,26 +151,36 @@ function retry() {
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
       <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value" />
 
-      <main class="container-page grid gap-5 pt-22 pb-24 md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
-        <TryoutQuestion
-          :question="session.currentQuestion.value"
-          :index="session.displayIndex.value"
-          :total="session.displayTotal.value"
-          :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
-          :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
-          @select="session.selectAnswer"
-        />
+      <!-- md:h-screen pins the row to the viewport instead of letting the
+           taller column (often the navigator, in flat mode with every
+           section's numbers open at once) stretch the shorter one and grow
+           the whole page — each column scrolls inside itself instead.
+           min-h-0 is what lets a grid child shrink below its content size at
+           all; without it overflow-y-auto has no effect. -->
+      <main class="container-page grid gap-5 pt-22 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
+        <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <TryoutQuestion
+            :question="session.currentQuestion.value"
+            :index="session.displayIndex.value"
+            :total="session.displayTotal.value"
+            :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
+            :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
+            @select="session.selectAnswer"
+          />
+        </div>
 
-        <TryoutNavigator
-          :groups="session.navigatorGroups.value"
-          :current-index="session.currentIndex.value"
-          :answered-count="session.answeredCount.value"
-          :doubtful-count="session.doubtfulCount.value"
-          :total-questions="session.displayTotal.value"
-          :status-of="session.statusOf"
-          :label-of="session.labelOf"
-          @jump="session.goTo"
-        />
+        <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <TryoutNavigator
+            :groups="session.navigatorGroups.value"
+            :current-index="session.currentIndex.value"
+            :answered-count="session.answeredCount.value"
+            :doubtful-count="session.doubtfulCount.value"
+            :total-questions="session.displayTotal.value"
+            :status-of="session.statusOf"
+            :label-of="session.labelOf"
+            @jump="session.goTo"
+          />
+        </div>
       </main>
 
       <TryoutControls

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+  <script setup lang="ts">
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ path: '/jadi-tutor' })
 
