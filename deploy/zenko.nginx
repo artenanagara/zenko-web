@@ -66,6 +66,27 @@ server {
     }
 
     location ^~ /api/ {
+        # A question/thumbnail image upload is capped at 5 MB by the API
+        # (handler.maxImageUploadBytes); the extra megabyte covers multipart
+        # overhead and stays under the Fiber BodyLimit of 8 MB. Without this the
+        # server-level 2m limit rejects the upload with a bare 413.
+        client_max_body_size 6m;
+
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    # Uploaded images live on the API's local disk (UPLOAD_DIR in
+    # zenko-api.service) and are served back by its /uploads static route. They
+    # are proxied to the API rather than read straight off disk so Nginx needs
+    # no access to the unit's state directory. Without this block /uploads/...
+    # falls through to location / and Nuxt answers 404 for every image.
+    location ^~ /uploads/ {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -139,6 +160,27 @@ server {
     }
 
     location ^~ /api/ {
+        # A question/thumbnail image upload is capped at 5 MB by the API
+        # (handler.maxImageUploadBytes); the extra megabyte covers multipart
+        # overhead and stays under the Fiber BodyLimit of 8 MB. Without this the
+        # server-level 2m limit rejects the upload with a bare 413.
+        client_max_body_size 6m;
+
+        proxy_pass http://127.0.0.1:8081;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    # Uploaded images live on the API's local disk (UPLOAD_DIR in
+    # zenko-api.service) and are served back by its /uploads static route. They
+    # are proxied to the API rather than read straight off disk so Nginx needs
+    # no access to the unit's state directory. Without this block /uploads/...
+    # falls through to location / and Nuxt answers 404 for every image.
+    location ^~ /uploads/ {
         proxy_pass http://127.0.0.1:8081;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -163,6 +205,59 @@ server {
     # Staging is a testing surface, not a public product page — keep it out
     # of search results regardless of what the app's own robots.txt says.
     add_header X-Robots-Tag "noindex, nofollow" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+}
+
+# --- Design System (reuses this VPS: zenko-design on port 3002 — see
+# zenko-design-system/deploy/zenko-design.service and
+# zenko-design-system/deploy/design.zenkoedu.id.nginx).
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name design.zenkoedu.id;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type "text/plain";
+        try_files $uri =404;
+    }
+
+    location / {
+        return 308 https://design.zenkoedu.id$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name design.zenkoedu.id;
+    client_max_body_size 2m;
+
+    ssl_certificate /etc/letsencrypt/live/design.zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/design.zenkoedu.id/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    location / {
+        proxy_pass http://127.0.0.1:3002;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 60s;
+    }
+
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
