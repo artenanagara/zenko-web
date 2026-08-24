@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/artenanagara/zenko-web/compare/v0.6.0...v0.6.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* stop the tutor product pages 500ing on the server ([8b51633](https://github.com/artenanagara/zenko-web/commit/8b516332e604fe00d7b134b167b62623d0855de6))
+
 ## [0.6.0](https://github.com/artenanagara/zenko-web/compare/v0.5.0...v0.6.0) (2026-08-24)
 
 
