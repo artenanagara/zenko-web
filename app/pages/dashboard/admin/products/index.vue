@@ -323,7 +323,8 @@ async function decide(approve: boolean, reason?: string) {
             <span class="block text-[0.82rem] text-muted">{{ item.author.email }}</span>
           </template>
           <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+            <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
+            <span v-else class="font-semibold text-success-ink">Gratis</span>
           </template>
           <template #cell(status)="{ value }">
             <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>

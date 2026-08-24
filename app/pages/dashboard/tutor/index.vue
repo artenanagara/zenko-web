@@ -245,7 +245,8 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
           </template>
           <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
           <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+            <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
+            <span v-else class="font-semibold text-success-ink">Gratis</span>
           </template>
           <template #cell(status)="{ item }">
             <DashboardBadge :tone="productStatusTone(item.status)">

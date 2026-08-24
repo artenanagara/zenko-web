@@ -115,10 +115,13 @@ useHead({
         <aside class="min-[901px]:sticky min-[901px]:top-24">
           <div class="rounded-lg border border-hairline bg-surface p-6 shadow-float">
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span class="text-[2rem] font-extrabold tracking-[-0.04em]">
-                {{ formatRupiah(detail.price) }}
+              <span
+                class="text-[2rem] font-extrabold tracking-[-0.04em]"
+                :class="detail.price > 0 ? '' : 'text-success-ink'"
+              >
+                {{ detail.price > 0 ? formatRupiah(detail.price) : 'Gratis' }}
               </span>
-              <span class="text-[0.95rem] text-muted line-through">
+              <span v-if="detail.priceOriginal > detail.price" class="text-[0.95rem] text-muted line-through">
                 {{ formatRupiah(detail.priceOriginal) }}
               </span>
             </div>
