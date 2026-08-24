@@ -10,7 +10,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Buat produk — Zenko',
+  title: 'Buat Paket Soal | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 </script>

@@ -23,7 +23,7 @@ const detailPending = ref(true)
 const detailError = ref('')
 
 useHead({
-  title: () => detail.value ? `${detail.value.name} — Zenko` : 'Profil tutor — Zenko',
+  title: () => detail.value ? `${detail.value.name} | Zenko` : 'Profil Tutor | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 

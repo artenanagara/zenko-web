@@ -9,7 +9,7 @@ definePageMeta({
 })  
 
 useHead({
-  title: 'Produk saya — Zenko',
+  title: 'Produk Saya | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -125,7 +125,7 @@ const actionError = ref('')
 
 /** 422 dari submit: judul produk + daftar masalahnya, dirender sebagai list. */
 const submitProblems = ref<{ title: string, problems: string[] } | null>(null)
-const submitProblemsTitle = computed(() => submitProblems.value ? `"${submitProblems.value.title}" belum bisa diajukan:` : '')
+const submitProblemsTitle = computed(() => submitProblems.value ? `Paket "${submitProblems.value.title}" belum dapat diajukan:` : '')
 
 const canEdit = (product: TutorProductSummary) =>
   product.status === 'draft' || product.status === 'rejected'
@@ -164,7 +164,7 @@ async function submitProduct(product: TutorProductSummary) {
 async function archiveProduct(product: TutorProductSummary) {
   const ok = await confirm({
     title: `Arsipkan "${product.title}"?`,
-    description: 'Produk tidak lagi tampil di katalog.',
+    description: 'Paket ini tidak akan tampil lagi di katalog publik Zenko.',
     confirmLabel: 'Arsipkan',
   })
   if (!ok) return
@@ -187,7 +187,7 @@ async function archiveProduct(product: TutorProductSummary) {
 async function deleteProduct(product: TutorProductSummary) {
   const ok = await confirm({
     title: `Hapus "${product.title}" permanen?`,
-    description: 'Tindakan ini tidak bisa dibatalkan.',
+    description: 'Seluruh data soal dan konfigurasi paket akan dihapus permanen dan tidak bisa dibatalkan.',
     confirmLabel: 'Hapus Permanen',
   })
   if (!ok) return
@@ -210,9 +210,9 @@ async function deleteProduct(product: TutorProductSummary) {
 
 <template>
   <div class="grid gap-6">
-    <AppPageHeader title="Produk saya" description="Try-out tunggal dan bundling yang kamu jual di Zenko.">
+    <AppPageHeader title="Produk saya" description="Kelola paket try out mandiri dan bundling yang kamu sediakan untuk siswa.">
       <template #actions>
-        <AppButton to="/dashboard/tutor/products/new" size="sm">Buat produk</AppButton>
+        <AppButton to="/dashboard/tutor/products/new" size="sm">Buat paket baru</AppButton>
       </template>
     </AppPageHeader>
 
@@ -247,9 +247,9 @@ async function deleteProduct(product: TutorProductSummary) {
            nothing to search, filter, or sort. -->
       <AppEmptyState
         v-else-if="products.length === 0"
-        title="Belum ada produk"
-        description="Mulai dari satu try-out tunggal: pilih jenis ujian, susun soal per subtes, lalu ajukan untuk tayang di katalog Zenko."
-        action-label="Buat produk"
+        title="Belum ada paket soal"
+        description="Mulai dengan membuat try out mandiri: tentukan jenis ujian, susun soal per subtes, lalu ajukan ke tim kurasi agar tayang di katalog Zenko."
+        action-label="Buat paket baru"
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />
 
@@ -277,7 +277,7 @@ async function deleteProduct(product: TutorProductSummary) {
         <AppEmptyState
           v-if="rows.length === 0"
           title="Tidak ada hasil"
-          description="Tidak ada produk yang cocok dengan pencarian atau filter ini."
+          description="Tidak ada paket soal yang sesuai dengan kata kunci pencarian atau filter status yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />
@@ -289,11 +289,11 @@ async function deleteProduct(product: TutorProductSummary) {
               v-if="item.status === 'rejected' && item.rejectReason"
               class="mt-1 block text-[0.82rem] text-danger-ink"
             >
-              Alasan penolakan: {{ item.rejectReason }}
+              Catatan revisi: {{ item.rejectReason }}
             </span>
           </template>
           <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
-          <template #cell(category)="{ value }">{{ value || '—' }}</template>
+          <template #cell(category)="{ value }">{{ value || 'Umum' }}</template>
           <template #cell(price)="{ value }">
             <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
             <span v-else class="font-semibold text-success-ink">Gratis</span>
@@ -302,7 +302,7 @@ async function deleteProduct(product: TutorProductSummary) {
             <span v-if="item.type === 'single'" class="tabular-nums">
               {{ item.questionCount }}/{{ item.questionTarget }} soal
             </span>
-            <span v-else class="text-muted">—</span>
+            <span v-else class="text-muted">Paket gabungan</span>
           </template>
           <template #cell(status)="{ item }">
             <DashboardBadge :tone="productStatusTone(item.status)">
@@ -353,7 +353,7 @@ async function deleteProduct(product: TutorProductSummary) {
                 <span
                   v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
                   class="text-[0.86rem] text-muted"
-                >—</span>
+                >-</span>
               </span>
             </template>
           </template>

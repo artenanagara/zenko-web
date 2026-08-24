@@ -3,7 +3,7 @@
 definePageMeta({ layout: 'auth', path: '/password-baru' })
 
 useHead({
-  title: 'Buat Kata Sandi Baru — Zenko',
+  title: 'Buat Kata Sandi Baru | Zenko',
   meta: [
     { name: 'description', content: 'Setel kata sandi baru untuk akun Zenko kamu.' },
     { name: 'robots', content: 'noindex' },

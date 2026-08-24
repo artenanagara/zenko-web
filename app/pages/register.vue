@@ -3,9 +3,9 @@
 definePageMeta({ layout: 'auth', path: '/daftar' })
 
 useHead({
-  title: 'Daftar — Zenko',
+  title: 'Daftar Akun | Zenko',
   meta: [
-    { name: 'description', content: 'Buat akun Zenko untuk mulai membeli dan mengerjakan paket try out.' },
+    { name: 'description', content: 'Buat akun Zenko gratis untuk mulai latihan try out dan meraih skor terbaikmu.' },
     { name: 'robots', content: 'noindex' },
   ],
 })

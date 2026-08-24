@@ -6,7 +6,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Paket saya — Zenko',
+  title: 'Paket Saya | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -74,15 +74,13 @@ const summary = computed(() => {
           tone="success"
           label="Try out dikerjakan"
           :value="String(summary.attempts)"
-          hint="Termasuk pengerjaan ulang"
         >
           <template #icon><IconRepeat class="h-[1.15rem] w-[1.15rem]" /></template>
         </AccountStat>
         <AccountStat
           tone="star"
           label="Akurasi terbaik"
-          :value="summary.bestAccuracy === null ? '—' : `${summary.bestAccuracy}%`"
-          hint="Persen jawaban benar tertinggi"
+          :value="summary.bestAccuracy === null ? '-' : `${summary.bestAccuracy}%`"
         >
           <template #icon><IconTrophy class="h-[1.15rem] w-[1.15rem]" /></template>
         </AccountStat>

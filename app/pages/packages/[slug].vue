@@ -33,7 +33,7 @@ const updatedLabel = computed(() =>
 )
 
 useHead({
-  title: `${detail.value.title} — Zenko`,
+  title: `${detail.value.title} | Zenko`,
   meta: [{ name: 'description', content: detail.value.description.slice(0, 160) }],
 })
 </script>
@@ -138,7 +138,7 @@ useHead({
                 size="lg"
                 class="w-full"
               >
-                {{ ownsPackage ? 'Lihat paket saya' : 'Beli sekarang' }}
+                {{ ownsPackage ? 'Buka Paket di Akun' : 'Beli Sekarang' }}
               </AppButton>
               <AppButton
                 :to="`/paket/${detail.slug}/coba`"
@@ -146,7 +146,7 @@ useHead({
                 size="lg"
                 class="w-full border border-hairline shadow-none"
               >
-                Coba gratis 5 soal
+                Coba Gratis 5 Soal
               </AppButton>
             </div>
 
@@ -171,7 +171,7 @@ useHead({
 
             <p class="mt-6 flex items-start gap-2.5 border-t border-line pt-6 text-[0.85rem] text-muted">
               <IconSeal class="mt-px h-5 w-5 shrink-0" />
-              Tutor terverifikasi. Garansi uang kembali 7 hari bila materi tidak sesuai deskripsi.
+              Disusun oleh tutor terpercaya. Transaksi aman dengan akses instan ke sistem CBT.
             </p>
           </div>
         </aside>

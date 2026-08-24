@@ -17,7 +17,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Pengajuan tutor — Zenko',
+  title: 'Pengajuan Tutor | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -192,8 +192,8 @@ async function submitDecision() {
     })
     confirmOpen.value = false
     successMessage.value = decisionStatus.value === 'approved'
-      ? `Pengajuan ${app.name} disetujui — akunnya kini tutor.`
-      : `Pengajuan ${app.name} ditolak.`
+      ? `Pengajuan ${app.name} telah disetujui. Akun berhasil diberikan akses sebagai tutor.`
+      : `Pengajuan ${app.name} telah ditolak.`
     // Refetch-not-optimistic: the row leaves the queue when truth lands.
     await refresh()
     refreshSummary()
@@ -201,7 +201,7 @@ async function submitDecision() {
   catch (cause) {
     if (isConflict(cause)) {
       confirmOpen.value = false
-      conflictNotice.value = 'Item ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
+      conflictNotice.value = 'Status pengajuan ini telah diperbarui oleh admin lain. Data antrean dimuat ulang.'
       await refresh()
       refreshSummary()
     }
@@ -220,7 +220,7 @@ async function submitDecision() {
   <div class="grid gap-6">
     <AppPageHeader
       title="Pengajuan tutor"
-      description="Tinjau pengajuan dari calon tutor dan putuskan siapa yang bergabung."
+      description="Tinjau profil dan latar belakang calon tutor yang ingin bergabung di Zenko."
     />
 
     <!-- One feedback slot: success banner (remounts per message) or 409 notice. -->
@@ -363,7 +363,7 @@ async function submitDecision() {
                 {{ detailApp.portfolioUrl }}
                 <AppIcon name="arrow-square-out" :size="14" />
               </a>
-              <span v-else class="text-muted">—</span>
+              <span v-else class="text-muted">-</span>
             </dd>
           </div>
         </dl>

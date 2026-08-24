@@ -3,12 +3,12 @@
 definePageMeta({ path: '/paket' })
 
 useHead({
-  title: 'Semua Paket Try Out — Zenko',
+  title: 'Katalog Paket Try Out | Zenko',
   meta: [
     {
       name: 'description',
       content:
-        'Jelajahi seluruh paket try out SKD/CPNS, BUMN, SNBT, dan TKA di Zenko. Beli per paket, tanpa langganan.',
+        'Jelajahi beragam pilihan paket latihan try out SKD CPNS, BUMN, SNBT, dan Tes Kedinasan di Zenko. Beli per paket, akses langsung, tanpa langganan.',
     },
   ],
 })

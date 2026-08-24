@@ -13,7 +13,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Akun saya — Zenko',
+  title: 'Profil & Pengaturan Akun | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -425,8 +425,7 @@ async function onSubmit() {
             @submit.prevent="confirmEmailCode"
           >
             <AppInlineMessage type="info">
-              Kode terkirim ke <strong>{{ pendingEmail }}</strong>. Masukkan di bawah untuk
-              mengaktifkan email baru — sebelum itu, email lamamu masih berlaku.
+              Kode verifikasi telah dikirim ke <strong>{{ pendingEmail }}</strong>. Masukkan kode di bawah untuk mengaktifkan email baru. Sebelum kode diverifikasi, email lamamu masih tetap aktif.
             </AppInlineMessage>
 
             <div>
@@ -582,9 +581,7 @@ async function onSubmit() {
           </div>
 
           <p class="text-[0.82rem] text-muted">
-            Kalau kamu selalu masuk lewat Google, akunmu belum punya kata sandi —
-            buat satu lewat <NuxtLink to="/lupa-password" class="font-semibold text-primary hover:text-primary-light">tautan pemulihan</NuxtLink>
-            begitu alur email aktif.
+            Jika kamu mendaftar atau selalu masuk menggunakan akun Google, kamu bisa mengatur kata sandi baru melalui <NuxtLink to="/lupa-password" class="font-semibold text-primary hover:text-primary-light">tautan pemulihan kata sandi</NuxtLink>.
           </p>
         </form>
       </DashboardPanel>

@@ -12,7 +12,7 @@ const route = useRoute()
 const { data: item, pending, error, refresh } = useOwnedPackage(route.params.slug as string)
 
 useHead({
-  title: computed(() => (item.value ? `${item.value.title} — Paket saya — Zenko` : 'Paket saya — Zenko')),
+  title: computed(() => (item.value ? `${item.value.title} | Paket Saya | Zenko` : 'Paket Saya | Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -34,7 +34,7 @@ function scoreDelta(attempt: Attempt): number | null {
 /** Tanda minus tipografis, bukan tanda hubung — angka negatif tetap terbaca angka. */
 function formatDelta(delta: number): string {
   if (delta > 0) return `+${delta}`
-  if (delta < 0) return `−${Math.abs(delta)}`
+  if (delta < 0) return `-${Math.abs(delta)}`
   return '±0'
 }
 
@@ -47,23 +47,6 @@ const DELTA_TONES = {
 function deltaTone(delta: number) {
   return DELTA_TONES[delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat']
 }
-
-/** Konteks di bawah skor terakhir: membaik, menurun, atau percobaan pertama. */
-const lastHint = computed(() => {
-  const last = stats.value.last
-  if (last === null) return undefined
-  const delta = scoreDelta(last)
-  if (delta === null) return 'Percobaan pertama'
-  if (delta === 0) return 'Sama dengan percobaan sebelumnya'
-  return `${formatDelta(delta)} dari percobaan sebelumnya`
-})
-
-/** Peringkat lebih memotivasi daripada mengulang angka skornya. */
-const bestHint = computed(() => {
-  const best = stats.value.best
-  if (best === null) return undefined
-  return best.rank === '—' ? `Percobaan #${best.number}` : `Peringkat ${best.rank}`
-})
 
 /** Analisis subtes memakai percobaan terbaik — itu yang jadi acuan skor di atas. */
 const sections = computed(() =>
@@ -163,8 +146,7 @@ function barTone(percent: number) {
         </span>
         <h2 class="text-[1.1rem] font-bold tracking-[-0.03em]">Paket ini belum pernah kamu kerjakan</h2>
         <p class="max-w-md text-[0.9rem] text-muted">
-          Kerjakan try out pertamamu — skor, analisis per subtes, dan riwayat
-          pengerjaan akan muncul di halaman ini.
+          Kerjakan simulasi try out pertamamu. Skor, analisis per subtes, dan riwayat latihan akan tercatat rapi di sini.
         </p>
       </section>
 
@@ -172,21 +154,20 @@ function barTone(percent: number) {
         <!-- Raw scores are fine here: one package is one exam type, so its own
              scale is consistent across every attempt. -->
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <AccountStat tone="star" label="Skor terbaik" :value="String(stats.best!.score)" :hint="bestHint">
+          <AccountStat tone="star" label="Skor terbaik" :value="String(stats.best!.score)">
             <template #icon><IconTrophy class="h-[1.15rem] w-[1.15rem]" /></template>
           </AccountStat>
-          <AccountStat tone="primary" label="Skor terakhir" :value="String(stats.last!.score)" :hint="lastHint">
+          <AccountStat tone="primary" label="Skor terakhir" :value="String(stats.last!.score)">
             <template #icon><IconTarget class="h-[1.15rem] w-[1.15rem]" /></template>
           </AccountStat>
           <AccountStat
             tone="primary"
             label="Jawaban benar"
             :value="`${stats.accuracy!.percent}%`"
-            :hint="`${stats.accuracy!.correct} dari ${stats.accuracy!.total} soal, percobaan terbaik`"
           >
             <template #icon><IconCheck class="h-[1.15rem] w-[1.15rem]" /></template>
           </AccountStat>
-          <AccountStat tone="success" label="Dikerjakan" :value="`${stats.attemptCount}×`" hint="Boleh diulang kapan saja">
+          <AccountStat tone="success" label="Dikerjakan" :value="`${stats.attemptCount}×`">
             <template #icon><IconRepeat class="h-[1.15rem] w-[1.15rem]" /></template>
           </AccountStat>
         </div>
@@ -194,7 +175,7 @@ function barTone(percent: number) {
         <DashboardPanel
           id="subtes"
           title="Analisis per subtes"
-          description="Dari percobaan dengan skor terbaik."
+          description="Berdasarkan hasil pengerjaan terbaikmu."
         >
           <ul class="grid gap-4">
             <li v-for="section in sections" :key="section.title">
@@ -202,7 +183,7 @@ function barTone(percent: number) {
                 <span class="inline-flex flex-wrap items-center gap-2 font-semibold tracking-[-0.02em]">
                   {{ section.title }}
                   <DashboardBadge v-if="section.title === weakestTitle" tone="warning">
-                    Fokus di sini
+                    Perlu ditingkatkan
                   </DashboardBadge>
                 </span>
                 <span class="text-[0.84rem] text-muted tabular-nums">
@@ -266,7 +247,7 @@ function barTone(percent: number) {
                     >
                       {{ formatDelta(scoreDelta(attempt)!) }}
                     </span>
-                    <span v-else class="text-[0.9rem] text-faint">—</span>
+                    <span v-else class="text-[0.9rem] text-faint">-</span>
                   </td>
                   <td class="py-3.5 pr-4 text-[0.9rem] text-muted tabular-nums">
                     {{ accuracyOf(attempt).correct }}/{{ accuracyOf(attempt).total }}
@@ -308,7 +289,7 @@ function barTone(percent: number) {
               </div>
               <p class="mt-2 text-[0.82rem] text-muted tabular-nums">
                 {{ accuracyOf(attempt).correct }}/{{ accuracyOf(attempt).total }} benar
-                <template v-if="attempt.rank !== '—'"> · Peringkat {{ attempt.rank }}</template>
+                <template v-if="attempt.rank !== '—' && attempt.rank !== '-'"> · Peringkat {{ attempt.rank }}</template>
               </p>
             </li>
           </ul>

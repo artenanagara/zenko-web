@@ -121,8 +121,8 @@ const STATE_TITLE = COMPLETION_STATE_TITLE
             STATE_CLASS[completionState(questions[index - 1]!)],
             activeId === questions[index - 1]!.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : '',
           ]"
-          :title="`Soal ${index} — ${STATE_TITLE[completionState(questions[index - 1]!)]}`"
-          :aria-label="`Soal ${index} — ${STATE_TITLE[completionState(questions[index - 1]!)]}`"
+          :title="`Soal ${index}: ${STATE_TITLE[completionState(questions[index - 1]!)]}`"
+          :aria-label="`Soal ${index}: ${STATE_TITLE[completionState(questions[index - 1]!)]}`"
           @click="emit('select', questions[index - 1]!.id)"
           @dragstart="onDragStart(index - 1)"
           @dragover.prevent

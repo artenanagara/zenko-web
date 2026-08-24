@@ -3,7 +3,7 @@
 definePageMeta({ path: '/ketentuan-layanan' })
 
 useHead({
-  title: 'Ketentuan Layanan — Zenko',
+  title: 'Ketentuan Layanan | Zenko',
   meta: [
     {
       name: 'description',

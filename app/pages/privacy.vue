@@ -3,7 +3,7 @@
 definePageMeta({ path: '/kebijakan-privasi' })
 
 useHead({
-  title: 'Kebijakan Privasi — Zenko',
+  title: 'Kebijakan Privasi | Zenko',
   meta: [
     {
       name: 'description',

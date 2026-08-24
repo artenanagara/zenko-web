@@ -8,7 +8,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Riwayat pembelian — Zenko',
+  title: 'Riwayat Pembelian | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -17,7 +17,7 @@ const { data: items, pending, error, refresh } = usePurchases()
 /** An invoice can hold several packages; the column stays a single line. */
 function itemsLabel(purchase: Purchase) {
   const [first, ...rest] = purchase.items
-  if (!first) return '—'
+  if (!first) return '-'
   return rest.length === 0 ? first.title : `${first.title} +${rest.length} paket lain`
 }
 
@@ -32,7 +32,7 @@ const totalSpent = computed(() =>
   <div class="grid gap-6">
     <AppPageHeader
       title="Riwayat pembelian"
-      description="Semua transaksi paket dari akun ini, lengkap dengan invoicenya."
+      description="Daftar seluruh transaksi pembelian paket try out dan invoice resmimu."
     />
 
     <!-- Memuat: kerangka tabel, bukan halaman kosong. -->

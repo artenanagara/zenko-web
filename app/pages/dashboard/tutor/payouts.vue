@@ -8,7 +8,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Pencairan — Zenko',
+  title: 'Pencairan Dana | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -104,7 +104,7 @@ async function submitPayout() {
   payoutSubmitting.value = true
   try {
     await requestTutorPayout(amount.value)
-    payoutSuccess.value = 'Pengajuan pencairan terkirim. Kami memprosesnya dalam 1–3 hari kerja.'
+    payoutSuccess.value = 'Pengajuan pencairan berhasil dikirim. Tim kami akan memproses transfer dalam 1 sampai 3 hari kerja.'
     amount.value = null
     await Promise.all([refreshBalance(), refreshPayouts()])
     // Brief success state so the confirmation actually registers, then close
@@ -126,7 +126,7 @@ async function submitPayout() {
   <div class="grid gap-6">
     <AppPageHeader
       title="Pencairan"
-      description="Saldo penghasilanmu, rekening tujuan, dan riwayat pencairan."
+      description="Pantau saldo penghasilan, rekening tujuan pencairan, dan riwayat penarikan dana."
     />
 
     <AppInlineMessage v-if="balanceError" type="error">{{ balanceError }}</AppInlineMessage>
@@ -138,10 +138,10 @@ async function submitPayout() {
            classes (this app has no tailwind-merge), so the wrapper owns the
            exact dimensions and the skeleton just fills it. -->
       <div class="w-full rounded-xl md:flex-1" style="min-height: 17rem;" aria-hidden="true">
-        <AppSkeleton type="rect" className="!h-full !w-full !rounded-xl" />
+        <AppSkeleton type="rect" className="h-full! w-full! rounded-xl!" />
       </div>
       <div class="min-h-32 flex-1" aria-hidden="true">
-        <AppSkeleton type="rect" className="!h-full !w-full !rounded-lg" />
+        <AppSkeleton type="rect" className="h-full! w-full! rounded-lg!" />
       </div>
     </div>
 
@@ -152,7 +152,7 @@ async function submitPayout() {
            3D depth per the Zenko style guide's CTA Depth Treatment, subtle
            decorative rings, one primary action). -->
       <div
-        class="panel-inset relative flex w-full flex-col gap-6 overflow-hidden rounded-xl bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark px-6 py-7 text-white min-h-[17rem] md:flex-1"
+        class="panel-inset relative flex w-full flex-col gap-6 overflow-hidden rounded-xl bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark px-6 py-7 text-white min-h-68 md:flex-1"
       >
         <!-- Decorative rings: subtle, concentric, bleeding off the right edge. -->
         <div
@@ -165,7 +165,7 @@ async function submitPayout() {
         />
 
         <p class="relative w-fit text-[0.76rem] font-bold tracking-[0.12em] text-white/75 uppercase">
-          Saldo tersedia
+          Saldo siap dicairkan
         </p>
 
         <p class="relative text-[2.75rem] leading-none font-extrabold tracking-[-0.045em] tabular-nums">
@@ -194,14 +194,14 @@ async function submitPayout() {
           @click="openPayoutModal"
         >
           <IconWallet class="mr-2 h-4.5 w-4.5 shrink-0" />
-          Tarik Dana
+          Tarik Saldo
         </AppButton>
       </div>
 
       <div class="flex flex-1 flex-col gap-4">
         <div class="flex flex-1 flex-col justify-between rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs">
-          <AppMetricText :value="formatRupiah(balance.totalPaidOut)" label="Total dicairkan" />
-          <p class="mt-2 text-[0.78rem] text-muted">Sepanjang waktu.</p>
+          <AppMetricText :value="formatRupiah(balance.totalPaidOut)" label="Total berhasil dicairkan" />
+          <p class="mt-2 text-[0.78rem] text-muted">Akumulasi dana yang telah masuk ke rekeningmu.</p>
         </div>
 
         <!-- Held balance now lives here as its own matrix card, same white
@@ -209,7 +209,7 @@ async function submitPayout() {
              matrix, not singled out. -->
         <div class="flex flex-1 flex-col justify-between rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs">
           <AppMetricText :value="formatRupiah(balance.held)" label="Saldo tertahan" />
-          <p class="mt-2 text-[0.78rem] text-muted">Cair otomatis 7 hari setelah pembayaran.</p>
+          <p class="mt-2 text-[0.78rem] text-muted">Siap dicairkan 7 hari setelah transaksi terverifikasi.</p>
         </div>
       </div>
     </div>
@@ -222,13 +222,13 @@ async function submitPayout() {
         </span>
         <span>·</span>
         <NuxtLink to="/dashboard/tutor/settings#rekening" class="font-semibold text-primary hover:underline">
-          Kelola di Pengaturan
+          Kelola rekening di Pengaturan
         </NuxtLink>
       </template>
       <template v-else>
-        <span>Belum ada rekening bank tersimpan.</span>
+        <span>Belum ada rekening bank yang tersimpan.</span>
         <NuxtLink to="/dashboard/tutor/settings#rekening" class="font-semibold text-primary hover:underline">
-          Tambahkan di Pengaturan
+          Tambahkan rekening di Pengaturan
         </NuxtLink>
       </template>
     </p>
@@ -250,7 +250,7 @@ async function submitPayout() {
     <DashboardPanel
       id="riwayat"
       title="Riwayat pencairan"
-      description="Terbaru di atas. Pencairan ditolak dikembalikan ke saldo tersedia."
+      description="Daftar pengajuan pencairan dana. Pengajuan yang belum disetujui akan otomatis dikembalikan ke saldo aktifmu."
     >
       <DashboardSkeleton v-if="payoutsPending" :count="4" label="Memuat riwayat pencairan..." />
 
@@ -262,7 +262,7 @@ async function submitPayout() {
       </div>
 
       <p v-else-if="payouts.length === 0" class="py-6 text-center text-muted">
-        Belum ada pencairan. Ajukan yang pertama begitu saldo tersediamu mencapai
+        Belum ada riwayat penarikan dana. Kamu dapat mengajukan pencairan setelah saldo aktif mencapai minimum
         {{ formatRupiah(PAYOUT_MINIMUM) }}.
       </p>
 
@@ -283,9 +283,9 @@ async function submitPayout() {
             {{ item.rejectReason }}
           </template>
           <template v-else-if="item.processedAt">
-            Diproses {{ formatDate(item.processedAt) }}
+            Selesai diproses pada {{ formatDate(item.processedAt) }}
           </template>
-          <template v-else>—</template>
+          <template v-else>Menunggu proses</template>
         </template>
       </AppTable>
     </DashboardPanel>

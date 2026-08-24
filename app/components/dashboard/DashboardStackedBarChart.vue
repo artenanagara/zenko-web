@@ -34,9 +34,9 @@ const props = defineProps<{
 }>()
 
 const WIDTH = 600
-const HEIGHT = 240
+const HEIGHT = 176
 const PAD_TOP = 16
-const PAD_BOTTOM = 30
+const PAD_BOTTOM = 28
 const PAD_X = 4
 
 const plotWidth = WIDTH - PAD_X * 2
@@ -97,7 +97,7 @@ const tickIndexes = computed(() => {
     <svg
       :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
       preserveAspectRatio="none"
-      class="h-60 w-full"
+      class="h-44 w-full"
       aria-hidden="true"
     >
       <line :x1="PAD_X" :x2="WIDTH - PAD_X" :y1="baseline" :y2="baseline" class="stroke-hairline-strong" stroke-width="1" />

@@ -2,8 +2,6 @@
 export interface DashboardStat {
   label: string
   value: string
-  /** Optional supporting line, e.g. a comparison with last month. */
-  hint?: string
 }
 
 /** Widest-breakpoint columns; default 4 keeps every existing caller unchanged. */
@@ -16,17 +14,23 @@ const wideCols = computed(() => WIDE_COLS[props.columns])
 </script>
 
 <template>
-  <!-- AppMetricText renders value+label as a plain div (no dt/dd of its
-       own), so the outer list uses div rather than dl/dt/dd — a bare dl
-       with no dt/dd children would be invalid markup. -->
+  <!-- Metric cards deliberately contain one value and one single-line label.
+       Keeping the same structure everywhere prevents supporting copy from
+       changing card heights and weakening the value-first hierarchy. -->
   <div class="grid gap-4 sm:grid-cols-2" :class="wideCols">
     <div
       v-for="item in items"
       :key="item.label"
       class="rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs"
     >
-      <AppMetricText :value="item.value" :label="item.label" />
-      <p v-if="item.hint" class="mt-2 text-[0.78rem] text-muted">{{ item.hint }}</p>
+      <div class="flex min-w-0 flex-col gap-3">
+        <p class="text-3xl leading-none font-extrabold tracking-tight text-ink tabular-nums md:text-4xl">
+          {{ item.value }}
+        </p>
+        <p class="truncate text-[0.82rem] font-medium text-muted" :title="item.label">
+          {{ item.label }}
+        </p>
+      </div>
     </div>
   </div>
 </template>

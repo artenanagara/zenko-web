@@ -16,7 +16,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Moderasi produk — Zenko',
+  title: 'Moderasi Produk | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -207,8 +207,8 @@ async function decide(approve: boolean, reason?: string) {
     notice.value = {
       type: 'success',
       text: approve
-        ? `Produk «${product.title}» disetujui dan tayang di katalog.`
-        : `Produk «${product.title}» ditolak — alasan terkirim ke tutor.`,
+        ? `Paket "${product.title}" telah disetujui dan kini aktif di katalog.`
+        : `Paket "${product.title}" telah ditolak. Catatan perbaikan berhasil dikirim ke tutor.`,
     }
     await afterDecision()
   }
@@ -233,7 +233,7 @@ async function decide(approve: boolean, reason?: string) {
   <div class="grid gap-6">
     <AppPageHeader
       title="Moderasi produk"
-      description="Tinjau produk yang diajukan tutor sebelum tayang di katalog."
+      description="Tinjau dan kurasi kualitas paket soal yang diajukan tutor sebelum tayang di katalog Zenko."
     />
 
     <!-- :key remounts AppAlert per message — it hides itself after a dismiss. -->

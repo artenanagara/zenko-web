@@ -426,7 +426,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
 
     <AppSectionMessage v-if="restoreAvailable" appearance="warning">
       <span class="flex flex-wrap items-center justify-between gap-3">
-        <span>Draft tersimpan otomatis ditemukan — mungkin dari sesi yang terputus.</span>
+        <span>Draft tersimpan otomatis ditemukan dari sesi sebelumnya.</span>
         <span class="flex shrink-0 items-center gap-3">
           <button type="button" class="font-semibold text-primary hover:underline" @click="restoreDraft">
             Pulihkan
@@ -528,7 +528,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
 
     <!-- true_false: daftar pernyataan -->
     <fieldset v-else-if="kind === 'true_false'" class="grid gap-3">
-      <legend :class="FIELD_LABEL_CLASS">Pernyataan — tentukan kuncinya Benar atau Salah</legend>
+      <legend :class="FIELD_LABEL_CLASS">Pernyataan (tentukan kunci Benar atau Salah)</legend>
 
       <div v-for="(statement, index) in statements" :key="index" class="flex items-start gap-2.5">
         <TutorOptionField

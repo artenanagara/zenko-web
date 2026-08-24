@@ -13,12 +13,12 @@ import {
 definePageMeta({ path: '/tentang' })
 
 useHead({
-  title: 'Tentang Kami — Zenko',
+  title: 'Tentang Kami | Zenko',
   meta: [
     {
       name: 'description',
       content:
-        'Zenko adalah marketplace try out untuk SKD/CPNS, BUMN, SNBT, dan TKA — tempat siswa menemukan paket latihan terbaik dari berbagai tutor terpercaya, dan tempat tutor mengubah keahliannya jadi penghasilan.',
+        'Zenko adalah platform marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
     },
   ],
 })
@@ -30,33 +30,33 @@ useHead({
 const differentiators = [
   {
     icon: IconTarget,
-    title: 'Beragam pilihan',
-    description: 'Paket dari banyak tutor, bukan satu sumber.',
+    title: 'Beragam pilihan tutor',
+    description: 'Banyak pilihan paket dari berbagai tutor berpengalaman, bukan hanya satu sumber.',
   },
   {
     icon: IconStar,
-    title: 'Transparan',
-    description: 'Rating & ulasan asli dari siswa yang sudah mencoba.',
+    title: 'Ulasan transparan',
+    description: 'Rating dan testimoni nyata dari siswa yang sudah mencoba langsung.',
   },
   {
     icon: IconLightning,
-    title: 'Langsung kerjakan',
-    description: 'Beli, akses, langsung latihan tanpa ribet.',
+    title: 'Langsung latihan',
+    description: 'Beli paket, akses sistem CBT secara instan tanpa ribet verifikasi manual.',
   },
 ]
 
 const studentSteps = [
-  'Cari kategori ujian',
-  'Pilih paket sesuai kebutuhan & budget',
-  'Kerjakan langsung',
-  'Lihat hasil dan pembahasan',
+  'Cari kategori ujian yang kamu tuju',
+  'Pilih paket try out sesuai target dan kebutuhanmu',
+  'Kerjakan simulasi ujian CBT',
+  'Pelajari evaluasi skor dan pembahasan lengkapnya',
 ]
 
 const tutorSteps = [
-  'Daftar sebagai tutor',
-  'Upload paket soal',
-  'Siswa menemukan dan membeli paketmu',
-  'Kamu dapat penghasilan dari setiap paket yang terjual',
+  'Daftar sebagai tutor dan lengkapi profilmu',
+  'Unggah paket try out dan susun pembahasannya',
+  'Paket tayang di katalog setelah dikurasi oleh tim Zenko',
+  'Dapatkan penghasilan bersih dari setiap paket yang terjual',
 ]
 
 const values = [
@@ -64,38 +64,38 @@ const values = [
     icon: IconHandshake,
     title: 'Adil untuk semua pihak',
     description:
-      'Bagi hasil yang transparan, siswa dapat harga wajar, tutor dapat porsi yang pantas.',
+      'Bagi hasil yang adil dan transparan. Siswa mendapatkan materi berkualitas dengan harga wajar, dan tutor memperoleh apresiasi yang layak.',
   },
   {
     icon: IconCheckCircle,
     title: 'Kualitas di atas kuantitas',
     description:
-      'Setiap konten yang tayang melewati proses moderasi, bukan sekadar upload asal jadi.',
+      'Setiap paket soal melewati kurasi ketat tim Zenko untuk memastikan relevansi dan akurasi kisi-kisi.',
   },
   {
     icon: IconRocket,
     title: 'Terus bergerak maju',
     description:
-      'Kami percaya progres kecil yang konsisten lebih berarti daripada janji besar yang lambat.',
+      'Kami percaya progres kecil yang konsisten dalam latihan jauh lebih bermakna daripada janji instan.',
   },
   {
     icon: IconPlant,
-    title: 'Membuka kesempatan',
+    title: 'Membuka kesempatan luas',
     description:
-      'Siapa pun dengan keahlian yang tepat berhak dapat kesempatan menghasilkan dari ilmunya.',
+      'Siapa pun yang memiliki keahlian dan dedikasi mengajar berhak mendapatkan ruang untuk berkarya dan berdaya.',
   },
 ]
 
 const audiences = [
   {
-    title: 'Siswa & pencari kerja',
+    title: 'Siswa dan pejuang seleksi',
     description:
-      'Sedang bersiap menghadapi SKD/CPNS, seleksi BUMN, SNBT, atau ujian TKA, dan ingin latihan dengan soal berkualitas tanpa harus bingung mencari ke sana kemari.',
+      'Sedang bersiap menghadapi SKD CPNS, Rekrutmen BUMN, SNBT UTBK, atau Tes Kedinasan, dan ingin latihan terarah dengan soal berkualitas tanpa bingung mencari materi ke sana ke mari.',
   },
   {
-    title: 'Tutor & kreator konten',
+    title: 'Tutor dan kreator edukasi',
     description:
-      'Punya pengalaman atau keahlian di bidang ini — baik sebagai pengajar bimbel, lulusan yang sudah berhasil, atau content creator edukasi — dan ingin membagikannya sekaligus mendapat penghasilan.',
+      'Punya materi dan keahlian mengajar (tutor bimbel, alumni berprestasi, atau konten kreator edukasi) yang ingin mendistribusikan soal secara profesional dan mendapatkan penghasilan mandiri.',
   },
 ]
 </script>
@@ -120,9 +120,7 @@ const audiences = [
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Zenko adalah marketplace try out untuk SKD/CPNS, BUMN, SNBT, dan TKA —
-            tempat siswa menemukan paket latihan terbaik dari berbagai tutor
-            terpercaya, dan tempat tutor mengubah keahliannya jadi penghasilan.
+            Zenko adalah marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan paket latihan terbaik dari berbagai tutor terpercaya, dan wadah bagi tutor untuk membagikan keahliannya.
           </p>
         </div>
       </div>
@@ -135,29 +133,22 @@ const audiences = [
       <div class="container-page">
         <div class="mx-auto mb-9 max-w-160 text-center">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-widest text-primary uppercase">
-            Masalah yang kami lihat
+            Latar Belakang
           </p>
           <h2 id="masalah-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Kenapa Zenko <span class="text-accent">ada</span>
+            Kenapa Zenko <span class="text-accent">hadir</span>
           </h2>
         </div>
 
         <div class="mx-auto grid max-w-160 gap-5 text-[1.02rem] leading-[1.7] text-muted">
           <p>
-            Setiap tahun, jutaan Gen Z Indonesia bersaing memperebutkan kursi CPNS,
-            BUMN, atau kampus impian lewat SNBT. Tapi persiapannya sering
-            berantakan — soal latihan tersebar di grup WhatsApp, kualitasnya nggak
-            jelas, dan susah tahu mana yang benar-benar sesuai standar ujian
-            sebenarnya.
+            Setiap tahun, jutaan pejuang ujian di Indonesia bersaing memperebutkan posisi di instansi pemerintahan, BUMN, atau perguruan tinggi negeri impian. Sayangnya, proses persiapan sering terasa membingungkan karena bahan latihan tersebar di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.
           </p>
           <p>
-            Di sisi lain, banyak tutor dan lulusan yang sudah berhasil punya materi
-            bagus, tapi terjebak jualan manual satu-satu lewat chat pribadi — capek
-            ngurus pembayaran, kirim file, dan susah berkembang lebih besar dari
-            itu.
+            Di sisi lain, banyak pendidik dan lulusan berprestasi yang memiliki bank soal bermutu, namun terkendala infrastruktur teknis seperti sistem CBT dan payment gateway otomatis untuk mendistribusikan ilmunya.
           </p>
           <p class="font-semibold text-ink">
-            Kami percaya ada cara yang lebih baik untuk mempertemukan keduanya.
+            Kami percaya ada cara yang lebih adil dan terstruktur untuk menjembatani semangat belajar siswa dengan keahlian para pendidik.
           </p>
         </div>
       </div>
@@ -170,7 +161,7 @@ const audiences = [
       <div class="container-page">
         <div class="mx-auto mb-9 max-w-160 text-center">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-widest text-primary uppercase">
-            Apa itu Zenko
+            Solusi Zenko
           </p>
           <h2 id="solusi-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
             Satu tempat, banyak pilihan <span class="text-accent">tutor terbaik</span>
@@ -179,17 +170,10 @@ const audiences = [
 
         <div class="mx-auto grid max-w-160 gap-5 text-[1.02rem] leading-[1.7] text-muted">
           <p>
-            Zenko adalah marketplace try out — bukan platform dari satu vendor
-            saja. Setiap paket soal di Zenko dibuat oleh tutor dan kreator konten
-            yang berbeda-beda, jadi kamu bisa membandingkan, memilih, dan
-            mempercayai paket berdasarkan rating dan ulasan nyata dari siswa lain —
-            bukan cuma percaya klaim satu pihak.
+            Zenko adalah marketplace try out terbuka, bukan sekadar platform satu arah. Setiap paket soal disusun oleh tutor yang memiliki spesialisasi masing-masing. Siswa dapat membandingkan paket, melihat ulasan jujur, dan memilih materi yang paling pas dengan gaya belajarnya.
           </p>
           <p>
-            Ini yang membedakan Zenko dari platform try out kebanyakan: kami nggak
-            membatasi kamu pada satu sudut pandang atau satu gaya mengajar. Semakin
-            banyak tutor berkualitas bergabung, semakin banyak juga pilihan yang
-            kamu punya untuk menemukan cara belajar yang paling cocok.
+            Kami tidak membatasi siswa pada satu metode pembelajaran saja. Semakin banyak pendidik berdedikasi yang bergabung, semakin kaya pilihan latihan yang kamu miliki untuk meraih impianmu.
           </p>
         </div>
 

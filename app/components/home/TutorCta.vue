@@ -16,20 +16,19 @@ const recentSales = [
       >
         <div>
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-white/75 uppercase">
-            Untuk tutor dan pembuat soal
+            Peluang Tutor & Edukator
           </p>
           <h2
             id="tutor-cta-heading"
             class="max-w-[15ch] text-[clamp(2rem,3.4vw,3rem)] leading-[1.12] tracking-[-0.04em] text-white"
           >
-            Jual paket try out buatanmu
+            Bagikan materi terbaikmu
             <span class="text-accent mt-0.5 block text-white/95">di Zenko</span>
           </h2>
           <p class="mt-5 mb-8 max-w-[44ch] text-[1.02rem] text-white/80">
-            Unggah paket soal, tentukan harga sendiri, dan dapatkan penghasilan dari
-            setiap paket yang terjual.
+            Unggah paket soal buatanmu, atur harga secara bebas, dan dapatkan penghasilan dari setiap penjualan tanpa pusing urusan teknis.
           </p>
-          <AppButton to="/jadi-tutor" variant="light" size="lg">Daftar jadi tutor</AppButton>
+          <AppButton to="/jadi-tutor" variant="light" size="lg">Gabung Jadi Tutor</AppButton>
         </div>
 
         <div class="rounded-lg bg-surface p-5 shadow-[0_20px_44px_rgba(12,40,100,0.22)] md:p-7 md:pb-6" aria-hidden="true">

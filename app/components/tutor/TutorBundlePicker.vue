@@ -104,8 +104,7 @@ const total = computed(() =>
           </li>
         </ol>
         <p class="mt-2.5 text-[0.86rem] text-muted">
-          Total harga satuan: <span class="font-semibold text-ink tabular-nums">{{ formatRupiah(total) }}</span>
-          — pasang harga bundling di bawah angka ini.
+          Total harga satuan: <span class="font-semibold text-ink tabular-nums">{{ formatRupiah(total) }}</span>. Kamu disarankan memasang harga bundling lebih hemat dari total ini.
         </p>
       </div>
 

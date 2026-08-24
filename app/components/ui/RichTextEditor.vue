@@ -475,7 +475,7 @@ defineExpose({
           <AppButton type="button" size="xs" class="w-full" :disabled="imageUploading" @click="triggerImageUpload">
             {{ imageUploading ? 'Mengunggah…' : 'Unggah dari perangkat' }}
           </AppButton>
-          <p class="-mt-1.5 text-[0.76rem] text-muted">JPG, PNG, WEBP, atau GIF — maksimal 5 MB.</p>
+          <p class="-mt-1.5 text-[0.76rem] text-muted">JPG, PNG, WEBP, atau GIF (maksimal 5 MB).</p>
           <div class="flex items-center gap-2">
             <span class="h-px flex-1 bg-line" aria-hidden="true" />
             <span class="text-[0.76rem] text-muted">atau tempel URL</span>

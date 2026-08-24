@@ -10,7 +10,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Dashboard tutor — Zenko',
+  title: 'Dashboard Tutor | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -38,9 +38,9 @@ const rejectedCount = computed(() => products.value.filter(product => product.st
 const reviewCount = computed(() => products.value.filter(product => product.status === 'review').length)
 
 const stats = computed(() => [
-  { label: 'Total pendapatan', value: formatRupiah(totalShare.value), hint: 'Porsi 70% dari seluruh penjualan.' },
+  { label: 'Total pendapatan', value: formatRupiah(totalShare.value) },
   { label: 'Total produk', value: String(products.value.length) },
-  { label: 'Produk terjual', value: String(summary.value.count), hint: 'Sepanjang waktu' },
+  { label: 'Produk terjual', value: String(summary.value.count) },
 ])
 
 /**
@@ -160,22 +160,22 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
   <div class="grid gap-6">
     <AppPageHeader
       title="Ringkasan"
-      description="Performa produkmu dan penghasilan yang menunggu dicairkan."
+      description="Pantau performa paket try out dan perkembangan penghasilanmu."
     />
 
     <!-- Perlu perhatian: rejected is loud (needs action), review is quiet
          (just a status). Both link nowhere new — the detail lives in Produk
          saya, this only makes sure it gets seen. -->
     <div v-if="rejectedCount > 0 || reviewCount > 0" class="grid gap-3">
-      <AppAlert v-if="rejectedCount > 0" variant="warning" :title="`${rejectedCount} produk ditolak`">
-        Perlu revisi sebelum bisa diajukan ulang.
+      <AppAlert v-if="rejectedCount > 0" variant="warning" :title="`${rejectedCount} produk memerlukan revisi`">
+        Silakan periksa catatan revisi agar paketmu bisa segera diajukan kembali.
         <NuxtLink to="/dashboard/tutor/products" class="font-semibold underline underline-offset-2">
           Lihat produk
         </NuxtLink>
       </AppAlert>
 
       <AppInlineMessage v-if="reviewCount > 0" type="info">
-        {{ reviewCount }} produk sedang ditinjau moderator — kami mengabarimu begitu selesai.
+        {{ reviewCount }} produk sedang ditinjau oleh tim kurasi. Kami akan mengabari begitu proses selesai.
       </AppInlineMessage>
     </div>
 
@@ -184,23 +184,23 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
     <!-- Saldo pencairan sudah punya halaman sendiri; ini cuma info sekunder
          supaya tautannya tetap kelihatan dari ringkasan. -->
     <p class="-mt-2 text-[0.86rem] text-muted">
-      Saldo tersedia untuk dicairkan: <strong class="font-semibold text-ink">{{ formatRupiah(balance.available) }}</strong>
+      Saldo siap dicairkan: <strong class="font-semibold text-ink">{{ formatRupiah(balance.available) }}</strong>
       <NuxtLink to="/dashboard/tutor/payouts" class="ml-1.5 font-semibold text-primary hover:underline">
-        Kelola pencairan
+        Kelola pencairan dana
       </NuxtLink>
     </p>
 
     <DashboardPanel
       id="pendapatan"
       title="Pendapatan harian per produk"
-      description="30 hari terakhir, ditumpuk per produk (maksimal 8 + Lainnya)."
+      description="Tren penjualan 30 hari terakhir untuk melihat paket yang paling diminati siswa."
     >
-      <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat pendapatan..." />
+      <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat data pendapatan..." />
 
       <AppInlineMessage v-else-if="salesError" type="error">{{ salesError }}</AppInlineMessage>
 
       <p v-else-if="sales.length === 0" class="py-6 text-center text-muted">
-        Belum ada penjualan untuk ditampilkan.
+        Belum ada aktivitas penjualan pada periode ini.
       </p>
 
       <DashboardStackedBarChart
@@ -215,10 +215,10 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
     <DashboardPanel
       id="paket"
       title="Paket saya"
-      description="Maksimal lima produk yang paling baru kamu perbarui. Daftar lengkapnya ada di Produk saya."
+      description="Daftar paket yang paling baru diperbarui. Kelola seluruh paket melalui menu Produk Saya."
     >
       <template #action>
-        <AppButton to="/dashboard/tutor/products" variant="outline" size="sm">Kelola produk</AppButton>
+        <AppButton to="/dashboard/tutor/products" variant="outline" size="sm">Kelola semua produk</AppButton>
       </template>
 
       <DashboardSkeleton v-if="productsPending" :count="3" label="Memuat produk..." />
@@ -227,9 +227,9 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
 
       <AppEmptyState
         v-else-if="products.length === 0"
-        title="Belum ada produk"
-        description="Mulai dari satu try-out tunggal dan ajukan untuk tayang di katalog Zenko."
-        action-label="Buat produk"
+        title="Belum ada paket soal"
+        description="Yuk buat paket try out pertamamu dan bantu siswa mempersiapkan ujian impian mereka."
+        action-label="Buat paket baru"
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />
 
@@ -258,7 +258,7 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
         <!-- Says out loud that the table is cut off, so the panel is never
              mistaken for the whole list. -->
         <p v-if="hiddenProductCount > 0" class="mt-3 text-[0.82rem] text-muted">
-          <span class="tabular-nums">+{{ hiddenProductCount }}</span> produk lainnya di Produk saya.
+          <span class="tabular-nums">+{{ hiddenProductCount }}</span> produk lainnya di menu Produk Saya.
         </p>
       </template>
     </DashboardPanel>
@@ -266,10 +266,10 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
     <DashboardPanel
       id="penjualan"
       title="Penjualan terbaru"
-      description="Bagi hasil 70:30 — porsi yang tercatat di sini sudah bagianmu."
+      description="Transaksi pembelian paket terbarumu. Nominal tercatat adalah pendapatan bersih yang siap masuk ke saldomu."
     >
       <template #action>
-        <AppButton to="/dashboard/tutor/sales" variant="outline" size="sm">Lihat semua</AppButton>
+        <AppButton to="/dashboard/tutor/sales" variant="outline" size="sm">Lihat semua transaksi</AppButton>
       </template>
 
       <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat penjualan..." />
@@ -277,7 +277,7 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
       <AppInlineMessage v-else-if="salesError" type="error">{{ salesError }}</AppInlineMessage>
 
       <p v-else-if="recentSales.length === 0" class="py-6 text-center text-muted">
-        Belum ada penjualan. Transaksi pertama produkmu akan tampil di sini.
+        Belum ada transaksi. Pembelian pertama paketmu akan langsung tampil di sini.
       </p>
 
       <ul v-else class="grid gap-3">
