@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.5.0](https://github.com/artenanagara/zenko-web/compare/v0.4.2...v0.5.0) (2026-08-24)
+
+
+### Features
+
+* add an admin-facing tutor directory ([0ab1a70](https://github.com/artenanagara/zenko-web/commit/0ab1a706d77a20bc5b812af20a6a068b6b532d74))
+* disable tutor pricing and skip QRIS for Rp0 checkout ([14c9eb9](https://github.com/artenanagara/zenko-web/commit/14c9eb988dcd3d36befadc9679c3105862d2ba9f))
+* free packages, subtest simulation, pembahasan, and profile layout ([51543c4](https://github.com/artenanagara/zenko-web/commit/51543c4cd8c192503549d62587b43fa994b36907))
+* let an account change its email, and give the footer a compact form ([3fec2c1](https://github.com/artenanagara/zenko-web/commit/3fec2c1f8ddca2d34bdf71e225135a23cbd33b30))
+* let tutors and admins simulate a subtest in the real exam room ([078d3be](https://github.com/artenanagara/zenko-web/commit/078d3be9a8aa350c543f8f25faa9eac215cf4a3d))
+* mirror the tutor pricing rule in the product wizard ([ab2433f](https://github.com/artenanagara/zenko-web/commit/ab2433f253edc23fd6ecc0514f4449e7fc53c0ce))
+* refresh site copywriting across account, dashboard, and marketing pages ([d60d73a](https://github.com/artenanagara/zenko-web/commit/d60d73a81155a48d226493f89e0f0d3b466635bd))
+* reveal the pembahasan after finishing a try out sitting ([fcaf4d8](https://github.com/artenanagara/zenko-web/commit/fcaf4d87e0b2bf7cffde668c368ddda3b8510170))
+* show a zero price as "Gratis" and keep free orders readable ([50519c1](https://github.com/artenanagara/zenko-web/commit/50519c110461afb0e34198812fbcdab753a1de45))
+* split the admin tutor detail page into profil and produk tabs ([9218991](https://github.com/artenanagara/zenko-web/commit/921899154a98251421c3c01b2639fba1c00e7e16))
+
+
+### Bug Fixes
+
+* crop logo.png to remove its lopsided transparent padding ([23257c0](https://github.com/artenanagara/zenko-web/commit/23257c0954ae16136f538ed939ab02ddacb1f931))
+* crop logo.png to remove lopsided transparent padding ([0b1493f](https://github.com/artenanagara/zenko-web/commit/0b1493f976fad62dfd8751cd6af6c482c02cb71e))
+* finish a free-sample sitting through the API grader ([e305780](https://github.com/artenanagara/zenko-web/commit/e305780597c97bf5919b37d60fb238d0829f4dc7))
+* scope the popular-search assertion to the hero ([dab455d](https://github.com/artenanagara/zenko-web/commit/dab455dc9dfd69c906eb5f7a36d5ddb34f69af9e))
+* stop the dashboard sidebar hydrating stale hrefs for admins ([bfbf83b](https://github.com/artenanagara/zenko-web/commit/bfbf83b8f81883f0585e93a4ec0fd10facfb4332))
+
 ## [0.4.2](https://github.com/artenanagara/zenko-web/compare/v0.4.1...v0.4.2) (2026-08-23)
 
 
