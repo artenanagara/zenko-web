@@ -487,6 +487,34 @@ const passingGradeSections = computed(() =>
   summarySections.value.filter(section => section.passingGrade != null),
 )
 
+/**
+ * "Simulasikan" per subtes — menjalankan subtesnya di ruang ujian sungguhan
+ * (lihat TryoutSimulation.vue). Opsional: sengaja TIDAK masuk `checklist`,
+ * jadi tidak pernah menahan tombol Ajukan.
+ *
+ * Cuma untuk produk `single` yang sudah tersimpan sebagai draft: bundling
+ * tidak punya subtes sendiri (isinya produk lain, yang masing-masing bisa
+ * disimulasikan dari halamannya sendiri), dan mode create belum punya id
+ * produk untuk dipanggil endpoint pratinjaunya.
+ *
+ * Subtes yang masih kurang dari target soal dimatikan tombolnya: server
+ * menjawab 422 untuk subtes belum lengkap, jadi lebih jujur mengatakannya di
+ * sini daripada mengirim tutor ke layar galat.
+ */
+const simulatableSections = computed(() =>
+  summarySections.value.map(section => ({
+    id: section.id,
+    title: section.title,
+    ready: section.questions.length >= section.questionTarget && section.questions.length > 0,
+    written: section.questions.length,
+    target: section.questionTarget,
+  })),
+)
+
+function simulateHref(sectionId: string): string {
+  return `/dashboard/tutor/products/${props.productId}/simulasikan?section=${encodeURIComponent(sectionId)}`
+}
+
 /* --------------------------------------------------------------- submit */
 
 const submitting = ref(false)
@@ -920,7 +948,35 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           </div>
 
           <div v-if="isSingle" class="rounded-md border border-hairline bg-surface-alt p-5">
-            <h3 class="text-[0.9rem] font-semibold">Daftar Soal</h3>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <h3 class="text-[0.9rem] font-semibold">Daftar Soal</h3>
+
+              <!-- Satu tombol per subtes: endpoint pratinjaunya menjalankan
+                   satu subtes, bukan seluruh produk sekaligus. -->
+              <div v-if="productId && simulatableSections.length" class="flex flex-wrap items-center gap-2">
+                <span class="text-[0.8rem] text-muted">Simulasikan:</span>
+                <template v-for="section in simulatableSections" :key="section.id">
+                  <AppButton
+                    v-if="section.ready"
+                    :to="simulateHref(section.id)"
+                    variant="outline"
+                    size="xs"
+                  >
+                    <AppIcon name="play" :size="13" />
+                    {{ section.title }}
+                  </AppButton>
+                  <span
+                    v-else
+                    class="inline-flex min-h-8 cursor-not-allowed items-center gap-2 rounded-xs border border-line px-3 text-[0.8rem] font-semibold text-faint"
+                    :title="`Belum bisa disimulasikan — baru ${section.written} dari ${section.target} soal.`"
+                  >
+                    <AppIcon name="play" :size="13" />
+                    {{ section.title }}
+                  </span>
+                </template>
+              </div>
+            </div>
+
             <TutorQuestionSummaryTable class="mt-3" :sections="detail?.sections ?? []" />
           </div>
 
