@@ -191,7 +191,10 @@ const showEndConfirm = ref(false)
           dan bisa dikerjakan ulang kapan saja.
         </p>
         <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">{{ formatRupiah(detail.price) }}</span>
+          <span
+            class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums"
+            :class="detail.price > 0 ? '' : 'text-success-ink'"
+          >{{ detail.price > 0 ? formatRupiah(detail.price) : 'Gratis' }}</span>
           <span v-if="discountPercent > 0" class="text-[0.9rem] text-muted line-through tabular-nums">
             {{ formatRupiah(detail.priceOriginal) }}
           </span>

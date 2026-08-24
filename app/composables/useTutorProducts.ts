@@ -8,6 +8,7 @@ import type {
   QuestionImportDraft,
   QuestionImportResult,
   QuestionKind,
+  TutorPricingEligibility,
   TutorProductDetail,
   TutorProductSummary,
   TutorQuestion,
@@ -82,6 +83,43 @@ export function useTutorProductDetail(id: string) {
     }
     catch (cause) {
       error.value = tutorApiMessage(cause, 'Gagal memuat produk.')
+    }
+    finally {
+      pending.value = false
+    }
+  }
+
+  return { data, pending, error, refresh }
+}
+
+/**
+ * GET /tutor/product-pricing — aturan harga sebagaimana berlaku untuk pemanggil
+ * saat ini. Dipanggil wizard supaya langkah harga bisa menunjukkan kelayakan
+ * paket gratis sejak awal, bukan baru ketahuan saat submit ditolak.
+ *
+ * Client-only seperti sisa /tutor/*: cookie sesi HttpOnly di origin API, jadi
+ * bertanya saat SSR selalu dijawab "belum masuk". Gagal memuat sengaja tidak
+ * memblokir wizard — `data` tetap null dan checklist jatuh ke aturan longgar,
+ * karena server tetap penjaga sebenarnya saat submit.
+ */
+export function useTutorPricingEligibility() {
+  const { public: config } = useRuntimeConfig()
+
+  const data = ref<TutorPricingEligibility | null>(null)
+  const pending = ref(false)
+  const error = ref('')
+
+  async function refresh() {
+    pending.value = true
+    error.value = ''
+    try {
+      data.value = await $fetch<TutorPricingEligibility>('/tutor/product-pricing', {
+        baseURL: config.apiBase,
+        credentials: 'include',
+      })
+    }
+    catch (cause) {
+      error.value = tutorApiMessage(cause, 'Gagal memuat aturan harga.')
     }
     finally {
       pending.value = false

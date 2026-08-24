@@ -26,6 +26,21 @@ export function invoiceTotals(purchase: Purchase): InvoiceTotals {
   }
 }
 
+/**
+ * Payment channel as a label that is never blank.
+ *
+ * `method` is null for two very different orders: one nobody has paid yet
+ * (no channel chosen), and a Rp0 order that zenko-api settles as `paid`
+ * without ever creating a charge — no method, reference, QR code, or expiry.
+ * Rendering `method` raw left that second case as an empty cell, so the
+ * total decides which of the two a null means.
+ */
+export function purchaseMethodLabel(purchase: Purchase): string {
+  if (purchase.method) return purchase.method
+  if (invoiceTotals(purchase).total === 0) return 'Gratis'
+  return 'Belum dipilih'
+}
+
 export function usePurchases(): AsyncResource<Purchase[]> {
   return useSessionCollection<Purchase>('/me/purchases')
 }

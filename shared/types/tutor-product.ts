@@ -142,6 +142,34 @@ export interface TutorProductDetail extends TutorProductSummary {
   shuffleQuestions?: boolean
 }
 
+/**
+ * GET /tutor/product-pricing — aturan harga sebagaimana berlaku untuk
+ * pemanggilnya saat ini, supaya langkah harga wizard bisa mencerminkan
+ * checklist submit alih-alih menunggu submit-nya gagal.
+ *
+ * Rp0 bukan lagi harga bebas. Untuk tutor, harga punya dua keadaan sah —
+ * tepat Rp0 (paket gratis, dengan syaratnya sendiri) atau minimal
+ * `minPrice` — dan paket gratis hanya boleh berdampingan dengan satu produk
+ * berbayar yang sudah tayang, maksimal satu sekaligus. Produk yang ditulis
+ * admin dikecualikan dari keduanya; servernya menyatakan itu lewat
+ * `minPrice: 0`, jadi klien tidak perlu bercabang berdasarkan peran.
+ */
+export interface TutorPricingEligibility {
+  /** Lantai harga produk berbayar, rupiah bulat. 0 berarti tanpa lantai (admin). */
+  minPrice: number
+  hasLivePaidProduct: boolean
+  hasLiveFreeProduct: boolean
+  /** Putusan untuk harga tepat Rp0. */
+  canSubmitFreeProduct: boolean
+  /**
+   * Alasan `canSubmitFreeProduct` bernilai false — kalimatnya persis sama
+   * dengan yang dikembalikan checklist submit untuk kasus itu (ada test di
+   * backend yang mengunci kesamaannya), jadi tampilkan apa adanya dan jangan
+   * menulis salinan copy-nya di sini. Absen saat putusannya true.
+   */
+  reason?: string
+}
+
 /** POST /tutor/products — examTypeSlug wajib untuk single. */
 export interface CreateProductRequest {
   type: ProductType

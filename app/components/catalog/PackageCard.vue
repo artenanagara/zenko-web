@@ -39,8 +39,13 @@ defineProps<{ item: Package }>()
 
         <!-- mt-auto pins the price to the bottom of every card -->
         <p class="mt-auto pt-3 font-bold tracking-[-0.02em]">
-          {{ formatRupiah(item.price) }}
-          <span class="ml-1.5 text-[0.8rem] font-medium text-muted line-through">
+          <span :class="item.price > 0 ? '' : 'text-success-ink'">
+            {{ item.price > 0 ? formatRupiah(item.price) : 'Gratis' }}
+          </span>
+          <span
+            v-if="item.priceOriginal > item.price"
+            class="ml-1.5 text-[0.8rem] font-medium text-muted line-through"
+          >
             {{ formatRupiah(item.priceOriginal) }}
           </span>
         </p>

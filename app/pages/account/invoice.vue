@@ -137,7 +137,7 @@ function print() {
             <dl class="mt-2 grid gap-1 text-[0.9rem]">
               <div class="flex justify-between gap-4 sm:justify-end sm:gap-3">
                 <dt class="text-muted">Metode</dt>
-                <dd class="font-semibold">{{ purchase.method ?? 'Belum dipilih' }}</dd>
+                <dd class="font-semibold">{{ purchaseMethodLabel(purchase) }}</dd>
               </div>
               <div v-if="purchase.reference" class="flex justify-between gap-4 sm:justify-end sm:gap-3">
                 <dt class="text-muted">Nomor rujukan</dt>
@@ -204,8 +204,11 @@ function print() {
             </div>
             <div class="mt-1 flex items-baseline justify-between gap-4 border-t border-line pt-3">
               <dt class="font-semibold">Total</dt>
-              <dd class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">
+              <dd v-if="invoiceTotals(purchase).total > 0" class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">
                 {{ formatRupiah(invoiceTotals(purchase).total) }}
+              </dd>
+              <dd v-else>
+                <DashboardBadge tone="success">Gratis</DashboardBadge>
               </dd>
             </div>
           </dl>

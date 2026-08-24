@@ -323,9 +323,13 @@ watch(isRedirecting, (active, wasActive) => {
 
             <div class="mt-5 flex items-baseline justify-between gap-4 border-t border-line pt-5">
               <span class="font-semibold">Total</span>
-              <span class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">
+              <span
+                v-if="invoiceTotals(purchase).total > 0"
+                class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums"
+              >
                 {{ formatRupiah(invoiceTotals(purchase).total) }}
               </span>
+              <DashboardBadge v-else tone="success">Gratis</DashboardBadge>
             </div>
 
             <p class="mt-5 flex items-start gap-2.5 border-t border-line pt-5 text-[0.82rem] text-muted">

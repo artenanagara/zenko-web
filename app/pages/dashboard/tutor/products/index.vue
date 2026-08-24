@@ -295,7 +295,8 @@ async function deleteProduct(product: TutorProductSummary) {
           <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
           <template #cell(category)="{ value }">{{ value || '—' }}</template>
           <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+            <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
+            <span v-else class="font-semibold text-success-ink">Gratis</span>
           </template>
           <template #cell(questionCount)="{ item }">
             <span v-if="item.type === 'single'" class="tabular-nums">

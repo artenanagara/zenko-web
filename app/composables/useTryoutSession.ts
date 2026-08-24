@@ -57,6 +57,19 @@ function scoreQuestion(question: TryoutQuestion, answer: TryoutAnswerState | und
   return { points, max: maxOf(question.scores), correct: points === maxOf(question.scores) }
 }
 
+export interface TryoutSessionOptions {
+  /**
+   * Whether a reload should pick the sitting back up where it left off
+   * (default). Turn it off for a sitting that is deliberately throwaway — the
+   * tutor/admin simulation — where "no resume" is the point: nothing is
+   * written to sessionStorage, and arriving at the page always starts from a
+   * clean intro screen instead of the previous run's leftovers, which the
+   * `useState` keys would otherwise still be holding after a client-side
+   * navigation away and back.
+   */
+  resume?: boolean
+}
+
 /**
  * Runs one try out sitting end to end: intro → questions → result.
  *
@@ -80,7 +93,9 @@ function scoreQuestion(question: TryoutQuestion, answer: TryoutAnswerState | und
 export function useTryoutSession(
   slug: string,
   blueprintSource: MaybeRefOrGetter<TryoutBlueprint | null | undefined>,
+  options: TryoutSessionOptions = {},
 ) {
+  const { resume = true } = options
   const blueprint = computed<TryoutBlueprint | null>(() => toValue(blueprintSource) ?? null)
   const key = storageKey(slug)
 
@@ -114,7 +129,7 @@ export function useTryoutSession(
   })
 
   function persist() {
-    if (!import.meta.client) return
+    if (!import.meta.client || !resume) return
     const payload: PersistedState = {
       phase: phase.value,
       currentIndex: currentIndex.value,
@@ -344,9 +359,24 @@ export function useTryoutSession(
   let mounted = false
   let restored = false
 
+  /** Back to a clean intro — same fields `start()` overwrites, minus the clock. */
+  function resetSession() {
+    stopTicker()
+    phase.value = 'intro'
+    currentIndex.value = 0
+    answers.value = {}
+    sectionEndsAt.value = 0
+    result.value = null
+    if (import.meta.client) sessionStorage.removeItem(key)
+  }
+
   function restoreWhenReady() {
     if (!mounted || restored || !blueprint.value) return
     restored = true
+    if (!resume) {
+      resetSession()
+      return
+    }
     restore()
     if (phase.value === 'running') startTicker()
   }
@@ -394,5 +424,6 @@ export function useTryoutSession(
     endSection,
     startNextSection,
     finish,
+    reset: resetSession,
   }
 }
