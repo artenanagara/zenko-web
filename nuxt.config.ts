@@ -74,6 +74,18 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
 
+  nitro: {
+    externals: {
+      // @aarkue/tiptap-math-extension imports 'evaluatex/dist/evaluatex' with
+      // no file extension. Left external, that specifier survives into the
+      // server output and Node's ESM loader — which does no extension
+      // guessing — throws ERR_MODULE_NOT_FOUND, so every page carrying the
+      // rich-text editor 500s on the server (the tutor product wizard, its
+      // edit page). Bundling both packages in resolves the path at build time.
+      inline: ['@aarkue/tiptap-math-extension', 'evaluatex'],
+    },
+  },
+
   runtimeConfig: {
     public: {
       // Application version maintained by Release Please from package.json.
