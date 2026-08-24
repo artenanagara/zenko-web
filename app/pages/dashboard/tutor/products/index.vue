@@ -248,7 +248,7 @@ async function deleteProduct(product: TutorProductSummary) {
       <AppEmptyState
         v-else-if="products.length === 0"
         title="Belum ada paket soal"
-        description="Mulai dengan membuat try out mandiri: tentukan jenis ujian, susun soal per subtes, lalu ajukan ke tim kurasi agar tayang di katalog Zenko."
+        description="Mulai dengan membuat try out mandiri: tentukan kategori ujian, susun soal per subtes, lalu ajukan ke tim kurasi agar tayang di katalog Zenko."
         action-label="Buat paket baru"
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />
