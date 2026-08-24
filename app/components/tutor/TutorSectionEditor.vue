@@ -223,6 +223,10 @@ const activeSectionDotClass = computed(() =>
     <div v-else class="grid gap-4">
       <AppSectionMessage v-if="errorMessage" appearance="warning">{{ errorMessage }}</AppSectionMessage>
 
+      <!--
+        Bar subtes ringkas — selalu tampil begitu ada subtes, terlepas dari
+        sedang menulis soal atau tidak. AppDropdownMenu (bukan native
+        `<select>`, bukan strip chip — lihat tutor-dashboard-v2-tasks.md Task
         5 / kontrak §7.2) dipakai supaya pindah subtes tetap satu aksi, dan
         tiap item membawa status kelengkapan (progres + dot warna) supaya
         overview lintas-subtes yang tadinya didapat dari chip tidak hilang
