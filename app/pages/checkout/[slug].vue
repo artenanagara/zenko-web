@@ -10,7 +10,7 @@ const slug = route.params.slug as string
 const detail = await usePackageDetail(slug)
 
 useHead({
-  title: `Checkout ${detail.value.title} — Zenko`,
+  title: `Checkout ${detail.value.title} | Zenko`,
   // An order page has nothing to rank for and should never be crawled.
   meta: [{ name: 'robots', content: 'noindex' }],
 })
@@ -57,7 +57,7 @@ function onSubmit() {
       Selesaikan pembelian
     </h1>
     <p class="mt-2.5 text-muted">
-      Bayar sekali, akses paketnya selamanya. Tanpa langganan.
+      Bayar sekali dan nikmati akses paket latihan selamanya, tanpa biaya langganan berulang.
     </p>
 
     <!-- Sudah dimiliki: tidak ada yang perlu dibayar, jadi form checkout dan
@@ -198,7 +198,7 @@ function onSubmit() {
               role="status"
               class="mt-4 rounded-sm border border-primary/30 bg-primary-soft/50 px-4 py-3.5 text-[0.86rem] text-ink"
             >
-              <p class="font-semibold">Pesanan dibuat — menunggu pembayaran</p>
+              <p class="font-semibold">Pesanan berhasil dibuat. Menunggu pembayaran...</p>
               <p class="mt-1 text-muted">
                 Pesananmu tercatat dan menunggu pembayaran. Statusnya bisa kamu
                 pantau di

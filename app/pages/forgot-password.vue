@@ -3,7 +3,7 @@
 definePageMeta({ layout: 'auth', path: '/lupa-password' })
 
 useHead({
-  title: 'Lupa Kata Sandi — Zenko',
+  title: 'Lupa Kata Sandi | Zenko',
   meta: [
     { name: 'description', content: 'Kirim tautan untuk menyetel ulang kata sandi akun Zenko kamu.' },
     { name: 'robots', content: 'noindex' },

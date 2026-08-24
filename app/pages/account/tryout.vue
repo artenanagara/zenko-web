@@ -22,7 +22,7 @@ const session = useTryoutSession(slug, blueprint)
 const isFlat = computed(() => blueprint.value?.mode === 'flat')
 
 useHead({
-  title: computed(() => (blueprint.value ? `Kerjakan — ${blueprint.value.title} — Zenko` : 'Kerjakan — Zenko')),
+  title: computed(() => (blueprint.value ? `Kerjakan ${blueprint.value.title} | Zenko` : 'Ruang Ujian | Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -131,20 +131,20 @@ function retry() {
       <div class="rounded-lg border border-hairline-strong bg-surface-alt p-5 text-[0.88rem] text-muted md:p-6">
         <h2 class="font-bold text-ink">Aturan pengerjaan</h2>
         <ul v-if="isFlat" class="mt-3 grid list-disc gap-2 pl-4">
-          <li>Semua soal dari setiap subtes langsung terbuka sejak awal — kerjakan dengan urutan bebas, seperti CAT BKN.</li>
-          <li>Hanya ada satu waktu keseluruhan untuk semua subtes; begitu habis, sesi otomatis berakhir dan langsung dinilai.</li>
-          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin ditinjau ulang sebelum waktu habis.</li>
-          <li>Nomor yang sudah dijawab menampilkan huruf pilihanmu di navigasi soal.</li>
+          <li>Semua butir soal dari seluruh subtes langsung terbuka sejak awal. Kamu bebas memilih urutan pengerjaan seperti pada simulasi CAT BKN.</li>
+          <li>Hanya ada satu batas waktu keseluruhan untuk seluruh subtes. Saat waktu habis, sistem otomatis mengakhiri ujian dan menghitung nilai.</li>
+          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin kamu periksa kembali sebelum waktu berakhir.</li>
+          <li>Nomor soal yang sudah dijawab akan menampilkan pilihan jawabanmu pada panel navigasi.</li>
         </ul>
         <ul v-else class="mt-3 grid list-disc gap-2 pl-4">
-          <li>Setiap subtes punya waktunya sendiri dan berjalan otomatis begitu kamu memulainya.</li>
-          <li>Begitu pindah ke subtes berikutnya, subtes sebelumnya tidak bisa dibuka lagi — sama seperti ujian aslinya.</li>
+          <li>Setiap subtes memiliki alokasi waktu tersendiri yang berjalan otomatis begitu subtes dimulai.</li>
+          <li>Setelah berpindah ke subtes berikutnya, subtes sebelumnya terkunci dan tidak bisa dibuka kembali, sesuai dengan ketentuan ujian resmi.</li>
           <li>Waktu yang habis akan memindahkanmu ke subtes berikutnya secara otomatis.</li>
-          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin ditinjau ulang sebelum waktu habis.</li>
+          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin kamu tinjau ulang.</li>
         </ul>
       </div>
 
-      <AppButton size="lg" class="justify-self-start" @click="session.start()">Mulai sesi</AppButton>
+      <AppButton size="lg" class="justify-self-start" @click="session.start()">Mulai Ujian</AppButton>
     </div>
 
     <!-- Sesi berjalan. -->

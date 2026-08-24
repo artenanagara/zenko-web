@@ -12,11 +12,35 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Pengaturan — Zenko',
+  title: 'Pengaturan | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
 const { user } = useAuth()
+const route = useRoute()
+const router = useRouter()
+
+/* --------------------------------------------------------------------------
+ * Tab — profil tutor dan rekening bank dipisah agar halaman lebih ringkas.
+ * Hash dipertahankan supaya tautan lama dari halaman Pencairan tetap langsung
+ * membuka Rekening bank, dan pilihan tab bisa dibagikan atau dimuat ulang.
+ * ------------------------------------------------------------------------ */
+
+const SETTINGS_TABS = [
+  { id: 'profil', label: 'Profil tutor' },
+  { id: 'rekening', label: 'Rekening bank' },
+]
+const activeTab = ref(route.hash === '#rekening' ? 'rekening' : 'profil')
+
+watch(() => route.hash, (hash) => {
+  const nextTab = hash === '#rekening' ? 'rekening' : 'profil'
+  if (activeTab.value !== nextTab) activeTab.value = nextTab
+})
+
+watch(activeTab, (tab) => {
+  const nextHash = tab === 'rekening' ? '#rekening' : ''
+  if (route.hash !== nextHash) void router.replace({ hash: nextHash })
+})
 
 const { data: bankAccount, pending: bankPending, refresh: refreshBankAccount } = useTutorBankAccount()
 const {
@@ -232,41 +256,50 @@ async function submitChangeRequest() {
       description="Profil tutor dan rekening bank untuk pencairan."
     />
 
-    <DashboardPanel title="Profil tutor" description="Nama dan foto tampil di seluruh Zenko, termasuk katalog paketmu.">
-      <div v-if="user" class="flex items-center gap-4">
-        <img
-          v-if="user.avatarUrl"
-          :src="user.avatarUrl"
-          alt=""
-          referrerpolicy="no-referrer"
-          class="h-14 w-14 shrink-0 rounded-full object-cover"
-        >
-        <span
-          v-else
-          aria-hidden="true"
-          class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[1.2rem] font-bold text-muted"
-        >{{ user.name.trim().charAt(0).toUpperCase() || '?' }}</span>
+    <AppTabs v-model="activeTab" :tabs="SETTINGS_TABS" aria-label="Bagian pengaturan tutor" />
 
-        <div class="min-w-0">
-          <p class="truncate font-semibold tracking-[-0.02em]">{{ user.name }}</p>
-          <p class="mt-0.5 truncate text-[0.88rem] text-muted">{{ user.email }}</p>
-        </div>
-      </div>
-
-      <AppSectionMessage appearance="information" class="mt-5">
-        Nama dan foto profil diubah lewat
-        <NuxtLink to="/akun/profil" class="font-semibold underline">Akun saya</NuxtLink>. Bio,
-        pengalaman, dan tautan sosial media ada di bawah ini.
-      </AppSectionMessage>
-    </DashboardPanel>
-
-    <DashboardPanel
-      title="Profil publik tutor"
-      description="Ditampilkan di halaman paket dan katalogmu."
+    <div
+      v-show="activeTab === 'profil'"
+      id="panel-profil"
+      role="tabpanel"
+      aria-labelledby="tab-profil"
+      class="grid gap-6"
     >
-      <DashboardSkeleton v-if="tutorProfilePending && !tutorProfile" :count="4" label="Memuat profil..." />
+      <DashboardPanel title="Profil tutor" description="Nama dan foto tampil di seluruh Zenko, termasuk katalog paketmu.">
+        <div v-if="user" class="flex items-center gap-4">
+          <img
+            v-if="user.avatarUrl"
+            :src="user.avatarUrl"
+            alt=""
+            referrerpolicy="no-referrer"
+            class="h-14 w-14 shrink-0 rounded-full object-cover"
+          >
+          <span
+            v-else
+            aria-hidden="true"
+            class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[1.2rem] font-bold text-muted"
+          >{{ user.name.trim().charAt(0).toUpperCase() || '?' }}</span>
 
-      <form v-else class="grid gap-5" @submit.prevent="saveProfile">
+          <div class="min-w-0">
+            <p class="truncate font-semibold tracking-[-0.02em]">{{ user.name }}</p>
+            <p class="mt-0.5 truncate text-[0.88rem] text-muted">{{ user.email }}</p>
+          </div>
+        </div>
+
+        <AppSectionMessage appearance="information" class="mt-5">
+          Nama dan foto profil diubah lewat
+          <NuxtLink to="/akun/profil" class="font-semibold underline">Akun saya</NuxtLink>. Bio,
+          pengalaman, dan tautan sosial media ada di bawah ini.
+        </AppSectionMessage>
+      </DashboardPanel>
+
+      <DashboardPanel
+        title="Profil publik tutor"
+        description="Ditampilkan di halaman paket dan katalogmu."
+      >
+        <DashboardSkeleton v-if="tutorProfilePending && !tutorProfile" :count="4" label="Memuat profil..." />
+
+        <form v-else class="grid gap-5" @submit.prevent="saveProfile">
         <div>
           <label for="tutor-bio" class="mb-2 block text-[0.9rem] font-semibold">Bio singkat</label>
           <textarea
@@ -313,7 +346,7 @@ async function submitChangeRequest() {
               id="tutor-specializations"
               v-model="specializationInput"
               type="text"
-              :placeholder="profileForm.specializations.length === 0 ? 'Contoh: SKD, SNBT — tekan Enter' : 'Tambah lagi'"
+              :placeholder="profileForm.specializations.length === 0 ? 'Contoh: SKD, SNBT (tekan Enter)' : 'Tambah keahlian lagi'"
               class="min-w-32 flex-1 border-0 bg-transparent p-1.5 text-[0.9rem] placeholder:text-placeholder focus:outline-none"
               @keydown="onSpecializationKeydown"
               @blur="addSpecialization"
@@ -347,25 +380,31 @@ async function submitChangeRequest() {
         <FormField id="tutor-website" v-model="profileForm.websiteUrl" type="url" label="Website" placeholder="https://..." />
 
         <AppInlineMessage v-if="profileError" type="error">{{ profileError }}</AppInlineMessage>
-        <AppInlineMessage v-if="profileSaved" type="confirmation">Profil tersimpan.</AppInlineMessage>
+        <AppInlineMessage v-if="profileSaved" type="confirmation">Profil berhasil disimpan.</AppInlineMessage>
 
         <div>
           <AppButton type="submit" size="sm" :disabled="profileSaving" :loading="profileSaving">
             Simpan profil
           </AppButton>
         </div>
-      </form>
-    </DashboardPanel>
+        </form>
+      </DashboardPanel>
+    </div>
 
-    <DashboardPanel
-      id="rekening"
-      title="Rekening bank"
-      description="Tujuan transfer pencairan. Pastikan nama pemilik sesuai buku tabungan."
+    <div
+      v-show="activeTab === 'rekening'"
+      id="panel-rekening"
+      role="tabpanel"
+      aria-labelledby="tab-rekening"
     >
-      <DashboardSkeleton v-if="bankPending || changeRequestPending" :count="3" label="Memuat rekening..." />
+      <DashboardPanel
+        title="Rekening bank"
+        description="Rekening tujuan untuk transfer pencairan dana. Pastikan nama pemilik sesuai dengan buku rekening tabungan."
+      >
+        <DashboardSkeleton v-if="bankPending || changeRequestPending" :count="3" label="Memuat rekening..." />
 
       <!-- State 1: belum ada rekening — form biasa, simpan via PUT. -->
-      <form v-else-if="!bankAccount" class="grid gap-5" @submit.prevent="saveBankAccount">
+        <form v-else-if="!bankAccount" class="grid gap-5" @submit.prevent="saveBankAccount">
         <AppSelect
           :options="bankSelectOptions"
           :model-value="bankForm.bankCode"
@@ -398,16 +437,16 @@ async function submitChangeRequest() {
             {{ bankSaving ? 'Menyimpan...' : 'Simpan rekening' }}
           </AppButton>
         </div>
-      </form>
+        </form>
 
       <!-- State 2/3: rekening sudah tersimpan — baca-saja, dengan alur pengajuan
            perubahan terpisah (PUT dikunci setelah simpan pertama). -->
-      <div v-else class="grid gap-5">
+        <div v-else class="grid gap-5">
         <!-- State 3: ada pengajuan pending — banner status, tombol pengajuan
              disembunyikan (backend cuma izinkan satu pending sekaligus). -->
         <AppSectionMessage v-if="changeRequest" appearance="warning" title="Menunggu persetujuan admin">
           <p>
-            Pengajuan perubahan rekening dikirim {{ formatDate(changeRequest.requestedAt) }} dan sedang ditinjau admin.
+            Pengajuan perubahan rekening dikirim pada {{ formatDate(changeRequest.requestedAt) }} dan sedang ditinjau oleh tim admin.
           </p>
           <dl class="mt-3 grid gap-3 sm:grid-cols-3">
             <div>
@@ -492,7 +531,8 @@ async function submitChangeRequest() {
             </div>
           </form>
         </div>
-      </div>
-    </DashboardPanel>
+        </div>
+      </DashboardPanel>
+    </div>
   </div>
 </template>

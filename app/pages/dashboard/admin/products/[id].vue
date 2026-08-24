@@ -27,7 +27,7 @@ const detailPending = ref(true)
 const detailError = ref('')
 
 useHead({
-  title: () => detail.value ? `${detail.value.title} — Zenko` : 'Tinjau produk — Zenko',
+  title: () => detail.value ? `${detail.value.title} | Zenko` : 'Tinjau Produk | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -273,7 +273,7 @@ async function decide(approve: boolean, reason?: string) {
             <span class="font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
           </template>
           <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '-' }}</span>
           </template>
           <template #cell(status)="{ value }">
             <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>

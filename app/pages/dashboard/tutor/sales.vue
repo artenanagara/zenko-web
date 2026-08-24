@@ -9,7 +9,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Penjualan — Zenko',
+  title: 'Penjualan | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -116,7 +116,7 @@ watch([period, productId], load)
 const stats = computed(() => [
   { label: 'Transaksi', value: String(summary.value.count) },
   { label: 'Penjualan kotor', value: formatRupiah(summary.value.gross) },
-  { label: 'Porsi kamu (70%)', value: formatRupiah(summary.value.share) },
+  { label: 'Pendapatan bersih', value: formatRupiah(summary.value.share) },
 ])
 
 /** The product select sits outside useTableControls, so Reset has to clear it too. */
@@ -147,7 +147,7 @@ const salesColumns = [
   { key: 'productTitle', label: 'Produk' },
   { key: 'buyerName', label: 'Pembeli' },
   { key: 'price', label: 'Harga', align: 'right' as const },
-  { key: 'share', label: 'Porsi kamu', align: 'right' as const },
+  { key: 'share', label: 'Pendapatan bersih', align: 'right' as const },
 ]
 
 // AppTable's cell slots hand back `item`/`value` as Record<string, any>/any
@@ -170,7 +170,7 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
   <div class="grid gap-6">
     <AppPageHeader
       title="Penjualan"
-      description="Riwayat penjualan produkmu. Porsi 70% tertahan 7 hari setelah pembayaran, lalu bisa dicairkan. Nama pembeli disamarkan demi privasi."
+      description="Catatan seluruh transaksi paket soalmu. Penghasilan bersih akan siap dicairkan 7 hari setelah pembayaran terverifikasi. Untuk menjaga kenyamanan bersama, nama pembeli disamarkan."
     />
 
     <DashboardStats :items="stats" :columns="3" />
@@ -228,15 +228,15 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
         <AppEmptyState
           v-else-if="rows.length === 0 && hasFilter"
           title="Tidak ada hasil"
-          description="Tidak ada penjualan yang cocok dengan pencarian, periode, atau produk ini."
-          action-label="Tampilkan semua"
+          description="Belum ada transaksi yang cocok dengan pencarian, periode, atau filter produk ini."
+          action-label="Tampilkan semua transaksi"
           @action="showEverything"
         />
 
         <AppEmptyState
           v-else-if="rows.length === 0"
           title="Belum ada penjualan"
-          description="Begitu produkmu tayang dan terjual, setiap transaksi tercatat di sini beserta porsi 70% yang jadi bagianmu."
+          description="Saat paket soalmu mulai dibeli siswa, seluruh catatan transaksi dan pendapatan bersihmu akan langsung muncul di sini."
           action-label="Lihat produk saya"
           @action="() => navigateTo('/dashboard/tutor/products')"
         />

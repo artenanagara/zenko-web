@@ -75,8 +75,7 @@ const year = new Date().getFullYear()
             aria-label="Zenko"
           />
           <p class="mt-5 text-[0.9rem] leading-[1.7] text-white/60">
-            Marketplace try out terkurasi untuk persiapan CPNS/SKD, Kedinasan,
-            BUMN, SNBT, dan TKA. Beli per paket, tanpa langganan.
+            Platform try out interaktif terkurasi untuk persiapan SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Beli per paket, akses langsung, tanpa langganan.
           </p>
         </div>
 
@@ -108,8 +107,7 @@ const year = new Date().getFullYear()
           aria-label="Zenko"
         />
         <p class="mt-4 max-w-95 text-[0.88rem] leading-[1.7] text-white/60">
-          Marketplace try out terkurasi untuk persiapan CPNS/SKD, Kedinasan,
-          BUMN, SNBT, dan TKA. Beli per paket, tanpa langganan.
+          Platform try out interaktif terkurasi untuk persiapan SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Beli per paket, akses langsung, tanpa langganan.
         </p>
 
         <div class="mt-7 border-t border-white/10">

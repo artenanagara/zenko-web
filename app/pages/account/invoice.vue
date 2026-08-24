@@ -49,7 +49,7 @@ onBeforeUnmount(() => {
 })
 
 useHead({
-  title: computed(() => (purchase.value ? `Invoice ${purchase.value.invoice} — Zenko` : 'Invoice — Zenko')),
+  title: computed(() => (purchase.value ? `Invoice ${purchase.value.invoice} | Zenko` : 'Invoice | Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -128,7 +128,7 @@ function print() {
         <div class="grid gap-6 border-b border-hairline px-5 py-6 sm:grid-cols-2 md:px-8">
           <div>
             <h2 class="text-[0.72rem] font-bold tracking-[0.16em] text-faint uppercase">Ditagihkan kepada</h2>
-            <p class="mt-2 font-semibold tracking-[-0.02em]">{{ user?.name ?? '—' }}</p>
+            <p class="mt-2 font-semibold tracking-[-0.02em]">{{ user?.name ?? '-' }}</p>
             <p class="mt-0.5 text-[0.9rem] text-muted">{{ user?.email ?? '' }}</p>
           </div>
 
@@ -178,9 +178,9 @@ function print() {
                   </td>
                   <td class="py-3.5 pr-4 text-right text-[0.9rem] tabular-nums">
                     <span v-if="line.priceOriginal > line.price" class="font-semibold text-success-ink">
-                      −{{ formatRupiah(line.priceOriginal - line.price) }}
+                      -{{ formatRupiah(line.priceOriginal - line.price) }}
                     </span>
-                    <span v-else class="text-muted">—</span>
+                    <span v-else class="text-muted">-</span>
                   </td>
                   <td class="py-3.5 text-right font-bold tabular-nums">{{ formatRupiah(line.price) }}</td>
                 </tr>

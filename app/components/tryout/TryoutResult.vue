@@ -14,12 +14,9 @@ const percent = computed(() =>
   props.result.maxScore === 0 ? 0 : Math.round((props.result.score / props.result.maxScore) * 100),
 )
 
-const totalCorrect = computed(() => props.result.sections.reduce((sum, s) => sum + s.correct, 0))
-const totalQuestions = computed(() => props.result.sections.reduce((sum, s) => sum + s.total, 0))
-
 const stats = computed(() => [
-  { label: 'Skor akhir', value: `${props.result.score}`, hint: `dari maksimal ${props.result.maxScore}` },
-  { label: 'Ketepatan', value: `${percent.value}%`, hint: `${totalCorrect.value} dari ${totalQuestions.value} soal` },
+  { label: 'Skor akhir', value: `${props.result.score}` },
+  { label: 'Ketepatan', value: `${percent.value}%` },
   { label: 'Subtes diselesaikan', value: `${props.result.sections.length}` },
   { label: 'Selesai pada', value: formatDate(props.result.finishedAt) },
 ])
@@ -64,8 +61,7 @@ const stats = computed(() => [
     </DashboardPanel>
 
     <AccountNotice>
-      Sesi ini adalah latihan singkat untuk mencoba ruang pengerjaan try out — jumlah soal dan
-      durasinya belum sama dengan paket lengkap yang kamu beli. Riwayatnya tersimpan selama tab ini terbuka.
+      Sesi ini adalah latihan singkat untuk mencoba ruang pengerjaan try out. Jumlah soal dan durasinya berbeda dengan paket lengkap aslinya.
     </AccountNotice>
 
     <div class="flex flex-wrap gap-3">

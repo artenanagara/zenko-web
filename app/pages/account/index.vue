@@ -9,7 +9,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Ringkasan — Zenko',
+  title: 'Ringkasan Belajar | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -85,7 +85,7 @@ const summary = computed(() => {
             <h1 class="mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.04em] md:text-[1.7rem]">
               Halo, {{ firstName || 'kembali' }}
             </h1>
-            <p class="mt-1 text-[0.94rem] text-muted">Lanjutkan perjalanan belajarmu di Zenko.</p>
+            <p class="mt-1 text-[0.94rem] text-muted">Siap melanjutkan persiapan dan latihan soalmu hari ini?</p>
           </div>
         </div>
 
@@ -140,23 +140,20 @@ const summary = computed(() => {
         tone="success"
         label="Try out dikerjakan"
         :value="String(summary.attempts)"
-        hint="Termasuk pengerjaan ulang"
       >
         <template #icon><IconRepeat class="h-[1.15rem] w-[1.15rem]" /></template>
       </AccountStat>
       <AccountStat
         tone="star"
         label="Akurasi terbaik"
-        :value="summary.bestAccuracy === null ? '—' : `${summary.bestAccuracy}%`"
-        hint="Persen jawaban benar tertinggi"
+        :value="summary.bestAccuracy === null ? '-' : `${summary.bestAccuracy}%`"
       >
         <template #icon><IconTrophy class="h-[1.15rem] w-[1.15rem]" /></template>
       </AccountStat>
       <AccountStat
         tone="primary"
         label="Rata-rata akurasi"
-        :value="summary.avgAccuracy === null ? '—' : `${summary.avgAccuracy}%`"
-        hint="Percobaan terbaik tiap paket"
+        :value="summary.avgAccuracy === null ? '-' : `${summary.avgAccuracy}%`"
       >
         <template #icon><IconTarget class="h-[1.15rem] w-[1.15rem]" /></template>
       </AccountStat>
@@ -200,7 +197,7 @@ const summary = computed(() => {
                 </span>
               </div>
               <p v-else class="mt-1 text-[0.84rem] text-muted">
-                Belum pernah dikerjakan — mulai sekarang.
+                Belum pernah dikerjakan. Yuk, mulai sekarang!
               </p>
             </div>
 

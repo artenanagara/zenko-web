@@ -22,15 +22,15 @@ const open = defineModel<boolean>('open', { required: true })
 const amount = defineModel<number | null>('amount', { required: true })
 
 const modalDescription = computed(() =>
-  `Minimum ${formatRupiah(props.minimum)}. Saldo tersedia berkurang begitu pengajuan dibuat.`,
+  `Minimum penarikan ${formatRupiah(props.minimum)}. Saldo aktifmu akan langsung disesuaikan saat pengajuan dibuat.`,
 )
 </script>
 
 <template>
-  <AppModal v-model="open" title="Ajukan pencairan" :description="modalDescription">
+  <AppModal v-model="open" title="Ajukan pencairan dana" :description="modalDescription">
     <!-- No bank account yet: point at Settings instead of a dead form. -->
     <AppSectionMessage v-if="!hasBankAccount" appearance="warning">
-      Simpan rekening bank terlebih dahulu — pencairan butuh rekening tujuan transfer.
+      Simpan rekening bank terlebih dahulu agar dana pencairan bisa ditransfer ke rekeningmu.
       <NuxtLink to="/dashboard/tutor/settings#rekening" class="font-semibold underline hover:no-underline">
         Buka Pengaturan
       </NuxtLink>

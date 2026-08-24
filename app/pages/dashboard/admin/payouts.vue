@@ -17,7 +17,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Pencairan — Zenko',
+  title: 'Pencairan Dana | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -199,7 +199,7 @@ function openTransfer(payout: AdminPayout) {
 const transferDescription = computed(() => {
   const t = transferTarget.value
   if (!t) return ''
-  return `${formatRupiah(t.amount)} ke ${t.bankAccount.bankLabel} · ${t.bankAccount.accountNumber} a.n. ${t.bankAccount.holderName}. Pastikan dana benar-benar sudah terkirim — status ini final.`
+  return `${formatRupiah(t.amount)} ke ${t.bankAccount.bankLabel} · ${t.bankAccount.accountNumber} a.n. ${t.bankAccount.holderName}. Pastikan dana sudah berhasil ditransfer. Status ini bersifat final.`
 })
 
 async function confirmTransfer() {
@@ -211,7 +211,7 @@ async function confirmTransfer() {
   try {
     await decideAdminPayout(target.id, { action: 'transfer' })
     transferTarget.value = null
-    successMessage.value = `Pencairan ${target.tutor.name} (${formatRupiah(target.amount)}) ditandai sudah ditransfer.`
+    successMessage.value = `Pencairan ${target.tutor.name} (${formatRupiah(target.amount)}) berhasil ditandai sudah ditransfer.`
     await refreshAll()
   }
   catch (cause) {
@@ -253,7 +253,7 @@ async function confirmReject(reason: string) {
   try {
     await decideAdminPayout(target.id, { action: 'reject', reason })
     rejectTarget.value = null
-    successMessage.value = `Pencairan ${target.tutor.name} ditolak — saldo dikembalikan otomatis.`
+    successMessage.value = `Pencairan ${target.tutor.name} telah ditolak dan saldo telah dikembalikan ke akun tutor.`
     await refreshAll()
   }
   catch (cause) {
@@ -276,7 +276,7 @@ async function confirmReject(reason: string) {
   <div class="grid gap-6">
     <AppPageHeader
       title="Pencairan"
-      description="Proses permintaan pencairan dana tutor dan tandai transfer yang selesai."
+      description="Verifikasi dan kelola permohonan transfer pencairan penghasilan tutor."
     />
 
     <!-- :key remounts AppAlert per message — it hides itself internally after
@@ -417,7 +417,7 @@ async function confirmReject(reason: string) {
                 </button>
               </span>
 
-              <span v-else class="text-[0.86rem] text-muted">—</span>
+              <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>
           </template>
         </AppTable>

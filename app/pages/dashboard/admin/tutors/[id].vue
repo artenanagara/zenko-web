@@ -23,7 +23,7 @@ const detailPending = ref(true)
 const detailError = ref('')
 
 useHead({
-  title: () => detail.value ? `${detail.value.name} — Zenko` : 'Profil tutor — Zenko',
+  title: () => detail.value ? `${detail.value.name} | Zenko` : 'Profil Tutor | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -217,7 +217,7 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
           </template>
           <template #cell(type)="{ value }">{{ typeLabel(value) }}</template>
           <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '-' }}</span>
           </template>
           <template #cell(status)="{ value }">
             <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>

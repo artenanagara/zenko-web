@@ -17,7 +17,7 @@ const { data: purchase, pending, error, refresh } = usePurchase(invoice)
 const { state: pollState, resumeWaiting } = useCheckout()
 
 useHead({
-  title: `Pembayaran ${invoice} — Zenko`,
+  title: `Pembayaran ${invoice} | Zenko`,
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -268,7 +268,7 @@ watch(isRedirecting, (active, wasActive) => {
             role="status"
             class="rounded-sm border border-primary/30 bg-primary-soft/50 px-4 py-3.5 text-[0.86rem] text-ink"
           >
-            <p class="font-semibold">Pesanan dibuat — menunggu pembayaran</p>
+            <p class="font-semibold">Pesanan berhasil dibuat. Menunggu pembayaran...</p>
             <p class="mt-1 text-muted">
               Pesananmu tercatat dan menunggu pembayaran. Statusnya bisa kamu
               pantau di
@@ -298,7 +298,7 @@ watch(isRedirecting, (active, wasActive) => {
             <ul class="mt-5 grid gap-4 border-t border-line pt-5">
               <li v-for="item in purchase.items" :key="item.slug">
                 <p class="font-semibold tracking-[-0.02em]">{{ item.title }}</p>
-                <p class="mt-1 text-[0.78rem] font-bold tracking-[0.1em] text-faint uppercase">
+                <p class="mt-1 text-[0.78rem] font-bold tracking-widest text-faint uppercase">
                   {{ item.category }}
                 </p>
               </li>

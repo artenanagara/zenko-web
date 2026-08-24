@@ -15,7 +15,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Tutor — Zenko',
+  title: 'Direktori Tutor | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 

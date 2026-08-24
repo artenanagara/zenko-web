@@ -20,7 +20,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Pengajuan rekening — Zenko',
+  title: 'Pengajuan Rekening | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -258,7 +258,7 @@ async function confirmVerify() {
               >
                 Verifikasi
               </button>
-              <span v-else class="text-[0.86rem] text-muted">—</span>
+              <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>
           </template>
         </AppTable>

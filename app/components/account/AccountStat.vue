@@ -7,7 +7,6 @@
 withDefaults(defineProps<{
   label: string
   value: string
-  hint?: string
   tone?: 'primary' | 'success' | 'star'
 }>(), { tone: 'primary' })
 
@@ -27,6 +26,5 @@ const TONES = {
       <p class="text-[0.84rem] text-muted">{{ label }}</p>
     </div>
     <p class="mt-3 text-[1.7rem] leading-none font-extrabold tracking-[-0.04em] tabular-nums">{{ value }}</p>
-    <p v-if="hint" class="mt-1.5 text-[0.76rem] text-muted">{{ hint }}</p>
   </div>
 </template>

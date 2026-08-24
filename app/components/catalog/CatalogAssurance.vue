@@ -6,8 +6,8 @@
   >
     <p class="flex items-center justify-center gap-3 text-[0.94rem] text-muted md:justify-start md:text-base">
       <IconSeal class="h-6 w-6 shrink-0" />
-      Semua paket berasal dari tutor terverifikasi dan dapat dikerjakan langsung di Zenko.
+      Semua paket soal disusun oleh tutor terpercaya dan dapat langsung kamu kerjakan secara interaktif di Zenko.
     </p>
-    <AppButton to="/paket" class="shrink-0">Lihat semua paket try out</AppButton>
+    <AppButton to="/paket" class="shrink-0">Lihat Semua Paket</AppButton>
   </div>
 </template>

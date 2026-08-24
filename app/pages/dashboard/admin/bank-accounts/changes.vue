@@ -20,7 +20,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Perubahan rekening — Zenko',
+  title: 'Perubahan Rekening | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -383,7 +383,7 @@ async function confirmReject(reason: string) {
                   Tolak…
                 </button>
               </span>
-              <span v-else class="text-[0.86rem] text-muted">—</span>
+              <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>
           </template>
         </AppTable>

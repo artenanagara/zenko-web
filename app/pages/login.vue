@@ -6,9 +6,9 @@ import type { EmailAuthFailure } from '~/composables/useAuth'
 definePageMeta({ layout: 'auth', path: '/masuk' })
 
 useHead({
-  title: 'Masuk — Zenko',
+  title: 'Masuk | Zenko',
   meta: [
-    { name: 'description', content: 'Masuk ke akun Zenko untuk mengakses paket try out yang sudah kamu beli.' },
+    { name: 'description', content: 'Masuk ke akun Zenko untuk mengakses simulasi try out dan melanjutkan latihanmu.' },
     // Nothing here is worth indexing, and it should never rank above the app.
     { name: 'robots', content: 'noindex' },
   ],

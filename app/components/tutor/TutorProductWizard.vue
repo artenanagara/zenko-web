@@ -112,7 +112,7 @@ const productModeOptions = computed<{ value: ProductMode, label: string }[]>(() 
 const sectionTitleOptions = computed(() =>
   (selectedExamType.value?.sections ?? []).map(section => ({
     value: section.title,
-    label: `${section.title} — ${section.questionTarget} soal · ${section.durationMinutes} mnt`,
+    label: `${section.title} (${section.questionTarget} soal · ${section.durationMinutes} menit)`,
   })),
 )
 
@@ -578,16 +578,15 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <IconCheck class="h-7 w-7 text-success-ink" />
         </span>
         <p class="mx-auto mt-4 max-w-105 leading-[1.7] text-muted">
-          Tim Zenko akan meninjau produkmu. Statusnya bisa kamu pantau di daftar
-          produk — jika disetujui, produk langsung tayang di katalog.
+          Tim kurasi Zenko akan segera meninjau paket soalmu. Kamu bisa memantau statusnya di menu Produk Saya. Begitu disetujui, paketmu akan langsung tayang di katalog.
         </p>
-        <AppButton to="/dashboard/tutor/products" class="mt-6">Ke daftar produk</AppButton>
+        <AppButton to="/dashboard/tutor/products" class="mt-6">Kembali ke Produk Saya</AppButton>
       </div>
     </DashboardPanel>
 
     <template v-else>
-      <AppAlert v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason" variant="warning" title="Produk ini ditolak">
-        {{ detail.rejectReason }} — perbaiki lalu ajukan lagi.
+      <AppAlert v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason" variant="warning" title="Paket soal memerlukan revisi">
+        {{ detail.rejectReason }}. Silakan sesuaikan materi soal, lalu ajukan kembali.
       </AppAlert>
 
       <!-- Step nav -->
@@ -833,26 +832,26 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Jenis ujian</dt>
                 <dd class="mt-0.5 font-semibold">
-                  {{ selectedExamType?.label || form.examTypeSlug || '—' }}
+                  {{ selectedExamType?.label || form.examTypeSlug || 'Belum dipilih' }}
                   <span class="block text-[0.82rem] font-normal text-muted">
                     {{ form.mode === 'mini_tryout'
-                      ? `${PRODUCT_MODE_LABEL.mini_tryout} — ${isEdit ? (detail?.sections?.[0]?.title ?? '—') : (form.sectionTitle || '—')}`
+                      ? `${PRODUCT_MODE_LABEL.mini_tryout}: ${isEdit ? (detail?.sections?.[0]?.title ?? 'Belum ditentukan') : (form.sectionTitle || 'Belum ditentukan')}`
                       : PRODUCT_MODE_LABEL.simulasi }}
                   </span>
                 </dd>
               </div>
               <div>
                 <dt class="text-[0.8rem] text-muted">Judul</dt>
-                <dd class="mt-0.5 font-semibold">{{ form.title || '—' }}</dd>
+                <dd class="mt-0.5 font-semibold">{{ form.title || 'Belum diisi' }}</dd>
               </div>
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Kategori</dt>
-                <dd class="mt-0.5 font-semibold">{{ form.category || '—' }}</dd>
+                <dd class="mt-0.5 font-semibold">{{ form.category || 'Umum' }}</dd>
               </div>
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Durasi</dt>
                 <dd class="mt-0.5 font-semibold">
-                  {{ totalDurationMinutes > 0 ? formatDuration(totalDurationMinutes) : '—' }}
+                  {{ totalDurationMinutes > 0 ? formatDuration(totalDurationMinutes) : 'Belum diatur' }}
                 </dd>
               </div>
 
@@ -907,14 +906,14 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                     v-if="form.thumbnailUrl"
                     :src="form.thumbnailUrl"
                     alt=""
-                    class="aspect-[16/10] h-24 w-auto rounded-sm border border-hairline object-cover"
+                    class="aspect-16/10 h-24 w-auto rounded-sm border border-hairline object-cover"
                   >
-                  <span v-else class="text-[0.88rem] text-muted">—</span>
+                  <span v-else class="text-[0.88rem] text-muted">Belum ada thumbnail</span>
                 </dd>
               </div>
               <div class="sm:col-span-2">
                 <dt class="text-[0.8rem] text-muted">Deskripsi</dt>
-                <dd class="mt-0.5 whitespace-pre-line text-[0.88rem]">{{ form.description || '—' }}</dd>
+                <dd class="mt-0.5 whitespace-pre-line text-[0.88rem]">{{ form.description || 'Belum ada deskripsi' }}</dd>
               </div>
             </dl>
           </div>
@@ -940,7 +939,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             </ul>
           </div>
 
-          <AppSectionMessage v-if="submitProblems.length" appearance="warning" title="Produk belum bisa diajukan:">
+          <AppSectionMessage v-if="submitProblems.length" appearance="warning" title="Paket belum dapat diajukan:">
             <ul class="grid list-disc gap-1 pl-5">
               <li v-for="problem in submitProblems" :key="problem">{{ problem }}</li>
             </ul>
@@ -951,7 +950,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <!-- Tombol "Ajukan untuk tayang" sendiri ada di step footer fixed
                di bawah, di sebelah Kembali — bukan lagi di sini. -->
           <p v-if="!allComplete" class="text-[0.82rem] text-muted">
-            Lengkapi daftar di atas dulu — tombol Ajukan aktif setelah semuanya terpenuhi.
+            Lengkapi poin di atas terlebih dahulu. Tombol ajukan akan aktif otomatis setelah seluruh syarat terpenuhi.
           </p>
         </div>
       </DashboardPanel>
