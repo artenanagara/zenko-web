@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/artenanagara/zenko-web/compare/v0.5.0...v0.6.0) (2026-08-24)
+
+
+### Features
+
+* rename the wizard's exam fields and drop the category input ([5b59fea](https://github.com/artenanagara/zenko-web/commit/5b59fea1b1bb8d4857a47e6896a79921c5b139f6))
+
 ## [0.5.0](https://github.com/artenanagara/zenko-web/compare/v0.4.2...v0.5.0) (2026-08-24)
 
 
