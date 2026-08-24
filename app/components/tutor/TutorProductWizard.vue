@@ -78,7 +78,6 @@ const form = reactive({
   title: '',
   description: '',
   thumbnailUrl: '',
-  category: '',
   price: (PRICE_INPUT_DISABLED ? 0 : null) as number | null,
   priceOriginal: null as number | null,
   shuffleQuestions: false,
@@ -94,15 +93,15 @@ const selectedExamType = computed(() =>
   examTypes.value.find(exam => exam.slug === form.examTypeSlug) ?? null,
 )
 
-/** Kategori mengikuti jenis ujian untuk single non-custom. */
-const categoryLocked = computed(() =>
-  isSingle.value && Boolean(form.examTypeSlug) && form.examTypeSlug !== 'custom',
-)
-
-watch(() => form.examTypeSlug, (slug) => {
-  if (!isSingle.value || !slug || slug === 'custom') return
-  const exam = examTypes.value.find(entry => entry.slug === slug)
-  if (exam) form.category = exam.label
+/**
+ * Kategori katalog tidak lagi diketik siapa pun: server menurunkannya dari
+ * kategori ujian yang dipilih (atau "Bundel" untuk bundling). Yang dipakai di
+ * sini hanya untuk menampilkan dan mencermin validasi submit — produk lama
+ * yang terlanjur kosong tetap ketahuan di checklist.
+ */
+const derivedCategory = computed(() => {
+  if (!isSingle.value) return detail.value?.category || 'Bundel'
+  return detail.value?.category || selectedExamType.value?.category || ''
 })
 
 // A stale subtest choice from a previous exam type (or from switching back to
@@ -157,7 +156,6 @@ watch(() => form.type, (type) => {
 const savedFields = ref<{
   title: string
   description: string
-  category: string
   thumbnailUrl: string
   price: number
   priceOriginal: number
@@ -177,7 +175,6 @@ watch(detail, (loaded) => {
   form.title = loaded.title
   form.description = loaded.description ?? ''
   form.thumbnailUrl = loaded.thumbnailUrl ?? ''
-  form.category = loaded.category ?? ''
   form.price = PRICE_INPUT_DISABLED ? 0 : (loaded.price > 0 ? loaded.price : null)
   form.priceOriginal = loaded.priceOriginal > 0 ? loaded.priceOriginal : null
   form.shuffleQuestions = loaded.shuffleQuestions ?? false
@@ -189,7 +186,6 @@ watch(detail, (loaded) => {
   savedFields.value = {
     title: loaded.title,
     description: loaded.description ?? '',
-    category: loaded.category ?? '',
     thumbnailUrl: loaded.thumbnailUrl ?? '',
     price: loaded.price,
     priceOriginal: loaded.priceOriginal,
@@ -231,7 +227,6 @@ function buildPatch(): UpdateProductRequest {
   const patch: UpdateProductRequest = {}
   if (form.title.trim() !== saved.title) patch.title = form.title.trim()
   if (form.description.trim() !== saved.description) patch.description = form.description.trim()
-  if (form.category.trim() !== saved.category) patch.category = form.category.trim()
   if (form.thumbnailUrl.trim() !== saved.thumbnailUrl) patch.thumbnailUrl = form.thumbnailUrl.trim()
   if ((form.price ?? 0) !== saved.price) patch.price = form.price ?? 0
   if ((form.priceOriginal ?? 0) !== saved.priceOriginal) patch.priceOriginal = form.priceOriginal ?? 0
@@ -264,7 +259,6 @@ async function persist(): Promise<boolean> {
       savedFields.value = {
         title: form.title.trim(),
         description: form.description.trim(),
-        category: form.category.trim(),
         thumbnailUrl: form.thumbnailUrl.trim(),
         price: form.price ?? 0,
         priceOriginal: form.priceOriginal ?? 0,
@@ -285,7 +279,7 @@ async function persist(): Promise<boolean> {
 /* ----------------------------------------------------------------- steps */
 
 const STEPS = [
-  { n: 1, label: 'Tipe & jenis' },
+  { n: 1, label: 'Tipe & kategori' },
   { n: 2, label: 'Info produk' },
   { n: 3, label: 'Isi' },
   { n: 4, label: 'Review & ajukan' },
@@ -311,7 +305,7 @@ function syncQuery() {
 /** Validasi minimum sebelum melangkah maju; server tetap memvalidasi penuh. */
 function validateThrough(target: number): boolean {
   if (target > 1 && isSingle.value && !form.examTypeSlug) {
-    stepError.value = 'Pilih jenis ujian dulu sebelum lanjut.'
+    stepError.value = 'Pilih kategori ujian dulu sebelum lanjut.'
     return false
   }
   if (
@@ -369,7 +363,6 @@ async function createAndContinue() {
     const patch: UpdateProductRequest = {}
     if (form.description.trim()) patch.description = form.description.trim()
     if (form.thumbnailUrl.trim()) patch.thumbnailUrl = form.thumbnailUrl.trim()
-    if (form.category.trim()) patch.category = form.category.trim()
     if (form.price) patch.price = form.price
     if (form.priceOriginal) patch.priceOriginal = form.priceOriginal
     if (isSingle.value && form.shuffleQuestions) patch.shuffleQuestions = form.shuffleQuestions
@@ -481,7 +474,7 @@ const checklist = computed<CheckItem[]>(() => {
   ]
 
   if (isSingle.value) {
-    list.push({ ok: form.category.trim().length > 0, label: 'Kategori terisi' })
+    list.push({ ok: derivedCategory.value.trim().length > 0, label: 'Kategori terisi' })
   }
 
   const price = priceCheck()
@@ -726,13 +719,13 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
         </li>
       </ol>
 
-      <!-- ============================================= Langkah 1: Tipe & jenis -->
+      <!-- ========================================== Langkah 1: Tipe & kategori -->
       <DashboardPanel v-if="step === 1">
         <div class="grid max-w-160 gap-5">
           <!-- The selects below are disabled in edit mode; without this the
                only cue is that they don't respond. -->
           <AppInlineMessage v-if="isEdit" type="info">
-            Tipe dan jenis ujian terkunci setelah produk dibuat.
+            Tipe dan kategori ujian terkunci setelah produk dibuat.
           </AppInlineMessage>
 
           <div>
@@ -752,18 +745,18 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
 
           <template v-if="isSingle">
             <div>
-              <span :class="FIELD_LABEL_CLASS">Jenis ujian</span>
+              <span :class="FIELD_LABEL_CLASS">Kategori ujian</span>
 
-              <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat jenis ujian...</p>
+              <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat kategori ujian...</p>
               <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
-                Gagal memuat jenis ujian. Muat ulang halaman untuk mencoba lagi.
+                Gagal memuat kategori ujian. Muat ulang halaman untuk mencoba lagi.
               </p>
               <AppSelect
                 v-else
                 :options="examTypeOptions"
                 :model-value="form.examTypeSlug"
                 :disabled="isEdit"
-                placeholder="Pilih jenis ujian"
+                placeholder="Pilih kategori ujian"
                 @update:model-value="(value) => { form.examTypeSlug = String(value) }"
               />
 
@@ -777,14 +770,14 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 :options="productModeOptions"
                 :model-value="form.mode"
                 :disabled="isEdit"
-                label="Simulasi / Mini Try Out"
+                label="Jenis ujian"
                 @update:model-value="(value) => { if (isProductMode(value)) form.mode = value }"
               />
             </div>
 
             <div v-if="form.mode === 'mini_tryout' && selectedExamType?.sections.length">
               <template v-if="isEdit">
-                <label for="product-section-title" :class="FIELD_LABEL_CLASS">Sub jenis ujian</label>
+                <label for="product-section-title" :class="FIELD_LABEL_CLASS">Subtes</label>
                 <input
                   id="product-section-title"
                   type="text"
@@ -797,7 +790,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 v-else
                 :options="sectionTitleOptions"
                 :model-value="form.sectionTitle"
-                label="Sub jenis ujian"
+                label="Subtes"
                 placeholder="Pilih subtes"
                 @update:model-value="(value) => { form.sectionTitle = String(value) }"
               />
@@ -834,22 +827,6 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           </div>
 
           <TutorThumbnailField v-model="form.thumbnailUrl" />
-
-          <div>
-            <label for="product-category" :class="FIELD_LABEL_CLASS">Kategori</label>
-            <input
-              id="product-category"
-              v-model="form.category"
-              type="text"
-              placeholder="Contoh: SNBT"
-              :readonly="categoryLocked"
-              :class="[FIELD_CLASS, categoryLocked && 'bg-surface-sunken text-muted']"
-              :aria-describedby="categoryLocked ? 'product-category-hint' : undefined"
-            >
-            <p v-if="categoryLocked" id="product-category-hint" class="mt-2 text-[0.82rem] text-muted">
-              Otomatis mengikuti jenis ujian yang dipilih.
-            </p>
-          </div>
 
           <div class="grid gap-5 sm:grid-cols-2">
             <div>
@@ -959,7 +936,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 <dd class="mt-0.5 font-semibold">{{ PRODUCT_TYPE_LABEL[form.type] }}</dd>
               </div>
               <div v-if="isSingle">
-                <dt class="text-[0.8rem] text-muted">Jenis ujian</dt>
+                <dt class="text-[0.8rem] text-muted">Kategori ujian</dt>
                 <dd class="mt-0.5 font-semibold">
                   {{ selectedExamType?.label || form.examTypeSlug || 'Belum dipilih' }}
                   <span class="block text-[0.82rem] font-normal text-muted">
@@ -972,10 +949,6 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               <div>
                 <dt class="text-[0.8rem] text-muted">Judul</dt>
                 <dd class="mt-0.5 font-semibold">{{ form.title || 'Belum diisi' }}</dd>
-              </div>
-              <div v-if="isSingle">
-                <dt class="text-[0.8rem] text-muted">Kategori</dt>
-                <dd class="mt-0.5 font-semibold">{{ form.category || 'Umum' }}</dd>
               </div>
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Durasi</dt>

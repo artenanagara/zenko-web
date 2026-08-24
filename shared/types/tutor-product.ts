@@ -32,6 +32,12 @@ export interface ExamType {
   slug: string
   label: string
   description: string
+  /**
+   * Kategori katalog yang dipakai produk dengan kategori ujian ini. Satu-satunya
+   * sumbernya: wizard tidak lagi punya field kategori, jadi server yang
+   * mengisinya dari sini ("Lainnya" untuk custom).
+   */
+  category: string
   sections: SectionTemplate[]
 }
 
