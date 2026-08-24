@@ -30,15 +30,24 @@ const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.v
 
 const { state, error, pay, reset } = useCheckout()
 
-const signInPath = computed(() => ({ path: '/masuk', query: { lanjut: route.fullPath } }))
-
 // The order body carries only the slug — the server prices it and the
 // session says who is buying. Zenko charges QRIS only, so there is no method
 // to choose. A real QR sends the buyer straight to /pembayaran/:invoice (see
 // useCheckout) — this page only ever sees 'awaiting-payment' for the no-QR
 // local-dev fallback.
 function onSubmit() {
-  pay({ slug })
+  pay({ slug }, detail.value.price === 0)
+}
+
+/**
+ * Login in place instead of losing someone to /masuk mid-checkout — they
+ * already picked this package, so signing in should drop them right back
+ * into the buy button they clicked, not the top of the funnel.
+ */
+const showAuthModal = ref(false)
+
+function onSignedIn() {
+  onSubmit()
 }
 </script>
 
@@ -109,13 +118,29 @@ function onSubmit() {
               Masuk dulu supaya paket ini tercatat di akunmu dan bisa dibuka
               kapan saja.
             </p>
-            <AppButton :to="signInPath.path" size="sm" class="mt-4">Masuk ke akun</AppButton>
+            <AppButton size="sm" class="mt-4" @click="showAuthModal = true">Masuk ke akun</AppButton>
           </div>
         </section>
 
         <section class="rounded-lg border border-hairline bg-surface p-6 shadow-xs">
           <h2 class="mb-4 font-bold tracking-[-0.02em]">Metode pembayaran</h2>
-          <div class="flex items-center gap-3.5 rounded-sm border border-primary bg-primary-soft/40 px-4 py-3.5">
+          <!-- Rp0 never reaches ChargeQRIS (see Orders.Create) — showing QRIS
+               as "the" method here would promise a step that never happens. -->
+          <div
+            v-if="detail.price === 0"
+            class="flex items-center gap-3.5 rounded-sm border border-success bg-success-soft/40 px-4 py-3.5"
+          >
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-success-ink">
+              <IconCheck class="h-4.5 w-4.5" />
+            </span>
+            <span class="min-w-0">
+              <span class="block font-semibold tracking-[-0.01em]">Gratis</span>
+              <span class="mt-0.5 block text-[0.86rem] text-muted">
+                Tidak ada yang perlu dibayar untuk paket ini
+              </span>
+            </span>
+          </div>
+          <div v-else class="flex items-center gap-3.5 rounded-sm border border-primary bg-primary-soft/40 px-4 py-3.5">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-primary">
               <IconGrid class="h-4.5 w-4.5" />
             </span>
@@ -134,9 +159,9 @@ function onSubmit() {
           <template #action>
             <AppButton
               v-if="!isSignedIn"
-              :to="signInPath.path"
               size="lg"
               class="w-full"
+              @click="showAuthModal = true"
             >
               Masuk untuk melanjutkan
             </AppButton>
@@ -229,5 +254,7 @@ function onSubmit() {
         </p>
       </aside>
     </div>
+
+    <AuthModal v-model:open="showAuthModal" @signed-in="onSignedIn" />
   </main>
 </template>

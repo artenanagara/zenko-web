@@ -13,6 +13,7 @@ defineProps<{
   placeholder?: string
   ariaDescribedby?: string
   ariaInvalid?: boolean
+  disabled?: boolean
 }>()
 
 const displayValue = computed(() =>
@@ -34,6 +35,7 @@ function onInput(event: Event) {
 <template>
   <div
     class="flex items-stretch overflow-hidden rounded-sm border border-line bg-surface transition-[border-color,box-shadow] duration-200 ease-smooth focus-within:border-primary/40 focus-within:shadow-[0_0_0_4px_rgba(47,111,235,0.1)]"
+    :class="disabled && 'bg-surface-sunken'"
   >
     <span class="flex shrink-0 items-center border-r border-line bg-surface-alt px-3.5 font-semibold text-muted">Rp</span>
     <input
@@ -44,7 +46,8 @@ function onInput(event: Event) {
       :placeholder="placeholder"
       :aria-describedby="ariaDescribedby"
       :aria-invalid="ariaInvalid"
-      class="w-full min-w-0 bg-transparent px-4 py-3 tabular-nums placeholder:text-placeholder focus:outline-none"
+      :disabled="disabled"
+      class="w-full min-w-0 bg-transparent px-4 py-3 tabular-nums placeholder:text-placeholder focus:outline-none disabled:cursor-not-allowed disabled:text-muted"
       @input="onInput"
     >
   </div>

@@ -59,6 +59,15 @@ const { data: pricingRule, refresh: refreshPricingRule } = useTutorPricingEligib
 
 onMounted(refreshPricingRule)
 
+/**
+ * Payment gateway belum jalan, jadi harga tidak berarti apa-apa — setiap
+ * paket harus Rp0. Mengunci input ini alih-alih membiarkannya dan menolak di
+ * server: tutor tidak sempat mengetik angka yang toh akan ditolak nanti.
+ * Cabut baris ini (dan biarkan input Harga aktif lagi) begitu pembayaran
+ * sungguhan tersedia — lihat paymentGatewayLive di zenko-api.
+ */
+const PRICE_INPUT_DISABLED = true
+
 /* ------------------------------------------------------------------ form */
 
 const form = reactive({
@@ -70,7 +79,7 @@ const form = reactive({
   description: '',
   thumbnailUrl: '',
   category: '',
-  price: null as number | null,
+  price: (PRICE_INPUT_DISABLED ? 0 : null) as number | null,
   priceOriginal: null as number | null,
   shuffleQuestions: false,
 })
@@ -169,7 +178,7 @@ watch(detail, (loaded) => {
   form.description = loaded.description ?? ''
   form.thumbnailUrl = loaded.thumbnailUrl ?? ''
   form.category = loaded.category ?? ''
-  form.price = loaded.price > 0 ? loaded.price : null
+  form.price = PRICE_INPUT_DISABLED ? 0 : (loaded.price > 0 ? loaded.price : null)
   form.priceOriginal = loaded.priceOriginal > 0 ? loaded.priceOriginal : null
   form.shuffleQuestions = loaded.shuffleQuestions ?? false
   selectedItems.value = (loaded.items ?? [])
@@ -607,6 +616,7 @@ async function submitForReview() {
  * bebas menetapkan harga berapa pun.
  */
 const priceHint = computed<string | null>(() => {
+  if (PRICE_INPUT_DISABLED) return 'Sementara nonaktif — semua paket gratis selama pembayaran belum tersedia.'
   const rule = pricingRule.value
   if (!rule || rule.minPrice <= 0) return null
   if ((form.price ?? 0) > 0) {
@@ -848,6 +858,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 id="product-price"
                 v-model="form.price"
                 placeholder="149.000"
+                :disabled="PRICE_INPUT_DISABLED"
                 :ariaDescribedby="priceHint ? 'product-price-hint' : undefined"
                 :ariaInvalid="priceHintBlocking || undefined"
               />

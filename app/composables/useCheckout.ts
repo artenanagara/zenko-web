@@ -127,11 +127,22 @@ export function useCheckout() {
     startPolling(existing.invoice, onPaid)
   }
 
-  async function pay(request: CreateOrderRequest) {
+  /**
+   * `free` is a client-side hint only — the package's own price, already on
+   * screen before this is ever called — never trusted as the actual charge.
+   * zenko-api recomputes the total from `request.slug` and independently
+   * decides whether the resulting order needs Midtrans at all (see
+   * Orders.Create: a Rp0 total skips ChargeQRIS and is written paid outright).
+   * This just decides whether `!config.paymentEnabled` should still block the
+   * attempt: that flag exists to stop a real charge from being attempted
+   * against a gateway that isn't live, and a free order was never going to
+   * touch the gateway in the first place.
+   */
+  async function pay(request: CreateOrderRequest, free = false) {
     error.value = ''
     stopWaiting()
 
-    if (!config.paymentEnabled) {
+    if (!free && !config.paymentEnabled) {
       state.value = 'not-connected'
       return
     }
@@ -146,6 +157,14 @@ export function useCheckout() {
       })
 
       purchase.value = created
+
+      if (created.status === 'paid') {
+        // Rp0 total: zenko-api settled it on creation, nothing to charge or
+        // wait on — the same destination a real QRIS payment lands on once
+        // it settles (see payment.vue's startPolling onPaid).
+        await navigateTo(`/akun/pembelian/${created.invoice}`, { replace: true })
+        return
+      }
 
       if (created.qrUrl) {
         // A real QR to scan — the dedicated payment page owns showing it and
