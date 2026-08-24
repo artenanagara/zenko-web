@@ -5,6 +5,7 @@ import type {
   TryoutBlueprint,
   TryoutQuestion,
   TryoutResult,
+  TryoutSampleScore,
   TryoutSectionResult,
 } from '#shared/types/tryout'
 import { toValue } from 'vue'
@@ -44,17 +45,26 @@ function storageKey(slug: string) {
   return `zenko-tryout:${slug}`
 }
 
-function maxOf(scores: Record<OptionLabel, number>): number {
-  return Math.max(...Object.values(scores))
+function maxOf(scores: Record<OptionLabel, number> | undefined): number {
+  const values = Object.values(scores ?? {})
+  return values.length ? Math.max(...values) : 0
 }
 
+/**
+ * Grades one item in the browser. Every field it reads is optional on
+ * TryoutQuestion because the public sample ships without an answer key — a
+ * sitting with no key scores zero here rather than throwing, and is graded by
+ * the API instead (see the `grade` option).
+ */
 function scoreQuestion(question: TryoutQuestion, answer: TryoutAnswerState | undefined) {
   if (question.kind === 'objective') {
-    const correct = answer?.selected === question.correct
-    return { points: correct ? question.points : 0, max: question.points, correct }
+    const max = question.points ?? 0
+    const correct = !!question.correct && answer?.selected === question.correct
+    return { points: correct ? max : 0, max, correct }
   }
-  const points = answer?.selected ? question.scores[answer.selected] : 0
-  return { points, max: maxOf(question.scores), correct: points === maxOf(question.scores) }
+  const max = maxOf(question.scores)
+  const points = answer?.selected ? (question.scores?.[answer.selected] ?? 0) : 0
+  return { points, max, correct: max > 0 && points === max }
 }
 
 export interface TryoutSessionOptions {
@@ -68,6 +78,21 @@ export interface TryoutSessionOptions {
    * navigation away and back.
    */
   resume?: boolean
+  /**
+   * Grades the sitting somewhere other than this browser, and becomes the
+   * result screen's only source of numbers.
+   *
+   * The "coba gratis" sample needs it: its questions arrive with no `correct`,
+   * `points` or `scores`, on purpose — a public endpoint that shipped the
+   * answer key would hand every visitor the keys to five real questions — so
+   * the API grades the submission and returns the tally. Left unset, the
+   * sitting is graded locally from the blueprint, which is what an owned
+   * package does.
+   *
+   * A rejection is surfaced as `gradeFailed` rather than swallowed: unlike the
+   * paid sitting, there is no locally computed score to fall back on.
+   */
+  grade?: (answers: Record<string, TryoutAnswerState>) => Promise<TryoutSampleScore>
 }
 
 /**
@@ -95,7 +120,7 @@ export function useTryoutSession(
   blueprintSource: MaybeRefOrGetter<TryoutBlueprint | null | undefined>,
   options: TryoutSessionOptions = {},
 ) {
-  const { resume = true } = options
+  const { resume = true, grade } = options
   const blueprint = computed<TryoutBlueprint | null>(() => toValue(blueprintSource) ?? null)
   const key = storageKey(slug)
 
@@ -105,6 +130,10 @@ export function useTryoutSession(
   const sectionEndsAt = useState<number>(`tryout-ends-${slug}`, () => 0)
   const result = useState<TryoutResult | null>(`tryout-result-${slug}`, () => null)
   const now = useState<number>(`tryout-now-${slug}`, () => Date.now())
+  // Only ever true while a remote grader is in flight; a locally graded
+  // sitting goes from running to a filled-in result in one tick.
+  const grading = useState<boolean>(`tryout-grading-${slug}`, () => false)
+  const gradeFailed = useState<boolean>(`tryout-grade-failed-${slug}`, () => false)
 
   let ticker: ReturnType<typeof setInterval> | null = null
 
@@ -249,6 +278,9 @@ export function useTryoutSession(
       ? currentBlueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0)
       : currentBlueprint.sections[0]!.durationMinutes
     sectionEndsAt.value = Date.now() + totalMinutes * 60_000
+    result.value = null
+    grading.value = false
+    gradeFailed.value = false
     phase.value = 'running'
     startTicker()
     persist()
@@ -322,6 +354,44 @@ export function useTryoutSession(
     if (!currentBlueprint) return
     stopTicker()
 
+    // The phase flips before the grader answers, not after: the sitting is
+    // over the moment the countdown or the participant says so, and leaving
+    // the workspace open while a request is in flight would let answers keep
+    // changing under a submission already sent.
+    phase.value = 'finished'
+    if (import.meta.client) sessionStorage.removeItem(key)
+
+    if (grade) {
+      result.value = null
+      void runGrade()
+      return
+    }
+    result.value = localResult(currentBlueprint)
+  }
+
+  /**
+   * Sends the sitting to the API grader. Failure leaves `result` null and
+   * `gradeFailed` true — the result screen shows a retry rather than a score
+   * of zero, which would be a lie about how the participant did.
+   */
+  async function runGrade() {
+    if (!grade) return
+    grading.value = true
+    gradeFailed.value = false
+    try {
+      const scored = await grade(answers.value)
+      result.value = { finishedAt: Math.floor(Date.now() / 1000), ...scored }
+    }
+    catch {
+      gradeFailed.value = true
+      result.value = null
+    }
+    finally {
+      grading.value = false
+    }
+  }
+
+  function localResult(currentBlueprint: TryoutBlueprint): TryoutResult {
     const sections: TryoutSectionResult[] = currentBlueprint.sections.map((section) => {
       let score = 0
       let maxScore = 0
@@ -341,14 +411,12 @@ export function useTryoutSession(
       return { title: section.title, correct, total: section.questions.length, score, maxScore }
     })
 
-    result.value = {
+    return {
       finishedAt: Math.floor(Date.now() / 1000),
       score: sections.reduce((sum, s) => sum + s.score, 0),
       maxScore: sections.reduce((sum, s) => sum + s.maxScore, 0),
       sections,
     }
-    phase.value = 'finished'
-    if (import.meta.client) sessionStorage.removeItem(key)
   }
 
   function warnBeforeUnload(event: BeforeUnloadEvent) {
@@ -367,6 +435,8 @@ export function useTryoutSession(
     answers.value = {}
     sectionEndsAt.value = 0
     result.value = null
+    grading.value = false
+    gradeFailed.value = false
     if (import.meta.client) sessionStorage.removeItem(key)
   }
 
@@ -413,6 +483,10 @@ export function useTryoutSession(
     doubtfulCount,
     unansweredInSection: unansweredCount,
     result,
+    grading,
+    gradeFailed,
+    /** Re-sends a submission the grader rejected; no-op without a grader. */
+    retryGrade: runGrade,
     statusOf,
     labelOf,
     start,

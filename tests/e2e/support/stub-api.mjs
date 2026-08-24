@@ -34,6 +34,8 @@ import {
   NEWEST_ORDER,
   PACKAGES,
   PACKAGE_DETAILS,
+  SAMPLE_BLUEPRINTS,
+  scoreSample,
   TESTIMONIALS,
 } from './catalog.ts'
 
@@ -100,11 +102,32 @@ function apiError(message) {
   return { error: message, requestId: 'stub' }
 }
 
-function route(pathname, query) {
+function route(pathname, query, method, body) {
   if (!pathname.startsWith(PREFIX)) return null
   const path = pathname.slice(PREFIX.length)
 
   if (path === '/packages') return { status: 200, body: listPackages(query) }
+
+  // Both halves of "coba gratis", and the split between them is the point: the
+  // blueprint goes out without an answer key, and the grader — the only thing
+  // that sees one — hands back counts. Matched before the detail route, which
+  // would otherwise swallow these paths as an unknown slug.
+  const sampleMatch = /^\/packages\/([^/]+)\/sample$/.exec(path)
+  if (sampleMatch) {
+    const blueprint = SAMPLE_BLUEPRINTS[decodeURIComponent(sampleMatch[1])]
+    return blueprint
+      ? { status: 200, body: blueprint }
+      : { status: 404, body: apiError('contoh soal belum tersedia') }
+  }
+
+  const scoreMatch = /^\/packages\/([^/]+)\/sample\/score$/.exec(path)
+  if (scoreMatch) {
+    if (method !== 'POST') return { status: 405, body: apiError('metode tidak didukung') }
+    const scored = scoreSample(decodeURIComponent(scoreMatch[1]), body?.answers ?? {})
+    return scored
+      ? { status: 200, body: scored }
+      : { status: 404, body: apiError('contoh soal belum tersedia') }
+  }
 
   if (path.startsWith('/packages/')) {
     const slug = decodeURIComponent(path.slice('/packages/'.length))
@@ -126,7 +149,25 @@ function route(pathname, query) {
   return null
 }
 
-const server = createServer((req, res) => {
+/** Collects a JSON request body; a malformed or absent one reads as {}. */
+function readJson(req) {
+  return new Promise((resolve) => {
+    let raw = ''
+    req.on('data', (chunk) => {
+      raw += chunk
+    })
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : {})
+      }
+      catch {
+        resolve({})
+      }
+    })
+  })
+}
+
+const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`)
 
   // The browser talks to this origin cross-site (Nuxt on :3210, this on
@@ -153,7 +194,8 @@ const server = createServer((req, res) => {
     return
   }
 
-  const matched = route(url.pathname, url.searchParams)
+  const payload = req.method === 'POST' ? await readJson(req) : null
+  const matched = route(url.pathname, url.searchParams, req.method, payload)
 
   // Anything not modelled here — /auth/*, /me/*, /orders — is answered 401, the
   // same as an anonymous browser hitting zenko-api. Specs needing a session

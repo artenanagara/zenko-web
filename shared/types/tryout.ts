@@ -20,6 +20,12 @@ export interface TryoutOption {
  * - situational: every option scores something 1–5 (TKP/AKHLAK style), so
  *   there is no wrong answer, only a better one — `scores` replaces `correct`.
  */
+/**
+ * The grading fields — `correct`, `points`, `scores` — are optional because one
+ * source deliberately withholds them: the public sample behind "coba gratis"
+ * ships questions with no answer key at all, and is graded by the API instead
+ * (see gradeSampleAnswers). The owned-package endpoint always sends them.
+ */
 export type TryoutQuestion =
   | {
     id: string
@@ -27,8 +33,8 @@ export type TryoutQuestion =
     stimulus?: string
     text: string
     options: TryoutOption[]
-    correct: OptionLabel
-    points: number
+    correct?: OptionLabel
+    points?: number
     /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
     explanation?: string
   }
@@ -38,7 +44,7 @@ export type TryoutQuestion =
     stimulus?: string
     text: string
     options: TryoutOption[]
-    scores: Record<OptionLabel, number>
+    scores?: Record<OptionLabel, number>
     /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
     explanation?: string
   }
@@ -91,6 +97,18 @@ export interface TryoutSectionResult {
   total: number
   score: number
   maxScore: number
+}
+
+/**
+ * What POST /packages/:slug/sample/score returns: the same tally as
+ * TryoutResult, minus finishedAt, which the browser stamps. The sample's
+ * answer key never leaves the API, so these numbers are the only grading
+ * information the "coba gratis" page ever receives.
+ */
+export interface TryoutSampleScore {
+  score: number
+  maxScore: number
+  sections: TryoutSectionResult[]
 }
 
 export interface TryoutResult {

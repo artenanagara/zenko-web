@@ -357,6 +357,176 @@ export const PACKAGE_DETAILS: Record<string, FixturePackageDetail> = {
   },
 }
 
+/**
+ * GET /api/v1/packages/:slug/sample — the "coba gratis" showcase.
+ *
+ * Transcribed from `internal/handler/package_sample.go`, whose defining
+ * property is what is *missing*: a sample question carries no `correct`, no
+ * `points` and no `scores`, because the endpoint is public and the answer key
+ * is the product. Grading therefore happens over POST
+ * /packages/:slug/sample/score, which is why the key below lives in a separate
+ * map the blueprint is not built from — the same split the API keeps between
+ * its wire DTO and the columns it reads.
+ */
+export interface FixtureSampleOption {
+  label: string
+  text: string
+}
+
+export interface FixtureSampleQuestion {
+  id: string
+  kind: 'objective' | 'situational'
+  text: string
+  options: FixtureSampleOption[]
+}
+
+export interface FixtureSampleSection {
+  id: string
+  code: string
+  title: string
+  durationMinutes: number
+  questions: FixtureSampleQuestion[]
+}
+
+export interface FixtureSampleBlueprint {
+  slug: string
+  title: string
+  theme: { system: string, agency: string, seal: string }
+  mode: 'flat'
+  sections: FixtureSampleSection[]
+}
+
+/** One question's key: `points` for objective items, `scores` for situational. */
+interface FixtureAnswerKey {
+  correct?: string
+  points?: number
+  scores?: Record<string, number>
+}
+
+/** POST /api/v1/packages/:slug/sample/score — mirrors handler.sampleScoreResult. */
+export interface FixtureSampleScore {
+  score: number
+  maxScore: number
+  sections: { title: string, correct: number, total: number, score: number, maxScore: number }[]
+}
+
+function objectiveFixture(id: string, text: string): FixtureSampleQuestion {
+  return {
+    id,
+    kind: 'objective',
+    text,
+    options: [
+      { label: 'A', text: 'Pilihan A' },
+      { label: 'B', text: 'Pilihan B' },
+      { label: 'C', text: 'Pilihan C' },
+    ],
+  }
+}
+
+function situationalFixture(id: string, text: string): FixtureSampleQuestion {
+  return {
+    id,
+    kind: 'situational',
+    text,
+    options: [
+      { label: 'A', text: 'Mengambil keputusan sendiri agar cepat selesai' },
+      { label: 'B', text: 'Menunda pembangunan sampai semua warga sepakat' },
+      { label: 'C', text: 'Memfasilitasi musyawarah lanjutan' },
+    ],
+  }
+}
+
+/** Five questions across two subtests, the shape the API's round-robin produces. */
+export const SAMPLE_BLUEPRINTS: Record<string, FixtureSampleBlueprint> = {
+  'cpns-2026-intensif': {
+    slug: 'cpns-2026-intensif',
+    title: PACKAGES['cpns-2026-intensif']!.title,
+    theme: { system: 'CAT BKN', agency: 'Badan Kepegawaian Negara', seal: 'BKN' },
+    mode: 'flat',
+    sections: [
+      {
+        id: 'twk',
+        code: 'TWK',
+        title: 'Tes Wawasan Kebangsaan',
+        durationMinutes: 3,
+        questions: [
+          objectiveFixture('twk-1', 'Dasar negara Republik Indonesia adalah…'),
+          objectiveFixture('twk-2', 'Sidang BPUPKI pertama membahas…'),
+          objectiveFixture('twk-3', 'Semboyan Bhinneka Tunggal Ika berasal dari…'),
+        ],
+      },
+      {
+        id: 'tkp',
+        code: 'TKP',
+        title: 'Tes Karakteristik Pribadi',
+        durationMinutes: 2,
+        questions: [
+          situationalFixture('tkp-1', 'Warga tidak mencapai mufakat soal lokasi sumur bor…'),
+          situationalFixture('tkp-2', 'Rekan kerjamu terlambat menyelesaikan bagiannya…'),
+        ],
+      },
+    ],
+  },
+}
+
+/**
+ * The key the sample response withholds, kept here so the stub can grade the
+ * way the API does. B is the right answer on every objective item and the best
+ * option on every situational one, so a spec that answers B everywhere expects
+ * a perfect score.
+ */
+const SAMPLE_ANSWER_KEYS: Record<string, Record<string, FixtureAnswerKey>> = {
+  'cpns-2026-intensif': {
+    'twk-1': { correct: 'B', points: 5 },
+    'twk-2': { correct: 'B', points: 5 },
+    'twk-3': { correct: 'B', points: 5 },
+    'tkp-1': { scores: { A: 2, B: 5, C: 3 } },
+    'tkp-2': { scores: { A: 1, B: 5, C: 4 } },
+  },
+}
+
+/**
+ * Grades a submission the way handler.scoreSampleAnswers does: totals come
+ * from the sample's own questions, so an unanswered question costs points
+ * without shrinking the denominator. Returns null for a slug with no sample,
+ * which the stub answers as the API's 404.
+ */
+export function scoreSample(slug: string, answers: Record<string, string>): FixtureSampleScore | null {
+  const blueprint = SAMPLE_BLUEPRINTS[slug]
+  const keys = SAMPLE_ANSWER_KEYS[slug]
+  if (!blueprint || !keys) return null
+
+  const sections = blueprint.sections.map((section) => {
+    const row = { title: section.title, correct: 0, total: section.questions.length, score: 0, maxScore: 0 }
+    for (const question of section.questions) {
+      const key = keys[question.id] ?? {}
+      const picked = (answers[question.id] ?? '').toUpperCase()
+      if (question.kind === 'objective') {
+        const points = key.points ?? 0
+        row.maxScore += points
+        if (key.correct && picked === key.correct) {
+          row.score += points
+          row.correct += 1
+        }
+        continue
+      }
+      const scores = key.scores ?? {}
+      const best = Math.max(0, ...Object.values(scores))
+      const points = scores[picked] ?? 0
+      row.maxScore += best
+      row.score += points
+      if (best > 0 && points === best) row.correct += 1
+    }
+    return row
+  })
+
+  return {
+    score: sections.reduce((sum, section) => sum + section.score, 0),
+    maxScore: sections.reduce((sum, section) => sum + section.maxScore, 0),
+    sections,
+  }
+}
+
 export const TESTIMONIALS: FixtureTestimonial[] = [
   {
     id: 'tst_01',

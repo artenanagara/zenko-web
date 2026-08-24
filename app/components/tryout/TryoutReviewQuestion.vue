@@ -28,15 +28,21 @@ const selected = computed(() => props.answer?.selected ?? null)
 /** Soal weighted (TKP/AKHLAK) tidak punya jawaban salah, cuma yang paling tinggi. */
 const bestLabels = computed<string[]>(() => {
   const question = props.question
-  if (question.kind === 'objective') return [question.correct]
-  const top = Math.max(...Object.values(question.scores))
-  return Object.entries(question.scores)
+  if (question.kind === 'objective') return question.correct ? [question.correct] : []
+  // Kunci jawaban selalu ada di layar review — paket ini sudah dimiliki. Nilai
+  // kosong hanya mungkin pada payload tanpa kunci (contoh gratis), yang tidak
+  // pernah sampai ke sini, jadi jangan sampai bikin halaman ini meledak.
+  const scores: Record<string, number> = question.scores ?? {}
+  const values = Object.values(scores)
+  if (!values.length) return []
+  const top = Math.max(...values)
+  return Object.entries(scores)
     .filter(([, score]) => score === top)
     .map(([label]) => label)
 })
 
 function scoreOf(option: TryoutOption): number | null {
-  return props.question.kind === 'situational' ? (props.question.scores[option.label] ?? 0) : null
+  return props.question.kind === 'situational' ? (props.question.scores?.[option.label] ?? 0) : null
 }
 
 function isBest(option: TryoutOption): boolean {
