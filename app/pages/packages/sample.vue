@@ -18,7 +18,12 @@ const blueprint = blueprintRef.value
 
 // Kunci sesi dibedakan dari sesi asli (`slug` polos), supaya coba-coba di
 // katalog tidak pernah me-resume atau menimpa pengerjaan sungguhan.
-const session = useTryoutSession(`${slug}--coba`, blueprint)
+//
+// Penilaian dititipkan ke API: soal contoh sengaja datang tanpa kunci jawaban,
+// jadi skornya dihitung di server dan yang kembali hanya rekap angkanya.
+const session = useTryoutSession(`${slug}--coba`, blueprint, {
+  grade: answers => gradeSampleAnswers(slug, answers),
+})
 
 useHead({
   title: `Coba Gratis ${detail.value.title} | Zenko`,
@@ -150,6 +155,37 @@ const showEndConfirm = ref(false)
         </div>
       </div>
     </template>
+
+    <!-- Sedang dinilai: hasilnya datang dari API, jadi ada jeda sekejap. -->
+    <div v-else-if="session.phase.value === 'finished' && session.grading.value" class="container-page grid max-w-2xl gap-4 py-16 text-center md:py-24">
+      <IconSpinner class="mx-auto h-7 w-7 animate-spin text-primary" />
+      <p class="text-muted">Menilai jawabanmu…</p>
+    </div>
+
+    <!--
+      Penilaian gagal: jawaban masih ada di memori sesi, jadi tawarkan ulang
+      alih-alih menampilkan skor nol yang tidak benar.
+    -->
+    <div v-else-if="session.phase.value === 'finished' && session.gradeFailed.value" class="container-page grid max-w-md gap-4 py-16 md:py-24">
+      <div class="rounded-lg border border-hairline bg-surface p-6 text-center shadow-xs">
+        <h1 class="font-bold tracking-[-0.02em]">Nilai belum bisa dihitung</h1>
+        <p class="mt-2 text-[0.9rem] text-muted">
+          Koneksi ke server terputus saat menilai. Jawabanmu masih tersimpan di halaman ini —
+          coba nilai ulang.
+        </p>
+        <div class="mt-5 flex flex-wrap justify-center gap-2.5">
+          <AppButton size="sm" @click="session.retryGrade()">Nilai ulang</AppButton>
+          <AppButton
+            :to="`/paket/${slug}`"
+            variant="light"
+            size="sm"
+            class="border border-hairline-strong shadow-none"
+          >
+            Kembali ke halaman paket
+          </AppButton>
+        </div>
+      </div>
+    </div>
 
     <!-- Selesai: hasil singkat, lalu jalan yang jelas menuju paket lengkapnya. -->
     <div v-else-if="session.phase.value === 'finished' && session.result.value" class="container-page grid max-w-2xl gap-6 py-10 md:py-14">

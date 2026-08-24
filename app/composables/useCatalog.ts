@@ -1,5 +1,5 @@
 import type { Package, PackageDetail, SortKey, Testimonial } from '#shared/types/catalog'
-import type { TryoutBlueprint } from '#shared/types/tryout'
+import type { TryoutAnswerState, TryoutBlueprint, TryoutSampleScore } from '#shared/types/tryout'
 
 /**
  * Thin wrappers around the zenko-api endpoints.
@@ -77,6 +77,36 @@ export async function useSampleBlueprint(slug: string): Promise<Ref<TryoutBluepr
   }
 
   return data as Ref<TryoutBlueprint>
+}
+
+/**
+ * Grades a finished sample sitting. The API holds the answer key for these
+ * questions — useSampleBlueprint deliberately arrives without one — so the
+ * tally comes back over the wire instead of being computed in the browser.
+ *
+ * Answers go as a flat questionId → label map; a question left blank is simply
+ * absent. Totals come from the sample the API itself picked, so skipping
+ * questions lowers the score, never the number of questions.
+ *
+ * Errors are left to the caller: the try-out session turns a rejection into a
+ * retry on the result screen rather than a score of zero.
+ */
+export async function gradeSampleAnswers(
+  slug: string,
+  answers: Record<string, TryoutAnswerState>,
+): Promise<TryoutSampleScore> {
+  const { public: config } = useRuntimeConfig()
+
+  const picked: Record<string, string> = {}
+  for (const [questionId, answer] of Object.entries(answers)) {
+    if (answer?.selected) picked[questionId] = answer.selected
+  }
+
+  return await $fetch<TryoutSampleScore>(`/packages/${slug}/sample/score`, {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body: { answers: picked },
+  })
 }
 
 /** Other packages in the same category, excluding the one being viewed. */
