@@ -1,12 +1,31 @@
 <script setup lang="ts">
-import type { TryoutResult, TryoutTheme } from '#shared/types/tryout'
+import type {
+  TryoutAnswerState,
+  TryoutBlueprint,
+  TryoutResult,
+  TryoutTheme,
+} from '#shared/types/tryout'
 
-const props = defineProps<{
-  result: TryoutResult
-  theme: TryoutTheme
-  packageTitle: string
-  packageSlug: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    result: TryoutResult
+    theme: TryoutTheme
+    packageTitle: string
+    packageSlug: string
+    /**
+     * Blueprint + jawaban sesi yang barusan selesai, untuk "Lihat pembahasan".
+     * `result` sendiri cuma agregat per subtes, tidak menyimpan satu pun soal
+     * atau jawaban — jadi keduanya harus dioper terpisah dari state sesi.
+     * Opsional: tanpa keduanya tombol Pembahasan tidak muncul sama sekali,
+     * sehingga pemanggil yang belum bisa menyediakannya tetap valid.
+     */
+    blueprint?: TryoutBlueprint | null
+    answers?: Record<string, TryoutAnswerState>
+    /** Simulasi tutor/admin: sembunyikan tautan progres paket milik siswa. */
+    simulate?: boolean
+  }>(),
+  { blueprint: null, answers: () => ({}), simulate: false },
+)
 
 const emit = defineEmits<{ retry: [] }>()
 
@@ -23,6 +42,43 @@ const stats = computed(() => [
   { label: 'Subtes diselesaikan', value: `${props.result.sections.length}` },
   { label: 'Selesai pada', value: formatDate(props.result.finishedAt) },
 ])
+
+/* --------------------------------------------------------------------------
+ * Pembahasan — dibuka di tempat, bukan lewat rute atau modal baru, supaya
+ * "Kerjakan lagi" dan "Lihat progres paket" tetap terjangkau sambil membaca.
+ * ------------------------------------------------------------------------ */
+
+interface ReviewRow {
+  number: number
+  sectionTitle: string
+  /** Hanya baris pertama tiap subtes yang mencetak judulnya, bukan tiap soal. */
+  startsSection: boolean
+  question: TryoutBlueprint['sections'][number]['questions'][number]
+}
+
+/**
+ * Nomor berjalan lintas subtes, sama seperti navigasi soal dalam mode flat —
+ * "Soal 37" di lembar ini harus soal yang sama dengan "Soal 37" tadi.
+ */
+const reviewRows = computed<ReviewRow[]>(() => {
+  const rows: ReviewRow[] = []
+  let number = 0
+  for (const section of props.blueprint?.sections ?? []) {
+    section.questions.forEach((question, indexInSection) => {
+      number += 1
+      rows.push({
+        number,
+        sectionTitle: section.title,
+        startsSection: indexInSection === 0,
+        question,
+      })
+    })
+  }
+  return rows
+})
+
+const canReview = computed(() => reviewRows.value.length > 0)
+const showReview = ref(false)
 </script>
 
 <template>
@@ -63,14 +119,59 @@ const stats = computed(() => [
       </ul>
     </DashboardPanel>
 
-    <AccountNotice>
+    <DashboardPanel
+      v-if="canReview && showReview"
+      id="pembahasan"
+      title="Pembahasan"
+      description="Semua soal sesi ini, lengkap dengan kunci jawaban dan penjelasan tutornya."
+    >
+      <AccountNotice>
+        Pembahasan ini hanya tersedia sekarang — tidak bisa dibuka lagi lewat Riwayat pengerjaan.
+      </AccountNotice>
+
+      <ul class="mt-4 grid gap-4">
+        <li v-for="row in reviewRows" :key="row.question.id">
+          <p
+            v-if="row.startsSection && (blueprint?.sections.length ?? 0) > 1"
+            class="mb-1.5 text-[0.78rem] font-bold tracking-widest text-faint uppercase"
+          >
+            {{ row.sectionTitle }}
+          </p>
+          <TryoutReviewQuestion
+            :question="row.question"
+            :number="row.number"
+            :answer="answers[row.question.id]"
+          />
+        </li>
+      </ul>
+    </DashboardPanel>
+
+    <!-- Simulasi punya spanduknya sendiri ("hasil tidak disimpan"), yang
+         mengatakan hal yang berbeda dari catatan sesi-siswa ini. -->
+    <AccountNotice v-if="!simulate">
       Sesi ini adalah latihan singkat untuk mencoba ruang pengerjaan try out — jumlah soal dan
       durasinya belum sama dengan paket lengkap yang kamu beli. Riwayatnya tersimpan selama tab ini terbuka.
     </AccountNotice>
 
     <div class="flex flex-wrap gap-3">
-      <AppButton size="lg" @click="emit('retry')">Kerjakan lagi</AppButton>
       <AppButton
+        v-if="canReview"
+        size="lg"
+        :aria-expanded="showReview"
+        aria-controls="pembahasan"
+        @click="showReview = !showReview"
+      >
+        {{ showReview ? 'Sembunyikan pembahasan' : 'Lihat pembahasan' }}
+      </AppButton>
+      <AppButton
+        size="lg"
+        :variant="canReview ? 'outline' : 'primary'"
+        @click="emit('retry')"
+      >
+        Kerjakan lagi
+      </AppButton>
+      <AppButton
+        v-if="!simulate"
         :to="`/akun/paket/${packageSlug}`"
         variant="light"
         size="lg"

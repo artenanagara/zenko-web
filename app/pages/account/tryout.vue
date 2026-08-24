@@ -256,6 +256,8 @@ function retry() {
       :theme="blueprint.theme"
       :package-title="blueprint.title"
       :package-slug="slug"
+      :blueprint="blueprint"
+      :answers="session.answers.value"
       @retry="retry"
     />
     </template>

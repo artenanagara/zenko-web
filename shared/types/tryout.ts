@@ -29,6 +29,8 @@ export type TryoutQuestion =
     options: TryoutOption[]
     correct: OptionLabel
     points: number
+    /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
+    explanation?: string
   }
   | {
     id: string
@@ -37,6 +39,8 @@ export type TryoutQuestion =
     text: string
     options: TryoutOption[]
     scores: Record<OptionLabel, number>
+    /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
+    explanation?: string
   }
 
 export interface TryoutSection {
