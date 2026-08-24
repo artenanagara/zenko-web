@@ -66,6 +66,6 @@ const ROLE_LABEL = { student: 'Siswa', tutor: 'Tutor', admin: 'Admin' } as const
       </div>
     </main>
 
-    <AppFooter class="print:hidden" />
+    <AppFooter compact class="print:hidden" />
   </div>
 </template>

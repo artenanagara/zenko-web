@@ -43,9 +43,10 @@ const discount = computed(() => Math.max(0, props.item.priceOriginal - props.ite
 
     <div class="mt-5 flex items-baseline justify-between gap-4 border-t border-line pt-5">
       <span class="font-semibold">Total</span>
-      <span class="text-[1.6rem] font-extrabold tracking-[-0.04em]">
+      <span v-if="item.price > 0" class="text-[1.6rem] font-extrabold tracking-[-0.04em]">
         {{ formatRupiah(item.price) }}
       </span>
+      <DashboardBadge v-else tone="success">Gratis</DashboardBadge>
     </div>
 
     <div class="mt-6">

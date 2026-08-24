@@ -17,20 +17,20 @@ defineProps<{
 <template>
   <!-- scroll-mt clears the dashboard's sticky navbar, so jumping to an
        anchor (e.g. /dashboard/admin#pengajuan) never hides the heading.
-       Card treatment (rounded-md/border-line/shadow-xs, bg-surface-alt
-       header) mirrors the design system's AppPanel so this reads as the
+       Card treatment (rounded-md/border-line/shadow-xs with one clean white
+       surface) mirrors the design system's AppPanel so this reads as the
        same surface — AppPanel itself can't be reused directly here since
        it has no description line and no always-visible action slot.
        Deliberately NOT overflow-hidden on the section (unlike AppPanel):
        this card routinely hosts dropdowns/popovers (AppSelect,
        AppDropdownMenu, RteDropdown, …) that position themselves absolutely
        and extend past the card's own bounds — clipping the section would
-       clip those too. The header gets its own top radius instead, so its
-       flush background still respects the card's rounded corners. -->
+       clip those too. The header keeps its own top radius so the card remains
+       visually continuous without adding a tinted header block. -->
   <section :id="id" class="scroll-mt-20 rounded-md border border-line bg-surface shadow-xs">
     <header
       v-if="title || $slots.action"
-      class="flex flex-wrap items-start justify-between gap-3 rounded-t-md border-b border-line bg-surface-alt px-5 py-4 md:px-6"
+      class="flex flex-wrap items-start justify-between gap-3 rounded-t-md border-b border-line px-5 py-4 md:px-6"
     >
       <div v-if="title">
         <h2 class="text-[1.05rem] font-bold tracking-[-0.03em] text-ink">{{ title }}</h2>

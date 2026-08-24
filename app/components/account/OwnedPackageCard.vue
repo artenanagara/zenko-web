@@ -79,7 +79,7 @@ const stats = computed(() => packageStats(props.item))
         <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-hairline pt-4 text-[0.82rem]">
           <div>
             <dt class="text-muted">Skor terbaik</dt>
-            <dd class="mt-0.5 font-bold tabular-nums">{{ stats.best?.score ?? '—' }}</dd>
+            <dd class="mt-0.5 font-bold tabular-nums">{{ stats.best?.score ?? '-' }}</dd>
           </div>
           <div>
             <dt class="text-muted">Dibeli</dt>

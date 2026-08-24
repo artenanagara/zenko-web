@@ -49,7 +49,7 @@ onBeforeUnmount(() => {
 })
 
 useHead({
-  title: computed(() => (purchase.value ? `Invoice ${purchase.value.invoice} — Zenko` : 'Invoice — Zenko')),
+  title: computed(() => (purchase.value ? `Invoice ${purchase.value.invoice} | Zenko` : 'Invoice | Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -128,7 +128,7 @@ function print() {
         <div class="grid gap-6 border-b border-hairline px-5 py-6 sm:grid-cols-2 md:px-8">
           <div>
             <h2 class="text-[0.72rem] font-bold tracking-[0.16em] text-faint uppercase">Ditagihkan kepada</h2>
-            <p class="mt-2 font-semibold tracking-[-0.02em]">{{ user?.name ?? '—' }}</p>
+            <p class="mt-2 font-semibold tracking-[-0.02em]">{{ user?.name ?? '-' }}</p>
             <p class="mt-0.5 text-[0.9rem] text-muted">{{ user?.email ?? '' }}</p>
           </div>
 
@@ -137,7 +137,7 @@ function print() {
             <dl class="mt-2 grid gap-1 text-[0.9rem]">
               <div class="flex justify-between gap-4 sm:justify-end sm:gap-3">
                 <dt class="text-muted">Metode</dt>
-                <dd class="font-semibold">{{ purchase.method ?? 'Belum dipilih' }}</dd>
+                <dd class="font-semibold">{{ purchaseMethodLabel(purchase) }}</dd>
               </div>
               <div v-if="purchase.reference" class="flex justify-between gap-4 sm:justify-end sm:gap-3">
                 <dt class="text-muted">Nomor rujukan</dt>
@@ -178,9 +178,9 @@ function print() {
                   </td>
                   <td class="py-3.5 pr-4 text-right text-[0.9rem] tabular-nums">
                     <span v-if="line.priceOriginal > line.price" class="font-semibold text-success-ink">
-                      −{{ formatRupiah(line.priceOriginal - line.price) }}
+                      -{{ formatRupiah(line.priceOriginal - line.price) }}
                     </span>
-                    <span v-else class="text-muted">—</span>
+                    <span v-else class="text-muted">-</span>
                   </td>
                   <td class="py-3.5 text-right font-bold tabular-nums">{{ formatRupiah(line.price) }}</td>
                 </tr>
@@ -204,8 +204,11 @@ function print() {
             </div>
             <div class="mt-1 flex items-baseline justify-between gap-4 border-t border-line pt-3">
               <dt class="font-semibold">Total</dt>
-              <dd class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">
+              <dd v-if="invoiceTotals(purchase).total > 0" class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">
                 {{ formatRupiah(invoiceTotals(purchase).total) }}
+              </dd>
+              <dd v-else>
+                <DashboardBadge tone="success">Gratis</DashboardBadge>
               </dd>
             </div>
           </dl>

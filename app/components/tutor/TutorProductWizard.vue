@@ -49,6 +49,16 @@ onMounted(() => {
 const own = useTutorProducts()
 const ownRequested = ref(false)
 
+/**
+ * Aturan harga sebagaimana berlaku untuk pemanggil ini: lantai harga produk
+ * berbayar, dan boleh-tidaknya paket gratis. Null selama belum termuat atau
+ * saat gagal — checklist lalu bersikap longgar, karena submit di server tetap
+ * penjaga sebenarnya dan kalimat penolakannya datang dari sana juga.
+ */
+const { data: pricingRule, refresh: refreshPricingRule } = useTutorPricingEligibility()
+
+onMounted(refreshPricingRule)
+
 /* ------------------------------------------------------------------ form */
 
 const form = reactive({
@@ -112,7 +122,7 @@ const productModeOptions = computed<{ value: ProductMode, label: string }[]>(() 
 const sectionTitleOptions = computed(() =>
   (selectedExamType.value?.sections ?? []).map(section => ({
     value: section.title,
-    label: `${section.title} — ${section.questionTarget} soal · ${section.durationMinutes} mnt`,
+    label: `${section.title} (${section.questionTarget} soal · ${section.durationMinutes} menit)`,
   })),
 )
 
@@ -421,6 +431,39 @@ interface CheckItem {
   label: string
 }
 
+/**
+ * Baris harga di checklist. Harga tutor punya dua keadaan sah — tepat Rp0
+ * (paket gratis, dengan syaratnya sendiri) atau minimal `minPrice` — jadi
+ * barisnya berganti pertanyaan tergantung yang mana sedang diketik.
+ *
+ * `minPrice` 0 berarti pemanggilnya admin: tanpa lantai dan tanpa syarat, jadi
+ * tidak ada yang perlu dicentang dan barisnya absen sama sekali.
+ */
+function priceCheck(): CheckItem | null {
+  const rule = pricingRule.value
+  const price = form.price ?? 0
+
+  if (price > 0) {
+    const min = rule?.minPrice ?? 0
+    if (min <= 0) return null
+    return {
+      ok: price >= min,
+      label: `Harga minimal ${formatRupiah(min)}, atau Rp0 untuk paket gratis`,
+    }
+  }
+
+  // Rp0 mulai dari sini. Putusannya milik server, termasuk kalimatnya:
+  // `reason` sama persis dengan yang dikembalikan submit untuk kasus itu.
+  if (!rule) return { ok: true, label: 'Harga: Gratis' }
+  if (rule.minPrice <= 0) return null
+  return {
+    ok: rule.canSubmitFreeProduct,
+    label: rule.canSubmitFreeProduct
+      ? 'Harga: Gratis (memenuhi syarat paket gratis)'
+      : rule.reason ?? 'Paket gratis belum bisa diajukan',
+  }
+}
+
 /** Cermin client-side dari validasi submit server, sebagai checklist. */
 const checklist = computed<CheckItem[]>(() => {
   const list: CheckItem[] = [
@@ -432,7 +475,8 @@ const checklist = computed<CheckItem[]>(() => {
     list.push({ ok: form.category.trim().length > 0, label: 'Kategori terisi' })
   }
 
-  list.push({ ok: (form.price ?? 0) > 0, label: 'Harga lebih dari nol' })
+  const price = priceCheck()
+  if (price) list.push(price)
 
   if (isSingle.value) {
     for (const section of detail.value?.sections ?? []) {
@@ -447,10 +491,15 @@ const checklist = computed<CheckItem[]>(() => {
       ok: selectedItems.value.length >= 2,
       label: `Minimal 2 produk dalam bundling (${selectedItems.value.length} dipilih)`,
     })
-    list.push({
-      ok: (form.price ?? 0) > 0 && (form.price ?? 0) < bundleItemsTotal.value,
-      label: `Harga bundling di bawah total harga satuan (${formatRupiah(bundleItemsTotal.value)})`,
-    })
+    // Bundel gratis melewati perbandingan ini, persis seperti servernya: Rp0
+    // sudah lebih murah dari isi apa pun, dan tak ada diskon tersisa untuk
+    // dituntut saat isinya pun gratis.
+    if ((form.price ?? 0) > 0) {
+      list.push({
+        ok: (form.price ?? 0) < bundleItemsTotal.value,
+        label: `Harga bundling di bawah total harga satuan (${formatRupiah(bundleItemsTotal.value)})`,
+      })
+    }
   }
 
   return list
@@ -487,6 +536,34 @@ const passingGradeSections = computed(() =>
   summarySections.value.filter(section => section.passingGrade != null),
 )
 
+/**
+ * "Simulasikan" per subtes — menjalankan subtesnya di ruang ujian sungguhan
+ * (lihat TryoutSimulation.vue). Opsional: sengaja TIDAK masuk `checklist`,
+ * jadi tidak pernah menahan tombol Ajukan.
+ *
+ * Cuma untuk produk `single` yang sudah tersimpan sebagai draft: bundling
+ * tidak punya subtes sendiri (isinya produk lain, yang masing-masing bisa
+ * disimulasikan dari halamannya sendiri), dan mode create belum punya id
+ * produk untuk dipanggil endpoint pratinjaunya.
+ *
+ * Subtes yang masih kurang dari target soal dimatikan tombolnya: server
+ * menjawab 422 untuk subtes belum lengkap, jadi lebih jujur mengatakannya di
+ * sini daripada mengirim tutor ke layar galat.
+ */
+const simulatableSections = computed(() =>
+  summarySections.value.map(section => ({
+    id: section.id,
+    title: section.title,
+    ready: section.questions.length >= section.questionTarget && section.questions.length > 0,
+    written: section.questions.length,
+    target: section.questionTarget,
+  })),
+)
+
+function simulateHref(sectionId: string): string {
+  return `/dashboard/tutor/products/${props.productId}/simulasikan?section=${encodeURIComponent(sectionId)}`
+}
+
 /* --------------------------------------------------------------- submit */
 
 const submitting = ref(false)
@@ -506,6 +583,9 @@ async function submitForReview() {
   try {
     await submitTutorProduct(props.productId)
     submitted.value = true
+    // Produk ini meninggalkan draft, jadi apa yang tayang milik tutor bisa
+    // berubah — dan dengan itu, kelayakan paket gratis berikutnya.
+    await refreshPricingRule()
   }
   catch (cause) {
     submitProblems.value = tutorSubmitProblems(cause)
@@ -517,6 +597,30 @@ async function submitForReview() {
     submitting.value = false
   }
 }
+
+/* ------------------------------------------------------- step 2: harga */
+
+/**
+ * Kalimat pendamping kolom harga, supaya aturannya terbaca saat mengetik dan
+ * bukan hanya saat checklist step 4 menolak. Null berarti tidak ada yang perlu
+ * dikatakan: aturannya belum termuat, atau pemanggilnya admin yang memang
+ * bebas menetapkan harga berapa pun.
+ */
+const priceHint = computed<string | null>(() => {
+  const rule = pricingRule.value
+  if (!rule || rule.minPrice <= 0) return null
+  if ((form.price ?? 0) > 0) {
+    return `Minimal ${formatRupiah(rule.minPrice)}, atau Rp0 untuk paket gratis.`
+  }
+  return rule.canSubmitFreeProduct
+    ? 'Rp0 tampil sebagai "Gratis" di katalog.'
+    : rule.reason ?? 'Paket gratis belum bisa diajukan.'
+})
+
+/** Merah hanya saat Rp0 memang belum boleh — sisanya keterangan biasa. */
+const priceHintBlocking = computed(() =>
+  (form.price ?? 0) === 0 && pricingRule.value?.canSubmitFreeProduct === false,
+)
 
 /* ----------------------------------------------------------------- misc */
 
@@ -578,16 +682,15 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <IconCheck class="h-7 w-7 text-success-ink" />
         </span>
         <p class="mx-auto mt-4 max-w-105 leading-[1.7] text-muted">
-          Tim Zenko akan meninjau produkmu. Statusnya bisa kamu pantau di daftar
-          produk — jika disetujui, produk langsung tayang di katalog.
+          Tim kurasi Zenko akan segera meninjau paket soalmu. Kamu bisa memantau statusnya di menu Produk Saya. Begitu disetujui, paketmu akan langsung tayang di katalog.
         </p>
-        <AppButton to="/dashboard/tutor/products" class="mt-6">Ke daftar produk</AppButton>
+        <AppButton to="/dashboard/tutor/products" class="mt-6">Kembali ke Produk Saya</AppButton>
       </div>
     </DashboardPanel>
 
     <template v-else>
-      <AppAlert v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason" variant="warning" title="Produk ini ditolak">
-        {{ detail.rejectReason }} — perbaiki lalu ajukan lagi.
+      <AppAlert v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason" variant="warning" title="Paket soal memerlukan revisi">
+        {{ detail.rejectReason }}. Silakan sesuaikan materi soal, lalu ajukan kembali.
       </AppAlert>
 
       <!-- Step nav -->
@@ -741,7 +844,21 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <div class="grid gap-5 sm:grid-cols-2">
             <div>
               <label for="product-price" :class="FIELD_LABEL_CLASS">Harga</label>
-              <AppCurrencyField id="product-price" v-model="form.price" placeholder="149.000" />
+              <AppCurrencyField
+                id="product-price"
+                v-model="form.price"
+                placeholder="149.000"
+                :ariaDescribedby="priceHint ? 'product-price-hint' : undefined"
+                :ariaInvalid="priceHintBlocking || undefined"
+              />
+              <p
+                v-if="priceHint"
+                id="product-price-hint"
+                class="mt-2 text-[0.82rem]"
+                :class="priceHintBlocking ? 'text-danger-ink' : 'text-muted'"
+              >
+                {{ priceHint }}
+              </p>
             </div>
             <div>
               <label for="product-price-original" :class="FIELD_LABEL_CLASS">Harga coret</label>
@@ -833,26 +950,26 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Jenis ujian</dt>
                 <dd class="mt-0.5 font-semibold">
-                  {{ selectedExamType?.label || form.examTypeSlug || '—' }}
+                  {{ selectedExamType?.label || form.examTypeSlug || 'Belum dipilih' }}
                   <span class="block text-[0.82rem] font-normal text-muted">
                     {{ form.mode === 'mini_tryout'
-                      ? `${PRODUCT_MODE_LABEL.mini_tryout} — ${isEdit ? (detail?.sections?.[0]?.title ?? '—') : (form.sectionTitle || '—')}`
+                      ? `${PRODUCT_MODE_LABEL.mini_tryout}: ${isEdit ? (detail?.sections?.[0]?.title ?? 'Belum ditentukan') : (form.sectionTitle || 'Belum ditentukan')}`
                       : PRODUCT_MODE_LABEL.simulasi }}
                   </span>
                 </dd>
               </div>
               <div>
                 <dt class="text-[0.8rem] text-muted">Judul</dt>
-                <dd class="mt-0.5 font-semibold">{{ form.title || '—' }}</dd>
+                <dd class="mt-0.5 font-semibold">{{ form.title || 'Belum diisi' }}</dd>
               </div>
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Kategori</dt>
-                <dd class="mt-0.5 font-semibold">{{ form.category || '—' }}</dd>
+                <dd class="mt-0.5 font-semibold">{{ form.category || 'Umum' }}</dd>
               </div>
               <div v-if="isSingle">
                 <dt class="text-[0.8rem] text-muted">Durasi</dt>
                 <dd class="mt-0.5 font-semibold">
-                  {{ totalDurationMinutes > 0 ? formatDuration(totalDurationMinutes) : '—' }}
+                  {{ totalDurationMinutes > 0 ? formatDuration(totalDurationMinutes) : 'Belum diatur' }}
                 </dd>
               </div>
 
@@ -907,20 +1024,48 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                     v-if="form.thumbnailUrl"
                     :src="form.thumbnailUrl"
                     alt=""
-                    class="aspect-[16/10] h-24 w-auto rounded-sm border border-hairline object-cover"
+                    class="aspect-16/10 h-24 w-auto rounded-sm border border-hairline object-cover"
                   >
-                  <span v-else class="text-[0.88rem] text-muted">—</span>
+                  <span v-else class="text-[0.88rem] text-muted">Belum ada thumbnail</span>
                 </dd>
               </div>
               <div class="sm:col-span-2">
                 <dt class="text-[0.8rem] text-muted">Deskripsi</dt>
-                <dd class="mt-0.5 whitespace-pre-line text-[0.88rem]">{{ form.description || '—' }}</dd>
+                <dd class="mt-0.5 whitespace-pre-line text-[0.88rem]">{{ form.description || 'Belum ada deskripsi' }}</dd>
               </div>
             </dl>
           </div>
 
           <div v-if="isSingle" class="rounded-md border border-hairline bg-surface-alt p-5">
-            <h3 class="text-[0.9rem] font-semibold">Daftar Soal</h3>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <h3 class="text-[0.9rem] font-semibold">Daftar Soal</h3>
+
+              <!-- Satu tombol per subtes: endpoint pratinjaunya menjalankan
+                   satu subtes, bukan seluruh produk sekaligus. -->
+              <div v-if="productId && simulatableSections.length" class="flex flex-wrap items-center gap-2">
+                <span class="text-[0.8rem] text-muted">Simulasikan:</span>
+                <template v-for="section in simulatableSections" :key="section.id">
+                  <AppButton
+                    v-if="section.ready"
+                    :to="simulateHref(section.id)"
+                    variant="outline"
+                    size="xs"
+                  >
+                    <AppIcon name="play" :size="13" />
+                    {{ section.title }}
+                  </AppButton>
+                  <span
+                    v-else
+                    class="inline-flex min-h-8 cursor-not-allowed items-center gap-2 rounded-xs border border-line px-3 text-[0.8rem] font-semibold text-faint"
+                    :title="`Belum bisa disimulasikan — baru ${section.written} dari ${section.target} soal.`"
+                  >
+                    <AppIcon name="play" :size="13" />
+                    {{ section.title }}
+                  </span>
+                </template>
+              </div>
+            </div>
+
             <TutorQuestionSummaryTable class="mt-3" :sections="detail?.sections ?? []" />
           </div>
 
@@ -940,7 +1085,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             </ul>
           </div>
 
-          <AppSectionMessage v-if="submitProblems.length" appearance="warning" title="Produk belum bisa diajukan:">
+          <AppSectionMessage v-if="submitProblems.length" appearance="warning" title="Paket belum dapat diajukan:">
             <ul class="grid list-disc gap-1 pl-5">
               <li v-for="problem in submitProblems" :key="problem">{{ problem }}</li>
             </ul>
@@ -951,7 +1096,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <!-- Tombol "Ajukan untuk tayang" sendiri ada di step footer fixed
                di bawah, di sebelah Kembali — bukan lagi di sini. -->
           <p v-if="!allComplete" class="text-[0.82rem] text-muted">
-            Lengkapi daftar di atas dulu — tombol Ajukan aktif setelah semuanya terpenuhi.
+            Lengkapi poin di atas terlebih dahulu. Tombol ajukan akan aktif otomatis setelah seluruh syarat terpenuhi.
           </p>
         </div>
       </DashboardPanel>

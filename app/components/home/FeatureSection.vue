@@ -50,10 +50,9 @@ const { target, ready, isInView } = useInView(0.2)
               </li>
             </ul>
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Pilih paket try out</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Pilih paket try out yang pas</h3>
           <p class="leading-[1.62] text-muted">
-            Bandingkan paket dari tutor terverifikasi, lalu pilih yang paling sesuai
-            dengan target ujian dan cara belajarmu.
+            Temukan paket soal dari tutor terpercaya yang sesuai dengan target seleksi, tingkat pemahaman, dan gaya belajarmu.
           </p>
         </article>
 
@@ -64,10 +63,9 @@ const { target, ready, isInView } = useInView(0.2)
           <div class="mb-8 flex min-h-60 items-center justify-center rounded-[20px] bg-surface-sunken p-7">
             <FeatureExamMock :active="isInView" />
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Kerjakan simulasi ujian</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Simulasi ujian mirip aslinya</h3>
           <p class="leading-[1.62] text-muted">
-            Gunakan timer dan tampilan yang menyerupai ujian agar kamu terbiasa
-            mengatur waktu saat hari ujian tiba.
+            Latihan dengan sistem CBT, batasan waktu, dan format soal yang menyerupai ujian resmi agar kamu makin tenang dan siap.
           </p>
         </article>
 
@@ -86,10 +84,9 @@ const { target, ready, isInView } = useInView(0.2)
               </span>
             </div>
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Lihat hasil latihan</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Evaluasi & pembahasan tuntas</h3>
           <p class="leading-[1.62] text-muted">
-            Setelah selesai, lihat skor, peringkat, pembahasan, dan materi yang masih
-            perlu kamu pelajari lagi.
+            Dapatkan analisis skor per subtes serta pembahasan rinci di setiap soal agar kamu tahu materi mana yang perlu ditingkatkan.
           </p>
         </article>
       </div>

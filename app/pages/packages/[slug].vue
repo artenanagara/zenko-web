@@ -33,7 +33,7 @@ const updatedLabel = computed(() =>
 )
 
 useHead({
-  title: `${detail.value.title} — Zenko`,
+  title: `${detail.value.title} | Zenko`,
   meta: [{ name: 'description', content: detail.value.description.slice(0, 160) }],
 })
 </script>
@@ -115,10 +115,13 @@ useHead({
         <aside class="min-[901px]:sticky min-[901px]:top-24">
           <div class="rounded-lg border border-hairline bg-surface p-6 shadow-float">
             <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span class="text-[2rem] font-extrabold tracking-[-0.04em]">
-                {{ formatRupiah(detail.price) }}
+              <span
+                class="text-[2rem] font-extrabold tracking-[-0.04em]"
+                :class="detail.price > 0 ? '' : 'text-success-ink'"
+              >
+                {{ detail.price > 0 ? formatRupiah(detail.price) : 'Gratis' }}
               </span>
-              <span class="text-[0.95rem] text-muted line-through">
+              <span v-if="detail.priceOriginal > detail.price" class="text-[0.95rem] text-muted line-through">
                 {{ formatRupiah(detail.priceOriginal) }}
               </span>
             </div>
@@ -135,7 +138,7 @@ useHead({
                 size="lg"
                 class="w-full"
               >
-                {{ ownsPackage ? 'Lihat paket saya' : 'Beli sekarang' }}
+                {{ ownsPackage ? 'Buka Paket di Akun' : 'Beli Sekarang' }}
               </AppButton>
               <AppButton
                 :to="`/paket/${detail.slug}/coba`"
@@ -143,7 +146,7 @@ useHead({
                 size="lg"
                 class="w-full border border-hairline shadow-none"
               >
-                Coba gratis 5 soal
+                Coba Gratis 5 Soal
               </AppButton>
             </div>
 
@@ -168,7 +171,7 @@ useHead({
 
             <p class="mt-6 flex items-start gap-2.5 border-t border-line pt-6 text-[0.85rem] text-muted">
               <IconSeal class="mt-px h-5 w-5 shrink-0" />
-              Tutor terverifikasi. Garansi uang kembali 7 hari bila materi tidak sesuai deskripsi.
+              Disusun oleh tutor terpercaya. Transaksi aman dengan akses instan ke sistem CBT.
             </p>
           </div>
         </aside>

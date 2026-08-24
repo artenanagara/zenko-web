@@ -22,7 +22,7 @@ const session = useTryoutSession(slug, blueprint)
 const isFlat = computed(() => blueprint.value?.mode === 'flat')
 
 useHead({
-  title: computed(() => (blueprint.value ? `Kerjakan — ${blueprint.value.title} — Zenko` : 'Kerjakan — Zenko')),
+  title: computed(() => (blueprint.value ? `Kerjakan ${blueprint.value.title} | Zenko` : 'Ruang Ujian | Zenko')),
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -131,46 +131,56 @@ function retry() {
       <div class="rounded-lg border border-hairline-strong bg-surface-alt p-5 text-[0.88rem] text-muted md:p-6">
         <h2 class="font-bold text-ink">Aturan pengerjaan</h2>
         <ul v-if="isFlat" class="mt-3 grid list-disc gap-2 pl-4">
-          <li>Semua soal dari setiap subtes langsung terbuka sejak awal — kerjakan dengan urutan bebas, seperti CAT BKN.</li>
-          <li>Hanya ada satu waktu keseluruhan untuk semua subtes; begitu habis, sesi otomatis berakhir dan langsung dinilai.</li>
-          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin ditinjau ulang sebelum waktu habis.</li>
-          <li>Nomor yang sudah dijawab menampilkan huruf pilihanmu di navigasi soal.</li>
+          <li>Semua butir soal dari seluruh subtes langsung terbuka sejak awal. Kamu bebas memilih urutan pengerjaan seperti pada simulasi CAT BKN.</li>
+          <li>Hanya ada satu batas waktu keseluruhan untuk seluruh subtes. Saat waktu habis, sistem otomatis mengakhiri ujian dan menghitung nilai.</li>
+          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin kamu periksa kembali sebelum waktu berakhir.</li>
+          <li>Nomor soal yang sudah dijawab akan menampilkan pilihan jawabanmu pada panel navigasi.</li>
         </ul>
         <ul v-else class="mt-3 grid list-disc gap-2 pl-4">
-          <li>Setiap subtes punya waktunya sendiri dan berjalan otomatis begitu kamu memulainya.</li>
-          <li>Begitu pindah ke subtes berikutnya, subtes sebelumnya tidak bisa dibuka lagi — sama seperti ujian aslinya.</li>
+          <li>Setiap subtes memiliki alokasi waktu tersendiri yang berjalan otomatis begitu subtes dimulai.</li>
+          <li>Setelah berpindah ke subtes berikutnya, subtes sebelumnya terkunci dan tidak bisa dibuka kembali, sesuai dengan ketentuan ujian resmi.</li>
           <li>Waktu yang habis akan memindahkanmu ke subtes berikutnya secara otomatis.</li>
-          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin ditinjau ulang sebelum waktu habis.</li>
+          <li>Gunakan tombol "Ragu-ragu" untuk menandai soal yang ingin kamu tinjau ulang.</li>
         </ul>
       </div>
 
-      <AppButton size="lg" class="justify-self-start" @click="session.start()">Mulai sesi</AppButton>
+      <AppButton size="lg" class="justify-self-start" @click="session.start()">Mulai Ujian</AppButton>
     </div>
 
     <!-- Sesi berjalan. -->
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
       <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value" />
 
-      <main class="container-page grid gap-5 pt-22 pb-24 md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
-        <TryoutQuestion
-          :question="session.currentQuestion.value"
-          :index="session.displayIndex.value"
-          :total="session.displayTotal.value"
-          :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
-          :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
-          @select="session.selectAnswer"
-        />
+      <!-- md:h-screen pins the row to the viewport instead of letting the
+           taller column (often the navigator, in flat mode with every
+           section's numbers open at once) stretch the shorter one and grow
+           the whole page — each column scrolls inside itself instead.
+           min-h-0 is what lets a grid child shrink below its content size at
+           all; without it overflow-y-auto has no effect. -->
+      <main class="container-page grid gap-5 pt-22 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
+        <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <TryoutQuestion
+            :question="session.currentQuestion.value"
+            :index="session.displayIndex.value"
+            :total="session.displayTotal.value"
+            :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
+            :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
+            @select="session.selectAnswer"
+          />
+        </div>
 
-        <TryoutNavigator
-          :groups="session.navigatorGroups.value"
-          :current-index="session.currentIndex.value"
-          :answered-count="session.answeredCount.value"
-          :doubtful-count="session.doubtfulCount.value"
-          :total-questions="session.displayTotal.value"
-          :status-of="session.statusOf"
-          :label-of="session.labelOf"
-          @jump="session.goTo"
-        />
+        <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <TryoutNavigator
+            :groups="session.navigatorGroups.value"
+            :current-index="session.currentIndex.value"
+            :answered-count="session.answeredCount.value"
+            :doubtful-count="session.doubtfulCount.value"
+            :total-questions="session.displayTotal.value"
+            :status-of="session.statusOf"
+            :label-of="session.labelOf"
+            @jump="session.goTo"
+          />
+        </div>
       </main>
 
       <TryoutControls
@@ -246,6 +256,8 @@ function retry() {
       :theme="blueprint.theme"
       :package-title="blueprint.title"
       :package-slug="slug"
+      :blueprint="blueprint"
+      :answers="session.answers.value"
       @retry="retry"
     />
     </template>

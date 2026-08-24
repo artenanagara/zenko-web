@@ -7,10 +7,22 @@
  * Closer to how the real CBT systems read too: most run a plain, utilitarian
  * header rather than a solid colour block.
  */
-const props = defineProps<{
-  packageTitle: string
-  remainingSeconds: number
-}>()
+const props = withDefaults(
+  defineProps<{
+    packageTitle: string
+    remainingSeconds: number
+    /**
+     * Mode simulasi (tutor/admin menjajal soalnya sendiri, hasil tidak
+     * disimpan). Menyalakan pil "Mode Simulasi" dan mengganti dasar bar jadi
+     * amber — bahasa visual yang sama dengan caption "(Khusus Pratinjau
+     * Tutor)" di TutorQuestionPreview, cuma jauh lebih kentara karena di sini
+     * yang dipinjam adalah UI ujian sungguhan. Sesi siswa asli tidak pernah
+     * mengoper prop ini, jadi tampilannya tidak berubah sedikit pun.
+     */
+    simulate?: boolean
+  }>(),
+  { simulate: false },
+)
 
 const clock = computed(() => {
   const total = Math.max(0, props.remainingSeconds)
@@ -25,24 +37,33 @@ const isUrgent = computed(() => props.remainingSeconds <= 60)
 </script>
 
 <template>
-  <header class="fixed inset-x-0 top-0 z-40 border-b border-hairline bg-surface shadow-xs">
+  <header
+    class="fixed inset-x-0 top-0 z-40 border-b shadow-xs"
+    :class="simulate ? 'border-amber-200 bg-amber-50' : 'border-hairline bg-surface'"
+  >
     <div class="container-page flex h-16 items-center justify-between gap-4">
       <div class="flex min-w-0 items-center gap-3">
         <BrandMark img-class="h-9 w-auto object-contain shrink-0" />
+        <DashboardBadge v-if="simulate" tone="warning">Mode Simulasi</DashboardBadge>
         <span class="min-w-0 truncate">
           <span class="text-faint" aria-hidden="true">·</span>
           <span class="ml-2 text-[0.92rem] font-medium text-muted">{{ packageTitle }}</span>
         </span>
       </div>
 
-      <div
-        class="flex shrink-0 items-center gap-2 rounded-sm px-3 py-1.5 tabular-nums"
-        :class="isUrgent ? 'animate-pulse bg-red-50 text-red-600 ring-1 ring-red-200' : 'bg-primary-soft text-primary ring-1 ring-primary/15'"
-        role="timer"
-        aria-live="polite"
-      >
-        <IconAlert v-if="isUrgent" class="h-4 w-4" />
-        <span class="text-[1.05rem] font-extrabold">{{ clock }}</span>
+      <div class="flex shrink-0 items-center gap-2.5">
+        <!-- Kosong pada sesi siswa; simulasi menaruh tombol "Keluar" di sini. -->
+        <slot name="action" />
+
+        <div
+          class="flex shrink-0 items-center gap-2 rounded-sm px-3 py-1.5 tabular-nums"
+          :class="isUrgent ? 'animate-pulse bg-red-50 text-red-600 ring-1 ring-red-200' : 'bg-primary-soft text-primary ring-1 ring-primary/15'"
+          role="timer"
+          aria-live="polite"
+        >
+          <IconAlert v-if="isUrgent" class="h-4 w-4" />
+          <span class="text-[1.05rem] font-extrabold">{{ clock }}</span>
+        </div>
       </div>
     </div>
   </header>

@@ -149,69 +149,83 @@ function submenuId(item: DashboardNavItem): string {
     </div>
 
     <nav aria-label="Navigasi dashboard" class="min-h-0 flex-1 overflow-y-auto p-3">
-      <p
-        v-if="!collapsed"
-        class="px-3.5 pt-1 pb-2 text-[0.72rem] font-bold tracking-widest text-faint uppercase"
-      >
-        {{ nav.title }}
-      </p>
+      <!-- ClientOnly, not just an empty-until-resolved `nav` prop: SSR can
+           never know the role (the session cookie is HttpOnly on the API
+           origin), so every server render would otherwise ship a set of
+           <NuxtLink>s hydration has to adopt and then never actually
+           corrects — see useDashboardNav's doc comment for the full story.
+           Skipping SSR for this block entirely means there is no server DOM
+           for the client to (mis)adopt in the first place: every link is
+           created fresh, with the right href from the moment it exists, and
+           Vue never has to reconcile a mismatch it doesn't fully repair. The
+           empty #fallback costs nothing here — the rail's width does not
+           depend on its content, so there is no layout shift while it fills
+           in a beat after mount. -->
+      <ClientOnly>
+        <p
+          v-if="!collapsed"
+          class="px-3.5 pt-1 pb-2 text-[0.72rem] font-bold tracking-widest text-faint uppercase"
+        >
+          {{ nav.title }}
+        </p>
 
-      <ul class="grid gap-1">
-        <li v-for="item in nav.items" :key="item.to">
-          <!-- Group: a button over a nested list. Only when there is room for
-               the list — the icon-only rail falls through to the link below. -->
-          <template v-if="hasChildren(item) && !collapsed">
-            <button
-              type="button"
-              class="w-full"
-              :class="itemClass(false, { within: isGroupActive(item) })"
-              :aria-expanded="isExpanded(item)"
-              :aria-controls="submenuId(item)"
-              @click="toggleGroup(item)"
+        <ul class="grid gap-1">
+          <li v-for="item in nav.items" :key="item.to">
+            <!-- Group: a button over a nested list. Only when there is room for
+                 the list — the icon-only rail falls through to the link below. -->
+            <template v-if="hasChildren(item) && !collapsed">
+              <button
+                type="button"
+                class="w-full"
+                :class="itemClass(false, { within: isGroupActive(item) })"
+                :aria-expanded="isExpanded(item)"
+                :aria-controls="submenuId(item)"
+                @click="toggleGroup(item)"
+              >
+                <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
+                <span class="truncate">{{ item.label }}</span>
+
+                <span class="ml-auto flex shrink-0 items-center gap-1.5">
+                  <!-- Aggregate only while collapsed: an open sub-menu already
+                       shows each child's number, and showing both double-counts. -->
+                  <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
+                  <IconChevron
+                    class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
+                    :class="isExpanded(item) ? '' : '-rotate-90'"
+                  />
+                </span>
+              </button>
+
+              <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
+                <li v-for="child in item.children ?? []" :key="child.to">
+                  <NuxtLink
+                    :to="child.to"
+                    :class="itemClass(isDashboardItemActive(child, route), { child: true })"
+                    :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
+                  >
+                    <span class="truncate">{{ child.label }}</span>
+                    <DashboardNavBadge :count="badgeFor(child)" />
+                  </NuxtLink>
+                </li>
+              </ul>
+            </template>
+
+            <!-- Leaf — and the icon-only rail's stand-in for a group, which
+                 points at its first child since a sub-menu cannot render here. -->
+            <NuxtLink
+              v-else
+              :to="item.children?.[0]?.to ?? item.to"
+              :class="itemClass(isDashboardItemActive(item, route))"
+              :title="collapsed ? item.label : undefined"
+              :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
             >
               <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
-              <span class="truncate">{{ item.label }}</span>
-
-              <span class="ml-auto flex shrink-0 items-center gap-1.5">
-                <!-- Aggregate only while collapsed: an open sub-menu already
-                     shows each child's number, and showing both double-counts. -->
-                <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
-                <IconChevron
-                  class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
-                  :class="isExpanded(item) ? '' : '-rotate-90'"
-                />
-              </span>
-            </button>
-
-            <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
-              <li v-for="child in item.children ?? []" :key="child.to">
-                <NuxtLink
-                  :to="child.to"
-                  :class="itemClass(isDashboardItemActive(child, route), { child: true })"
-                  :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
-                >
-                  <span class="truncate">{{ child.label }}</span>
-                  <DashboardNavBadge :count="badgeFor(child)" />
-                </NuxtLink>
-              </li>
-            </ul>
-          </template>
-
-          <!-- Leaf — and the icon-only rail's stand-in for a group, which
-               points at its first child since a sub-menu cannot render here. -->
-          <NuxtLink
-            v-else
-            :to="item.children?.[0]?.to ?? item.to"
-            :class="itemClass(isDashboardItemActive(item, route))"
-            :title="collapsed ? item.label : undefined"
-            :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
-          >
-            <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
-            <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
-            <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
-          </NuxtLink>
-        </li>
-      </ul>
+              <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
+              <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
+            </NuxtLink>
+          </li>
+        </ul>
+      </ClientOnly>
     </nav>
 
     <!-- Pinned footer: the way back out, plus the collapse toggle on desktop. -->

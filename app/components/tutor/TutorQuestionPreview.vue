@@ -263,7 +263,7 @@ const showResult = computed(() => {
               <p v-if="shortAnswerChecked" class="flex items-center gap-1.5 text-[0.86rem] font-semibold" :class="shortAnswerCorrect ? 'text-success-ink' : 'text-danger-ink'">
                 <AppIcon :name="shortAnswerCorrect ? 'check-circle' : 'x-circle'" :size="16" weight="fill" />
                 {{ shortAnswerCorrect ? 'Benar.' : 'Kurang tepat.' }}
-                Jawaban diterima: {{ (question.answers ?? []).join(', ') || '—' }}
+                Jawaban diterima: {{ (question.answers ?? []).join(', ') || 'Belum diatur' }}
               </p>
             </div>
 
@@ -273,7 +273,7 @@ const showResult = computed(() => {
             <div v-if="showResult" class="rounded-md border border-hairline bg-surface-alt p-4">
               <p class="mb-1.5 flex items-center gap-1.5 text-[0.78rem] font-bold tracking-wide text-faint uppercase">
                 <AppIcon name="eye" :size="13" />
-                Pembahasan (tutor saja — siswa lihat ini setelah ujian)
+                Pembahasan (Khusus Pratinjau Tutor)
               </p>
               <div v-if="stripHtmlToText(question.explanation)" class="prose-question text-[0.9rem]" v-html="explanationHtml" />
               <p v-else class="text-[0.86rem] text-muted">Belum ada pembahasan untuk soal ini.</p>

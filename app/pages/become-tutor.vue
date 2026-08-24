@@ -1,4 +1,4 @@
-<script setup lang="ts">
+  <script setup lang="ts">
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ path: '/jadi-tutor' })
 
@@ -45,39 +45,39 @@ const steps = [
  */
 const faqs = [
   {
-    question: 'Apakah saya harus punya pengalaman mengajar?',
+    question: 'Apakah saya harus punya pengalaman mengajar formal?',
     answer:
-      'Tidak wajib. Tim kami menilai kualitas dan orisinalitas soal yang kamu buat. Ceritakan latar belakangmu melalui formulir, misalnya pernah lulus seleksi, mengajar di bimbel, atau memiliki kumpulan soal sendiri.',
+      'Tidak wajib. Tim kurasi kami mengutamakan kualitas, akurasi kisi-kisi, dan orisinalitas soal yang kamu buat. Ceritakan pengalamanmu di formulir, baik sebagai tutor bimbel, alumni yang berhasil lolos seleksi, maupun pembuat bank soal mandiri.',
   },
   {
     question: 'Berapa bagi hasilnya, dan apakah ada biaya lain?',
     answer:
-      'Kamu dapat 70% dari setiap paket yang terjual, Zenko 30%. Tidak ada biaya pendaftaran. Bagian Zenko dipakai untuk biaya payment gateway, penyimpanan, dan operasional platform.',
+      'Kamu menerima 70% bersih dari setiap penjualan paketmu, dan Zenko menerima 30%. Bebas biaya pendaftaran dan tanpa biaya langganan bulanan. Porsi Zenko digunakan untuk biaya pemrosesan pembayaran otomatis, server CBT engine, dan operasional platform.',
   },
   {
-    question: 'Siapa yang menentukan harga paket saya?',
+    question: 'Siapa yang menentukan harga paket soal?',
     answer:
-      'Kamu sendiri yang menentukan harga tiap paket, dan bisa mengubahnya kapan saja lewat dashboard tutor.',
+      'Kamu memiliki kebebasan penuh untuk menentukan harga setiap paket try out, dan kamu bisa menyesuaikannya kapan saja melalui dashboard tutor.',
   },
   {
-    question: 'Paket apa saja yang bisa saya jual?',
+    question: 'Kategori paket apa saja yang bisa saya buat?',
     answer:
-      'Kamu dapat menjual paket try out SKD CPNS, BUMN, SNBT, dan TKA. Kategori lain dapat dibicarakan dengan tim kami saat pengajuanmu ditinjau.',
+      'Saat ini kamu bisa menjual paket try out untuk SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Jika ingin membuat kategori baru, kamu bisa mendiskusikannya dengan tim kami.',
   },
   {
-    question: 'Berapa lama proses peninjauannya?',
+    question: 'Berapa lama proses peninjauan pengajuan tutor?',
     answer:
-      'Prosesnya biasanya memerlukan beberapa hari kerja. Tim kami akan menghubungi lewat email atau WhatsApp yang kamu cantumkan, baik pengajuanmu disetujui maupun belum.',
+      'Proses kurasi biasanya memakan waktu 1 sampai 3 hari kerja. Tim Zenko akan menghubungimu secara personal melalui WhatsApp atau email yang terdaftar.',
   },
   {
-    question: 'Bagaimana kalau soal saya disalin orang lain?',
+    question: 'Bagaimana keamanan soal buatan saya dari pembajakan?',
     answer:
-      'Paket diakses lewat sistem Zenko, bukan file yang bisa diunduh dan disebar ulang. Aturan orisinalitas dan penanganan pelanggaran diatur di Ketentuan Layanan, dan kamu bisa melaporkan dugaan penyalinan ke tim kami.',
+      'Seluruh paket try out dikerjakan langsung di dalam sistem CBT Zenko dengan proteksi anti-salin, bukan berupa file PDF yang bisa diunduh dan disebarluaskan. Hak cipta materi tetap sepenuhnya menjadi milikmu.',
   },
   {
     question: 'Kapan penghasilan saya bisa dicairkan?',
     answer:
-      'Penghasilan dari tiap penjualan tercatat di dashboard dan dibayarkan pada siklus pencairan berikutnya. Rincian siklus dan syaratnya ada di Ketentuan Layanan.',
+      'Penghasilan dari setiap transaksi tercatat otomatis di dashboard tutormu dan siap dicairkan 7 hari setelah pembayaran terverifikasi, dengan batas minimum pencairan Rp100.000.',
   },
 ]
 
@@ -313,7 +313,7 @@ const formState = computed<FormState>(() => {
              ber-anim-*. Di Tailwind v4 `rotate-*` memakai properti `rotate`
              sendiri sehingga sebenarnya tidak bentrok dengan animasi, tapi
              memisahkannya menjaga tiap elemen tetap satu tanggung jawab. -->
-        <div class="mx-auto grid max-w-300 grid-cols-1 gap-5 rounded-[32px] bg-surface-alt p-4 md:p-6 md:grid-cols-2">
+        <div class="mx-auto grid max-w-300 grid-cols-1 gap-5 rounded-4xl bg-surface-alt p-4 md:p-6 md:grid-cols-2">
           <!-- 1. Penghasilan tambahan -->
           <article
             style="--cycle: 7s"
@@ -323,14 +323,14 @@ const formState = computed<FormState>(() => {
               <div class="absolute inset-0 flex items-center px-6">
                 <div class="relative mx-auto w-full max-w-80">
                   <div class="relative z-1 ml-auto w-64 translate-x-3 rotate-2">
-                    <div class="rounded-[16px] bg-surface p-4 shadow-float">
+                    <div class="rounded-2xl bg-surface p-4 shadow-float">
                       <TutorEarningsMock :cycle-ms="7000" />
                     </div>
                   </div>
 
                   <div class="absolute -top-11 -left-5 w-44 -rotate-8">
                     <div
-                      class="anim-item rounded-[14px] bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark p-3.5 shadow-brand"
+                      class="anim-item rounded-lg bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark p-3.5 shadow-brand"
                       style="--delay: 80ms"
                     >
                       <span class="block text-[0.68rem] font-bold tracking-widest text-white/70 uppercase">
@@ -373,7 +373,7 @@ const formState = computed<FormState>(() => {
               <div class="absolute inset-0 flex items-center px-8">
                 <div class="relative mx-auto w-full max-w-80">
                   <div class="relative z-1 rotate-2">
-                    <div class="anim-item rounded-[16px] bg-surface p-4 shadow-float" style="--delay: 140ms">
+                    <div class="anim-item rounded-2xl bg-surface p-4 shadow-float" style="--delay: 140ms">
                       <ul class="grid gap-3">
                         <li
                           v-for="(result, index) in mockResults"
@@ -444,7 +444,7 @@ const formState = computed<FormState>(() => {
               <div class="absolute inset-0 flex items-center px-6">
                 <div class="relative mx-auto w-full max-w-80">
                   <div class="relative z-1 ml-auto w-64 translate-x-3 rotate-2">
-                    <div class="rounded-[16px] bg-surface p-4 shadow-float">
+                    <div class="rounded-2xl bg-surface p-4 shadow-float">
                       <!-- Performance row: package name above, fill growing from the left -->
                       <p class="mb-3 text-[0.68rem] font-bold tracking-widest text-faint uppercase">
                         Performa paket
@@ -501,7 +501,7 @@ const formState = computed<FormState>(() => {
               <div class="absolute inset-0 flex items-center px-6">
                 <div class="relative mx-auto w-full max-w-80">
                   <div class="relative z-1 ml-auto w-64 translate-x-3 rotate-2">
-                    <div class="rounded-[16px] bg-surface p-4 shadow-float">
+                    <div class="rounded-2xl bg-surface p-4 shadow-float">
                       <!-- Payout schedule: three paid, one pending -->
                       <p class="mb-3 text-[0.68rem] font-bold tracking-widest text-faint uppercase">
                         Riwayat pencairan
@@ -533,7 +533,7 @@ const formState = computed<FormState>(() => {
                        card mocks, so the four boxes don't read the same. -->
                   <div class="absolute -top-11 -left-6 w-36 -rotate-8">
                     <div
-                      class="anim-item rounded-[14px] bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark p-4 shadow-brand"
+                      class="anim-item rounded-lg bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark p-4 shadow-brand"
                       style="--delay: 90ms"
                     >
                       <span class="block h-2 w-12 rounded-pill bg-white/45" />
@@ -600,12 +600,12 @@ const formState = computed<FormState>(() => {
         <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
           <article
             style="--cycle: 4.5s"
-            class="rounded-[24px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7 md:col-span-2"
+            class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7 md:col-span-2"
           >
             <!-- The widest card, so its mock uses the richest example
                  perhitungan supaya lebarnya terpakai, bukan cuma satu batang.
                  70% dan 30% dari Rp149.000 = Rp104.300 dan Rp44.700. -->
-            <div class="mb-6 rounded-[18px] bg-surface-sunken p-6" aria-hidden="true">
+            <div class="mb-6 rounded-xl bg-surface-sunken p-6" aria-hidden="true">
               <p class="text-[0.78rem] font-semibold text-muted">
                 Contoh: satu paket seharga <span class="text-ink">Rp149.000</span> terjual
               </p>
@@ -638,9 +638,9 @@ const formState = computed<FormState>(() => {
 
           <article
             style="--cycle: 5.5s"
-            class="rounded-[24px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:flex md:flex-col md:p-7 md:row-span-2"
+            class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:flex md:flex-col md:p-7 md:row-span-2"
           >
-            <div class="relative overflow-hidden rounded-[18px] bg-surface-sunken p-6 md:flex md:flex-1 md:flex-col md:justify-between" aria-hidden="true">
+            <div class="relative overflow-hidden rounded-xl bg-surface-sunken p-6 md:flex md:flex-1 md:flex-col md:justify-between" aria-hidden="true">
               <!-- Package content held behind the access panel -->
               <!-- Access panel stays in flow (not absolute) so on a tall card
                    ia turun ke bawah dan daftar soalnya mengisi sisa ruang. -->
@@ -667,9 +667,9 @@ const formState = computed<FormState>(() => {
 
           <article
             style="--cycle: 6.5s"
-            class="rounded-[24px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7"
+            class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7"
           >
-            <div class="mb-6 rounded-[18px] bg-surface-sunken p-6" aria-hidden="true">
+            <div class="mb-6 rounded-xl bg-surface-sunken p-6" aria-hidden="true">
               <!-- Three options; the right one ticks itself -->
               <ul class="grid gap-2.5">
                 <li
@@ -704,9 +704,9 @@ const formState = computed<FormState>(() => {
 
           <article
             style="--cycle: 7.5s"
-            class="rounded-[24px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7"
+            class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7"
           >
-            <div class="mb-6 rounded-[18px] bg-surface-sunken p-6" aria-hidden="true">
+            <div class="mb-6 rounded-xl bg-surface-sunken p-6" aria-hidden="true">
               <!-- The parts you don't have to build yourself -->
               <div class="flex flex-wrap gap-2">
                 <span
@@ -756,7 +756,7 @@ const formState = computed<FormState>(() => {
              (pointer-fine). Di layar sentuh hover tidak pernah terjadi, jadi
              kalau disembunyikan tanpa syarat isinya tidak akan pernah terlihat
              di sana. -->
-        <ol class="mx-auto flex max-w-300 flex-col gap-4 rounded-[32px] bg-surface-alt p-4 md:p-6 md:flex-row">
+        <ol class="mx-auto flex max-w-300 flex-col gap-4 rounded-4xl bg-surface-alt p-4 md:p-6 md:flex-row">
           <li
             v-for="(step, index) in steps"
             :key="step.title"
@@ -776,7 +776,7 @@ const formState = computed<FormState>(() => {
             </div>
 
             <div
-              class="order-first mb-6 w-full shrink-0 overflow-hidden transition-[width,opacity,margin] duration-500 ease-smooth md:order-none md:mb-0 md:pointer-fine:w-0 md:pointer-fine:opacity-0 md:pointer-fine:group-hover:ml-5 md:pointer-fine:group-hover:w-64 md:pointer-fine:group-hover:opacity-100"
+              class="order-first mb-6 w-full shrink-0 overflow-hidden transition-[width,opacity,margin] duration-500 ease-smooth md:order-0 md:mb-0 md:pointer-fine:w-0 md:pointer-fine:opacity-0 md:pointer-fine:group-hover:ml-5 md:pointer-fine:group-hover:w-64 md:pointer-fine:group-hover:opacity-100"
               aria-hidden="true"
             >
               <div class="flex min-h-40 w-full items-center rounded-[20px] bg-surface-sunken p-5 md:h-full md:w-64">
@@ -862,7 +862,7 @@ const formState = computed<FormState>(() => {
           </p>
         </div>
 
-        <div class="mx-auto grid max-w-300 gap-3 rounded-[32px] bg-surface-alt p-4 md:p-6">
+        <div class="mx-auto grid max-w-300 gap-3 rounded-4xl bg-surface-alt p-4 md:p-6">
           <!-- The shared `name` makes the four one exclusive group:
                membuka satu otomatis menutup yang lain, tanpa JavaScript.
                Di browser yang belum mendukung (Firefox < 130, Safari < 17.2),
@@ -872,7 +872,7 @@ const formState = computed<FormState>(() => {
             v-for="faq in faqs"
             :key="faq.question"
             name="faq"
-            class="group rounded-[18px] border border-hairline bg-surface px-5 py-4 shadow-xs transition-[box-shadow,border-color] duration-300 ease-smooth hover:shadow-lift open:shadow-lift md:px-6 md:py-5"
+            class="group rounded-xl border border-hairline bg-surface px-5 py-4 shadow-xs transition-[box-shadow,border-color] duration-300 ease-smooth hover:shadow-lift open:shadow-lift md:px-6 md:py-5"
           >
             <summary
               class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold tracking-[-0.02em] [&::-webkit-details-marker]:hidden"
@@ -1018,7 +1018,7 @@ const formState = computed<FormState>(() => {
                 <select
                   id="tutor-expertise"
                   v-model="form.expertise"
-                  class="w-full appearance-none rounded-sm border bg-surface bg-[length:1.15rem] bg-[right_1rem_center] bg-no-repeat py-3 pr-11 pl-4 transition-[border-color,box-shadow] duration-200 ease-smooth focus:outline-none"
+                  class="w-full appearance-none rounded-sm border bg-surface bg-size-[1.15rem] bg-position-[right_1rem_center] bg-no-repeat py-3 pr-11 pl-4 transition-[border-color,box-shadow] duration-200 ease-smooth focus:outline-none"
                   :class="[
                     form.expertise ? 'text-ink' : 'text-placeholder',
                     errors.expertise

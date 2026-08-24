@@ -195,11 +195,10 @@ const SECTION_STATE_DOT: Record<CompletionState, 'success' | 'warning' | 'danger
 
 const sectionMenuItems = computed<MenuItem[]>(() => orderedSections.value.map(section => ({
   id: section.id,
-  label: `${section.title} — ${section.questions.length}/${section.questionTarget}`,
+  label: `${section.title} (${section.questions.length}/${section.questionTarget})`,
   dot: SECTION_STATE_DOT[sectionCompletionState(section)],
 })))
 
-/** Full literal class names — Tailwind's scanner can't discover a `bg-${variable}` template string. */
 const DOT_BG_CLASS = {
   success: 'bg-success',
   warning: 'bg-warning',
@@ -215,7 +214,7 @@ const activeSectionDotClass = computed(() =>
 <template>
   <DashboardPanel
     title="Soal per subtes"
-    description="Pilih subtes lalu susun soalnya — tulis satu per satu atau impor CSV."
+    description="Pilih subtes lalu susun soalnya dengan menulis langsung atau mengimpor file CSV."
   >
     <p v-if="orderedSections.length === 0" class="py-6 text-center text-muted">
       Belum ada subtes. Tambahkan subtes dulu untuk mulai menyusun soal.
@@ -224,10 +223,6 @@ const activeSectionDotClass = computed(() =>
     <div v-else class="grid gap-4">
       <AppSectionMessage v-if="errorMessage" appearance="warning">{{ errorMessage }}</AppSectionMessage>
 
-      <!--
-        Bar subtes ringkas — selalu tampil begitu ada subtes, terlepas dari
-        sedang menulis soal atau tidak. AppDropdownMenu (bukan native
-        `<select>`, bukan strip chip — lihat tutor-dashboard-v2-tasks.md Task
         5 / kontrak §7.2) dipakai supaya pindah subtes tetap satu aksi, dan
         tiap item membawa status kelengkapan (progres + dot warna) supaya
         overview lintas-subtes yang tadinya didapat dari chip tidak hilang
@@ -249,7 +244,7 @@ const activeSectionDotClass = computed(() =>
                 @click="open"
               >
                 <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="activeSectionDotClass" />
-                <span class="truncate font-semibold text-ink">{{ activeSection.title }} — {{ activeSection.questions.length }}/{{ activeSection.questionTarget }}</span>
+                <span class="truncate font-semibold text-ink">{{ activeSection.title }} ({{ activeSection.questions.length }}/{{ activeSection.questionTarget }})</span>
                 <AppIcon name="caret-down" :size="14" class="shrink-0 text-muted transition-transform" :class="isOpen ? 'rotate-180 text-primary' : ''" />
               </button>
             </template>
@@ -316,7 +311,7 @@ const activeSectionDotClass = computed(() =>
                 Tambah soal
               </AppButton>
               <AppInlineMessage v-else type="confirmation">
-                Target soal subtes ini terpenuhi — klik kotak di grid untuk mengubah soal, atau hapus salah satu dulu untuk menambah.
+                Target soal subtes ini sudah terpenuhi. Klik nomor soal di samping untuk mengedit, atau hapus salah satu soal untuk menambah soal baru.
               </AppInlineMessage>
             </div>
 

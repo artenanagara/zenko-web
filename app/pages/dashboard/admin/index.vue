@@ -12,7 +12,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Ringkasan — Zenko',
+  title: 'Ringkasan Admin | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -83,7 +83,7 @@ const allClear = computed(() =>
   <div class="grid gap-6">
     <AppPageHeader
       title="Ringkasan"
-      description="Antrean yang menunggu keputusanmu hari ini."
+      description="Daftar tugas dan antrean moderasi yang memerlukan tindakanmu hari ini."
     />
 
     <!-- Skeleton on first load only; refetches keep the cards rendered. -->
@@ -124,8 +124,8 @@ const allClear = computed(() =>
 
       <AppEmptyState
         v-if="allClear"
-        title="Semua antrean bersih"
-        description="Tidak ada keputusan yang menunggu. Kembali lagi nanti atau muat ulang untuk memeriksa."
+        title="Semua antrean selesai"
+        description="Kerja bagus! Belum ada tugas moderasi yang menunggu saat ini. Silakan kembali nanti."
       />
     </template>
   </div>

@@ -27,7 +27,7 @@ const detailPending = ref(true)
 const detailError = ref('')
 
 useHead({
-  title: () => detail.value ? `${detail.value.title} — Zenko` : 'Tinjau produk — Zenko',
+  title: () => detail.value ? `${detail.value.title} | Zenko` : 'Tinjau Produk | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -81,6 +81,7 @@ const SECTION_COLUMNS = [
   { key: 'title', label: 'Subtes' },
   { key: 'soal', label: 'Soal' },
   { key: 'durasi', label: 'Durasi' },
+  { key: 'aksi', label: '', align: 'right' as const },
 ]
 
 const sectionRows = computed(() => (detail.value?.sections ?? []).map(section => ({
@@ -88,8 +89,34 @@ const sectionRows = computed(() => (detail.value?.sections ?? []).map(section =>
   title: section.title,
   soal: `${section.questions.length}/${section.questionTarget} soal`,
   incomplete: section.questions.length < section.questionTarget,
+  empty: section.questions.length === 0,
   durasi: formatDuration(section.durationMinutes),
 })))
+
+/* --------------------------------------------------------------------------
+ * Isi soal — sampai sekarang halaman ini cuma menghitung soal, tidak pernah
+ * memperlihatkan satu pun. Dua jalan masuk per subtes:
+ *
+ * - "Lihat soal": daftar + pratinjau per soal, komponen yang sama dengan
+ *   langkah 4 wizard tutor (TutorQuestionSummaryTable sudah baca-saja —
+ *   penghapusan/pengeditan soal memang tidak pernah ada di sana).
+ * - "Simulasikan": subtesnya dijalankan penuh di ruang ujian, lewat
+ *   /dashboard/admin/products/:id/simulasikan?section=…
+ * ------------------------------------------------------------------------ */
+
+const openSectionId = ref<string | null>(null)
+
+const openSection = computed(() =>
+  (detail.value?.sections ?? []).find(section => section.id === openSectionId.value) ?? null,
+)
+
+function toggleSectionQuestions(sectionId: string) {
+  openSectionId.value = openSectionId.value === sectionId ? null : sectionId
+}
+
+function simulateHref(sectionId: string): string {
+  return `/dashboard/admin/products/${productId.value}/simulasikan?section=${encodeURIComponent(sectionId)}`
+}
 
 const BUNDLE_COLUMNS = [
   { key: 'title', label: 'Produk' },
@@ -210,8 +237,8 @@ async function decide(approve: boolean, reason?: string) {
       <DashboardPanel title="Ringkasan produk">
         <div class="grid gap-4">
           <div class="flex flex-wrap items-center gap-3">
-            <p class="text-[1.05rem] font-bold tabular-nums">
-              {{ formatRupiah(detail.price) }}
+            <p class="text-[1.05rem] font-bold tabular-nums" :class="detail.price > 0 ? '' : 'text-success-ink'">
+              {{ detail.price > 0 ? formatRupiah(detail.price) : 'Gratis' }}
               <s v-if="hasDiscount" class="ml-1.5 text-[0.86rem] font-normal text-muted">
                 {{ formatRupiah(detail.priceOriginal) }}
               </s>
@@ -257,6 +284,33 @@ async function decide(approve: boolean, reason?: string) {
           <template #cell(durasi)="{ value }">
             <span class="whitespace-nowrap text-muted">{{ value }}</span>
           </template>
+          <template #cell(aksi)="{ item }">
+            <span class="inline-flex items-center gap-3 whitespace-nowrap">
+              <button
+                v-if="!item.empty"
+                type="button"
+                class="text-[0.86rem] font-semibold text-primary hover:underline"
+                :aria-expanded="openSectionId === item.id"
+                @click="toggleSectionQuestions(String(item.id))"
+              >
+                {{ openSectionId === item.id ? 'Tutup soal' : 'Lihat soal' }}
+              </button>
+              <NuxtLink
+                v-if="!item.incomplete && !item.empty"
+                :to="simulateHref(String(item.id))"
+                class="text-[0.86rem] font-semibold text-primary hover:underline"
+              >
+                Simulasikan
+              </NuxtLink>
+              <span
+                v-else
+                class="text-[0.86rem] text-faint"
+                title="Subtes belum memenuhi target soal, jadi belum bisa disimulasikan."
+              >
+                Simulasikan
+              </span>
+            </span>
+          </template>
         </AppTable>
       </DashboardPanel>
 
@@ -273,12 +327,29 @@ async function decide(approve: boolean, reason?: string) {
             <span class="font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
           </template>
           <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ value > 0 ? formatRupiah(value) : '—' }}</span>
+            <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
+            <span v-else class="font-semibold text-success-ink">Gratis</span>
           </template>
           <template #cell(status)="{ value }">
             <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>
           </template>
         </AppTable>
+      </DashboardPanel>
+
+      <!-- Isi soal satu subtes, dibuka dari baris tabel Subtes di atas —
+           daftar yang sama dengan yang tutor lihat di langkah Review,
+           termasuk modal pratinjau per soal. Panel terpisah (bukan disisipkan
+           di antara panel Subtes dan Isi bundling) supaya rantai
+           v-if/v-else keduanya tetap bersebelahan. -->
+      <DashboardPanel
+        v-if="openSection"
+        :title="`Soal — ${openSection.title}`"
+        description="Klik satu baris untuk membuka pratinjau soalnya."
+      >
+        <template #action>
+          <AppButton variant="ghost" size="sm" @click="openSectionId = null">Tutup</AppButton>
+        </template>
+        <TutorQuestionSummaryTable :sections="[openSection]" />
       </DashboardPanel>
 
       <!-- Sticky action bar — only while the product still awaits a decision. -->

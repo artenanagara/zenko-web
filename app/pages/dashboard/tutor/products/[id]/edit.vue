@@ -6,7 +6,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Edit produk — Zenko',
+  title: 'Edit Paket Soal | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 

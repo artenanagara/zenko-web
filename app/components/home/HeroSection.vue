@@ -34,8 +34,7 @@ function onSubmit() {
         </h1>
 
         <p class="mx-auto mt-3.5 max-w-150 text-[1.02rem] text-muted">
-          Pilih paket soal SKD CPNS, BUMN, SNBT, dan TKA dari tutor terverifikasi.
-          Bayar per paket, kerjakan simulasi, lalu pelajari pembahasannya.
+          Pilih paket soal SKD CPNS, BUMN, SNBT, dan Tes Kedinasan dari tutor terpercaya. Akses langsung latihan, rasakan simulasi ujian sebenarnya, dan kuasai materi pembahasannya langkah demi langkah.
         </p>
 
         <form
@@ -50,11 +49,11 @@ function onSubmit() {
             v-model="query"
             type="search"
             name="query"
-            placeholder="Cari paket, topik, atau tutor"
+            placeholder="Cari paket soal, topik materi, atau nama tutor..."
             class="w-full min-w-0 flex-1 border-0 bg-transparent px-2.5 py-3 text-base placeholder:text-placeholder focus:outline-none sm:px-0 sm:py-3.5"
           >
           <AppButton type="submit" class="w-full min-h-13 rounded-xl sm:w-auto sm:min-w-30">
-            Cari paket
+            Cari Paket
           </AppButton>
         </form>
 

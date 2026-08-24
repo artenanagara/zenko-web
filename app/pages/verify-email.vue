@@ -5,7 +5,7 @@ import { OtpInput } from '#components'
 definePageMeta({ layout: 'auth', path: '/verifikasi-email' })
 
 useHead({
-  title: 'Verifikasi Email — Zenko',
+  title: 'Verifikasi Email | Zenko',
   meta: [
     { name: 'description', content: 'Konfirmasi alamat email akun Zenko kamu.' },
     { name: 'robots', content: 'noindex' },
