@@ -306,10 +306,20 @@ async function onSubmit() {
     <div v-show="activeTab === 'profil'" id="panel-profil" role="tabpanel" aria-labelledby="tab-profil">
       <DashboardPanel title="Profil" description="Foto, nama, email, dan status verifikasi akunmu.">
         <div v-if="user" class="grid gap-5">
-          <!-- Identity as one card, not a stack of label/value rows: avatar with
-               a brand ring and verified seal, name, role and email together. -->
-          <div class="flex flex-col gap-4 rounded-md border border-hairline bg-linear-to-br from-surface-alt to-surface p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
-            <span class="relative inline-flex shrink-0 self-start rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift sm:self-center">
+          <!-- "Edit profil" bukan baris identitas keempat — ini aksi tingkat
+               bagian, jadi tempatnya di atas blok identitas dan rata kanan. -->
+          <div v-if="!editing" class="flex justify-end">
+            <AppButton variant="outline" size="sm" @click="startEditing">
+              Edit profil
+            </AppButton>
+          </div>
+
+          <!-- Identitas mengalir dari atas ke bawah dan terpusat: foto, nama,
+               peran, email, lalu status verifikasi — tanpa kartu berbingkai,
+               yang dulu membuat blok ini terbaca sebagai widget tersendiri
+               alih-alih bagian isi panel. -->
+          <div class="flex flex-col items-center gap-3 text-center">
+            <span class="relative inline-flex shrink-0 rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift">
               <img
                 v-if="user.avatarUrl"
                 :src="user.avatarUrl"
@@ -352,32 +362,20 @@ async function onSubmit() {
               >
             </span>
 
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2">
-                <p class="truncate text-[1.2rem] font-bold tracking-[-0.03em]">{{ user.name }}</p>
-                <DashboardBadge :tone="ROLE_TONE[user.role]">{{ ROLE_LABEL[user.role] }}</DashboardBadge>
-              </div>
-              <p class="mt-0.5 truncate text-[0.9rem] text-muted">{{ user.email }}</p>
+            <p class="text-[1.2rem] font-bold tracking-[-0.03em]">{{ user.name }}</p>
 
-              <div class="mt-3 flex flex-wrap items-center gap-3">
-                <DashboardBadge :tone="user.verified ? 'success' : 'warning'">
-                  {{ user.verified ? 'Email terverifikasi' : 'Email belum terverifikasi' }}
-                </DashboardBadge>
-                <AppButton v-if="!user.verified" to="/verifikasi-email" variant="light" size="sm">
-                  Verifikasi email
-                </AppButton>
-              </div>
+            <DashboardBadge :tone="ROLE_TONE[user.role]">{{ ROLE_LABEL[user.role] }}</DashboardBadge>
+
+            <p class="text-[0.9rem] break-all text-muted">{{ user.email }}</p>
+
+            <div class="flex flex-wrap items-center justify-center gap-3">
+              <DashboardBadge :tone="user.verified ? 'success' : 'warning'">
+                {{ user.verified ? 'Email terverifikasi' : 'Email belum terverifikasi' }}
+              </DashboardBadge>
+              <AppButton v-if="!user.verified" to="/verifikasi-email" variant="light" size="sm">
+                Verifikasi email
+              </AppButton>
             </div>
-
-            <AppButton
-              v-if="!editing"
-              variant="outline"
-              size="sm"
-              class="shrink-0 self-start sm:self-center"
-              @click="startEditing"
-            >
-              Edit profil
-            </AppButton>
           </div>
 
           <AppInlineMessage v-if="avatarError" type="error">{{ avatarError }}</AppInlineMessage>
