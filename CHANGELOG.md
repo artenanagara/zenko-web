@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/artenanagara/zenko-web/compare/v0.7.0...v0.7.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* land buyers on the success screen, restore question lists, stop two sideways scrolls ([ce4d1fe](https://github.com/artenanagara/zenko-web/commit/ce4d1fed8cfc0ff63adcab9c5f56eaa2cf38448c))
+* land buyers on the success screen, restore question lists, stop two sideways scrolls ([f817ae4](https://github.com/artenanagara/zenko-web/commit/f817ae41b717eee35436bab16368b74e6c3514e3))
+
 ## [0.7.0](https://github.com/artenanagara/zenko-web/compare/v0.6.1...v0.7.0) (2026-08-25)
 
 
