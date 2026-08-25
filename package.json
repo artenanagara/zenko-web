@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",
+    "@artenanagara/zenko-design-system": "^1.2.1",
     "@phosphor-icons/vue": "^2.2.1",
     "@tiptap/extension-image": "^3.30.1",
     "@tiptap/extension-placeholder": "^3.30.1",
@@ -27,18 +28,19 @@
     "@tiptap/extension-table-header": "^3.30.1",
     "@tiptap/extension-table-row": "^3.30.1",
     "@tiptap/extension-text-align": "^3.30.1",
-    "@artenanagara/zenko-design-system": "^1.2.1",
     "@tiptap/pm": "^3.30.1",
     "@tiptap/starter-kit": "^3.30.1",
     "@tiptap/vue-3": "^3.30.1",
     "katex": "^0.16.47",
     "nuxt": "^4.0.0",
+    "qrcode": "^1.5.4",
     "vue": "^3.5.0",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.0.0",
+    "@types/qrcode": "^1.5.6",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.0",
     "vue-tsc": "^3.3.9"

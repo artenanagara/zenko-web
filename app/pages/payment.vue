@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import QRCode from 'qrcode'
+
 // English file name, Indonesian URL; `path` keeps a bookmarked/shared QR link
 // alive after the buyer navigates away and comes back.
 definePageMeta({
@@ -55,6 +57,25 @@ const isExpired = computed(() => pollState.value === 'expired' || purchase.value
 const isPaid = computed(() => livePaid.value || purchase.value?.status === 'paid')
 const displayStatus = computed(() => isPaid.value ? 'paid' : (purchase.value?.status ?? 'pending'))
 const showQR = computed(() => !isExpired.value && !isPaid.value && Boolean(purchase.value?.qrUrl))
+
+// `qrUrl` now carries Duitku's raw QRIS payload string, not a hosted image —
+// rendered into an image locally (no third-party image API ever sees a
+// payment code). Regenerates whenever the payload changes; starts over
+// (cleared, not stale) the moment it does, so a slow generation never shows
+// the previous invoice's code under a new one's data.
+const qrDataUrl = ref<string | null>(null)
+const qrGenerationFailed = ref(false)
+
+watchEffect(() => {
+  const payload = purchase.value?.qrUrl
+  qrDataUrl.value = null
+  qrGenerationFailed.value = false
+  if (!payload || !import.meta.client) return
+
+  QRCode.toDataURL(payload, { width: 512, margin: 1 })
+    .then((url) => { qrDataUrl.value = url })
+    .catch(() => { qrGenerationFailed.value = true })
+})
 
 /** Best-effort link back to buy again — a purchase carries one package in practice. */
 const retrySlug = computed(() => purchase.value?.items[0]?.slug ?? null)
@@ -207,10 +228,22 @@ watch(isRedirecting, (active, wasActive) => {
           >
             <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
               <img
-                :src="purchase.qrUrl!"
+                v-if="qrDataUrl"
+                :src="qrDataUrl"
                 alt="Kode QRIS untuk membayar"
                 class="h-56 w-56 shrink-0 rounded-sm bg-white p-2 object-contain shadow-xs sm:h-64 sm:w-64"
               >
+              <div
+                v-else
+                class="grid h-56 w-56 shrink-0 place-items-center rounded-sm bg-white p-2 shadow-xs sm:h-64 sm:w-64"
+                role="img"
+                aria-label="Kode QRIS untuk membayar"
+              >
+                <IconSpinner v-if="!qrGenerationFailed" class="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+                <p v-else class="px-2 text-center text-[0.82rem] text-amber-700">
+                  Kode QRIS gagal dibuat. Muat ulang halaman.
+                </p>
+              </div>
 
               <div class="grid w-full gap-5 text-center sm:text-left">
                 <p class="text-[0.9rem] font-semibold">Scan dari aplikasi bank atau e-wallet apa pun</p>
@@ -260,9 +293,19 @@ watch(isRedirecting, (active, wasActive) => {
               <IconSpinner class="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden="true" />
               Halaman ini otomatis lanjut begitu pembayaran diterima.
             </p>
+
+            <!-- Atribusi penyedia pembayaran ditampilkan di layar tempat uang
+                 benar-benar berpindah, bukan hanya di halaman legal. -->
+            <p class="mt-4 text-center text-[0.8rem] leading-[1.6] text-muted">
+              Pembayaran diproses oleh <strong class="font-semibold text-ink">Duitku</strong>.
+              Zenko tidak pernah meminta PIN, OTP, atau kata sandimu.
+              <NuxtLink to="/kebijakan-refund" class="font-semibold text-primary hover:underline">
+                Kebijakan Refund
+              </NuxtLink>
+            </p>
           </div>
 
-          <!-- Pesanan pending tanpa QR (Midtrans belum dikonfigurasi di dev). -->
+          <!-- Pesanan pending tanpa QR (payment gateway belum dikonfigurasi di dev). -->
           <div
             v-else
             role="status"

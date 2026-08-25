@@ -305,7 +305,76 @@ const audiences = [
     </section>
 
     <!-- ==================================================================
-         7. CTA penutup
+         7. Identitas penyelenggara
+         ==================================================================
+         Badan hukum, alamat, dan kanal kontak dikumpulkan di satu tempat yang
+         mudah ditemukan. Halaman legal tetap memuat detail yang sama; blok ini
+         ada supaya identitas usaha terbaca tanpa harus membuka Ketentuan
+         Layanan — hal pertama yang dicari saat review merchant payment gateway.
+         ================================================================== -->
+    <section class="pb-18 md:pb-22" aria-labelledby="identitas-heading">
+      <div class="container-page">
+        <div class="mx-auto max-w-300 rounded-[32px] bg-surface-alt p-6 md:p-8">
+          <h2 id="identitas-heading" class="mb-5 text-[1.2rem] font-bold tracking-[-0.03em]">
+            Identitas penyelenggara
+          </h2>
+
+          <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Badan hukum</dt>
+              <dd class="mt-1 font-semibold">PT Zenko Edukasi Digital</dd>
+            </div>
+            <div>
+              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Alamat</dt>
+              <dd class="mt-1">Klaten, Jawa Tengah, Indonesia</dd>
+            </div>
+            <div>
+              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Email</dt>
+              <dd class="mt-1">
+                <a href="mailto:artenanagara22@gmail.com" class="font-semibold text-primary hover:underline">
+                  artenanagara22@gmail.com
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Telepon / WhatsApp</dt>
+              <dd class="mt-1">
+                <a href="tel:+628220840196" class="font-semibold text-primary hover:underline">
+                  0822-0840-196
+                </a>
+              </dd>
+            </div>
+            <div class="sm:col-span-2">
+              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Pembayaran</dt>
+              <dd class="mt-1 leading-[1.7] text-muted">
+                Transaksi di Zenko diproses melalui QRIS oleh
+                <strong class="text-ink">Duitku</strong>, penyedia payment gateway
+                berizin Bank Indonesia. Zenko tidak pernah menyimpan nomor kartu,
+                PIN, maupun kredensial rekeningmu.
+              </dd>
+            </div>
+          </dl>
+
+          <ul class="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-hairline pt-5 text-[0.9rem] font-semibold">
+            <li>
+              <NuxtLink to="/ketentuan-layanan" class="text-primary hover:underline">Ketentuan Layanan</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/kebijakan-privasi" class="text-primary hover:underline">Kebijakan Privasi</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/kebijakan-refund" class="text-primary hover:underline">Kebijakan Refund</NuxtLink>
+            </li>
+            <li>
+              <NuxtLink to="/pusat-bantuan" class="text-primary hover:underline">Pusat Bantuan</NuxtLink>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         8. CTA penutup
          ================================================================== -->
     <section class="pb-18 md:pb-22" aria-labelledby="cta-heading">
       <div class="container-page">

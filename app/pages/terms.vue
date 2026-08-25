@@ -28,13 +28,13 @@ const revenueShare = [
 </script>
 
 <template>
-  <LegalDocument lead="Ketentuan" accent="Layanan" updated="14 Agustus 2026">
+  <LegalDocument lead="Ketentuan" accent="Layanan" updated="25 Agustus 2026">
     <p>
       Ketentuan Layanan ini (&ldquo;Ketentuan&rdquo;) mengatur penggunaan Zenko,
       platform marketplace pembelajaran yang mempertemukan tutor atau pembuat konten
-      dengan siswa, mahasiswa, dan calon ASN. Zenko dioperasikan sebagai usaha
-      perorangan oleh <strong>Arttenna Dhyttya Nagara</strong>, berkedudukan di Klaten,
-      Jawa Tengah, Indonesia (&ldquo;Zenko&rdquo;, &ldquo;kami&rdquo;).
+      dengan siswa, mahasiswa, dan calon ASN. Zenko dioperasikan oleh
+      <strong>PT Zenko Edukasi Digital</strong>, sebuah perseroan terbatas yang
+      berkedudukan di Klaten, Jawa Tengah, Indonesia (&ldquo;Zenko&rdquo;, &ldquo;kami&rdquo;).
     </p>
     <p>
       Dengan membuat akun, membeli atau menerbitkan paket, atau menggunakan layanan,
@@ -120,10 +120,19 @@ const revenueShare = [
     <ul>
       <li>Harga ditampilkan dalam Rupiah pada halaman Paket atau checkout.</li>
       <li>Potongan harga, pajak, atau biaya tambahan yang berlaku akan ditampilkan sebelum pembayaran diselesaikan.</li>
-      <li>Pembayaran diproses oleh Midtrans dan kanal pembayaran yang tersedia pada saat transaksi.</li>
-      <li>Pesanan dianggap berhasil setelah status pembayaran dikonfirmasi oleh sistem Zenko berdasarkan informasi dari Midtrans.</li>
+      <li>Pembayaran diproses oleh Duitku dan kanal pembayaran yang tersedia pada saat transaksi.</li>
+      <li>Pesanan dianggap berhasil setelah status pembayaran dikonfirmasi oleh sistem Zenko berdasarkan informasi dari Duitku.</li>
       <li>Instruksi, batas waktu, dan biaya kanal pembayaran tertentu mengikuti ketentuan penyedia pembayaran.</li>
     </ul>
+    <p>
+      <strong>Penyerahan Paket.</strong> Paket adalah produk digital, sehingga tidak ada
+      pengiriman fisik dan tidak dikenakan ongkos kirim. Akses aktif otomatis di akun
+      pembeli segera setelah pembayaran dikonfirmasi, umumnya kurang dari 5 menit, dan
+      dapat dibuka melalui menu Paketku. Bukti pembelian berupa invoice elektronik
+      tersedia di Riwayat Pembelian. Jika akses belum aktif dalam 1&times;24 jam sejak
+      pembayaran terkonfirmasi, hubungi kami melalui
+      <NuxtLink to="/pusat-bantuan">Pusat Bantuan</NuxtLink>.
+    </p>
     <p>
       Kami dapat membatalkan atau mengoreksi pesanan karena kesalahan harga yang nyata,
       dugaan penipuan, pembayaran tidak sah, atau kewajiban hukum. Jika dana telah
@@ -191,6 +200,11 @@ const revenueShare = [
 
     <h2 id="refund">8. Pembatalan dan Pengembalian Dana</h2>
     <p>
+      Ketentuan pembatalan dan pengembalian dana di bagian ini merupakan bagian
+      dari Ketentuan Layanan. Ringkasan praktis cara mengajukan refund juga
+      dapat dibaca di <NuxtLink to="/kebijakan-refund">Kebijakan Refund</NuxtLink>.
+    </p>
+    <p>
       Permohonan refund harus dikirim ke
       <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a> paling
       lambat <strong>7 hari kalender</strong> setelah pembayaran, disertai nomor pesanan,
@@ -216,7 +230,7 @@ const revenueShare = [
     <p>
       Refund dapat diberikan penuh atau proporsional sesuai bagian layanan yang gagal.
       Pembayaran ganda dan kegagalan akses total yang memenuhi syarat dikembalikan penuh.
-      Dana dikembalikan ke metode pembayaran awal apabila didukung Midtrans; jika tidak,
+      Dana dikembalikan ke metode pembayaran awal apabila didukung Duitku; jika tidak,
       kami dapat meminta rekening atau dompet digital atas nama pembeli yang telah
       diverifikasi. Setelah disetujui, pemrosesan umumnya memerlukan 5&ndash;14 Hari Kerja,
       tidak termasuk keterlambatan bank atau penyedia pembayaran.
@@ -322,7 +336,7 @@ const revenueShare = [
     <h2 id="hubungi-kami">16. Hubungi Kami</h2>
     <p>Pertanyaan, pengaduan, atau pemberitahuan tertulis dapat disampaikan kepada:</p>
     <ul>
-      <li><strong>Pengelola</strong>: Arttenna Dhyttya Nagara (usaha perorangan)</li>
+      <li><strong>Pengelola</strong>: PT Zenko Edukasi Digital</li>
       <li>
         <strong>Email</strong>:
         <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a>
@@ -337,6 +351,9 @@ const revenueShare = [
     <template #related>
       <NuxtLink to="/kebijakan-privasi" class="font-semibold text-primary hover:underline">
         Kebijakan Privasi
+      </NuxtLink>
+      <NuxtLink to="/kebijakan-refund" class="font-semibold text-primary hover:underline">
+        Kebijakan Refund
       </NuxtLink>
     </template>
   </LegalDocument>

@@ -39,7 +39,7 @@ const columns: FooterColumn[] = [
     title: 'Bantuan',
     links: [
       { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
-      { label: 'Hubungi Kami', to: 'mailto:halo@zenko.id' },
+      { label: 'Hubungi Kami', to: 'mailto:artenanagara22@gmail.com' },
       { label: 'FAQ', to: '/faq' },
       { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
     ],
@@ -146,7 +146,10 @@ const year = new Date().getFullYear()
       <div
         class="container-page grid gap-4 py-6 text-[0.82rem] text-white/52 sm:grid-cols-[1fr_auto] sm:items-center lg:grid-cols-[1fr_auto_1fr]"
       >
-        <p>&copy; {{ year }} Zenko</p>
+        <!-- Badan hukum penyelenggara disebut di sini, bukan hanya di
+             halaman legal, supaya identitas usaha terlihat di setiap halaman
+             (dicek saat review merchant payment gateway). -->
+        <p>&copy; {{ year }} PT Zenko Edukasi Digital</p>
 
         <nav aria-label="Dokumen legal" class="sm:justify-self-end lg:justify-self-center">
           <ul class="flex flex-wrap items-center gap-x-3 gap-y-2">
