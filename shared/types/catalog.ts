@@ -16,7 +16,15 @@ export interface Package {
   thumbnailUrl: string
   author: Author
   rating: number
-  soldLabel: string
+  /**
+   * Berapa kali paket ini sudah dikerjakan, sudah diformat untuk ditampilkan
+   * ("0", "740", "1.2rb"). Dulu ini jumlah penjualan, tapi angkanya
+   * di-hardcode nol di zenko-api untuk setiap produk tutor sehingga tidak
+   * pernah bergerak. Jumlah pengerjaan juga sinyal yang lebih jujur untuk
+   * marketplace try out: paket yang dibeli lalu tidak pernah dibuka belum
+   * mengajari siapa pun.
+   */
+  attemptLabel: string
   price: number
   priceOriginal: number
 }

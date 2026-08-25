@@ -14,7 +14,10 @@ const model = defineModel<SortKey>({ required: true })
 
 const options: SortOption[] = [
   { key: 'featured', label: 'Pilihan' },
-  { key: 'bestseller', label: 'Terlaris' },
+  // Kuncinya tetap 'bestseller' — itu parameter URL yang mungkin sudah
+  // dibagikan orang — tapi yang diurutkan sekarang jumlah pengerjaan, bukan
+  // penjualan, jadi labelnya menyesuaikan.
+  { key: 'bestseller', label: 'Paling dikerjakan' },
   { key: 'newest', label: 'Terbaru' },
 ]
 

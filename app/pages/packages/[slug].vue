@@ -71,7 +71,7 @@ useHead({
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>
               ({{ detail.reviewCount }} ulasan)
             </span>
-            <span>{{ detail.soldLabel }} terjual</span>
+            <span>{{ detail.attemptLabel }} dikerjakan</span>
           </div>
         </div>
       </div>
