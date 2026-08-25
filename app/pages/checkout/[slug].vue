@@ -214,10 +214,10 @@ function onSignedIn() {
               </p>
             </div>
 
-            <!-- Order created, but the backend has no Midtrans key configured
-                 (local dev without MIDTRANS_SERVER_KEY) — pending with no QR
-                 to show. A real QR never reaches this state on this page; it
-                 leaves for /pembayaran/:invoice instead (see useCheckout). -->
+            <!-- Order created, but the backend has no payment gateway key
+                 configured (local dev) — pending with no QR to show. A real
+                 QR never reaches this state on this page; it leaves for
+                 /pembayaran/:invoice instead (see useCheckout). -->
             <div
               v-else-if="state === 'awaiting-payment'"
               role="status"

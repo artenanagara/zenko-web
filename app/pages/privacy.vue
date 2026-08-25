@@ -30,7 +30,7 @@ const sharing = [
     purpose: 'Mengirim verifikasi akun, pemulihan kata sandi, dan pemberitahuan layanan',
   },
   {
-    party: 'Midtrans dan mitra kanal pembayarannya',
+    party: 'Duitku dan mitra kanal pembayarannya',
     data: 'Identitas dan kontak yang diperlukan, nomor pesanan, nilai, metode, serta status transaksi',
     purpose: 'Memproses, memverifikasi, menangani pengembalian dana, dan mencegah penipuan pembayaran',
   },
@@ -76,7 +76,7 @@ const retention = [
 </script>
 
 <template>
-  <LegalDocument lead="Kebijakan" accent="Privasi" updated="14 Agustus 2026">
+  <LegalDocument lead="Kebijakan" accent="Privasi" updated="25 Agustus 2026">
     <p>
       Kebijakan Privasi ini menjelaskan cara Zenko mengumpulkan, menggunakan,
       menyimpan, membagikan, dan melindungi data pribadi ketika Anda menggunakan
@@ -94,10 +94,10 @@ const retention = [
 
     <h2 id="pengendali-data">1. Pengendali Data Pribadi</h2>
     <p>
-      Zenko dioperasikan sebagai usaha perorangan oleh
-      <strong>Arttenna Dhyttya Nagara</strong>, berkedudukan di Klaten, Jawa Tengah,
-      Indonesia. Dalam penyelenggaraan layanan Zenko, Arttenna Dhyttya Nagara
-      bertindak sebagai Pengendali Data Pribadi.
+      Zenko dioperasikan oleh <strong>PT Zenko Edukasi Digital</strong>, sebuah
+      perseroan terbatas yang berkedudukan di Klaten, Jawa Tengah, Indonesia.
+      Dalam penyelenggaraan layanan Zenko, PT Zenko Edukasi Digital bertindak
+      sebagai Pengendali Data Pribadi.
     </p>
 
     <hr>
@@ -142,7 +142,7 @@ const retention = [
         waktu, referensi gateway, refund, dan riwayat pencairan;
       </li>
       <li>
-        Informasi terbatas yang diterima dari Midtrans, seperti jenis pembayaran,
+        Informasi terbatas yang diterima dari Duitku, seperti jenis pembayaran,
         bank atau penerbit, dan nomor instrumen yang disamarkan. Zenko tidak menyimpan
         nomor kartu, PIN, CVV, atau kredensial rekening pembayaran secara lengkap.
       </li>
@@ -162,7 +162,7 @@ const retention = [
     <ul>
       <li>Langsung dari Anda ketika mendaftar, mengisi profil, membeli, belajar, atau menghubungi kami;</li>
       <li>Dari Google apabila Anda memilih autentikasi Google;</li>
-      <li>Dari Midtrans dan kanal pembayaran terkait ketika Anda melakukan transaksi;</li>
+      <li>Dari Duitku dan kanal pembayaran terkait ketika Anda melakukan transaksi;</li>
       <li>Secara otomatis dari perangkat dan penggunaan layanan melalui cookie yang diperlukan dan log sistem.</li>
     </ul>
 
@@ -231,7 +231,7 @@ const retention = [
 
     <h2 id="transfer-data">6. Pemrosesan di Luar Indonesia</h2>
     <p>
-      Sebagian penyedia layanan, termasuk Google, Resend, Midtrans, atau subprosesornya,
+      Sebagian penyedia layanan, termasuk Google, Resend, Duitku, atau subprosesornya,
       dapat memproses data melalui infrastruktur di luar Indonesia. Jika terjadi
       transfer lintas negara, kami akan menerapkan persyaratan pelindungan data yang
       diwajibkan UU PDP, termasuk memastikan tingkat pelindungan yang memadai atau
@@ -347,7 +347,7 @@ const retention = [
       Untuk pertanyaan, pengaduan, atau penggunaan hak atas data pribadi, hubungi:
     </p>
     <ul>
-      <li><strong>Pengelola</strong>: Arttenna Dhyttya Nagara (usaha perorangan)</li>
+      <li><strong>Pengelola</strong>: PT Zenko Edukasi Digital</li>
       <li>
         <strong>Email</strong>:
         <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a>

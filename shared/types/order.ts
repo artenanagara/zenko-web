@@ -4,7 +4,7 @@
  * The checkout page posts a slug and nothing else — the session cookie decides
  * who is buying and the server recomputes the price from the slug, so the
  * browser is never trusted to carry an amount. zenko-api answers POST /orders
- * with a `Purchase` (see #shared/types/account), charged through Midtrans QRIS
+ * with a `Purchase` (see #shared/types/account), charged through Duitku QRIS
  * and pending until the webhook reports it paid.
  * Keep in sync with zenko-api/internal/model/order.go.
  */

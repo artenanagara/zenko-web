@@ -93,9 +93,9 @@ export default defineNuxtConfig({
       // Base URL of zenko-api. Override with NUXT_PUBLIC_API_BASE.
       apiBase: 'http://localhost:8080/api/v1',
       // Whether checkout may call POST /orders, which now charges a real
-      // Midtrans QRIS payment (see zenko-api's MIDTRANS_SERVER_KEY). Off until
-      // that backend is reachable; while off, the checkout page says the
-      // payment is not connected instead of placing an order.
+      // Duitku QRIS payment (see zenko-api's DUITKU_API_KEY). Off until that
+      // backend is reachable; while off, the checkout page says the payment
+      // is not connected instead of placing an order.
       // Turn on with NUXT_PUBLIC_PAYMENT_ENABLED=true.
       paymentEnabled: false,
 		// Recovery flows are live in zenko-api. Operators can still turn one off

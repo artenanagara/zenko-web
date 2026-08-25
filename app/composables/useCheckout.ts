@@ -6,21 +6,22 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *
  * POST /orders creates a pending purchase from a slug — the session cookie says
  * who is buying and the server prices the slug, so the browser carries neither
- * identity nor amount. It also charges a QRIS payment through Midtrans in the
+ * identity nor amount. It also charges a QRIS payment through Duitku in the
  * same request and returns the pending purchase with `qrUrl`/`expiresAt`
  * filled in, which is what the checkout page renders while it waits.
  *
  * - paymentEnabled off → nothing is created; the page says payment is not
  *   connected yet, rather than pretending an order was placed.
  * - paymentEnabled on → the order is created and left pending. With a
- *   Midtrans key configured on the backend, `purchase.qrUrl` carries a real
- *   QR code to scan; without one (local dev without MIDTRANS_SERVER_KEY) it
- *   stays null and the page falls back to a plain "waiting for payment"
- *   message, same as before this was wired up.
+ *   payment gateway key configured on the backend, `purchase.qrUrl` carries
+ *   Duitku's raw QRIS payload string (rendered into a scannable code
+ *   client-side, see payment.vue); without one (local dev with no gateway key
+ *   set) it stays null and the page falls back to a plain "waiting for
+ *   payment" message, same as before this was wired up.
  *
  * Settlement is never polled aggressively for its own sake — a short interval
  * checks `/me/purchases/:invoice` while a charge is outstanding, but it is
- * Midtrans's webhook that actually marks the order paid server-side; polling
+ * Duitku's webhook that actually marks the order paid server-side; polling
  * only notices once that has already happened. A local timer flips the state
  * to 'expired' at the QR's own deadline as a client-side fallback, in case the
  * settlement (or expiry) webhook is slow to land.
@@ -131,7 +132,7 @@ export function useCheckout() {
    * `free` is a client-side hint only — the package's own price, already on
    * screen before this is ever called — never trusted as the actual charge.
    * zenko-api recomputes the total from `request.slug` and independently
-   * decides whether the resulting order needs Midtrans at all (see
+   * decides whether the resulting order needs Duitku at all (see
    * Orders.Create: a Rp0 total skips ChargeQRIS and is written paid outright).
    * This just decides whether `!config.paymentEnabled` should still block the
    * attempt: that flag exists to stop a real charge from being attempted
@@ -173,7 +174,7 @@ export function useCheckout() {
         return
       }
 
-      // No Midtrans key configured (local dev): stay here with the existing
+      // No payment gateway key configured (local dev): stay here with the existing
       // "waiting for payment" fallback instead of sending them to a page with
       // no QR to show either.
       resumeWaiting(created)
