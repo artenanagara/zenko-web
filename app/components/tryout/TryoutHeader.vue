@@ -41,28 +41,36 @@ const isUrgent = computed(() => props.remainingSeconds <= 60)
     class="fixed inset-x-0 top-0 z-40 border-b shadow-xs"
     :class="simulate ? 'border-amber-200 bg-amber-50' : 'border-hairline bg-surface'"
   >
-    <div class="container-page flex h-16 items-center justify-between gap-4">
-      <div class="flex min-w-0 items-center gap-3">
-        <BrandMark img-class="h-9 w-auto object-contain shrink-0" />
+    <!-- 56px di HP, 64px di desktop. Di layar 390px setiap piksel yang tidak
+         dipakai chrome adalah piksel untuk soal, dan header ujian tidak punya
+         satu pun aksi yang perlu ruang bernapas. -->
+    <div class="container-page flex h-14 items-center justify-between gap-3 md:h-16 md:gap-4">
+      <div class="flex min-w-0 items-center gap-2 md:gap-3">
+        <!-- Ikon saja di HP: lockup penuh memakan sepertiga lebar layar,
+             sementara yang benar-benar harus terbaca adalah judul paket. -->
+        <BrandIcon class="h-8 w-8 shrink-0 sm:hidden" />
+        <BrandMark img-class="h-9 w-auto object-contain shrink-0" class="hidden sm:block" />
+
         <DashboardBadge v-if="simulate" tone="warning">Mode Simulasi</DashboardBadge>
+
         <span class="min-w-0 truncate">
-          <span class="text-faint" aria-hidden="true">·</span>
-          <span class="ml-2 text-[0.92rem] font-medium text-muted">{{ packageTitle }}</span>
+          <span class="hidden text-faint sm:inline" aria-hidden="true">·</span>
+          <span class="text-[0.85rem] font-medium text-muted sm:ml-2 md:text-[0.92rem]">{{ packageTitle }}</span>
         </span>
       </div>
 
-      <div class="flex shrink-0 items-center gap-2.5">
+      <div class="flex shrink-0 items-center gap-2 md:gap-2.5">
         <!-- Kosong pada sesi siswa; simulasi menaruh tombol "Keluar" di sini. -->
         <slot name="action" />
 
         <div
-          class="flex shrink-0 items-center gap-2 rounded-sm px-3 py-1.5 tabular-nums"
+          class="flex shrink-0 items-center gap-1.5 rounded-sm px-2.5 py-1.5 tabular-nums md:gap-2 md:px-3"
           :class="isUrgent ? 'animate-pulse bg-red-50 text-red-600 ring-1 ring-red-200' : 'bg-primary-soft text-primary ring-1 ring-primary/15'"
           role="timer"
           aria-live="polite"
         >
           <IconAlert v-if="isUrgent" class="h-4 w-4" />
-          <span class="text-[1.05rem] font-extrabold">{{ clock }}</span>
+          <span class="text-[0.98rem] font-extrabold md:text-[1.05rem]">{{ clock }}</span>
         </div>
       </div>
     </div>

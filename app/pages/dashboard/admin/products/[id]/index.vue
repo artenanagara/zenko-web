@@ -271,7 +271,7 @@ async function decide(approve: boolean, reason?: string) {
         <p v-if="sectionRows.length === 0" class="py-6 text-center text-muted">
           Belum ada subtes pada produk ini.
         </p>
-        <AppTable v-else :columns="SECTION_COLUMNS" :data="sectionRows">
+        <DashboardTable v-else :columns="SECTION_COLUMNS" :data="sectionRows" primary-key="title" action-key="aksi">
           <template #cell(title)="{ value }">
             <span class="font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
           </template>
@@ -311,7 +311,7 @@ async function decide(approve: boolean, reason?: string) {
               </span>
             </span>
           </template>
-        </AppTable>
+        </DashboardTable>
       </DashboardPanel>
 
       <DashboardPanel
@@ -322,7 +322,7 @@ async function decide(approve: boolean, reason?: string) {
         <p v-if="bundleRows.length === 0" class="py-6 text-center text-muted">
           Bundling ini belum punya isi.
         </p>
-        <AppTable v-else :columns="BUNDLE_COLUMNS" :data="bundleRows">
+        <DashboardTable v-else :columns="BUNDLE_COLUMNS" :data="bundleRows" primary-key="title">
           <template #cell(title)="{ value }">
             <span class="font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
           </template>
@@ -333,7 +333,7 @@ async function decide(approve: boolean, reason?: string) {
           <template #cell(status)="{ value }">
             <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>
           </template>
-        </AppTable>
+        </DashboardTable>
       </DashboardPanel>
 
       <!-- Isi soal satu subtes, dibuka dari baris tabel Subtes di atas —

@@ -36,7 +36,7 @@ const payoutColumns = [
   { key: 'keterangan', label: 'Keterangan' },
 ]
 
-// AppTable's cell slots hand back `item` as Record<string, any> (it isn't a
+// DashboardTable's cell slots hand back `item` as Record<string, any> (it isn't a
 // generic component), so the tone/label lookup goes through this typed
 // accessor instead of indexing the `any` value directly.
 function payoutStatusTone(status: TutorPayout['status']) {
@@ -266,7 +266,7 @@ async function submitPayout() {
         {{ formatRupiah(PAYOUT_MINIMUM) }}.
       </p>
 
-      <AppTable v-else :columns="payoutColumns" :data="payouts">
+      <DashboardTable v-else :columns="payoutColumns" :data="payouts" primary-key="amount">
         <template #cell(requestedAt)="{ value }">
           <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
         </template>
@@ -287,7 +287,7 @@ async function submitPayout() {
           </template>
           <template v-else>Menunggu proses</template>
         </template>
-      </AppTable>
+      </DashboardTable>
     </DashboardPanel>
   </div>
 </template>

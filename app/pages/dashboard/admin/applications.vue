@@ -91,7 +91,7 @@ const columns = [
   { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
 
-// AppTable's cell slots hand back `item` as Record<string, any>; lookups go
+// DashboardTable's cell slots hand back `item` as Record<string, any>; lookups go
 // through these typed accessors instead (pattern from tutor/products).
 function statusLabel(status: ApplicationStatus): string {
   return APPLICATION_STATUS_LABEL[status]
@@ -289,7 +289,7 @@ async function submitDecision() {
           @action="reset"
         />
 
-        <AppTable v-else :columns="columns" :data="rows">
+        <DashboardTable v-else :columns="columns" :data="rows" primary-key="name" action-key="aksi">
           <template #cell(name)="{ item }">
             <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span>
             <span class="block text-[0.82rem] text-muted">{{ item.email }}</span>
@@ -314,7 +314,7 @@ async function submitDecision() {
               Tinjau
             </button>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
 

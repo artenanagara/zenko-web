@@ -154,7 +154,44 @@ function print() {
         </div>
 
         <div class="px-5 py-6 md:px-8">
-          <div class="overflow-x-auto">
+          <!-- Rincian versi HP. Tabel lima kolom di bawah lebarnya 560px, jadi
+               di layar kecil kolom "Harga" — angka yang justru dicari orang
+               saat membuka invoice — berada di luar layar. Dicetak, yang
+               dipakai selalu tabelnya (print:hidden di sini). -->
+          <ul class="grid gap-3 sm:hidden print:hidden">
+            <li
+              v-for="line in purchase.items"
+              :key="line.slug"
+              class="rounded-md border border-hairline px-4 py-3.5"
+            >
+              <NuxtLink
+                :to="`/paket/${line.slug}`"
+                class="block font-semibold tracking-[-0.02em] transition-colors hover:text-primary"
+              >
+                {{ line.title }}
+              </NuxtLink>
+              <p class="mt-0.5 text-[0.82rem] text-muted">{{ line.category }}</p>
+
+              <dl class="mt-2.5 grid gap-1 text-[0.84rem]">
+                <div class="flex justify-between gap-4">
+                  <dt class="text-muted">Harga normal</dt>
+                  <dd class="text-muted tabular-nums">{{ formatRupiah(line.priceOriginal) }}</dd>
+                </div>
+                <div v-if="line.priceOriginal > line.price" class="flex justify-between gap-4">
+                  <dt class="text-muted">Diskon</dt>
+                  <dd class="font-semibold text-success-ink tabular-nums">
+                    -{{ formatRupiah(line.priceOriginal - line.price) }}
+                  </dd>
+                </div>
+                <div class="flex justify-between gap-4 border-t border-hairline pt-1.5">
+                  <dt class="text-muted">Harga</dt>
+                  <dd class="font-bold tabular-nums">{{ formatRupiah(line.price) }}</dd>
+                </div>
+              </dl>
+            </li>
+          </ul>
+
+          <div class="hidden overflow-x-auto sm:block print:block">
             <table class="w-full min-w-140 border-collapse text-left">
               <thead>
                 <tr class="text-[0.72rem] tracking-[0.14em] text-faint uppercase">

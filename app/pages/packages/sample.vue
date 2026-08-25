@@ -46,6 +46,14 @@ const resultPercent = computed(() => {
 })
 
 const showEndConfirm = ref(false)
+
+/** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
+const navOpen = ref(false)
+
+function requestEndSection() {
+  navOpen.value = false
+  showEndConfirm.value = true
+}
 </script>
 
 <template>
@@ -97,7 +105,7 @@ const showEndConfirm = ref(false)
     <template v-else-if="session.phase.value === 'running' && session.currentQuestion.value">
       <TryoutHeader :package-title="`${detail.title} — coba gratis`" :remaining-seconds="session.remainingSeconds.value" />
 
-      <main class="container-page grid gap-5 pt-22 pb-24 md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
+      <main class="container-page grid gap-5 pt-18 pb-24 md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
         <TryoutQuestion
           :question="session.currentQuestion.value"
           :index="session.displayIndex.value"
@@ -107,7 +115,10 @@ const showEndConfirm = ref(false)
           @select="session.selectAnswer"
         />
 
+        <!-- Rail nomor soal: desktop saja. Di HP tempatnya bottom sheet di
+             bawah, bukan tumpukan di bawah kartu soal. -->
         <TryoutNavigator
+          class="hidden md:block"
           :groups="session.navigatorGroups.value"
           :current-index="session.currentIndex.value"
           :answered-count="session.answeredCount.value"
@@ -124,10 +135,27 @@ const showEndConfirm = ref(false)
         :can-next="!session.isLastQuestion.value"
         :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
         :is-last-section="true"
+        :answered-count="session.answeredCount.value"
+        :total-questions="session.displayTotal.value"
         @prev="session.prev()"
         @next="session.next()"
         @toggle-doubt="session.toggleDoubt()"
-        @end-section="showEndConfirm = true"
+        @end-section="requestEndSection"
+        @open-navigator="navOpen = true"
+      />
+
+      <TryoutNavigatorSheet
+        v-model:open="navOpen"
+        :groups="session.navigatorGroups.value"
+        :current-index="session.currentIndex.value"
+        :answered-count="session.answeredCount.value"
+        :doubtful-count="session.doubtfulCount.value"
+        :total-questions="session.displayTotal.value"
+        :status-of="session.statusOf"
+        :label-of="session.labelOf"
+        :is-last-section="true"
+        @jump="session.goTo"
+        @end-section="requestEndSection"
       />
 
       <div v-if="showEndConfirm" class="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4">

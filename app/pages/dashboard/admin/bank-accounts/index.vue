@@ -102,7 +102,7 @@ const columns = [
   { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
 
-// AppTable's cell slots hand back `item` as Record<string, any>; typed rows
+// DashboardTable's cell slots hand back `item` as Record<string, any>; typed rows
 // are recovered by id and badge lookups go through typed accessors (pattern
 // from tutor/products/index.vue).
 function findAccount(accountId: string): AdminBankAccount | undefined {
@@ -228,7 +228,7 @@ async function confirmVerify() {
           @action="reset"
         />
 
-        <AppTable v-else :columns="columns" :data="rows">
+        <DashboardTable v-else :columns="columns" :data="rows" primary-key="tutor" action-key="aksi">
           <template #cell(tutor)="{ item }">
             <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.tutor.name }}</span>
             <span class="block text-[0.82rem] text-muted">{{ item.tutor.email }}</span>
@@ -261,7 +261,7 @@ async function confirmVerify() {
               <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
 

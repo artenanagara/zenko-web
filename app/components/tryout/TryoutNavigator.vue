@@ -15,16 +15,28 @@ import type { TryoutNavigatorGroup } from '~/composables/useTryoutSession'
  * subtest" step, so this component doesn't assume there is only one group.
  * This panel doubles as the exam info that used to live in the header: the
  * progress line here is the only place that count is shown now.
+ *
+ * Two hosts, one grid:
+ * - `panel` — the desktop sidebar column. Its own card, and 36px cells,
+ *   which is plenty for a mouse and keeps 110 numbers from turning the rail
+ *   into a scroll marathon.
+ * - `sheet` — the mobile bottom sheet (TryoutNavigatorSheet). No card of its
+ *   own, and cells grow to the 44px minimum touch target: a mis-tap here
+ *   costs a candidate the question they meant to open, on the clock.
  */
-const props = defineProps<{
-  groups: TryoutNavigatorGroup[]
-  currentIndex: number
-  answeredCount: number
-  doubtfulCount: number
-  totalQuestions: number
-  statusOf: (id: string) => 'answered' | 'doubtful' | 'unanswered'
-  labelOf: (id: string) => OptionLabel | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    groups: TryoutNavigatorGroup[]
+    currentIndex: number
+    answeredCount: number
+    doubtfulCount: number
+    totalQuestions: number
+    statusOf: (id: string) => 'answered' | 'doubtful' | 'unanswered'
+    labelOf: (id: string) => OptionLabel | null
+    variant?: 'panel' | 'sheet'
+  }>(),
+  { variant: 'panel' },
+)
 
 const emit = defineEmits<{ jump: [index: number] }>()
 
@@ -34,24 +46,33 @@ function numberFor(question: TryoutQuestion, displayNumber: number) {
 </script>
 
 <template>
-  <div class="rounded-lg border border-hairline bg-surface p-4 shadow-xs">
-    <p class="text-[0.9rem]">
+  <div :class="variant === 'panel' ? 'rounded-lg border border-hairline bg-surface p-4 shadow-xs' : ''">
+    <p v-if="variant === 'panel'" class="text-[0.9rem]">
       <span class="font-bold tabular-nums">{{ answeredCount }}</span>
       <span class="text-muted"> dari {{ totalQuestions }} terjawab</span>
       <span v-if="doubtfulCount" class="text-amber-700"> · {{ doubtfulCount }} ragu-ragu</span>
     </p>
 
-    <div v-for="group in groups" :key="group.code" class="mt-4 first:mt-3.5">
+    <div v-for="group in groups" :key="group.code" class="mt-4 first:mt-3.5" :class="variant === 'sheet' && 'first:mt-0'">
       <p class="mb-2 text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">
         {{ group.code }} · {{ group.title }}
       </p>
-      <div class="grid grid-cols-6 gap-2 md:grid-cols-5">
+      <!-- auto-fill against a 2.75rem floor: the sheet lays out as many 44px
+           cells as the phone is wide (7 at 390px, 9 at 480px) without a
+           breakpoint per device. The desktop rail keeps its fixed 5. -->
+      <div
+        class="grid gap-2"
+        :class="variant === 'sheet'
+          ? 'grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))]'
+          : 'grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] md:grid-cols-5'"
+      >
         <button
           v-for="(question, i) in group.questions"
           :key="question.id"
           type="button"
-          class="flex h-9 w-9 items-center justify-center rounded-sm border text-[0.82rem] font-bold tabular-nums transition-transform duration-150 ease-smooth hover:-translate-y-0.5"
+          class="flex w-full touch-manipulation items-center justify-center rounded-sm border text-[0.82rem] font-bold tabular-nums transition-transform duration-150 ease-smooth hover:-translate-y-0.5"
           :class="[
+            variant === 'sheet' ? 'h-11' : 'h-11 md:h-10',
             statusOf(question.id) === 'answered' && 'border-success bg-success-soft text-success-ink',
             statusOf(question.id) === 'doubtful' && 'border-amber-400 bg-amber-50 text-amber-800',
             statusOf(question.id) === 'unanswered' && 'border-hairline-strong bg-surface text-muted',
@@ -66,18 +87,21 @@ function numberFor(question: TryoutQuestion, displayNumber: number) {
       </div>
     </div>
 
-    <ul class="mt-4 grid gap-1.5 border-t border-hairline pt-3 text-[0.78rem] text-muted">
+    <ul
+      class="mt-4 gap-1.5 border-t border-hairline pt-3 text-[0.78rem] text-muted"
+      :class="variant === 'sheet' ? 'flex flex-wrap gap-x-4' : 'grid'"
+    >
       <li class="flex items-center gap-2">
-        <span class="h-3 w-3 rounded-[3px] border border-hairline-strong bg-surface" />
+        <span class="h-3 w-3 shrink-0 rounded-[3px] border border-hairline-strong bg-surface" />
         Belum dijawab
       </li>
       <li class="flex items-center gap-2">
-        <span class="h-3 w-3 rounded-[3px] border border-amber-400 bg-amber-50" />
+        <span class="h-3 w-3 shrink-0 rounded-[3px] border border-amber-400 bg-amber-50" />
         Ragu-ragu
       </li>
       <li class="flex items-center gap-2">
-        <span class="h-3 w-3 rounded-[3px] border border-success bg-success-soft" />
-        Sudah dijawab (menampilkan pilihan)
+        <span class="h-3 w-3 shrink-0 rounded-[3px] border border-success bg-success-soft" />
+        {{ variant === 'sheet' ? 'Sudah dijawab' : 'Sudah dijawab (menampilkan pilihan)' }}
       </li>
     </ul>
   </div>

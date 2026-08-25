@@ -76,7 +76,7 @@ const productColumns = [
   { key: 'status', label: 'Status', align: 'right' as const },
 ]
 
-// AppTable's cell slots hand back `item`/`value` as Record<string, any>/any
+// DashboardTable's cell slots hand back `item`/`value` as Record<string, any>/any
 // (it isn't a generic component), so lookups against the strictly-typed
 // label/tone records go through these typed accessors instead of indexing
 // the `any` value directly.
@@ -234,7 +234,7 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
       />
 
       <template v-else>
-        <AppTable :columns="productColumns" :data="previewProducts">
+        <DashboardTable :columns="productColumns" :data="previewProducts" primary-key="title">
           <template #cell(title)="{ item }">
             <NuxtLink
               to="/dashboard/tutor/products"
@@ -253,7 +253,7 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
               {{ productStatusLabel(item.status) }}
             </DashboardBadge>
           </template>
-        </AppTable>
+        </DashboardTable>
 
         <!-- Says out loud that the table is cut off, so the panel is never
              mistaken for the whole list. -->

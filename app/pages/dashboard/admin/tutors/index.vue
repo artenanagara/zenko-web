@@ -129,7 +129,7 @@ function initial(name: string): string {
           @action="reset"
         />
 
-        <AppTable v-else :columns="columns" :data="rows">
+        <DashboardTable v-else :columns="columns" :data="rows" primary-key="tutor">
           <template #cell(tutor)="{ item }">
             <NuxtLink
               :to="`/dashboard/admin/tutors/${item.id}`"
@@ -160,7 +160,7 @@ function initial(name: string): string {
               {{ item.verified ? 'Terverifikasi' : 'Belum verifikasi' }}
             </DashboardBadge>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
   </div>

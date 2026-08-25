@@ -55,7 +55,56 @@ const totalSpent = computed(() =>
         </span>
       </template>
 
-      <div v-if="items.length" class="overflow-x-auto">
+      <!-- Kartu: HP. Tabel tujuh kolom di bawah ini lebarnya 720px — di layar
+           390px "Lihat invoice" ada jauh di kanan, di luar layar, dan itu satu-
+           satunya tautan pada barisnya. Kartu menaruhnya di kaki, terlihat. -->
+      <ul v-if="items.length" class="grid gap-3 sm:hidden">
+        <li
+          v-for="purchase in items"
+          :key="purchase.invoice"
+          class="rounded-md border border-hairline bg-surface p-4"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <p class="min-w-0 font-semibold tracking-[-0.02em]">{{ itemsLabel(purchase) }}</p>
+            <DashboardBadge :tone="purchaseStatusTone(purchase.status)">
+              {{ purchaseStatusLabel(purchase.status) }}
+            </DashboardBadge>
+          </div>
+
+          <dl class="mt-3 grid gap-1.5 text-[0.82rem]">
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-muted">Invoice</dt>
+              <dd class="font-semibold tabular-nums">{{ purchase.invoice }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-muted">Tanggal</dt>
+              <dd>{{ formatDate(purchase.date) }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-muted">Metode</dt>
+              <dd>{{ purchaseMethodLabel(purchase) }}</dd>
+            </div>
+            <div class="flex items-baseline justify-between gap-4">
+              <dt class="text-muted">Total</dt>
+              <dd class="font-bold tabular-nums">
+                <span v-if="invoiceTotals(purchase).total > 0">
+                  {{ formatRupiah(invoiceTotals(purchase).total) }}
+                </span>
+                <span v-else class="text-success-ink">Gratis</span>
+              </dd>
+            </div>
+          </dl>
+
+          <NuxtLink
+            :to="`/akun/pembelian/${purchase.invoice}`"
+            class="mt-3.5 flex min-h-11 items-center justify-center rounded-xs border border-hairline-strong text-[0.88rem] font-semibold text-primary transition-colors hover:bg-surface-alt"
+          >
+            Lihat invoice
+          </NuxtLink>
+        </li>
+      </ul>
+
+      <div v-if="items.length" class="hidden overflow-x-auto sm:block">
         <table class="w-full min-w-180 border-collapse text-left">
           <thead>
             <tr class="border-b border-hairline text-[0.74rem] tracking-widest text-muted uppercase">
