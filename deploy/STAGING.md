@@ -1,7 +1,7 @@
 # Staging setup
 
 Staging reuses the same VPS as production (`103.89.5.73` / `zenkoedu.id`) —
-separate ports, separate database, separate Midtrans environment (sandbox),
+separate ports, separate database, separate Duitku environment (sandbox),
 so it can never touch real data or real payments.
 
 | | Production | Staging |
@@ -12,7 +12,7 @@ so it can never touch real data or real payments.
 | API env file | `/etc/zenko/api.env` | `/etc/zenko/api-staging.env` |
 | Web env file | `/etc/zenko/web.env` | `/etc/zenko/web-staging.env` |
 | Database | `zenko` | `zenko_staging` |
-| Midtrans | live (`MIDTRANS_PRODUCTION=true`) | sandbox (`MIDTRANS_PRODUCTION=false`) |
+| Payment gateway | Duitku live (`DUITKU_PRODUCTION=true`) | Duitku sandbox (`DUITKU_PRODUCTION=false`) |
 | Deploy branch | `main` | `staging` |
 | systemd units | `zenko-api.service`, `zenko-web.service` | `zenko-api-staging.service`, `zenko-web-staging.service` |
 
@@ -96,11 +96,25 @@ sudo nano /etc/zenko/web-staging.env
 sudo chmod 0640 /etc/zenko/api-staging.env /etc/zenko/web-staging.env
 sudo chown root:zenko /etc/zenko/api-staging.env /etc/zenko/web-staging.env
 ```
-Put the Midtrans **sandbox** server key here
-(`MIDTRANS_SERVER_KEY=SB-Mid-server-...`, from
-[dashboard.sandbox.midtrans.com](https://dashboard.sandbox.midtrans.com) →
-Settings → Access Keys) — a production-format key (`Mid-server-...`, no
-`SB-` prefix) will fail every request against the sandbox API.
+Put the **sandbox** Duitku credentials in `api-staging.env` — merchant code
+and API key from the sandbox dashboard at
+[sandbox.duitku.com](https://sandbox.duitku.com), with
+`DUITKU_PRODUCTION=false` so requests go to the sandbox host. Production
+credentials belong to a different environment entirely and will fail every
+sandbox request.
+
+`DUITKU_QRIS_METHOD_CODE` is the payment method code your own sandbox
+merchant account uses for QRIS — read it off that dashboard's Payment Method
+list. It varies per account depending on which channels are enabled, so
+there is no default to copy. Leaving it (or either credential) empty is not
+an error: the API still runs, `POST /orders` creates pending orders with no
+QR attached, and checkout says the payment is not connected instead of
+pretending a charge exists.
+
+Also set `API_PUBLIC_URL=https://staging.zenkoedu.id`. Duitku takes a
+`callbackUrl` on every charge request rather than reading one URL configured
+on its dashboard, so the API builds its own callback from this value — point
+it at localhost and Duitku can never deliver a settlement notification.
 
 **2e. Register the systemd units** without starting them yet — there is no
 binary at `/opt/zenko/api-staging/current` until the first deploy runs
@@ -150,12 +164,28 @@ certificate path from skipping 2a, or an incomplete file copy from 2c).
 
 1. Open `https://staging.zenkoedu.id`, sign in, and go through checkout for
    any product — this hits `POST /orders`, which charges QRIS through
-   Midtrans sandbox and returns a QR code.
-2. Set the sandbox dashboard's **Payment Notification URL** to
-   `https://staging.zenkoedu.id/api/v1/payments/midtrans/notification` so
-   settlement notifications reach this deployment.
-3. Simulate payment at
-   [simulator.sandbox.midtrans.com/qris](https://simulator.sandbox.midtrans.com/qris/index)
-   using the `transaction_id` from the charge response (or by scanning the
-   QR with the simulator). Midtrans then calls the notification URL above
-   and the order should flip to paid.
+   Duitku sandbox and returns a QR payload. Unlike Midtrans, Duitku returns
+   the raw QRIS string rather than a hosted image; `/pembayaran/:invoice`
+   renders it into a scannable code in the browser, so a blank QR box there
+   means the payload never arrived, not that image loading failed.
+2. There is no notification URL to configure on the dashboard. The API sends
+   `callbackUrl: {API_PUBLIC_URL}/api/v1/payments/duitku/notification` with
+   every charge, so getting `API_PUBLIC_URL` right in step 2d is what makes
+   settlement reach this deployment.
+3. Simulate the payment from the sandbox dashboard
+   ([sandbox.duitku.com](https://sandbox.duitku.com)). QRIS is not always
+   enabled on a fresh sandbox account — if it is missing from the payment
+   options there, request activation from `support@duitku.com` before
+   testing. See
+   [knowledge.duitku.com](https://knowledge.duitku.com/bagaimana-cara-melakukan-testing-pembayaran-qris)
+   for the current simulation steps.
+4. Duitku retries a callback up to 5 times until it gets an HTTP 200, then
+   emails a failure notice; the dashboard's **Report** menu can resend one
+   manually. If settlement is slow to land, the order is not lost — the API
+   also reconciles pending charges by polling Duitku's transaction status.
+
+Note: `internal/payment/duitku.go` carries a `TODO(duitku)` on the sandbox
+and production hostnames and endpoint paths — they were written from the
+integration's shape rather than verified end-to-end against a live sandbox
+account. A first staging payment that fails at the HTTP layer is the most
+likely place that TODO comes due.
