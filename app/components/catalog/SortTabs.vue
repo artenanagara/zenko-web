@@ -8,7 +8,7 @@ const options: SortOption[] = [
   // Kuncinya tetap 'bestseller' — itu parameter URL yang mungkin sudah
   // dibagikan orang — tapi yang diurutkan sekarang jumlah pengerjaan, bukan
   // penjualan, jadi labelnya menyesuaikan.
-  { key: 'bestseller', label: 'Paling dikerjakan' },
+  { key: 'bestseller', label: 'Banyak dikerjakan' },
   { key: 'newest', label: 'Terbaru' },
 ]
 </script>
