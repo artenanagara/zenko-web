@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/artenanagara/zenko-web/compare/v0.7.1...v0.8.0) (2026-08-25)
+
+
+### Features
+
+* say "dikerjakan" on package cards, backed by a real count ([e08cca4](https://github.com/artenanagara/zenko-web/commit/e08cca446b812e47ac534bce5c34e679ec6849e3))
+* say "dikerjakan" on package cards, backed by a real count ([2e00084](https://github.com/artenanagara/zenko-web/commit/2e0008477cec189d50d794f2171caaafd87def13))
+
 ## [0.7.1](https://github.com/artenanagara/zenko-web/compare/v0.7.0...v0.7.1) (2026-08-25)
 
 
