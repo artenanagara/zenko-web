@@ -5,6 +5,8 @@
 
 ### Features
 
+* make the exam room and both dashboards usable on a phone ([2d674ec](https://github.com/artenanagara/zenko-web/commit/2d674ecaafcf6b4c36c17b5141b6f9a9064584de))
+* make the exam room and both dashboards usable on a phone ([e0d1b66](https://github.com/artenanagara/zenko-web/commit/e0d1b6627f44a47f4d5825cacb2afca7532cdc43))
 * switch payments to Duitku and add the merchant-review legal pages ([458d1b8](https://github.com/artenanagara/zenko-web/commit/458d1b89f67253e95c850a5a4de929cb57da0765))
 * switch payments to Duitku and add the merchant-review legal pages ([1d562d7](https://github.com/artenanagara/zenko-web/commit/1d562d78fcbaaa46e774a2a2d9644f811285210b))
 
