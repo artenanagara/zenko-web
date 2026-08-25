@@ -16,6 +16,33 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
+  modules: ['@nuxtjs/sitemap'],
+
+  site: {
+    url: 'https://zenkoedu.id',
+  },
+
+  // Static routes are auto-discovered from Nuxt's resolved page routes
+  // (already reflecting each page's `definePageMeta({ path })` override).
+  // Dynamic /paket/:slug entries come from server/api/__sitemap__/urls.ts.
+  // Everything below is either private/functional or already `noindex`
+  // (packages/sample.vue), so it must not appear in the sitemap even though
+  // it isn't all literally listed in public/robots.txt.
+  sitemap: {
+    exclude: [
+      '/dashboard/**',
+      '/akun/**',
+      '/masuk',
+      '/daftar',
+      '/lupa-password',
+      '/password-baru',
+      '/verifikasi-email',
+      '/checkout/**',
+      '/pembayaran/**',
+      '/paket/*/coba',
+    ],
+  },
+
   css: ['~/assets/css/main.css'],
 
   // Components are grouped into folders by domain (ui, layout, home, …) purely

@@ -6,10 +6,17 @@
  * menunjuk ke GET /admin/products/:id/preview — berlaku untuk produk siapa
  * pun, bukan cuma milik pemanggilnya.
  */
+// English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({
   layout: 'tryout',
   middleware: 'auth',
   roles: ['admin'],
+  path: '/dashboard/admin/products/:id()/simulasikan',
+})
+
+useHead({
+  title: 'Simulasi Produk | Zenko',
+  meta: [{ name: 'robots', content: 'noindex' }],
 })
 
 const route = useRoute()

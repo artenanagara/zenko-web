@@ -2,15 +2,20 @@
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ path: '/kebijakan-privasi' })
 
-useHead({
+useSeoMeta({
   title: 'Kebijakan Privasi | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Kebijakan Privasi Zenko mengenai pengumpulan, penggunaan, penyimpanan, pembagian, dan pelindungan data pribadi pengguna.',
-    },
-  ],
+  description:
+    'Kebijakan Privasi Zenko mengenai pengumpulan, penggunaan, penyimpanan, pembagian, dan pelindungan data pribadi pengguna.',
+  ogTitle: 'Kebijakan Privasi | Zenko',
+  ogDescription:
+    'Kebijakan Privasi Zenko mengenai pengumpulan, penggunaan, penyimpanan, pembagian, dan pelindungan data pribadi pengguna.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/kebijakan-privasi',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/kebijakan-privasi' }],
 })
 
 const sharing = [

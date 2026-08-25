@@ -2,15 +2,20 @@
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ path: '/kebijakan-refund' })
 
-useHead({
+useSeoMeta({
   title: 'Kebijakan Refund | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Kebijakan pengembalian dana Zenko untuk pembelian paket try out: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
-    },
-  ],
+  description:
+    'Kebijakan pengembalian dana Zenko untuk pembelian paket try out: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
+  ogTitle: 'Kebijakan Refund | Zenko',
+  ogDescription:
+    'Kebijakan pengembalian dana Zenko untuk pembelian paket try out: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/kebijakan-refund',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/kebijakan-refund' }],
 })
 </script>
 

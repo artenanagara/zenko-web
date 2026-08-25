@@ -2,15 +2,20 @@
 // English file name, Indonesian URL.
 definePageMeta({ path: '/paket' })
 
-useHead({
+useSeoMeta({
   title: 'Katalog Paket Try Out | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Jelajahi beragam pilihan paket latihan try out SKD CPNS, BUMN, SNBT, dan Tes Kedinasan di Zenko. Beli per paket, akses langsung, tanpa langganan.',
-    },
-  ],
+  description:
+    'Jelajahi beragam pilihan paket latihan try out SKD CPNS, BUMN, SNBT, dan Tes Kedinasan di Zenko. Beli per paket, akses langsung, tanpa langganan.',
+  ogTitle: 'Katalog Paket Try Out | Zenko',
+  ogDescription:
+    'Jelajahi beragam pilihan paket latihan try out SKD CPNS, BUMN, SNBT, dan Tes Kedinasan di Zenko. Beli per paket, akses langsung, tanpa langganan.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/paket',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/paket' }],
 })
 
 // Sort is read from the URL first: the fetch needs an order before there is a

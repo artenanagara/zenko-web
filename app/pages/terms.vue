@@ -2,15 +2,20 @@
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ path: '/ketentuan-layanan' })
 
-useHead({
+useSeoMeta({
   title: 'Ketentuan Layanan | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Ketentuan penggunaan Zenko mengenai akun, paket belajar, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
-    },
-  ],
+  description:
+    'Ketentuan penggunaan Zenko mengenai akun, paket belajar, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
+  ogTitle: 'Ketentuan Layanan | Zenko',
+  ogDescription:
+    'Ketentuan penggunaan Zenko mengenai akun, paket belajar, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/ketentuan-layanan',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/ketentuan-layanan' }],
 })
 
 const revenueShare = [

@@ -32,9 +32,50 @@ const updatedLabel = computed(() =>
   }),
 )
 
-useHead({
+const canonicalUrl = `https://zenkoedu.id/paket/${detail.value.slug}`
+
+useSeoMeta({
   title: `${detail.value.title} | Zenko`,
-  meta: [{ name: 'description', content: detail.value.description.slice(0, 160) }],
+  description: detail.value.description.slice(0, 160),
+  ogTitle: `${detail.value.title} | Zenko`,
+  ogDescription: detail.value.description.slice(0, 160),
+  ogImage: detail.value.thumbnailUrl,
+  ogUrl: canonicalUrl,
+  twitterCard: 'summary_large_image',
+})
+
+// Product (not Course): a fixed-price bundle of practice questions with a
+// rating and review count fits Google's Product/Offer guidance better than
+// Course, which is meant for instructor-led educational content.
+const productJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: detail.value.title,
+  description: detail.value.description,
+  category: detail.value.category,
+  image: detail.value.thumbnailUrl,
+  brand: { '@type': 'Brand', name: detail.value.author.name },
+  offers: {
+    '@type': 'Offer',
+    price: detail.value.price,
+    priceCurrency: 'IDR',
+    availability: 'https://schema.org/InStock',
+    url: canonicalUrl,
+  },
+  ...(detail.value.reviewCount > 0
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: detail.value.rating,
+          reviewCount: detail.value.reviewCount,
+        },
+      }
+    : {}),
+}
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }],
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(productJsonLd) }],
 })
 </script>
 

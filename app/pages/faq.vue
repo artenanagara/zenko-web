@@ -2,15 +2,20 @@
 // English file name, Indonesian URL.
 definePageMeta({ path: '/faq' })
 
-useHead({
+useSeoMeta({
   title: 'FAQ | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja try out CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
-    },
-  ],
+  description:
+    'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja try out CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
+  ogTitle: 'FAQ | Zenko',
+  ogDescription:
+    'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja try out CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/faq',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/faq' }],
 })
 
 /**
@@ -106,6 +111,22 @@ const categories: FaqCategory[] = [
     ],
   },
 ]
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: categories.flatMap(category =>
+    category.items.map(item => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
+    })),
+  ),
+}
+
+useHead({
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(faqJsonLd) }],
+})
 </script>
 
 <template>

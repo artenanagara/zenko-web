@@ -11,15 +11,20 @@ definePageMeta({ path: '/jadi-tutor' })
  * loops repeat, so only decoration may animate. Real copy would vanish
  * every cycle.
  */
-useHead({
+useSeoMeta({
   title: 'Jadi Tutor Zenko | Jual Paket Try Out Online',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Daftar menjadi tutor Zenko dan jual paket try out SKD CPNS, BUMN, SNBT, atau TKA. Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
-    },
-  ],
+  description:
+    'Daftar menjadi tutor Zenko dan jual paket try out SKD CPNS, BUMN, SNBT, atau TKA. Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+  ogTitle: 'Jadi Tutor Zenko | Jual Paket Try Out Online',
+  ogDescription:
+    'Daftar menjadi tutor Zenko dan jual paket try out SKD CPNS, BUMN, SNBT, atau TKA. Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/jadi-tutor',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/jadi-tutor' }],
 })
 
 const steps = [

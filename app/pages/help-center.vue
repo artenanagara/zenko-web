@@ -10,15 +10,20 @@ import {
 // English file name, Indonesian URL.
 definePageMeta({ path: '/pusat-bantuan' })
 
-useHead({
+useSeoMeta({
   title: 'Pusat Bantuan | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Pusat Bantuan Zenko — temukan jawaban seputar akun, pembayaran, refund, paket try out, dan menjadi tutor, atau hubungi tim kami langsung.',
-    },
-  ],
+  description:
+    'Pusat Bantuan Zenko — temukan jawaban seputar akun, pembayaran, refund, paket try out, dan menjadi tutor, atau hubungi tim kami langsung.',
+  ogTitle: 'Pusat Bantuan | Zenko',
+  ogDescription:
+    'Pusat Bantuan Zenko — temukan jawaban seputar akun, pembayaran, refund, paket try out, dan menjadi tutor, atau hubungi tim kami langsung.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/pusat-bantuan',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/pusat-bantuan' }],
 })
 
 /**

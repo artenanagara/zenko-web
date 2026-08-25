@@ -12,15 +12,21 @@ import {
 // English file name, Indonesian URL.
 definePageMeta({ path: '/tentang' })
 
-useHead({
+useSeoMeta({
   title: 'Tentang Kami | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Zenko adalah platform marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
-    },
-  ],
+  description:
+    'Zenko adalah platform marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
+  ogTitle: 'Tentang Kami | Zenko',
+  ogDescription:
+    'Zenko adalah platform marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/tentang',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/tentang' }],
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(useOrganizationSchema()) }],
 })
 
 /**
