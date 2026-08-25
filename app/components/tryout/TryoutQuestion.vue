@@ -69,14 +69,14 @@ const stimulusId = useId()
       <div
         v-show="stimulusOpen"
         :id="stimulusId"
-        class="max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-muted md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80 [&_img]:max-w-full [&_img]:rounded-xs"
+        class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-muted md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80"
         v-html="question.stimulus"
       />
     </div>
 
     <!-- Product question HTML is sanitized by zenko-api when the tutor saves it. -->
     <div
-      class="mt-4 text-[1.02rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink md:text-[1.05rem] [&_img]:my-3 [&_img]:max-h-96 [&_img]:max-w-full [&_img]:rounded-xs"
+      class="prose-question mt-4 text-[1.02rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink md:text-[1.05rem] [&_img]:max-h-96"
       v-html="question.text"
     />
 
@@ -112,7 +112,7 @@ const stimulusId = useId()
             alt=""
             class="mb-2 max-h-52 max-w-full rounded-xs object-contain"
           >
-          <span class="[&_img]:my-2 [&_img]:max-h-52 [&_img]:max-w-full [&_img]:rounded-xs" v-html="option.text" />
+          <span class="prose-question [&_img]:max-h-52" v-html="option.text" />
         </span>
       </button>
     </div>

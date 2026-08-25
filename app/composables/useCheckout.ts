@@ -161,9 +161,14 @@ export function useCheckout() {
 
       if (created.status === 'paid') {
         // Rp0 total: zenko-api settled it on creation, nothing to charge or
-        // wait on — the same destination a real QRIS payment lands on once
-        // it settles (see payment.vue's startPolling onPaid).
-        await navigateTo(`/akun/pembelian/${created.invoice}`, { replace: true })
+        // wait on. Tetap lewat /pembayaran/:invoice, bukan langsung ke
+        // dokumen invoice — pembeli baru butuh konfirmasi bahwa paketnya
+        // sudah jadi miliknya dan jalan masuk ke pengerjaannya, bukan bukti
+        // pembayaran. Halaman itu menampilkan layar "Pembayaran berhasil"
+        // dengan tombol "Lihat paket saya" dan hitung mundur otomatis ke
+        // /akun/paket — persis yang dilihat pembayaran QRIS sungguhan begitu
+        // lunas. Invoice-nya tetap tersimpan di Riwayat pembelian.
+        await navigateTo(`/pembayaran/${created.invoice}`, { replace: true })
         return
       }
 

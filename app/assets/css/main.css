@@ -397,6 +397,122 @@
 
   /* Long-form legal copy. Styles elements directly so the markup stays
      readable instead of carrying a utility list on every paragraph. */
+  /* ------------------------------------------------------------------
+     Soal buatan tutor (HTML tersanitasi dari zenko-api)
+
+     Preflight Tailwind mematikan `list-style` pada ul/ol dan meratakan h1–h3
+     jadi teks biasa. Editor soal memulihkannya lewat `.rte-content`, dan
+     pratinjau tutor punya salinannya sendiri — tapi ruang ujian tidak punya
+     keduanya, jadi daftar bernomor yang diketik tutor sampai ke siswa tanpa
+     angka, cuma sebagai baris menjorok. Aturannya hidup di sini supaya satu
+     berkas ini yang menentukan rupa soal di editor, pratinjau, dan ujian.
+
+     Global (bukan `scoped`): dipakai pada isi `v-html`, yang tidak pernah
+     kebagian atribut scope komponen.
+     ------------------------------------------------------------------ */
+  .prose-question p {
+    margin: 0 0 0.6em;
+  }
+
+  .prose-question p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prose-question h1 {
+    margin: 0.4em 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .prose-question h2 {
+    margin: 0.4em 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .prose-question h3 {
+    margin: 0.4em 0;
+    font-size: 1.02rem;
+    font-weight: 700;
+  }
+
+  .prose-question ul,
+  .prose-question ol {
+    margin: 0.4em 0;
+    padding-left: 1.4em;
+  }
+
+  .prose-question ul {
+    list-style: disc;
+  }
+
+  .prose-question ul ul {
+    list-style: circle;
+  }
+
+  .prose-question ol {
+    list-style: decimal;
+  }
+
+  .prose-question li {
+    margin: 0.15em 0;
+  }
+
+  /* Tiptap membungkus isi tiap butir dalam <p>; margin bawaannya membuat
+     daftar terlihat renggang dan penandanya tidak sejajar dengan barisnya. */
+  .prose-question li > p {
+    margin: 0;
+  }
+
+  .prose-question blockquote {
+    margin: 0.5em 0;
+    border-left: 3px solid var(--color-line);
+    padding-left: 0.85em;
+    color: var(--color-muted);
+  }
+
+  .prose-question hr {
+    margin: 0.9em 0;
+    border: none;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .prose-question a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  .prose-question img {
+    max-width: 100%;
+    height: auto;
+    margin: 0.5em 0;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Tabel soal sering lebih lebar dari layar HP. Yang boleh menggulung
+     adalah tabelnya sendiri, bukan halamannya — lihat .prose-question di
+     TryoutQuestion, yang membungkusnya dengan wadah bergulir. */
+  .prose-question table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.6em 0;
+  }
+
+  .prose-question td,
+  .prose-question th {
+    border: 1px solid var(--color-line);
+    padding: 0.4rem 0.6rem;
+    vertical-align: top;
+  }
+
+  .prose-question th {
+    background: var(--color-surface-alt);
+    font-weight: 700;
+    text-align: left;
+  }
+
   .legal-prose {
     color: var(--color-muted);
     line-height: 1.75;

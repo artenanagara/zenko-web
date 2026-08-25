@@ -101,8 +101,14 @@ function print() {
         </div>
       </div>
 
-      <!-- The document itself. On paper, the frame and shadow are just ink. -->
-      <article class="rounded-lg border border-hairline bg-surface shadow-xs print:rounded-none print:border-0 print:shadow-none">
+      <!-- The document itself. On paper, the frame and shadow are just ink.
+
+           min-w-0: sebagai grid item, <article> default-nya `min-width:auto`,
+           jadi lebar minimum tabel rincian di dalamnya (min-w-140 = 560px)
+           memaksa lebar track grid halaman ini — 626px di dalam kolom yang
+           cuma 484px. Akibatnya yang menggulung ke samping adalah seluruh
+           halaman invoice, bukan tabelnya sendiri. Terlihat di iPad. -->
+      <article class="min-w-0 rounded-lg border border-hairline bg-surface shadow-xs print:rounded-none print:border-0 print:shadow-none">
         <header class="flex flex-wrap items-start justify-between gap-5 border-b border-hairline px-5 py-6 md:px-8">
           <div>
             <BrandMark to="/" img-class="h-10 w-auto object-contain" aria-label="Zenko" />
