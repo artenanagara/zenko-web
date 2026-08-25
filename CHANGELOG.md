@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/artenanagara/zenko-web/compare/v0.6.1...v0.7.0) (2026-08-25)
+
+
+### Features
+
+* switch payments to Duitku and add the merchant-review legal pages ([458d1b8](https://github.com/artenanagara/zenko-web/commit/458d1b89f67253e95c850a5a4de929cb57da0765))
+* switch payments to Duitku and add the merchant-review legal pages ([1d562d7](https://github.com/artenanagara/zenko-web/commit/1d562d78fcbaaa46e774a2a2d9644f811285210b))
+
 ## [0.6.1](https://github.com/artenanagara/zenko-web/compare/v0.6.0...v0.6.1) (2026-08-24)
 
 
