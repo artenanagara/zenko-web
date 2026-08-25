@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/artenanagara/zenko-web/compare/v0.8.0...v0.8.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* name the sort tab "Banyak dikerjakan" ([e6b76da](https://github.com/artenanagara/zenko-web/commit/e6b76dabe17786523dbf0a195732e0a052440f72))
+* name the sort tab "Banyak dikerjakan" ([c477093](https://github.com/artenanagara/zenko-web/commit/c477093bb3804cf672ced8bfe30b77cd638cf848))
+
 ## [0.8.0](https://github.com/artenanagara/zenko-web/compare/v0.7.1...v0.8.0) (2026-08-25)
 
 
