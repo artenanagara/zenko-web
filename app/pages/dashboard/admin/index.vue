@@ -77,6 +77,22 @@ const cards = computed<QueueCard[]>(() => {
 const allClear = computed(() =>
   summary.value !== null && cards.value.every(card => card.count === 0),
 )
+
+/**
+ * Headcount stats, shown above the queue grid. `totalStudents`/`totalTutors`
+ * are optional on the wire (older API responses may predate them), so an
+ * absent field renders as an em-dash instead of "undefined" or a false 0.
+ */
+const EM_DASH = '—'
+
+function formatCount(value: number | undefined): string {
+  return value === undefined ? EM_DASH : value.toLocaleString('id-ID')
+}
+
+const headcountStats = computed(() => [
+  { label: 'Jumlah Siswa', value: formatCount(summary.value?.totalStudents) },
+  { label: 'Jumlah Tutor', value: formatCount(summary.value?.totalTutors) },
+])
 </script>
 
 <template>
@@ -108,6 +124,12 @@ const allClear = computed(() =>
           Muat ulang
         </button>
       </div>
+
+      <!-- Headcounts: sourced from the same summary fetch as the queue cards
+           below, so no extra request. Always rendered, same as the cards —
+           an em-dash covers both a failed fetch and a backend that has not
+           shipped these fields yet, rather than hiding the section. -->
+      <DashboardStats :items="headcountStats" :columns="2" />
 
       <!-- Five cards: 3 columns, so the last row is a pair rather than the
            lone orphan a 4-column row would leave. -->

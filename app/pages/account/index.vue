@@ -36,9 +36,6 @@ const continueItems = computed(() =>
     .slice(0, 3),
 )
 
-/** The single most useful next step, for the hero's call to action. */
-const topContinue = computed(() => continueItems.value[0] ?? null)
-
 const summary = computed(() => {
   const all = items.value.map(packageStats)
   // Raw scores use a different scale per exam type, so they cannot be compared
@@ -63,53 +60,28 @@ const summary = computed(() => {
       class="dot-grid relative overflow-hidden rounded-lg border border-hairline bg-linear-to-br from-primary-soft via-surface to-surface p-5 shadow-xs md:p-7"
       style="--dot-color: rgba(47, 111, 235, 0.08)"
     >
-      <div class="relative z-1 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex items-center gap-4">
-          <span class="inline-flex shrink-0 rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift">
-            <img
-              v-if="user?.avatarUrl"
-              :src="user.avatarUrl"
-              alt=""
-              referrerpolicy="no-referrer"
-              class="h-16 w-16 rounded-full border-2 border-white object-cover"
-            >
-            <span
-              v-else
-              aria-hidden="true"
-              class="inline-flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-surface-alt text-xl font-bold text-muted"
-            >{{ initial }}</span>
-          </span>
-
-          <div class="min-w-0">
-            <p class="text-[0.76rem] font-bold tracking-[0.14em] text-primary uppercase">Ringkasan</p>
-            <h1 class="mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.04em] md:text-[1.7rem]">
-              Halo, {{ firstName || 'kembali' }}
-            </h1>
-            <p class="mt-1 text-[0.94rem] text-muted">Siap melanjutkan persiapan dan latihan soalmu hari ini?</p>
-          </div>
-        </div>
-
-        <div class="shrink-0">
-          <!-- Selagi memuat, jangan tebak CTA-nya: kerangka tombol dulu, supaya
-               labelnya tidak berganti dari "Jelajahi katalog" ke "Lanjutkan". -->
-          <div v-if="pending" aria-hidden="true" class="h-12 w-full animate-pulse rounded-xs bg-white/50 sm:w-44" />
-
-          <!-- "Mulai try out" menuju ruang pengerjaan (yang membuka dengan tata
-               tertib, bukan langsung timer); "Lanjutkan belajar" menuju halaman
-               progres. Tujuan mengikuti janji labelnya. -->
-          <AppButton
-            v-else-if="topContinue"
-            :to="topContinue.stats.attemptCount === 0
-              ? `/akun/paket/${topContinue.item.slug}/kerjakan`
-              : `/akun/paket/${topContinue.item.slug}`"
-            size="md"
-            class="w-full sm:w-auto"
+      <div class="relative z-1 flex items-center gap-4">
+        <span class="inline-flex shrink-0 rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift">
+          <img
+            v-if="user?.avatarUrl"
+            :src="user.avatarUrl"
+            alt=""
+            referrerpolicy="no-referrer"
+            class="h-16 w-16 rounded-full border-2 border-white object-cover"
           >
-            {{ topContinue.stats.attemptCount === 0 ? 'Mulai try out' : 'Lanjutkan belajar' }}
-          </AppButton>
-          <AppButton v-else to="/paket" size="md" class="w-full sm:w-auto">
-            Jelajahi katalog
-          </AppButton>
+          <span
+            v-else
+            aria-hidden="true"
+            class="inline-flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-surface-alt text-xl font-bold text-muted"
+          >{{ initial }}</span>
+        </span>
+
+        <div class="min-w-0">
+          <p class="text-[0.76rem] font-bold tracking-[0.14em] text-primary uppercase">Ringkasan</p>
+          <h1 class="mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.04em] md:text-[1.7rem]">
+            Halo, {{ firstName || 'kembali' }}
+          </h1>
+          <p class="mt-1 text-[0.94rem] text-muted">Siap melanjutkan persiapan dan latihan soalmu hari ini?</p>
         </div>
       </div>
     </section>

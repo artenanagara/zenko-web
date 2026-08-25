@@ -10,15 +10,25 @@ import type { QuestionDraft, QuestionImportDraft, TutorSection } from '#shared/t
  *   baris ke section produk ini dan melaporkan baris yang gagal cocok/valid
  *   di `problems`, tanpa membatalkan baris lain yang valid.
  *
+ * Produk mini_tryout selalu punya tepat satu subtes (ditegakkan server) —
+ * mode gabungan tidak ada gunanya di sana (kolom `subtes` ekstra hanya
+ * membingungkan tutor untuk satu-satunya subtes yang ada), jadi picker dua
+ * tab disembunyikan total dan hanya form "per subtes" yang dirender. Dideteksi
+ * dari `sections.length <= 1` — bukan lewat prop `mode` terpisah, karena
+ * `sections` (daftar semua subtes produk ini) sudah tersedia di sini.
+ *
  * Dirender sebagai isi tab "Impor CSV/Excel" di TutorSectionEditor.vue — lihat
  * docs/tutor-flow-contract.md §6 dan §7.4.
  */
 const props = defineProps<{
   productId: string
   section: TutorSection
-  /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota. */
+  /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota, dan untuk mendeteksi produk mini_tryout (1 subtes). */
   sections: TutorSection[]
 }>()
+
+/** mini_tryout: selalu tepat 1 subtes (§7.2 kontrak) — picker mode disembunyikan dan `mode` tidak pernah berpindah dari 'section'. */
+const isSingleSection = computed(() => props.sections.length <= 1)
 
 const emit = defineEmits<{ refresh: [] }>()
 
@@ -132,9 +142,9 @@ function reset() {
 
 <template>
   <div class="grid gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
-    <AppTabs :tabs="MODE_TABS" :model-value="mode" aria-label="Mode impor" @update:model-value="selectMode" />
+    <AppTabs v-if="!isSingleSection" :tabs="MODE_TABS" :model-value="mode" aria-label="Mode impor" @update:model-value="selectMode" />
 
-    <p v-if="mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
+    <p v-if="!isSingleSection && mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
       Satu file CSV bisa berisi soal dari beberapa subtes produk ini sekaligus — kolom
       <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
       di tiap baris menentukan section tujuannya (dicocokkan ke nama subtes produk ini,

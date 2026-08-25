@@ -314,11 +314,11 @@ async function onSubmit() {
             </AppButton>
           </div>
 
-          <!-- Identitas mengalir dari atas ke bawah dan terpusat: foto, nama,
-               peran, email, lalu status verifikasi — tanpa kartu berbingkai,
-               yang dulu membuat blok ini terbaca sebagai widget tersendiri
-               alih-alih bagian isi panel. -->
-          <div class="flex flex-col items-center gap-3 text-center">
+          <!-- Identitas berjalan horizontal: foto di kiri, kolom teks rata kiri
+               di kanannya (nama, peran, email, status verifikasi) — tanpa kartu
+               berbingkai, yang dulu membuat blok ini terbaca sebagai widget
+               tersendiri alih-alih bagian isi panel. -->
+          <div class="flex items-center gap-4">
             <span class="relative inline-flex shrink-0 rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift">
               <img
                 v-if="user.avatarUrl"
@@ -362,19 +362,22 @@ async function onSubmit() {
               >
             </span>
 
-            <p class="text-[1.2rem] font-bold tracking-[-0.03em]">{{ user.name }}</p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[1.2rem] font-bold tracking-[-0.03em]">{{ user.name }}</p>
 
-            <DashboardBadge :tone="ROLE_TONE[user.role]">{{ ROLE_LABEL[user.role] }}</DashboardBadge>
+              <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <DashboardBadge :tone="ROLE_TONE[user.role]">{{ ROLE_LABEL[user.role] }}</DashboardBadge>
+                <p class="text-[0.9rem] break-all text-muted">{{ user.email }}</p>
+              </div>
 
-            <p class="text-[0.9rem] break-all text-muted">{{ user.email }}</p>
-
-            <div class="flex flex-wrap items-center justify-center gap-3">
-              <DashboardBadge :tone="user.verified ? 'success' : 'warning'">
-                {{ user.verified ? 'Email terverifikasi' : 'Email belum terverifikasi' }}
-              </DashboardBadge>
-              <AppButton v-if="!user.verified" to="/verifikasi-email" variant="light" size="sm">
-                Verifikasi email
-              </AppButton>
+              <div class="mt-2 flex flex-wrap items-center gap-3">
+                <DashboardBadge :tone="user.verified ? 'success' : 'warning'">
+                  {{ user.verified ? 'Email terverifikasi' : 'Email belum terverifikasi' }}
+                </DashboardBadge>
+                <AppButton v-if="!user.verified" to="/verifikasi-email" variant="light" size="sm">
+                  Verifikasi email
+                </AppButton>
+              </div>
             </div>
           </div>
 

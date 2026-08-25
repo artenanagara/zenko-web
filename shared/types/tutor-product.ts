@@ -133,6 +133,12 @@ export interface BundleItem {
  */
 export interface TutorProductDetail extends TutorProductSummary {
   description: string
+  /**
+   * Checklist "Yang kamu dapatkan" yang diisi tutor sendiri, ditampilkan di
+   * halaman detail publik. Kosong/absen berarti tutor belum mengisinya — API
+   * publik memakai template kategori sebagai gantinya (lihat catalog.go).
+   */
+  includes?: string[]
   /** single only: exam type slug (`snbt`, `cpns-skd`, `custom`, …). */
   examType?: string
   durationMinutes?: number
@@ -198,6 +204,8 @@ export interface UpdateProductRequest {
   description?: string
   category?: string
   thumbnailUrl?: string
+  /** "Yang kamu dapatkan" — lihat TutorProductDetail.includes. */
+  includes?: string[]
   price?: number
   priceOriginal?: number
   durationMinutes?: number

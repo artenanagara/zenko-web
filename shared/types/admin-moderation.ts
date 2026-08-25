@@ -104,4 +104,12 @@ export interface AdminSummary {
   pendingPayouts: number
   pendingBankVerifications: number
   pendingBankChangeRequests: number
+  /**
+   * Current headcount per role, not a queue — backs the Ringkasan page's
+   * stat cards. Optional so older API responses (before the backend shipped
+   * these fields) don't break the type; the page falls back to an em-dash
+   * when either is undefined.
+   */
+  totalStudents?: number
+  totalTutors?: number
 }

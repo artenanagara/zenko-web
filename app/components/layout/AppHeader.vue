@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { homePathFor } from '#shared/types/user'
-
 const { user, isSignedIn } = useAuth()
 const route = useRoute()
 
@@ -10,14 +8,6 @@ const NAV_LINKS = [
   { label: 'Tentang Kami', to: '/tentang' },
   { label: 'Jadi Tutor', to: '/jadi-tutor' },
 ] as const
-
-/**
- * Only tutors and admins have a dashboard; a student's own surfaces all live in
- * the account menu, so they get no link to a page that is not theirs.
- */
-const dashboardPath = computed(() =>
-  user.value && user.value.role !== 'student' ? homePathFor(user.value.role) : null,
-)
 
 const isScrolled = ref(false)
 
@@ -156,13 +146,6 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
         </a>
 
         <template v-if="isSignedIn && user">
-          <NuxtLink
-            v-if="dashboardPath"
-            :to="dashboardPath"
-            class="hidden rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt md:block"
-          >
-            Dashboard
-          </NuxtLink>
           <ProfileMenu :user="user" />
         </template>
 
@@ -229,14 +212,6 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
             class="flex min-h-12 items-center rounded-sm px-3 font-medium text-ink transition-colors hover:bg-surface-alt"
             active-class="bg-primary-soft font-semibold text-primary"
           >{{ link.label }}</NuxtLink>
-
-          <NuxtLink
-            v-if="dashboardPath"
-            :to="dashboardPath"
-            class="flex min-h-12 items-center rounded-sm px-3 font-medium text-ink transition-colors hover:bg-surface-alt"
-          >
-            Dashboard
-          </NuxtLink>
 
           <NuxtLink
             v-if="!isSignedIn"

@@ -49,12 +49,21 @@ function confirmEndSection() {
 // Persist the result once, when the sitting finishes. Live this POSTs to
 // zenko-api; a failure is swallowed on purpose — the result screen already
 // shows the locally computed score, and a lost network write must not blank it.
+//
+// recordedAttemptId is what makes "Lihat pembahasan" a real page instead of
+// an inline toggle: TryoutResult only renders that button once this holds a
+// real id, since a review page has nothing to load without one. It stays
+// null on a failed write — a smaller loss (one sitting whose pembahasan
+// cannot be reopened) than blanking the score already shown from the
+// finished session, which recording best-effort is here to avoid.
 let recorded = false
+const recordedAttemptId = ref<string | null>(null)
 watch(session.phase, async (phase) => {
   if (phase === 'finished' && session.result.value && !recorded) {
     recorded = true
     try {
-      await recordAttempt(slug, session.result.value)
+      const attempt = await recordAttempt(slug, session.result.value, session.answers.value)
+      recordedAttemptId.value = attempt?.id ?? null
     }
     catch {
       // Best-effort: the score is still shown from the finished session.
@@ -64,6 +73,7 @@ watch(session.phase, async (phase) => {
 
 function retry() {
   recorded = false
+  recordedAttemptId.value = null
   session.start()
 }
 </script>
@@ -282,6 +292,7 @@ function retry() {
       :package-slug="slug"
       :blueprint="blueprint"
       :answers="session.answers.value"
+      :attempt-id="recordedAttemptId"
       @retry="retry"
     />
     </template>

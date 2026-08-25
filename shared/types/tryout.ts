@@ -117,3 +117,43 @@ export interface TryoutResult {
   maxScore: number
   sections: TryoutSectionResult[]
 }
+
+/**
+ * One item inside a stored attempt's full review: everything TryoutQuestion
+ * carries, plus what the student actually did with it and whether zenko-api
+ * judged it correct. `selected`/`doubtful` mirror TryoutAnswerState — absent
+ * (not merely falsy) means the question was left unanswered, same convention
+ * the live session composable uses.
+ */
+export type TryoutReviewQuestion = TryoutQuestion & {
+  selected?: OptionLabel
+  doubtful?: boolean
+  /** Judged server-side against the real answer key, never trusted from the client. */
+  isCorrect: boolean
+}
+
+/** One subtest inside a stored attempt's review. */
+export interface TryoutReviewSection {
+  id: string
+  code: string
+  title: string
+  questions: TryoutReviewQuestion[]
+}
+
+/**
+ * GET /me/attempts/:attemptId/review — the full pembahasan for one stored
+ * attempt, snapshotted at submission time so it stays reopenable from
+ * Riwayat pengerjaan long after the sitting itself, and unaffected by any
+ * later edit the tutor makes to the live product.
+ */
+export interface TryoutAttemptReview {
+  attemptId: string
+  packageSlug: string
+  number: number
+  score: number
+  finishedAt: number
+  title: string
+  theme: TryoutTheme
+  mode: TryoutMode
+  sections: TryoutReviewSection[]
+}

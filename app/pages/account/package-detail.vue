@@ -223,6 +223,7 @@ function barTone(percent: number) {
                   <th class="pb-2.5 font-bold">Selisih</th>
                   <th class="pb-2.5 font-bold">Benar</th>
                   <th class="pb-2.5 font-bold">Peringkat</th>
+                  <th class="pb-2.5 font-bold" />
                 </tr>
               </thead>
               <tbody>
@@ -252,7 +253,15 @@ function barTone(percent: number) {
                   <td class="py-3.5 pr-4 text-[0.9rem] text-muted tabular-nums">
                     {{ accuracyOf(attempt).correct }}/{{ accuracyOf(attempt).total }}
                   </td>
-                  <td class="py-3.5 text-[0.9rem] text-muted tabular-nums">{{ attempt.rank }}</td>
+                  <td class="py-3.5 pr-4 text-[0.9rem] text-muted tabular-nums">{{ attempt.rank }}</td>
+                  <td class="py-3.5 text-right">
+                    <NuxtLink
+                      :to="`/akun/paket/${item.slug}/kerjakan/pembahasan/${attempt.id}`"
+                      class="text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
+                    >
+                      Lihat pembahasan
+                    </NuxtLink>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -291,6 +300,12 @@ function barTone(percent: number) {
                 {{ accuracyOf(attempt).correct }}/{{ accuracyOf(attempt).total }} benar
                 <template v-if="attempt.rank !== '—' && attempt.rank !== '-'"> · Peringkat {{ attempt.rank }}</template>
               </p>
+              <NuxtLink
+                :to="`/akun/paket/${item.slug}/kerjakan/pembahasan/${attempt.id}`"
+                class="mt-2.5 inline-block text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
+              >
+                Lihat pembahasan
+              </NuxtLink>
             </li>
           </ul>
         </DashboardPanel>

@@ -78,10 +78,28 @@ const form = reactive({
   title: '',
   description: '',
   thumbnailUrl: '',
+  /** "Yang kamu dapatkan" — baris kosong difilter sebelum dikirim, lihat cleanIncludes. */
+  includes: [] as string[],
   price: (PRICE_INPUT_DISABLED ? 0 : null) as number | null,
   priceOriginal: null as number | null,
   shuffleQuestions: false,
 })
+
+/**
+ * Trim tiap baris dan buang yang kosong — baris kosong tidak pernah dikirim
+ * ke server, baik lewat draft awal maupun autosave PATCH.
+ */
+function cleanIncludes(rows: string[]): string[] {
+  return rows.map(row => row.trim()).filter(row => row.length > 0)
+}
+
+function addIncludeRow() {
+  form.includes.push('')
+}
+
+function removeIncludeRow(index: number) {
+  form.includes.splice(index, 1)
+}
 
 /** Bundle membership, in display order. */
 const selectedItems = ref<string[]>([])
@@ -157,6 +175,7 @@ const savedFields = ref<{
   title: string
   description: string
   thumbnailUrl: string
+  includes: string[]
   price: number
   priceOriginal: number
   items: string[]
@@ -175,6 +194,7 @@ watch(detail, (loaded) => {
   form.title = loaded.title
   form.description = loaded.description ?? ''
   form.thumbnailUrl = loaded.thumbnailUrl ?? ''
+  form.includes = [...(loaded.includes ?? [])]
   form.price = PRICE_INPUT_DISABLED ? 0 : (loaded.price > 0 ? loaded.price : null)
   form.priceOriginal = loaded.priceOriginal > 0 ? loaded.priceOriginal : null
   form.shuffleQuestions = loaded.shuffleQuestions ?? false
@@ -187,6 +207,7 @@ watch(detail, (loaded) => {
     title: loaded.title,
     description: loaded.description ?? '',
     thumbnailUrl: loaded.thumbnailUrl ?? '',
+    includes: cleanIncludes(form.includes),
     price: loaded.price,
     priceOriginal: loaded.priceOriginal,
     items: [...selectedItems.value],
@@ -228,6 +249,8 @@ function buildPatch(): UpdateProductRequest {
   if (form.title.trim() !== saved.title) patch.title = form.title.trim()
   if (form.description.trim() !== saved.description) patch.description = form.description.trim()
   if (form.thumbnailUrl.trim() !== saved.thumbnailUrl) patch.thumbnailUrl = form.thumbnailUrl.trim()
+  const cleanedIncludes = cleanIncludes(form.includes)
+  if (cleanedIncludes.join('\n') !== saved.includes.join('\n')) patch.includes = cleanedIncludes
   if ((form.price ?? 0) !== saved.price) patch.price = form.price ?? 0
   if ((form.priceOriginal ?? 0) !== saved.priceOriginal) patch.priceOriginal = form.priceOriginal ?? 0
   if (form.type === 'bundle' && selectedItems.value.join('|') !== saved.items.join('|')) {
@@ -242,7 +265,7 @@ function buildPatch(): UpdateProductRequest {
 /** Create mode has no server copy yet: any typed content counts as unsaved. */
 const isDirty = computed(() => {
   if (isEdit.value) return Object.keys(buildPatch()).length > 0
-  return Boolean(form.title.trim() || form.description.trim() || form.thumbnailUrl.trim())
+  return Boolean(form.title.trim() || form.description.trim() || form.thumbnailUrl.trim() || cleanIncludes(form.includes).length)
 })
 
 /** Autosave (edit): PATCH what changed. Resolves false when saving failed. */
@@ -260,6 +283,7 @@ async function persist(): Promise<boolean> {
         title: form.title.trim(),
         description: form.description.trim(),
         thumbnailUrl: form.thumbnailUrl.trim(),
+        includes: cleanIncludes(form.includes),
         price: form.price ?? 0,
         priceOriginal: form.priceOriginal ?? 0,
         items: [...selectedItems.value],
@@ -363,6 +387,8 @@ async function createAndContinue() {
     const patch: UpdateProductRequest = {}
     if (form.description.trim()) patch.description = form.description.trim()
     if (form.thumbnailUrl.trim()) patch.thumbnailUrl = form.thumbnailUrl.trim()
+    const cleanedIncludes = cleanIncludes(form.includes)
+    if (cleanedIncludes.length) patch.includes = cleanedIncludes
     if (form.price) patch.price = form.price
     if (form.priceOriginal) patch.priceOriginal = form.priceOriginal
     if (isSingle.value && form.shuffleQuestions) patch.shuffleQuestions = form.shuffleQuestions
@@ -374,6 +400,7 @@ async function createAndContinue() {
     form.title = ''
     form.description = ''
     form.thumbnailUrl = ''
+    form.includes = []
     await navigateTo({
       path: `/dashboard/tutor/products/${created.id}/edit`,
       query: { langkah: '3' },
@@ -827,6 +854,42 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           </div>
 
           <TutorThumbnailField v-model="form.thumbnailUrl" />
+
+          <div>
+            <span :class="FIELD_LABEL_CLASS">Yang kamu dapatkan</span>
+            <p class="-mt-1 mb-3 text-[0.82rem] text-muted">
+              Poin yang tampil sebagai checklist di halaman detail paket. Contoh: "Akses selamanya",
+              "Pembahasan tiap soal". Kosongkan semua untuk memakai daftar bawaan sesuai kategori ujian.
+            </p>
+            <div class="grid gap-2.5">
+              <div
+                v-for="(_, index) in form.includes"
+                :key="index"
+                class="flex items-center gap-3"
+              >
+                <input
+                  v-model="form.includes[index]"
+                  type="text"
+                  placeholder="Contoh: Akses selamanya, bisa diulang kapan saja"
+                  :class="FIELD_CLASS"
+                >
+                <button
+                  type="button"
+                  class="shrink-0 text-[0.86rem] font-semibold text-danger hover:underline"
+                  @click="removeIncludeRow(index)"
+                >
+                  Hapus
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="mt-3 text-[0.9rem] font-semibold text-primary hover:underline"
+              @click="addIncludeRow"
+            >
+              + Tambah poin
+            </button>
+          </div>
 
           <div class="grid gap-5 sm:grid-cols-2">
             <div>

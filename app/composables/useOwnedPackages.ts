@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import type { Attempt, OwnedPackage, RecordAttemptRequest } from '#shared/types/account'
-import type { TryoutBlueprint, TryoutResult } from '#shared/types/tryout'
+import type { TryoutAnswerState, TryoutAttemptReview, TryoutBlueprint, TryoutResult } from '#shared/types/tryout'
 import type { AsyncResource } from '~/composables/useAccountResource'
 
 /**
@@ -73,11 +73,19 @@ export function useOwnedPackages(): AsyncResource<OwnedPackage[]> {
 /**
  * Persists a finished try out sitting and returns the stored attempt.
  *
- * Posts the result — score and per-section tallies — to
- * POST /me/packages/:slug/attempts; the questions are not sent, only the
- * outcome.
+ * Posts the result — score, per-section tallies, and every question's answer
+ * — to POST /me/packages/:slug/attempts. `answers` is what makes "Lihat
+ * pembahasan" reopenable later from Riwayat pengerjaan: zenko-api judges each
+ * one against its own copy of the product and stores the result as the
+ * attempt's review snapshot, rather than trusting anything about correctness
+ * from this request. The returned Attempt's id is that review's key —
+ * TryoutResult navigates to `/akun/paket/:slug/kerjakan/pembahasan/:id` with it.
  */
-export async function recordAttempt(slug: string, result: TryoutResult): Promise<Attempt | null> {
+export async function recordAttempt(
+  slug: string,
+  result: TryoutResult,
+  answers: Record<string, TryoutAnswerState> = {},
+): Promise<Attempt | null> {
   const { public: config } = useRuntimeConfig()
 
   const body: RecordAttemptRequest = {
@@ -88,6 +96,7 @@ export async function recordAttempt(slug: string, result: TryoutResult): Promise
       correct: section.correct,
       total: section.total,
     })),
+    answers,
   }
 
   return await $fetch<Attempt>(`/me/packages/${slug}/attempts`, {
@@ -96,6 +105,22 @@ export async function recordAttempt(slug: string, result: TryoutResult): Promise
     body,
     credentials: 'include',
   })
+}
+
+/**
+ * One stored attempt's full pembahasan, read from
+ * GET /me/attempts/:attemptId/review. Reopenable at any time — from the
+ * result screen right after finishing, or later from Riwayat pengerjaan on
+ * the package page — since the detail lives in the database, not in
+ * sessionStorage. An attemptId that does not exist, or belongs to another
+ * account, 404s through to Nuxt's error page (see useSessionItem), same
+ * treatment useOwnedPackage already gives an unowned slug.
+ */
+export function useAttemptReview(attemptId: string): AsyncResource<TryoutAttemptReview | null> {
+  return useSessionItem<TryoutAttemptReview>(
+    `/me/attempts/${attemptId}/review`,
+    'Pembahasan ini tidak ada di akunmu',
+  )
 }
 
 /** One owned package; a slug the account doesn't own 404s instead of rendering empty. */
