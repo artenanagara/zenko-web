@@ -107,7 +107,7 @@ const columns = [
   { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
 
-// AppTable's cell slots hand back `item` as Record<string, any> (it isn't a
+// DashboardTable's cell slots hand back `item` as Record<string, any> (it isn't a
 // generic component), so tone/label lookups go through typed accessors and
 // the action cell recovers the typed row by id (pattern from
 // tutor/products/index.vue).
@@ -337,7 +337,7 @@ async function confirmReject(reason: string) {
           @action="reset"
         />
 
-        <AppTable v-else :columns="columns" :data="rows">
+        <DashboardTable v-else :columns="columns" :data="rows" primary-key="tutor" action-key="aksi">
           <template #cell(tutor)="{ item }">
             <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.tutor.name }}</span>
             <span class="block text-[0.82rem] text-muted">{{ item.tutor.email }}</span>
@@ -420,7 +420,7 @@ async function confirmReject(reason: string) {
               <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
 

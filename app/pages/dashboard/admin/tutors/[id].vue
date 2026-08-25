@@ -228,7 +228,7 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
           <p v-if="detail.products.length === 0" class="py-6 text-center text-muted">
             Tutor ini belum membuat produk.
           </p>
-          <AppTable v-else :columns="PRODUCT_COLUMNS" :data="detail.products">
+          <DashboardTable v-else :columns="PRODUCT_COLUMNS" :data="detail.products" primary-key="title" action-key="aksi">
             <template #cell(title)="{ value }">
               <span class="block font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
             </template>
@@ -248,7 +248,7 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
                 Lihat
               </NuxtLink>
             </template>
-          </AppTable>
+          </DashboardTable>
         </DashboardPanel>
       </div>
     </template>

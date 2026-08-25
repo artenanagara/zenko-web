@@ -100,7 +100,7 @@ const productColumns = [
   { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
 
-// AppTable's cell slots hand back `item`/`value` as Record<string, any>/any
+// DashboardTable's cell slots hand back `item`/`value` as Record<string, any>/any
 // (it isn't a generic component). Label/tone lookups go through these typed
 // accessors instead of indexing the `any` value directly...
 function productTypeLabel(type: TutorProductSummary['type']): string {
@@ -114,7 +114,7 @@ function productStatusLabel(status: TutorProductSummary['status']): string {
 }
 // ...and the action column (which needs the *whole* typed row, not just a
 // field) looks the row back up in the already-typed `rows` array by id
-// rather than trusting AppTable's erased `item`.
+// rather than trusting DashboardTable's erased `item`.
 function findProduct(id: string): TutorProductSummary | undefined {
   return rows.value.find(product => product.id === id)
 }
@@ -282,7 +282,7 @@ async function deleteProduct(product: TutorProductSummary) {
           @action="reset"
         />
 
-        <AppTable v-else :columns="productColumns" :data="rows">
+        <DashboardTable v-else :columns="productColumns" :data="rows" primary-key="title" action-key="aksi">
           <template #cell(title)="{ item }">
             <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
             <span
@@ -312,7 +312,7 @@ async function deleteProduct(product: TutorProductSummary) {
           <template #cell(aksi)="{ item }">
             <!-- v-for over a one-item array recovers the typed row from
                  `findProduct` as a template-scoped variable, narrowed by the
-                 v-if below — avoids passing AppTable's untyped `item` straight
+                 v-if below — avoids passing DashboardTable's untyped `item` straight
                  into functions that expect the real TutorProductSummary shape. -->
             <template v-for="product in [findProduct(item.id)]" :key="item.id">
               <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
@@ -357,7 +357,7 @@ async function deleteProduct(product: TutorProductSummary) {
               </span>
             </template>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
   </div>

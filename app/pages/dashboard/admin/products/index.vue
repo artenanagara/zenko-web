@@ -148,7 +148,7 @@ const columns = computed<Column[]>(() => [
   { key: 'aksi', label: 'Aksi', align: 'right' },
 ])
 
-// AppTable's cell slots hand back `item` as Record<string, any>; label/tone
+// DashboardTable's cell slots hand back `item` as Record<string, any>; label/tone
 // lookups go through typed accessors, and the action cell recovers the whole
 // typed row by id (same discipline as tutor/products/index.vue).
 function typeLabel(type: AdminProductSummary['type']): string {
@@ -313,7 +313,7 @@ async function decide(approve: boolean, reason?: string) {
           @action="reset"
         />
 
-        <AppTable v-else :columns="columns" :data="rows">
+        <DashboardTable v-else :columns="columns" :data="rows" primary-key="title" action-key="aksi">
           <template #cell(title)="{ value }">
             <span class="block font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
           </template>
@@ -360,7 +360,7 @@ async function decide(approve: boolean, reason?: string) {
               </span>
             </template>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
 

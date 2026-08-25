@@ -28,7 +28,7 @@ const previewOpen = ref(false)
 const previewIndex = ref(0)
 
 /**
- * Takes the row number directly (not the whole row) — AppTable's cell slots
+ * Takes the row number directly (not the whole row) — DashboardTable's cell slots
  * hand back `item` as `Record<string, any>` (it isn't a generic component),
  * so pulling just the one field we need out of it avoids re-asserting the
  * whole row's shape with an `as`.
@@ -80,7 +80,7 @@ const columns = computed(() => [
       Belum ada soal di produk ini.
     </p>
 
-    <AppTable v-else :columns="columns" :data="rows">
+    <DashboardTable v-else :columns="columns" :data="rows" primary-key="prompt" action-key="preview">
       <template #cell(sectionTitle)="{ value }">
         <DashboardBadge tone="neutral">{{ value }}</DashboardBadge>
       </template>
@@ -104,7 +104,7 @@ const columns = computed(() => [
           <AppIcon name="eye" :size="16" />
         </button>
       </template>
-    </AppTable>
+    </DashboardTable>
 
     <TutorQuestionPreviewModal v-model:open="previewOpen" :sections="sections" :start-index="previewIndex" />
   </div>

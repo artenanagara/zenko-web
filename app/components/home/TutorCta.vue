@@ -52,7 +52,11 @@ const recentSales = [
           </div>
 
           <ul class="mt-5 grid gap-3.5 border-t border-line pt-5">
-            <li v-for="sale in recentSales" :key="sale.title" class="flex items-center gap-3">
+            <!-- min-w-0: sebagai grid item, <li> default-nya `min-width:auto`
+                 dan menolak menyusut di bawah lebar min-content-nya, jadi di
+                 320px baris ini menonjol keluar panel dan membuat seluruh
+                 beranda bisa digeser ke samping. -->
+            <li v-for="sale in recentSales" :key="sale.title" class="flex min-w-0 items-center gap-3">
               <span class="h-9 w-9 shrink-0 rounded-[10px] bg-primary-soft" />
               <span class="flex min-w-0 flex-1 flex-col">
                 <b class="truncate text-[0.9rem] font-bold tracking-[-0.02em]">{{ sale.title }}</b>

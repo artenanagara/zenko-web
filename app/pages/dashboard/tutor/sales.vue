@@ -150,7 +150,7 @@ const salesColumns = [
   { key: 'share', label: 'Pendapatan bersih', align: 'right' as const },
 ]
 
-// AppTable's cell slots hand back `item`/`value` as Record<string, any>/any
+// DashboardTable's cell slots hand back `item`/`value` as Record<string, any>/any
 // (it isn't a generic component), so lookups against the strictly-typed
 // label/tone records go through these typed accessors instead of indexing
 // the `any` value directly — keeps the label maps honestly typed without an
@@ -241,11 +241,11 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
           @action="() => navigateTo('/dashboard/tutor/products')"
         />
 
-        <AppTable
+        <DashboardTable
           v-else
           :columns="salesColumns"
           :data="rows"
-        >
+         primary-key="productTitle">
           <template #cell(paidAt)="{ value }">
             <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
           </template>
@@ -266,7 +266,7 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
               </DashboardBadge>
             </span>
           </template>
-        </AppTable>
+        </DashboardTable>
       </div>
     </DashboardPanel>
   </div>

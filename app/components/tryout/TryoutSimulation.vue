@@ -62,7 +62,11 @@ const totalQuestions = computed(() => section.value?.questions.length ?? 0)
 
 const showEndConfirm = ref(false)
 
+/** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
+const navOpen = ref(false)
+
 function requestEndSection() {
+  navOpen.value = false
   showEndConfirm.value = true
 }
 
@@ -178,7 +182,7 @@ async function exitSimulation() {
           </template>
         </TryoutHeader>
 
-        <main class="container-page grid gap-5 pt-22 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
+        <main class="container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
           <div class="min-h-0 md:overflow-y-auto md:pr-1">
             <!-- Spanduk praktik, menempel tepat di bawah header dan sebelum
                  area soal, supaya UI ujian ini tidak pernah tertukar dengan
@@ -197,7 +201,9 @@ async function exitSimulation() {
             />
           </div>
 
-          <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <!-- Rail nomor soal: desktop saja. Di HP tempatnya bottom
+               sheet di bawah, bukan tumpukan di bawah kartu soal. -->
+          <div class="hidden min-h-0 md:block md:overflow-y-auto md:pr-1">
             <TryoutNavigator
               :groups="session.navigatorGroups.value"
               :current-index="session.currentIndex.value"
@@ -216,9 +222,26 @@ async function exitSimulation() {
           :can-next="!session.isLastQuestion.value"
           :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
           :is-last-section="session.isLastSection.value"
+          :answered-count="session.answeredCount.value"
+          :total-questions="session.displayTotal.value"
           @prev="session.prev()"
           @next="session.next()"
           @toggle-doubt="session.toggleDoubt()"
+          @end-section="requestEndSection"
+          @open-navigator="navOpen = true"
+        />
+
+        <TryoutNavigatorSheet
+          v-model:open="navOpen"
+          :groups="session.navigatorGroups.value"
+          :current-index="session.currentIndex.value"
+          :answered-count="session.answeredCount.value"
+          :doubtful-count="session.doubtfulCount.value"
+          :total-questions="session.displayTotal.value"
+          :status-of="session.statusOf"
+          :label-of="session.labelOf"
+          :is-last-section="session.isLastSection.value"
+          @jump="session.goTo"
           @end-section="requestEndSection"
         />
 
