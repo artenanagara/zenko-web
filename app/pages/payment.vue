@@ -37,10 +37,19 @@ const livePaid = ref(false)
 watch(purchase, async (value) => {
   if (!value) return
 
-  // A payment page is only useful while its QR is actionable. Reopening a
-  // settled/expired URL (including via browser Back) lands on the durable
-  // invoice instead, so payment history has one canonical destination.
-  if (value.status !== 'pending') {
+  // Lunas berhenti di sini, tidak dilempar ke invoice.
+  //
+  // Sebelumnya setiap status non-`pending` diarahkan ke /akun/pembelian/:invoice,
+  // termasuk yang baru saja berhasil dibayar — jadi pembeli paket gratis (Rp0,
+  // yang langsung berstatus `paid` begitu pesanan dibuat) tidak pernah melihat
+  // layar "Pembayaran berhasil" sama sekali; ia mendarat di dokumen invoice dan
+  // harus mencari sendiri jalan ke paketnya. Layar sukses di bawah sudah punya
+  // tombol "Lihat paket saya" dan hitung mundur otomatis ke /akun/paket, yang
+  // memang tujuan orang sesudah membeli. Invoice tetap ada di Riwayat pembelian.
+  //
+  // Yang masih diarahkan hanya status yang QR-nya sudah tidak bisa dipakai dan
+  // tidak berujung kepemilikan — expired, batal, gagal.
+  if (value.status !== 'pending' && value.status !== 'paid') {
     await navigateTo(`/akun/pembelian/${value.invoice}`, { replace: true })
     return
   }
@@ -194,7 +203,7 @@ watch(isRedirecting, (active, wasActive) => {
                 class="w-full"
                 @click="navigateTo('/akun/paket', { replace: true })"
               >
-                Lihat paketku
+                Lihat paket saya
               </AppButton>
               <p class="text-[0.82rem] text-muted tabular-nums" role="status">
                 Otomatis diarahkan dalam {{ redirectRemaining }} detik…

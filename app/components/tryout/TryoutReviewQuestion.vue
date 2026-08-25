@@ -83,12 +83,12 @@ function isBestLabel(label: string): boolean {
 
     <div
       v-if="question.stimulus"
-      class="mt-3 rounded-sm border border-hairline bg-surface-alt p-3.5 text-[0.9rem] leading-[1.65] text-muted [&_img]:my-3 [&_img]:max-h-72 [&_img]:rounded-xs"
+      class="prose-question mt-3 rounded-sm border border-hairline bg-surface-alt p-3.5 text-[0.9rem] leading-[1.65] text-muted [&_img]:max-h-72"
       v-html="question.stimulus"
     />
 
     <div
-      class="mt-3 text-[0.98rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink [&_img]:my-3 [&_img]:max-h-96 [&_img]:rounded-xs"
+      class="prose-question mt-3 text-[0.98rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink [&_img]:max-h-96"
       v-html="question.text"
     />
 
@@ -110,7 +110,7 @@ function isBestLabel(label: string): boolean {
             alt=""
             class="mb-2 max-h-52 max-w-full rounded-xs object-contain"
           >
-          <span class="[&_img]:my-2 [&_img]:max-h-52 [&_img]:rounded-xs" v-html="option.text" />
+          <span class="prose-question [&_img]:max-h-52" v-html="option.text" />
           <span v-if="selected === option.label" class="mt-1 block text-[0.76rem] font-bold text-muted uppercase">
             Jawabanmu
           </span>
@@ -146,7 +146,7 @@ function isBestLabel(label: string): boolean {
       </p>
       <div
         v-if="question.explanation"
-        class="text-[0.9rem] leading-[1.65] text-muted [&_img]:my-2 [&_img]:max-h-72 [&_img]:rounded-xs"
+        class="prose-question text-[0.9rem] leading-[1.65] text-muted [&_img]:max-h-72"
         v-html="question.explanation"
       />
       <p v-else class="text-[0.86rem] text-muted">Tutor belum menulis pembahasan untuk soal ini.</p>
