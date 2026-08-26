@@ -81,7 +81,7 @@ const describedBy = computed(() => {
         :autocomplete="autocomplete"
         :disabled="disabled"
         :inputmode="inputMode"
-        class="w-full rounded-sm border bg-surface py-2.5 pl-3.5 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:outline-none"
+        class="w-full rounded-sm border bg-surface py-2.5 pl-3.5 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:outline-none disabled:cursor-not-allowed disabled:border-hairline disabled:bg-surface-sunken disabled:text-muted"
         :class="[
           isPassword ? 'pr-12' : 'pr-3.5',
           error
