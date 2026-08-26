@@ -3,5 +3,6 @@
     <NuxtPage />
   </NuxtLayout>
   <ConfirmDialog />
+  <ToastHost />
   <CookieConsent />
 </template>

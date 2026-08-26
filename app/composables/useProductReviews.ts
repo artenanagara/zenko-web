@@ -20,10 +20,12 @@ export function useProductReviews(slug: string) {
     catch { mine.value = null }
   }
 
+  // Deliberately does not call refresh(): only the public paket page shows the
+  // full list, and on the account page that extra request fetches a list
+  // nothing renders. Call sites that display the list refresh it themselves.
   async function save(input: ProductReviewInput) {
     const saved = await $fetch<ProductReview>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase, method: 'POST', body: input, credentials: 'include' })
     mine.value = saved
-    await refresh()
     return saved
   }
 

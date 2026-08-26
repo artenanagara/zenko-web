@@ -73,6 +73,15 @@ watchEffect(() => {
   void navigateTo({ path: route.path, query: rest }, { replace: true })
 })
 
+/**
+ * Modal yang sama dipakai dua arah: ajakan setelah sesi selesai (di atas) dan
+ * tombol "Edit ulasan" pada ulasan yang sudah ada. Judulnya ikut berubah
+ * supaya siswa tahu mana yang sedang ia lakukan.
+ */
+function openReviewEditor() {
+  reviewModalOpen.value = true
+}
+
 async function onReviewSubmitted() {
   reviewModalOpen.value = false
   await reviews.refreshMine()
@@ -388,13 +397,18 @@ function barTone(percent: number) {
             ? 'Ulasan ini tampil di halaman paket dan profil tutornya. Kamu bisa memperbaruinya kapan saja.'
             : 'Bantu tutor dan siswa lain dengan menilai paket yang sudah kamu kerjakan.'"
         >
-          <!-- Kirim ulasan lewat modal, dan form ini harus ikut memuat ulang
-               isinya — tanpa key-nya panel masih menampilkan bintang kosong
-               di bawah judul yang sudah berubah jadi "Ulasanmu". -->
+          <!-- Sudah pernah mengulas: yang tampil adalah ulasannya, bukan form
+               kosong kedua. Memperbaruinya lewat "Edit ulasan" di kartu itu,
+               yang membuka form yang sama di dalam modal. -->
+          <ProductReviewItem
+            v-if="reviews.mine.value"
+            :review="reviews.mine.value"
+            is-mine
+            @edit="openReviewEditor"
+          />
           <ProductReviewForm
-            :key="hasReviewed ? 'tersimpan' : 'baru'"
+            v-else
             :slug="item.slug"
-            :product-title="item.title"
             embedded
             @submitted="onReviewSubmitted"
           />
@@ -405,12 +419,14 @@ function barTone(percent: number) {
            sama dengan panel di atas — satu sumber, dua tempat munculnya. -->
       <AppModal
         v-model="reviewModalOpen"
-        title="Bagaimana pengalaman try out ini?"
-        description="Bantu tutor dan rekan pejuang lainnya dengan memberikan ulasan singkat."
+        :title="hasReviewed ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman try out ini?'"
+        :description="hasReviewed
+          ? 'Ulasan yang tersimpan akan menggantikan versi sebelumnya.'
+          : 'Bantu tutor dan rekan pejuang lainnya dengan memberikan ulasan singkat.'"
       >
         <ProductReviewForm
           :slug="item.slug"
-          :product-title="item.title"
+          :existing="reviews.mine.value"
           embedded
           @submitted="onReviewSubmitted"
         />
@@ -420,7 +436,7 @@ function barTone(percent: number) {
             class="text-[0.88rem] font-semibold text-muted transition-colors hover:text-ink"
             @click="close"
           >
-            Nanti saja
+            {{ hasReviewed ? 'Batal' : 'Nanti saja' }}
           </button>
         </template>
       </AppModal>

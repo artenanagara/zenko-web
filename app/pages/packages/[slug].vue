@@ -15,9 +15,30 @@ const { isSignedIn } = useAuth()
 const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.value)
 const productReviews = useProductReviews(slug)
 
+// refreshMine() runs for everyone, signed in or not: the session cookie rides
+// along with the request either way, and waiting for useAuth to resolve first
+// would only delay knowing whether this visitor already has an ulasan here.
+// A signed-out visitor gets a 401, which the composable reads as "none".
 onMounted(() => {
   productReviews.refresh()
+  productReviews.refreshMine()
 })
+
+/**
+ * Satu ulasan per siswa per paket. Begitu ulasannya ada, form di bawah daftar
+ * hilang — memperbaruinya dimulai dari tombol "Edit ulasan" pada ulasan itu
+ * sendiri, yang membuka form ini di dalam modal.
+ */
+const myReview = computed(() => productReviews.mine.value)
+const reviewEditorOpen = ref(false)
+
+// refreshMine() matters as much as refresh(): the form saves through its own
+// composable instance, so without this the page still believes this visitor
+// has no ulasan and keeps offering a blank form under the list.
+async function onReviewSubmitted() {
+  reviewEditorOpen.value = false
+  await Promise.all([productReviews.refresh(), productReviews.refreshMine()])
+}
 
 const discountPercent = computed(() => {
   const { price, priceOriginal } = detail.value
@@ -162,18 +183,41 @@ useHead({
               <p class="text-[0.88rem] text-muted">Rating dan masukan dari siswa yang sudah mengerjakan paket ini.</p>
             </div>
             <div v-if="productReviews.data.value.length" class="grid gap-4">
-              <article v-for="review in productReviews.data.value" :key="review.id" class="rounded-md border border-hairline bg-surface p-4">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <p class="font-semibold">{{ review.isAnonymous ? 'Siswa anonim' : review.authorName }}</p>
-                  <p class="text-star" :aria-label="`${review.rating} dari 5 bintang`">{{ '★'.repeat(review.rating) }}<span class="text-faint">{{ '★'.repeat(5 - review.rating) }}</span></p>
-                </div>
-                <p v-if="review.tags.length" class="mt-2 text-[0.8rem] text-muted">{{ review.tags.join(' · ') }}</p>
-                <p v-if="review.reviewText" class="mt-3 leading-[1.65] text-muted">{{ review.reviewText }}</p>
-                <div v-if="review.tutorReplyText" class="mt-4 border-l-2 border-primary/30 pl-3 text-[0.88rem] text-muted"><span class="font-semibold text-ink">Balasan tutor:</span> {{ review.tutorReplyText }}</div>
-              </article>
+              <ProductReviewItem
+                v-for="review in productReviews.data.value"
+                :key="review.id"
+                :review="review"
+                :is-mine="review.id === myReview?.id"
+                @edit="reviewEditorOpen = true"
+              />
             </div>
             <p v-else class="rounded-md border border-dashed border-line px-4 py-6 text-center text-muted">Belum ada ulasan. Jadilah yang pertama setelah mengerjakan paket ini.</p>
-            <ProductReviewForm v-if="isSignedIn" :slug="slug" :product-title="detail.title" @submitted="productReviews.refresh" />
+
+            <!-- Ulasan siswa ini belum dipublikasikan (masih dimoderasi), jadi
+                 tidak ada di daftar di atas dan tidak punya tombol edit di
+                 sana — panel ringkas ini yang menyediakannya. -->
+            <div
+              v-if="myReview && !productReviews.data.value.some(review => review.id === myReview!.id)"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary-soft/20 px-4 py-3"
+            >
+              <p class="text-[0.88rem] text-muted">
+                Ulasanmu sudah terkirim dan sedang menunggu tayang.
+              </p>
+              <button
+                type="button"
+                class="inline-flex cursor-pointer items-center gap-1.5 text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
+                @click="reviewEditorOpen = true"
+              >
+                <AppIcon name="pencil-simple" :size="15" weight="bold" />
+                Edit ulasan
+              </button>
+            </div>
+
+            <ProductReviewForm
+              v-if="isSignedIn && !myReview"
+              :slug="slug"
+              @submitted="onReviewSubmitted"
+            />
           </div>
         </div>
 
@@ -256,5 +300,20 @@ useHead({
         </div>
       </div>
     </section>
+
+    <!-- Form yang sama dengan yang tampil di bawah daftar untuk siswa yang
+         belum mengulas — di sini ia hanya muncul lewat tombol "Edit ulasan". -->
+    <AppModal
+      v-model="reviewEditorOpen"
+      title="Perbarui ulasanmu"
+      description="Ulasan yang tersimpan akan menggantikan versi sebelumnya."
+    >
+      <ProductReviewForm
+        :slug="slug"
+        :existing="myReview"
+        embedded
+        @submitted="onReviewSubmitted"
+      />
+    </AppModal>
   </main>
 </template>

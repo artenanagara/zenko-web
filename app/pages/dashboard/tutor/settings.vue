@@ -53,6 +53,7 @@ const {
 const { data: tutorProfile, pending: tutorProfilePending, refresh: refreshTutorProfile } = useTutorProfile()
 const tutorReviews = useTutorReviews()
 const replyDrafts = reactive<Record<string, string>>({})
+const toast = useToast()
 
 // Client-only fetch: the session cookie never reaches the Nuxt server, so
 // this resolves after hydration (see useTutorEarnings).
@@ -67,8 +68,33 @@ watch(() => tutorReviews.data.value, (reviews) => {
   for (const review of reviews) replyDrafts[review.id] = review.tutorReplyText || ''
 }, { deep: true })
 
+/**
+ * Textarea balasan per ulasan, dipakai untuk memindahkan fokus ke kolom yang
+ * bermasalah — bukan reaktif, hanya dibaca saat submit.
+ */
+const replyFields: Record<string, HTMLTextAreaElement | null> = {}
+
+function setReplyField(reviewId: string, el: unknown) {
+  replyFields[reviewId] = (el as HTMLTextAreaElement | null) ?? null
+}
+
 async function replyToReview(reviewId: string) {
-  await tutorReviews.reply(reviewId, replyDrafts[reviewId] || '')
+  const draft = (replyDrafts[reviewId] || '').trim()
+  if (!draft) {
+    const field = replyFields[reviewId]
+    field?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    field?.focus({ preventScroll: true })
+    toast.error('Balasan masih kosong.', 'Tulis dulu balasanmu sebelum mengirim.')
+    return
+  }
+
+  try {
+    await tutorReviews.reply(reviewId, draft)
+    toast.success('Balasan terkirim.', 'Balasanmu tampil di bawah ulasan siswa itu.')
+  }
+  catch (cause) {
+    toast.error('Gagal mengirim balasan.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -485,7 +511,7 @@ async function submitChangeRequest() {
             <details class="mt-4">
               <summary class="cursor-pointer text-[0.86rem] font-semibold text-primary">{{ review.tutorReplyText ? 'Edit balasan' : 'Balas ulasan' }}</summary>
               <form class="mt-3 flex gap-2" @submit.prevent="replyToReview(review.id)">
-                <textarea v-model="replyDrafts[review.id]" rows="2" maxlength="1000" class="min-w-0 flex-1 rounded-sm border border-line bg-surface px-3 py-2 text-[0.86rem]" placeholder="Tulis balasan yang membantu siswa..." />
+                <textarea :ref="el => setReplyField(review.id, el)" v-model="replyDrafts[review.id]" rows="2" maxlength="1000" class="min-w-0 flex-1 scroll-mt-24 rounded-sm border border-line bg-surface px-3 py-2 text-[0.86rem]" placeholder="Tulis balasan yang membantu siswa..." />
                 <AppButton type="submit" size="sm">Kirim</AppButton>
               </form>
             </details>
