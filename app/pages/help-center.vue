@@ -2,10 +2,17 @@
 import {
   IconUser,
   IconWallet,
-  IconStar,
+  IconTarget,
   IconHandshake,
+  IconUsers,
+  IconSettings,
+  IconSearch,
+  IconArrowRight,
+  IconLink,
   IconMail,
+  IconRocket,
 } from '#components'
+import { helpArticles, helpCategories, type HelpArticle, type HelpCategoryIcon, type HelpRole } from '~/data/help-center'
 
 // English file name, Indonesian URL.
 definePageMeta({ path: '/pusat-bantuan' })
@@ -13,10 +20,10 @@ definePageMeta({ path: '/pusat-bantuan' })
 useSeoMeta({
   title: 'Pusat Bantuan | Zenko',
   description:
-    'Pusat Bantuan Zenko — temukan jawaban seputar akun, pembayaran, refund, paket try out, dan menjadi tutor, atau hubungi tim kami langsung.',
+    'Pusat Bantuan Zenko — panduan langkah demi langkah seputar akun, pembayaran, ujian CBT, portal tutor, dan bimbel, atau hubungi tim kami langsung.',
   ogTitle: 'Pusat Bantuan | Zenko',
   ogDescription:
-    'Pusat Bantuan Zenko — temukan jawaban seputar akun, pembayaran, refund, paket try out, dan menjadi tutor, atau hubungi tim kami langsung.',
+    'Pusat Bantuan Zenko — panduan langkah demi langkah seputar akun, pembayaran, ujian CBT, portal tutor, dan bimbel, atau hubungi tim kami langsung.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/pusat-bantuan',
   twitterCard: 'summary_large_image',
@@ -26,37 +33,75 @@ useHead({
   link: [{ rel: 'canonical', href: 'https://zenkoedu.id/pusat-bantuan' }],
 })
 
-/**
- * A navigation hub, not a document — each card sends the visitor to the
- * relevant FAQ category or dedicated policy page rather than restating any
- * content here.
- */
-const categories = [
-  {
-    icon: IconUser,
-    title: 'Akun & Login',
-    description: 'Mendaftar, masuk dengan Google atau email, dan mengatur ulang kata sandi.',
-    to: '/faq#akun-login',
-  },
-  {
-    icon: IconWallet,
-    title: 'Pembayaran & Refund',
-    description: 'Metode pembayaran QRIS, status pesanan, dan cara mengajukan refund.',
-    to: '/faq#pembayaran-refund',
-  },
-  {
-    icon: IconStar,
-    title: 'Paket & Try Out',
-    description: 'Cara kerja try out CBT, masa akses paket, dan hasil pengerjaan.',
-    to: '/faq#tentang-zenko',
-  },
-  {
-    icon: IconHandshake,
-    title: 'Jadi Tutor',
-    description: 'Syarat, proses pengajuan, bagi hasil, dan ketentuan tutor.',
-    to: '/faq#jadi-tutor',
-  },
+const categoryIcons: Record<HelpCategoryIcon, unknown> = {
+  user: IconUser,
+  wallet: IconWallet,
+  target: IconTarget,
+  handshake: IconHandshake,
+  users: IconUsers,
+  settings: IconSettings,
+}
+
+interface RoleTab {
+  value: 'semua' | HelpRole
+  label: string
+}
+
+const roleTabs: RoleTab[] = [
+  { value: 'semua', label: 'Semua' },
+  { value: 'siswa', label: 'Siswa' },
+  { value: 'tutor', label: 'Tutor' },
+  { value: 'bimbel', label: 'Bimbel & Institusi' },
 ]
+
+const activeRole = ref<RoleTab['value']>('semua')
+
+const visibleCategories = computed(() =>
+  helpCategories
+    .map(category => ({
+      ...category,
+      articles: helpArticles.filter(
+        article =>
+          article.categorySlug === category.slug
+          && (activeRole.value === 'semua' || article.roles.includes(activeRole.value as HelpRole)),
+      ),
+    }))
+    .filter(category => category.articles.length > 0),
+)
+
+// ------------------------------------------------------------------------
+// Bilah pencarian: daftar saran instan sambil mengetik, tanpa panggilan API
+// — seluruh 28 artikel sudah ada di client lewat data/help-center.
+// ------------------------------------------------------------------------
+const searchQuery = ref('')
+const searchFocused = ref(false)
+
+const searchResults = computed<HelpArticle[]>(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return []
+  return helpArticles
+    .filter(
+      article =>
+        article.title.toLowerCase().includes(query)
+        || article.summary.toLowerCase().includes(query)
+        || (article.keywords ?? []).some(keyword => keyword.toLowerCase().includes(query)),
+    )
+    .slice(0, 8)
+})
+
+const showSuggestions = computed(() => searchFocused.value && searchQuery.value.trim().length > 0)
+
+function categoryTitleFor(article: HelpArticle) {
+  return helpCategories.find(category => category.slug === article.categorySlug)?.title ?? ''
+}
+
+// Delay menutup dropdown supaya klik pada hasil sempat terdaftar sebelum
+// blur menyembunyikannya.
+function onSearchBlur() {
+  setTimeout(() => {
+    searchFocused.value = false
+  }, 150)
+}
 
 const quickLinks = [
   { label: 'FAQ selengkapnya', to: '/faq' },
@@ -71,7 +116,7 @@ const quickLinks = [
 <template>
   <main>
     <!-- ==================================================================
-         1. Hero
+         1. Hero + pencarian
          ================================================================== -->
     <section class="container-page pt-3 md:pt-5">
       <div
@@ -86,42 +131,127 @@ const quickLinks = [
             <span class="text-accent mt-1 block">kami bantu?</span>
           </h1>
           <p class="mx-auto mt-4 max-w-140 text-[1.02rem] text-muted">
-            Pilih topik di bawah untuk jawaban cepat, atau hubungi tim Zenko
+            Cari panduan langkah demi langkah di bawah, atau hubungi tim Zenko
             langsung kalau belum ketemu yang kamu cari.
           </p>
+
+          <div class="relative mx-auto mt-8 max-w-130 text-left">
+            <IconSearch class="pointer-events-none absolute top-1/2 left-4.5 h-4.5 w-4.5 -translate-y-1/2 text-muted" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari, misalnya “ganti rekening” atau “qris tertunda”"
+              class="h-13 w-full rounded-xl border border-hairline bg-surface pr-4.5 pl-12 text-[0.95rem] text-ink shadow-xs transition-[box-shadow,border-color] duration-200 ease-smooth placeholder:text-muted focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none"
+              @focus="searchFocused = true"
+              @blur="onSearchBlur"
+            >
+
+            <!-- Daftar saran instan -->
+            <div
+              v-if="showSuggestions"
+              class="absolute inset-x-0 top-[calc(100%+0.5rem)] z-20 max-h-100 overflow-y-auto rounded-xl border border-hairline bg-surface p-2 text-left shadow-lift"
+            >
+              <template v-if="searchResults.length">
+                <NuxtLink
+                  v-for="result in searchResults"
+                  :key="result.slug"
+                  :to="`/pusat-bantuan/${result.slug}`"
+                  class="flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 hover:bg-surface-alt"
+                >
+                  <span class="min-w-0">
+                    <span class="block truncate font-semibold text-ink">{{ result.title }}</span>
+                    <span class="mt-0.5 block text-[0.8rem] text-muted">{{ categoryTitleFor(result) }}</span>
+                  </span>
+                  <span
+                    v-if="result.comingSoon"
+                    class="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-pill bg-purple-50 px-2 py-0.5 text-[0.68rem] font-bold text-purple-700"
+                  >
+                    Segera Hadir
+                  </span>
+                </NuxtLink>
+              </template>
+              <p v-else class="px-3 py-2.5 text-[0.9rem] text-muted">
+                Tidak ada panduan yang cocok. Coba kata kunci lain.
+              </p>
+            </div>
+          </div>
+
+          <!-- Filter peran -->
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-2" role="tablist" aria-label="Filter berdasarkan peran">
+            <button
+              v-for="tab in roleTabs"
+              :key="tab.value"
+              type="button"
+              role="tab"
+              :aria-selected="activeRole === tab.value"
+              class="rounded-pill px-4 py-2 text-[0.86rem] font-semibold transition-colors duration-200 ease-smooth"
+              :class="
+                activeRole === tab.value
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'bg-surface text-muted hover:text-ink'
+              "
+              @click="activeRole = tab.value"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ==================================================================
-         2. Kategori bantuan
+         2. Kategori dan artikel panduan
          ================================================================== -->
-    <section class="pt-18 md:pt-22" aria-labelledby="kategori-heading">
+    <section
+      v-for="(category, index) in visibleCategories"
+      :key="category.slug"
+      class="pt-16 md:pt-20"
+      :class="index === 0 ? 'pt-20 md:pt-24' : 'border-t border-line/60'"
+      :aria-labelledby="`${category.slug}-heading`"
+    >
       <div class="container-page">
-        <h2 id="kategori-heading" class="sr-only">Kategori bantuan</h2>
-
-        <div class="mx-auto grid max-w-300 gap-5 md:grid-cols-2">
-          <NuxtLink
-            v-for="category in categories"
-            :key="category.title"
-            :to="category.to"
-            class="group rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
-          >
+        <div class="mx-auto max-w-300">
+          <div class="mb-9 flex items-start gap-4">
             <span
-              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-primary"
+              class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-primary-soft text-primary"
               aria-hidden="true"
             >
-              <component :is="category.icon" class="h-6 w-6" />
+              <component :is="categoryIcons[category.icon]" class="h-5.5 w-5.5" />
             </span>
-            <h3 class="mt-4 mb-2 text-[1.15rem] font-bold tracking-[-0.03em]">
-              {{ category.title }}
-            </h3>
-            <p class="leading-[1.62] text-muted">{{ category.description }}</p>
-            <span class="mt-4 inline-flex items-center gap-1.5 text-[0.9rem] font-semibold text-primary">
-              Lihat jawaban
-              <IconArrowRight class="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </span>
-          </NuxtLink>
+            <div class="pt-0.5">
+              <h2 :id="`${category.slug}-heading`" class="text-[clamp(1.3rem,2.2vw,1.6rem)] leading-[1.2] tracking-tighter">
+                {{ category.title }}
+              </h2>
+              <p class="mt-1.5 leading-[1.6] text-muted">{{ category.description }}</p>
+            </div>
+          </div>
+
+          <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <NuxtLink
+              v-for="article in category.articles"
+              :key="article.slug"
+              :to="`/pusat-bantuan/${article.slug}`"
+              class="group flex flex-col rounded-2xl border border-hairline bg-surface p-7 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
+            >
+              <div class="mb-2.5 flex items-start justify-between gap-3">
+                <h3 class="leading-[1.4] font-bold tracking-[-0.02em]">
+                  {{ article.title }}
+                </h3>
+                <span
+                  v-if="article.comingSoon"
+                  class="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-pill bg-purple-50 px-2.5 py-1 text-[0.68rem] font-bold text-purple-700"
+                >
+                  <IconRocket class="h-3 w-3" />
+                  Segera Hadir
+                </span>
+              </div>
+              <p class="grow text-[0.9rem] leading-[1.7] text-muted">{{ article.summary }}</p>
+              <span class="mt-5 inline-flex items-center gap-1.5 text-[0.85rem] font-semibold text-primary">
+                Baca panduan
+                <IconArrowRight class="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </span>
+            </NuxtLink>
+          </div>
         </div>
       </div>
     </section>
