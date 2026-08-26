@@ -58,16 +58,19 @@ function numberFor(_question: TryoutQuestion, displayNumber: number) {
         <span v-if="doubtfulCount" class="text-amber-700"> · {{ doubtfulCount }} ragu-ragu</span>
       </p>
 
-      <ul class="mt-3 grid gap-1.5 text-[0.78rem] text-muted">
-        <li class="flex items-center gap-2">
+      <!-- Mendatar, membungkus ke baris berikutnya kalau rail-nya kesempitan:
+           tiga baris tertumpuk memakan tinggi sticky header ini, dan tinggi
+           itu langsung memotong jatah scroll grid nomor soal di bawahnya. -->
+      <ul class="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[0.78rem] text-muted">
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-hairline-strong bg-surface" />
           Belum dijawab
         </li>
-        <li class="flex items-center gap-2">
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-amber-400 bg-amber-50" />
           Ragu-ragu
         </li>
-        <li class="flex items-center gap-2">
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-success bg-success-soft" />
           Sudah dijawab
         </li>
@@ -112,15 +115,15 @@ function numberFor(_question: TryoutQuestion, displayNumber: number) {
       <!-- Sheet only: the panel's legend moved into the sticky header above;
            the sheet keeps it inline here, same as before. -->
       <ul v-if="variant === 'sheet'" class="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-hairline pt-3 text-[0.78rem] text-muted">
-        <li class="flex items-center gap-2">
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-hairline-strong bg-surface" />
           Belum dijawab
         </li>
-        <li class="flex items-center gap-2">
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-amber-400 bg-amber-50" />
           Ragu-ragu
         </li>
-        <li class="flex items-center gap-2">
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-success bg-success-soft" />
           Sudah dijawab
         </li>
