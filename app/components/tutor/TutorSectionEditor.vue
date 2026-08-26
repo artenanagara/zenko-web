@@ -26,6 +26,8 @@ const props = defineProps<{
   sections: TutorSection[]
   /** The section default is used as the initial answer type for new questions. */
   isCustom?: boolean
+  /** Passed straight through to the question editor's TKA format check. */
+  examTypeSlug?: string
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -291,6 +293,7 @@ const activeSectionDotClass = computed(() =>
             :initial="questionBeingEdited(activeSection!)"
             :default-kind="activeSection!.defaultKind"
             :is-custom="isCustom"
+            :exam-type-slug="examTypeSlug"
             :saving="saving"
             :product-id="productId"
             :section-id="activeSection!.id"

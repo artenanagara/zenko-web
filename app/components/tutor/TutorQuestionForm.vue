@@ -33,6 +33,8 @@ const props = defineProps<{
   saving: boolean
   productId: string
   sectionId: string
+  /** Exam type of the paket, used to flag answer types the real TKA never uses. */
+  examTypeSlug?: string
 }>()
 
 const emit = defineEmits<{
@@ -69,11 +71,24 @@ const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
 
 const kind = ref<QuestionKind>(props.initial?.kind ?? props.defaultKind)
 const kindLabel = computed(() => KIND_OPTIONS.find(option => option.value === kind.value)?.label ?? kind.value)
+
+/**
+ * Advice, not a block: a paket that claims to simulate TKA should not quietly
+ * drill a format the real exam has never asked. See docs/plan-produk-tka-lengkap.md §5B.
+ */
+const kindWarning = computed(() => nonTkaKindWarning(props.examTypeSlug, kind.value))
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
 const explanation = ref(props.initial?.explanation ?? '')
-const cognitiveLevel = ref<CognitiveLevel>(props.initial?.cognitiveLevel ?? 'L1')
+/**
+ * Starts unset for a new question so the tutor has to say which level it is.
+ * It used to default to L1, and the server still falls back to L1 for anything
+ * it is not told — which meant an untouched dropdown quietly filed every soal
+ * under L1 and made the student's cognitive report read "100% L1".
+ * See docs/plan-produk-tka-lengkap.md §6.
+ */
+const cognitiveLevel = ref<CognitiveLevel | ''>(props.initial?.cognitiveLevel ?? '')
 
 /* Per-kind state, hydrated from `initial` where the kind matches. */
 
@@ -134,9 +149,10 @@ const ordering = ref<string[]>(props.initial?.kind === 'ordering' ? [...(props.i
  * editor — and "Isi minimal dua opsi." shown at the very bottom told them
  * nothing about where to scroll.
  */
-type ValidationAnchor = 'prompt' | 'choices' | 'statements' | 'matching' | 'answers'
+type ValidationAnchor = 'prompt' | 'level' | 'choices' | 'statements' | 'matching' | 'answers'
 
 const promptBlockRef = ref<HTMLElement | null>(null)
+const levelBlockRef = ref<HTMLElement | null>(null)
 const choicesBlockRef = ref<HTMLElement | null>(null)
 const statementsBlockRef = ref<HTMLElement | null>(null)
 const matchingBlockRef = ref<HTMLElement | null>(null)
@@ -144,6 +160,7 @@ const answersBlockRef = ref<HTMLElement | null>(null)
 
 const ANCHOR_REFS: Record<ValidationAnchor, Ref<HTMLElement | null>> = {
   prompt: promptBlockRef,
+  level: levelBlockRef,
   choices: choicesBlockRef,
   statements: statementsBlockRef,
   matching: matchingBlockRef,
@@ -227,12 +244,17 @@ function buildDraft(): QuestionDraft | null {
     return fail('Tulis pertanyaannya dulu.', 'prompt')
   }
 
+  const level = cognitiveLevel.value
+  if (!level) {
+    return fail('Pilih level kognitif soal ini (L1, L2, atau L3).', 'level')
+  }
+
   const trimmedStimulus = stripHtmlToText(stimulus.value) ? stimulus.value.trim() : ''
   const base = {
     kind: kind.value,
     prompt: prompt.value.trim(),
     explanation: explanation.value.trim(),
-    cognitiveLevel: cognitiveLevel.value,
+    cognitiveLevel: level,
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
@@ -361,7 +383,10 @@ const previewDraft = computed<QuestionDraft>(() => {
     kind: kind.value,
     prompt: prompt.value,
     explanation: explanation.value,
-    cognitiveLevel: cognitiveLevel.value,
+    // The preview is best-effort and runs before the form is valid, so it
+    // shows a level even when none is picked yet. buildDraft() is the one that
+    // insists on a real choice.
+    cognitiveLevel: cognitiveLevel.value || 'L1',
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
@@ -479,7 +504,7 @@ function restoreDraft() {
       correctIndexes?: number[]
       statements?: typeof statements.value
       answers?: string[]
-      cognitiveLevel?: CognitiveLevel
+      cognitiveLevel?: CognitiveLevel | ''
       matchingLeftRows?: typeof matchingLeftRows.value
       matchingItems?: typeof matchingItems.value
       matchingPairs?: Record<string, string>
@@ -490,7 +515,7 @@ function restoreDraft() {
     if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
     explanation.value = snapshot.explanation ?? ''
-    cognitiveLevel.value = snapshot.cognitiveLevel ?? 'L1'
+    cognitiveLevel.value = snapshot.cognitiveLevel ?? ''
     if (snapshot.choiceRows) choiceRows.value = snapshot.choiceRows
     if (typeof snapshot.correctIndex === 'number') correctIndex.value = snapshot.correctIndex
     if (snapshot.correctIndexes) correctIndexes.value = snapshot.correctIndexes
@@ -611,6 +636,9 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       <select :id="`${uid}-question-kind`" v-model="kind" :class="FIELD_CLASS" :aria-label="`Answer type, currently ${kindLabel}`">
         <option v-for="option in KIND_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
+      <AppInlineMessage v-if="kindWarning" type="warning" class="mt-2">
+        {{ kindWarning }} Soal ini tetap bisa disimpan, tapi simulasinya jadi berbeda dari ujian aslinya.
+      </AppInlineMessage>
       <p class="mt-1 text-[0.78rem] text-faint">The section default is preselected, and each question can use a different answer type.</p>
     </div>
 
@@ -651,13 +679,22 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       />
     </div>
 
-    <div class="max-w-xs">
+    <div ref="levelBlockRef" class="max-w-xs scroll-mt-24">
       <label :for="`${uid}-cognitive-level`" :class="FIELD_LABEL_CLASS">Cognitive level</label>
-      <select :id="`${uid}-cognitive-level`" v-model="cognitiveLevel" :class="FIELD_CLASS">
-        <option value="L1">L1 — Recall and recognition</option>
-        <option value="L2">L2 — Application and reasoning</option>
-        <option value="L3">L3 — Analysis and evaluation</option>
+      <select
+        :id="`${uid}-cognitive-level`"
+        v-model="cognitiveLevel"
+        :class="FIELD_CLASS"
+        :aria-invalid="cognitiveLevel === '' || undefined"
+      >
+        <option value="" disabled>Pilih level kognitif</option>
+        <option value="L1">L1 — Pengetahuan dan pemahaman</option>
+        <option value="L2">L2 — Aplikasi konsep</option>
+        <option value="L3">L3 — Penalaran dan analisis</option>
       </select>
+      <p class="mt-2 text-[0.82rem] text-muted">
+        Menentukan rapor penguasaan L1/L2/L3 yang dilihat siswa setelah mengerjakan.
+      </p>
     </div>
 
     <!-- Choice-based kinds share the same option editor. -->

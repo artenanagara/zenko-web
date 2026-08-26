@@ -186,6 +186,20 @@ const productModeOptions = computed<{ value: ProductMode, label: string }[]>(() 
   PRODUCT_MODE_VALUES.map(value => ({ value, label: PRODUCT_MODE_LABEL[value] })),
 )
 
+/**
+ * tka-sma-pilihan lists all 19 elective mata pelajaran, but a student only
+ * ever sits two of them, and never in one session. Picking Simulasi there
+ * would generate a 475-soal, 19-hour paket nobody can take — the template is
+ * meant for one paket per mapel, via Mini Try Out.
+ * See docs/plan-produk-tka-lengkap.md §7B.
+ */
+const electiveModeWarning = computed(() =>
+  form.examTypeSlug === 'tka-sma-pilihan' && form.mode === 'simulasi'
+    ? 'Template ini berisi 19 mata pelajaran pilihan, dan siswa hanya mengambil 2 — bukan semuanya sekaligus. '
+      + 'Pilih "Mini Try Out" lalu satu mata pelajaran, supaya paketnya jadi 25 soal / 60 menit sesuai TKA aslinya.'
+    : '',
+)
+
 const sectionTitleOptions = computed(() =>
   (selectedExamType.value?.sections ?? []).map(section => ({
     value: section.title,
@@ -926,6 +940,9 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 label="Jenis ujian"
                 @update:model-value="(value) => { if (isProductMode(value)) form.mode = value }"
               />
+              <AppInlineMessage v-if="electiveModeWarning" type="warning" class="mt-2">
+                {{ electiveModeWarning }}
+              </AppInlineMessage>
             </div>
 
             <div v-if="form.mode === 'mini_tryout' && selectedExamType?.sections.length" ref="sectionBlockRef" class="scroll-mt-24">
@@ -1122,6 +1139,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             :product-id="productId"
             :sections="detail.sections ?? []"
             :is-custom="isCustom"
+            :exam-type-slug="detail.examType ?? form.examTypeSlug"
             @refresh="refreshDetail"
           />
           <DashboardPanel v-else>
