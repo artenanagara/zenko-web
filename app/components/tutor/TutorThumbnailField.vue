@@ -10,7 +10,7 @@ const props = defineProps<{ disabled?: boolean }>()
 
 const uid = useId()
 const uploading = ref(false)
-const uploadError = ref('')
+const toast = useToast()
 
 async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement
@@ -19,12 +19,11 @@ async function onFileSelected(event: Event) {
   if (!file) return
 
   uploading.value = true
-  uploadError.value = ''
   try {
     model.value = await uploadTutorImage(file)
   }
   catch (cause) {
-    uploadError.value = tutorApiMessage(cause, 'Gagal mengunggah gambar.')
+    toast.error('Gagal mengunggah gambar.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     uploading.value = false
@@ -77,6 +76,5 @@ async function onFileSelected(event: Event) {
     </div>
 
     <p class="text-[0.82rem] text-muted">Opsional. Gambar sampul produk di katalog, rasio 16:10.</p>
-    <AppInlineMessage v-if="uploadError" type="error">{{ uploadError }}</AppInlineMessage>
   </div>
 </template>

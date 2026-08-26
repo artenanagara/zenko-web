@@ -57,23 +57,22 @@ const parsed = ref<QuestionDraft[]>([])
 const combinedParsed = ref<QuestionImportDraft[]>([])
 const parseErrors = ref<string[]>([])
 const importing = ref(false)
-const importError = ref('')
-const importedCount = ref(0)
-/** Baris bermasalah dari respons server (`problems`) — hanya mode gabungan. */
+/**
+ * Baris bermasalah dari respons server (`problems`) — hanya mode gabungan.
+ * Stays on the panel rather than going to a toast: it is a list the tutor has
+ * to work through row by row, not a one-line outcome.
+ */
 const importProblems = ref<string[]>([])
+const toast = useToast()
 
 function switchMode(next: ImportMode) {
   if (mode.value === next) return
   mode.value = next
   reset()
-  importError.value = ''
-  importedCount.value = 0
   importProblems.value = []
 }
 
 async function onFileChange(event: Event) {
-  importError.value = ''
-  importedCount.value = 0
   importProblems.value = []
   parsed.value = []
   combinedParsed.value = []
@@ -109,22 +108,28 @@ async function importQuestions() {
   if (rowCount.value === 0) return
 
   importing.value = true
-  importError.value = ''
   try {
+    let imported: number
     if (mode.value === 'combined') {
       const result = await importTutorQuestions(props.productId, combinedParsed.value)
-      importedCount.value = result.imported
+      imported = result.imported
       importProblems.value = result.problems
     }
     else {
       await createTutorQuestionBatch(props.productId, props.section.id, parsed.value)
-      importedCount.value = parsed.value.length
+      imported = parsed.value.length
     }
     reset()
     emit('refresh')
+    toast.success(
+      `${imported} soal terimpor.`,
+      importProblems.value.length
+        ? `${importProblems.value.length} baris dilewati — lihat daftarnya di panel impor.`
+        : undefined,
+    )
   }
   catch (cause) {
-    importError.value = tutorApiMessage(cause, 'Gagal mengimpor soal. Coba lagi.')
+    toast.error('Gagal mengimpor soal.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     importing.value = false
@@ -198,12 +203,6 @@ function reset() {
         <li v-for="problem in parseErrors" :key="problem">{{ problem }}</li>
       </ul>
     </AppSectionMessage>
-
-    <AppSectionMessage v-if="importError" appearance="warning">{{ importError }}</AppSectionMessage>
-
-    <AppInlineMessage v-if="importedCount" type="confirmation">
-      {{ importedCount }} soal berhasil diimpor.
-    </AppInlineMessage>
 
     <AppSectionMessage v-if="importProblems.length" appearance="warning" title="Beberapa baris tidak diimpor:">
       <ul class="grid list-disc gap-1 pl-5">

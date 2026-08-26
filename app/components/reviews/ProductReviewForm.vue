@@ -52,17 +52,9 @@ function toggleTag(tag: string) {
   else if (tags.value.length < 5) tags.value.push(tag)
 }
 
-/**
- * A toast alone leaves the student hunting for what to fix, so an invalid
- * field is also scrolled to and focused. `preventScroll` keeps focus() from
- * fighting the smooth scroll with a second, instant jump.
- */
 function revealRating() {
   ratingInvalid.value = true
-  const group = ratingGroup.value
-  if (!group) return
-  group.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  group.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })
+  focusField(ratingGroup.value)
 }
 
 async function submit() {

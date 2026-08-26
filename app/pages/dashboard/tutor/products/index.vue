@@ -121,9 +121,13 @@ function findProduct(id: string): TutorProductSummary | undefined {
 
 /** Which row's action is in flight, so only that row's buttons lock. */
 const busyId = ref('')
-const actionError = ref('')
+const toast = useToast()
 
-/** 422 dari submit: judul produk + daftar masalahnya, dirender sebagai list. */
+/**
+ * 422 dari submit: judul produk + daftar masalahnya, dirender sebagai list.
+ * Stays on the page rather than in a toast — it is a checklist the tutor works
+ * through, not a one-line outcome.
+ */
 const submitProblems = ref<{ title: string, problems: string[] } | null>(null)
 const submitProblemsTitle = computed(() => submitProblems.value ? `Paket "${submitProblems.value.title}" belum dapat diajukan:` : '')
 
@@ -153,20 +157,21 @@ const canSubmit = (product: TutorProductSummary) =>
   && (product.type === 'bundle' || product.questionCount >= product.questionTarget)
 
 async function submitProduct(product: TutorProductSummary) {
-  actionError.value = ''
   submitProblems.value = null
   busyId.value = product.id
   try {
     await submitTutorProduct(product.id)
     await refresh()
+    toast.success('Produk diajukan.', 'Admin akan meninjaunya sebelum tayang di katalog.')
   }
   catch (cause) {
     const problems = tutorSubmitProblems(cause)
     if (problems.length) {
       submitProblems.value = { title: product.title, problems }
+      toast.error('Produk belum bisa diajukan.', `${problems.length} hal masih perlu dibereskan — daftarnya ada di atas tabel.`)
     }
     else {
-      actionError.value = tutorApiMessage(cause, 'Gagal mengajukan produk. Coba lagi sebentar lagi.')
+      toast.error('Gagal mengajukan produk.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
     }
   }
   finally {
@@ -182,15 +187,15 @@ async function archiveProduct(product: TutorProductSummary) {
   })
   if (!ok) return
 
-  actionError.value = ''
   submitProblems.value = null
   busyId.value = product.id
   try {
     await archiveTutorProduct(product.id)
     await refresh()
+    toast.success('Produk diarsipkan.', 'Paket ini tidak tampil lagi di katalog publik.')
   }
   catch (cause) {
-    actionError.value = tutorApiMessage(cause, 'Gagal mengarsipkan produk. Coba lagi sebentar lagi.')
+    toast.error('Gagal mengarsipkan produk.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     busyId.value = ''
@@ -205,15 +210,15 @@ async function deleteProduct(product: TutorProductSummary) {
   })
   if (!ok) return
 
-  actionError.value = ''
   submitProblems.value = null
   busyId.value = product.id
   try {
     await deleteTutorProduct(product.id)
     await refresh()
+    toast.success('Produk dihapus permanen.')
   }
   catch (cause) {
-    actionError.value = tutorApiMessage(cause, 'Gagal menghapus produk. Coba lagi sebentar lagi.')
+    toast.error('Gagal menghapus produk.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     busyId.value = ''
@@ -229,7 +234,6 @@ async function deleteProduct(product: TutorProductSummary) {
       </template>
     </AppPageHeader>
 
-    <AppInlineMessage v-if="actionError" type="error">{{ actionError }}</AppInlineMessage>
 
     <AppSectionMessage
       v-if="submitProblems"

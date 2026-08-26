@@ -120,8 +120,6 @@ const profileForm = reactive({
   websiteUrl: '',
 })
 const profileSaving = ref(false)
-const profileError = ref('')
-const profileSaved = ref(false)
 const specializationInput = ref('')
 
 // Salin ke form lokal begitu profil tersimpan tiba — bukan binding langsung,
@@ -142,7 +140,6 @@ watch(tutorProfile, (profile) => {
 
 const publicAvatarInputRef = useTemplateRef('publicAvatarInputRef')
 const publicAvatarUploading = ref(false)
-const publicAvatarError = ref('')
 
 function pickPublicAvatar() {
   publicAvatarInputRef.value?.click()
@@ -152,13 +149,13 @@ async function onPublicAvatarSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  publicAvatarError.value = ''
   publicAvatarUploading.value = true
   try {
     profileForm.avatarUrl = await uploadTutorImage(file)
+    toast.success('Foto publik terunggah.', 'Tekan Simpan profil supaya perubahannya berlaku.')
   }
   catch (cause) {
-    publicAvatarError.value = tutorApiMessage(cause, 'Gagal mengunggah foto publik.')
+    toast.error('Gagal mengunggah foto publik.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     publicAvatarUploading.value = false
@@ -191,16 +188,14 @@ function onSpecializationKeydown(event: KeyboardEvent) {
 }
 
 async function saveProfile() {
-  profileError.value = ''
-  profileSaved.value = false
   profileSaving.value = true
   try {
     await saveTutorProfile({ ...profileForm })
     await refreshTutorProfile()
-    profileSaved.value = true
+    toast.success('Profil tersimpan.', 'Perubahannya sudah tampil di halaman profil publikmu.')
   }
   catch (cause) {
-    profileError.value = tutorApiMessage(cause, 'Gagal menyimpan profil. Coba lagi sebentar lagi.')
+    toast.error('Gagal menyimpan profil.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     profileSaving.value = false
@@ -219,7 +214,7 @@ async function saveProfile() {
 
 const bankForm = reactive({ bankCode: '', accountNumber: '', holderName: '' })
 const bankSaving = ref(false)
-const bankError = ref('')
+const bankSelectRef = ref<HTMLElement | null>(null)
 
 const bankFormValid = computed(() =>
   bankForm.bankCode !== ''
@@ -228,11 +223,10 @@ const bankFormValid = computed(() =>
 )
 
 async function saveBankAccount() {
-  bankError.value = ''
-
   const bank = BANK_OPTIONS.find(option => option.code === bankForm.bankCode)
   if (!bank) {
-    bankError.value = 'Pilih bank terlebih dahulu.'
+    focusField(bankSelectRef.value)
+    toast.error('Bank belum dipilih.', 'Pilih bank tujuan pencairan dulu.')
     return
   }
 
@@ -245,9 +239,10 @@ async function saveBankAccount() {
       holderName: bankForm.holderName.trim(),
     })
     await refreshBankAccount()
+    toast.success('Rekening tersimpan.', 'Pencairan berikutnya dikirim ke rekening ini.')
   }
   catch (cause) {
-    bankError.value = tutorApiMessage(cause, 'Gagal menyimpan rekening. Coba lagi sebentar lagi.')
+    toast.error('Gagal menyimpan rekening.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     bankSaving.value = false
@@ -261,7 +256,7 @@ async function saveBankAccount() {
 const changeForm = reactive({ bankCode: '', accountNumber: '', holderName: '' })
 const changeFormOpen = ref(false)
 const changeSaving = ref(false)
-const changeError = ref('')
+const changeSelectRef = ref<HTMLElement | null>(null)
 
 const changeFormValid = computed(() =>
   changeForm.bankCode !== ''
@@ -277,23 +272,20 @@ function openChangeForm() {
     changeForm.accountNumber = bankAccount.value.accountNumber
     changeForm.holderName = bankAccount.value.holderName
   }
-  changeError.value = ''
   changeFormOpen.value = true
 }
 
 function closeChangeForm() {
   changeFormOpen.value = false
-  changeError.value = ''
 }
 
 const bankSelectOptions = BANK_OPTIONS.map(option => ({ value: option.code, label: option.label }))
 
 async function submitChangeRequest() {
-  changeError.value = ''
-
   const bank = BANK_OPTIONS.find(option => option.code === changeForm.bankCode)
   if (!bank) {
-    changeError.value = 'Pilih bank terlebih dahulu.'
+    focusField(changeSelectRef.value)
+    toast.error('Bank belum dipilih.', 'Pilih bank tujuan pencairan dulu.')
     return
   }
 
@@ -307,9 +299,10 @@ async function submitChangeRequest() {
     })
     changeFormOpen.value = false
     await refreshChangeRequest()
+    toast.success('Pengajuan terkirim.', 'Admin akan meninjau perubahan rekeningmu.')
   }
   catch (cause) {
-    changeError.value = tutorApiMessage(cause, 'Gagal mengirim pengajuan perubahan. Coba lagi sebentar lagi.')
+    toast.error('Gagal mengirim pengajuan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     changeSaving.value = false
@@ -390,7 +383,6 @@ async function submitChangeRequest() {
               {{ publicAvatarUploading ? 'Mengunggah…' : 'Pilih foto' }}
             </button>
             <input ref="publicAvatarInputRef" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" @change="onPublicAvatarSelected">
-            <AppInlineMessage v-if="publicAvatarError" class="mt-2" type="error">{{ publicAvatarError }}</AppInlineMessage>
           </div>
         </div>
 
@@ -479,8 +471,6 @@ async function submitChangeRequest() {
 
         <FormField id="tutor-website" v-model="profileForm.websiteUrl" type="url" label="Website" placeholder="https://..." />
 
-        <AppInlineMessage v-if="profileError" type="error">{{ profileError }}</AppInlineMessage>
-        <AppInlineMessage v-if="profileSaved" type="confirmation">Profil berhasil disimpan.</AppInlineMessage>
 
         <div>
           <AppButton type="submit" size="sm" :disabled="profileSaving" :loading="profileSaving">
@@ -535,13 +525,17 @@ async function submitChangeRequest() {
 
       <!-- State 1: belum ada rekening — form biasa, simpan via PUT. -->
         <form v-else-if="!bankAccount" class="grid gap-5" @submit.prevent="saveBankAccount">
-        <AppSelect
-          :options="bankSelectOptions"
-          :model-value="bankForm.bankCode"
-          label="Bank"
-          placeholder="Pilih bank"
-          @update:model-value="bankForm.bankCode = String($event)"
-        />
+        <!-- Wrapper, not a ref on AppSelect itself: focusField() needs a DOM
+             node to scroll and to find the trigger button inside. -->
+        <div ref="bankSelectRef" class="scroll-mt-24">
+          <AppSelect
+            :options="bankSelectOptions"
+            :model-value="bankForm.bankCode"
+            label="Bank"
+            placeholder="Pilih bank"
+            @update:model-value="bankForm.bankCode = String($event)"
+          />
+        </div>
 
         <FormField
           id="bank-account-number"
@@ -559,8 +553,6 @@ async function submitChangeRequest() {
           placeholder="Sesuai buku tabungan"
           autocomplete="name"
         />
-
-        <AppInlineMessage v-if="bankError" type="error">{{ bankError }}</AppInlineMessage>
 
         <div>
           <AppButton type="submit" size="sm" :disabled="!bankFormValid || bankSaving">
@@ -624,13 +616,15 @@ async function submitChangeRequest() {
           </AppButton>
 
           <form v-else class="grid gap-5" @submit.prevent="submitChangeRequest">
-            <AppSelect
-              :options="bankSelectOptions"
-              :model-value="changeForm.bankCode"
-              label="Bank"
-              placeholder="Pilih bank"
-              @update:model-value="changeForm.bankCode = String($event)"
-            />
+            <div ref="changeSelectRef" class="scroll-mt-24">
+              <AppSelect
+                :options="bankSelectOptions"
+                :model-value="changeForm.bankCode"
+                label="Bank"
+                placeholder="Pilih bank"
+                @update:model-value="changeForm.bankCode = String($event)"
+              />
+            </div>
 
             <FormField
               id="change-bank-account-number"
@@ -648,8 +642,6 @@ async function submitChangeRequest() {
               placeholder="Sesuai buku tabungan"
               autocomplete="name"
             />
-
-            <AppInlineMessage v-if="changeError" type="error">{{ changeError }}</AppInlineMessage>
 
             <div class="flex items-center gap-3">
               <AppButton type="submit" size="sm" :disabled="!changeFormValid || changeSaving">

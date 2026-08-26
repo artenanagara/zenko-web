@@ -400,7 +400,37 @@ function initialStep(): number {
 }
 
 const step = ref(initialStep())
-const stepError = ref('')
+const toast = useToast()
+
+/**
+ * Blocks a failed step check can point at. The wizard is a tall form and its
+ * Lanjut button lives in a footer pinned to the viewport, so a message next to
+ * that button sat nowhere near the field it was about.
+ */
+const examTypeBlockRef = ref<HTMLElement | null>(null)
+const sectionBlockRef = ref<HTMLElement | null>(null)
+const includesBlockRef = ref<HTMLElement | null>(null)
+
+/** Set by validateThrough(); raised by whoever called it. */
+let stepFailure: { message: string, anchor: Ref<HTMLElement | null> | string } | null = null
+
+function failStep(message: string, anchor: Ref<HTMLElement | null> | string): false {
+  stepFailure = { message, anchor }
+  return false
+}
+
+function takeStepFailure() {
+  const failure = stepFailure
+  stepFailure = null
+  return failure
+}
+
+function reportStepFailure() {
+  const failure = takeStepFailure()
+  if (!failure) return
+  focusField(typeof failure.anchor === 'string' ? failure.anchor : failure.anchor.value)
+  toast.error('Belum bisa lanjut.', failure.message)
+}
 
 watch(() => detail.value?.status, (status) => {
   if (status === 'live' && step.value !== 2) {
@@ -416,12 +446,10 @@ function syncQuery() {
 /** Validasi minimum sebelum melangkah maju; server tetap memvalidasi penuh. */
 function validateThrough(target: number): boolean {
   if (isEdit.value && detail.value?.status === 'live' && target !== 2) {
-    stepError.value = 'Produk tayang hanya bisa mengubah judul dan harga di langkah Info produk.'
-    return false
+    return failStep('Produk tayang hanya bisa mengubah judul dan harga di langkah Info produk.', 'product-title')
   }
   if (target > 1 && isSingle.value && !form.examTypeSlug) {
-    stepError.value = 'Pilih kategori ujian dulu sebelum lanjut.'
-    return false
+    return failStep('Pilih kategori ujian dulu sebelum lanjut.', examTypeBlockRef)
   }
   if (
     target > 1
@@ -431,25 +459,24 @@ function validateThrough(target: number): boolean {
     && form.examTypeSlug !== 'custom'
     && !form.sectionTitle
   ) {
-    stepError.value = 'Pilih subtes dulu sebelum lanjut.'
-    return false
+    return failStep('Pilih subtes dulu sebelum lanjut.', sectionBlockRef)
   }
   if (target > 2 && !form.title.trim()) {
-    stepError.value = 'Isi judul produk dulu sebelum lanjut.'
-    return false
+    return failStep('Isi judul produk dulu sebelum lanjut.', 'product-title')
   }
   if (target > 2 && cleanIncludes(form.includes).length === 0) {
-    stepError.value = 'Pilih minimal satu poin yang kamu dapatkan.'
-    return false
+    return failStep('Pilih minimal satu poin yang kamu dapatkan.', includesBlockRef)
   }
   return true
 }
 
 async function goTo(target: number) {
   if (target === step.value) return
-  stepError.value = ''
 
-  if (target > step.value && !validateThrough(target)) return
+  if (target > step.value && !validateThrough(target)) {
+    reportStepFailure()
+    return
+  }
   if (isEdit.value && detail.value?.status === 'live' && target !== 2) return
 
   // Create mode: past step 2 the draft must exist first.
@@ -870,7 +897,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           </div>
 
           <template v-if="isSingle">
-            <div>
+            <div ref="examTypeBlockRef" class="scroll-mt-24">
               <span :class="FIELD_LABEL_CLASS">Kategori ujian</span>
 
               <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat kategori ujian...</p>
@@ -901,7 +928,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               />
             </div>
 
-            <div v-if="form.mode === 'mini_tryout' && selectedExamType?.sections.length">
+            <div v-if="form.mode === 'mini_tryout' && selectedExamType?.sections.length" ref="sectionBlockRef" class="scroll-mt-24">
               <template v-if="isEdit">
                 <label for="product-section-title" :class="FIELD_LABEL_CLASS">Subtes</label>
                 <input
@@ -968,7 +995,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
 
           <TutorThumbnailField v-model="form.thumbnailUrl" :disabled="!isFieldEditable('details')" />
 
-          <div>
+          <div ref="includesBlockRef" class="scroll-mt-24">
             <span :class="FIELD_LABEL_CLASS">Yang kamu dapatkan</span>
             <p class="-mt-1 mb-3 text-[0.82rem] text-muted">Pilih minimal satu manfaat yang benar-benar tersedia di paket ini.</p>
             <div class="grid gap-2.5">
@@ -1270,8 +1297,6 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           </p>
         </div>
       </DashboardPanel>
-
-      <AppInlineMessage v-if="stepError" type="error">{{ stepError }}</AppInlineMessage>
 
       <!-- Step footer — fixed to the viewport bottom so Kembali/Lanjut stay
            reachable on long steps without scrolling. Left edge tracks the

@@ -110,19 +110,25 @@ async function removeRow(index: number) {
 }
 
 const saving = ref(false)
-const errorMessage = ref('')
+const toast = useToast()
 
 async function save() {
-  errorMessage.value = ''
-
   const payload: SectionInput[] = []
-  for (const row of rows.value) {
+  for (const [index, row] of rows.value.entries()) {
+    // Which row is at fault matters here — the list can be long, and "Tiap
+    // subtes butuh judul." says nothing about which subtes. The toast names
+    // the row, focusField() scrolls to the field itself.
     if (!row.title.trim()) {
-      errorMessage.value = 'Tiap subtes butuh judul.'
+      focusField(`${uid}-title-${index}`)
+      toast.error('Judul subtes belum diisi.', `Subtes ke-${index + 1} belum punya judul.`)
       return
     }
     if (!row.questionTarget || row.questionTarget < 1 || !row.durationMinutes || row.durationMinutes < 1) {
-      errorMessage.value = 'Target soal dan durasi tiap subtes minimal 1.'
+      focusField(`${uid}-target-${index}`)
+      toast.error(
+        'Target soal atau durasi belum benar.',
+        `Subtes ke-${index + 1}: target soal dan durasi minimal 1.`,
+      )
       return
     }
     payload.push({
@@ -141,9 +147,10 @@ async function save() {
   try {
     await updateTutorProduct(props.productId, { sections: payload })
     emit('refresh')
+    toast.success('Subtes tersimpan.')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menyimpan subtes. Coba lagi.')
+    toast.error('Gagal menyimpan subtes.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     saving.value = false
@@ -164,7 +171,7 @@ async function save() {
       <div
         v-for="(row, index) in rows"
         :key="row.id ?? `new-${index}`"
-        class="grid gap-3 rounded-md border border-hairline-strong bg-surface p-4"
+        class="grid scroll-mt-24 gap-3 rounded-md border border-hairline-strong bg-surface p-4"
       >
         <div class="flex flex-wrap items-end gap-3">
           <div class="min-w-48 flex-1">
@@ -248,8 +255,6 @@ async function save() {
           />
         </div>
       </div>
-
-      <AppInlineMessage v-if="errorMessage" type="error">{{ errorMessage }}</AppInlineMessage>
 
       <div class="flex flex-wrap items-center gap-3">
         <button

@@ -128,7 +128,55 @@ const matchingItems = ref<MatchingData['items']>(props.initial?.kind === 'matchi
 const matchingPairs = ref<Record<string, string>>(props.initial?.kind === 'matching' ? { ...(props.initial.matching?.pairs ?? {}) } : {})
 const ordering = ref<string[]>(props.initial?.kind === 'ordering' ? [...(props.initial.ordering ?? [])] : [])
 
-const errorMessage = ref('')
+/**
+ * Which block a validation failure belongs to, so submit() can put the tutor
+ * in front of it. This form is long — nine question kinds, each with its own
+ * editor — and "Isi minimal dua opsi." shown at the very bottom told them
+ * nothing about where to scroll.
+ */
+type ValidationAnchor = 'prompt' | 'choices' | 'statements' | 'matching' | 'answers'
+
+const promptBlockRef = ref<HTMLElement | null>(null)
+const choicesBlockRef = ref<HTMLElement | null>(null)
+const statementsBlockRef = ref<HTMLElement | null>(null)
+const matchingBlockRef = ref<HTMLElement | null>(null)
+const answersBlockRef = ref<HTMLElement | null>(null)
+
+const ANCHOR_REFS: Record<ValidationAnchor, Ref<HTMLElement | null>> = {
+  prompt: promptBlockRef,
+  choices: choicesBlockRef,
+  statements: statementsBlockRef,
+  matching: matchingBlockRef,
+  answers: answersBlockRef,
+}
+
+interface ValidationFailure {
+  message: string
+  anchor: ValidationAnchor
+}
+
+/** Set by buildDraft() on the way out; read by submit() to raise the toast. */
+let validationFailure: ValidationFailure | null = null
+
+/** Records why the draft is invalid and returns null, the shape buildDraft() wants. */
+function fail(message: string, anchor: ValidationAnchor): null {
+  validationFailure = { message, anchor }
+  return null
+}
+
+/**
+ * Read-and-clear. Going through a function rather than reading the variable
+ * directly also keeps TypeScript honest: at the call site it has just seen
+ * `validationFailure = null` and would otherwise narrow the type to `null`,
+ * blind to buildDraft() having written to it in between.
+ */
+function takeValidationFailure(): ValidationFailure | null {
+  const failure = validationFailure
+  validationFailure = null
+  return failure
+}
+
+const toast = useToast()
 
 function addStatement() {
   statements.value.push({ text: '', isCorrect: true, imageUrl: '' })
@@ -176,8 +224,7 @@ function correctChoiceKind(value: QuestionKind) {
  */
 function buildDraft(): QuestionDraft | null {
   if (!stripHtmlToText(prompt.value)) {
-    errorMessage.value = 'Tulis pertanyaannya dulu.'
-    return null
+    return fail('Tulis pertanyaannya dulu.', 'prompt')
   }
 
   const trimmedStimulus = stripHtmlToText(stimulus.value) ? stimulus.value.trim() : ''
@@ -200,14 +247,12 @@ function buildDraft(): QuestionDraft | null {
       .filter(row => stripHtmlToText(row.text))
 
     if (filled.length < 2) {
-      errorMessage.value = 'Isi minimal dua opsi.'
-      return null
+      return fail('Isi minimal dua opsi.', 'choices')
     }
 
     if (correctChoiceKind(kind.value) && kind.value !== 'multiple_choice') {
       if (!filled.some(row => row.index === correctIndex.value)) {
-        errorMessage.value = 'Pilih kunci jawaban dari opsi yang terisi.'
-        return null
+        return fail('Pilih kunci jawaban dari opsi yang terisi.', 'choices')
       }
       return {
         ...base,
@@ -223,8 +268,7 @@ function buildDraft(): QuestionDraft | null {
 
     if (kind.value === 'multiple_choice') {
       if (correctIndexes.value.length < 2) {
-        errorMessage.value = 'Pilih minimal dua kunci jawaban.'
-        return null
+        return fail('Pilih minimal dua kunci jawaban.', 'choices')
       }
       return {
         ...base,
@@ -241,8 +285,7 @@ function buildDraft(): QuestionDraft | null {
       const labels = filled.map((_, at) => OPTION_LETTERS[at]!)
       const ordered = ordering.value.filter(label => labels.includes(label as typeof labels[number]))
       if (ordered.length !== labels.length || new Set(ordered).size !== labels.length) {
-        errorMessage.value = 'Tentukan urutan semua item.'
-        return null
+        return fail('Tentukan urutan semua item.', 'choices')
       }
       return {
         ...base,
@@ -255,8 +298,7 @@ function buildDraft(): QuestionDraft | null {
       row => row.weight === null || !Number.isInteger(row.weight) || row.weight < 0,
     )
     if (missingWeight) {
-      errorMessage.value = 'Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.'
-      return null
+      return fail('Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.', 'choices')
     }
     return {
       ...base,
@@ -272,8 +314,7 @@ function buildDraft(): QuestionDraft | null {
   if (kind.value === 'true_false') {
     const filled = statements.value.filter(statement => stripHtmlToText(statement.text))
     if (filled.length === 0) {
-      errorMessage.value = 'Tulis minimal satu pernyataan.'
-      return null
+      return fail('Tulis minimal satu pernyataan.', 'statements')
     }
     return {
       ...base,
@@ -290,12 +331,10 @@ function buildDraft(): QuestionDraft | null {
     const left = matchingLeftRows.value.filter(row => stripHtmlToText(row.text))
     const right = matchingItems.value.filter(item => stripHtmlToText(item.text))
     if (left.length < 2 || right.length !== left.length) {
-      errorMessage.value = 'Isi jumlah item kiri dan kanan yang sama, minimal dua.'
-      return null
+      return fail('Isi jumlah item kiri dan kanan yang sama, minimal dua.', 'matching')
     }
     if (left.some(row => !matchingPairs.value[row.label] || !right.some(item => item.id === matchingPairs.value[row.label]))) {
-      errorMessage.value = 'Tentukan pasangan untuk setiap item kiri.'
-      return null
+      return fail('Tentukan pasangan untuk setiap item kiri.', 'matching')
     }
     return {
       ...base,
@@ -306,8 +345,7 @@ function buildDraft(): QuestionDraft | null {
 
   const accepted = answers.value.map(answer => answer.trim()).filter(Boolean)
   if (accepted.length === 0) {
-    errorMessage.value = 'Isi minimal satu jawaban yang diterima.'
-    return null
+    return fail('Isi minimal satu jawaban yang diterima.', 'answers')
   }
   return { ...base, answers: accepted }
 }
@@ -482,9 +520,16 @@ function clearDraft() {
  * ---------------------------------------------------------------------- */
 
 function submit(mode: 'save' | 'save-and-next') {
-  errorMessage.value = ''
+  validationFailure = null
   const draft = buildDraft()
-  if (!draft) return
+  if (!draft) {
+    const failure = takeValidationFailure()
+    if (failure) {
+      focusField(ANCHOR_REFS[failure.anchor].value)
+      toast.error('Soal belum bisa disimpan.', failure.message)
+    }
+    return
+  }
   clearDraft()
   if (mode === 'save') emit('save', draft)
   else emit('saveAndNext', draft)
@@ -597,7 +642,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </div>
     </div>
 
-    <div>
+    <div ref="promptBlockRef" class="scroll-mt-24">
       <span :class="FIELD_LABEL_CLASS">Pertanyaan</span>
       <RichTextEditor
         v-model="prompt"
@@ -616,7 +661,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </div>
 
     <!-- Choice-based kinds share the same option editor. -->
-    <fieldset v-if="choiceKind(kind)" class="grid gap-3">
+    <fieldset v-if="choiceKind(kind)" ref="choicesBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">
         {{ kind === 'weighted' ? 'Opsi jawaban + bobot (umumnya 1–5)' : kind === 'multiple_choice' ? 'Opsi jawaban — tandai semua kunci yang benar' : kind === 'ordering' ? 'Item yang akan diurutkan' : 'Opsi jawaban — tandai kunci yang benar' }}
       </legend>
@@ -678,7 +723,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </fieldset>
 
     <!-- Matching pairs map each left prompt to one right-hand item. -->
-    <fieldset v-else-if="kind === 'matching'" class="grid gap-3">
+    <fieldset v-else-if="kind === 'matching'" ref="matchingBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">Matching pairs</legend>
       <div v-for="(row, index) in matchingLeftRows" :key="row.label" class="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <TutorOptionField
@@ -704,7 +749,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </fieldset>
 
     <!-- true_false: one key per statement. -->
-    <fieldset v-else-if="kind === 'true_false'" class="grid gap-3">
+    <fieldset v-else-if="kind === 'true_false'" ref="statementsBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">Pernyataan (tentukan kunci Benar atau Salah)</legend>
 
       <div v-for="(statement, index) in statements" :key="index" class="flex items-start gap-2.5">
@@ -757,7 +802,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </fieldset>
 
     <!-- short_answer: daftar jawaban diterima -->
-    <fieldset v-else class="grid gap-2.5">
+    <fieldset v-else ref="answersBlockRef" class="grid scroll-mt-24 gap-2.5">
       <legend :class="FIELD_LABEL_CLASS">Jawaban yang diterima</legend>
 
       <div v-for="(answer, index) in answers" :key="index" class="flex items-center gap-2.5">
@@ -796,7 +841,6 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       />
     </div>
 
-    <AppInlineMessage v-if="errorMessage" type="error">{{ errorMessage }}</AppInlineMessage>
 
     <div class="flex flex-wrap items-center gap-3">
       <AppButton type="submit" size="sm" :disabled="saving">
