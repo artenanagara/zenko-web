@@ -127,16 +127,29 @@ const actionError = ref('')
 const submitProblems = ref<{ title: string, problems: string[] } | null>(null)
 const submitProblemsTitle = computed(() => submitProblems.value ? `Paket "${submitProblems.value.title}" belum dapat diajukan:` : '')
 
-const canEdit = (product: TutorProductSummary) =>
+/** Belum pernah tayang: masih bebas diubah dan masih perlu diajukan. */
+const isUnpublished = (product: TutorProductSummary) =>
   product.status === 'draft' || product.status === 'rejected'
+
+/**
+ * Produk tayang ikut bisa dibuka — hanya harganya yang boleh berubah, sisanya
+ * dikunci oleh wizard (lihat isFieldEditable di TutorProductWizard). Labelnya
+ * tetap "Edit"; halaman edit sendiri yang menjelaskan apa saja yang terkunci.
+ */
+const canEdit = (product: TutorProductSummary) =>
+  isUnpublished(product) || product.status === 'live'
 
 /** Delete is permanent — everything except live and review (admin's queue). */
 const canDelete = (product: TutorProductSummary) =>
   product.status !== 'live' && product.status !== 'review'
 
-/** "Ajukan tayang" hanya saat lengkap — target soal terpenuhi (single) atau bundle. */
+/**
+ * "Ajukan tayang" hanya saat lengkap — target soal terpenuhi (single) atau
+ * bundle. Sengaja lewat isUnpublished, bukan canEdit: yang sudah tayang boleh
+ * dibuka untuk ubah harga tapi tentu tidak perlu diajukan lagi.
+ */
 const canSubmit = (product: TutorProductSummary) =>
-  canEdit(product)
+  isUnpublished(product)
   && (product.type === 'bundle' || product.questionCount >= product.questionTarget)
 
 async function submitProduct(product: TutorProductSummary) {

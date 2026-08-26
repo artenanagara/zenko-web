@@ -263,22 +263,28 @@ watch(detail, (loaded) => {
   }
 })
 
-/** Live products keep their structure locked but allow commercial fields. */
+/** Live products keep everything locked except their price. */
 const canEditProduct = computed(() => {
   if (!isEdit.value) return true
   if (!detail.value) return false
   return ['draft', 'rejected', 'live'].includes(detail.value.status)
 })
 
+/**
+ * Yang boleh berubah setelah tayang hanya harga — judul ikut terkunci karena
+ * itulah produk yang sudah dibeli dan sudah diindeks katalog. Aturan yang
+ * sama ditegakkan server di ensurePatchEditable (zenko-api); kalau salah satu
+ * berubah, ubah keduanya.
+ */
 function isFieldEditable(field: 'title' | 'price' | 'priceOriginal' | 'section' | 'details') {
   if (!isEdit.value || !detail.value) return true
   if (detail.value.status === 'draft' || detail.value.status === 'rejected') return true
-  return detail.value.status === 'live' && ['title', 'price', 'priceOriginal'].includes(field)
+  return detail.value.status === 'live' && ['price', 'priceOriginal'].includes(field)
 }
 
 const LOCKED_EXPLANATION: Partial<Record<TutorProductDetail['status'], string>> = {
   review: 'Produk sedang ditinjau tim Zenko. Kamu bisa mengeditnya lagi jika hasil tinjauan keluar.',
-  live: 'Produk sudah tayang. Judul dan harga masih bisa diubah; field lain terkunci karena produk sudah tayang.',
+  live: 'Produk sudah tayang. Hanya harga yang masih bisa diubah; field lain terkunci karena produk sudah dibeli dan tampil di katalog.',
   archived: 'Produk sudah diarsipkan dan tidak tampil di katalog.',
 }
 
