@@ -17,7 +17,8 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { user } = useAuth()
+const { user, signOutAllDevices } = useAuth()
+const { confirm } = useConfirm()
 
 const ROLE_LABEL: Record<Role, string> = {
   student: 'Siswa',
@@ -292,6 +293,37 @@ async function onSubmit() {
     form.confirm = ''
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Keluar dari semua perangkat — server mem-bump session_version, jadi semua
+ * sesi (termasuk perangkat ini) langsung tidak berlaku. Perlakukan sama
+ * seperti logout biasa: bersihkan state auth lalu tinggalkan halaman terkunci
+ * ini menuju beranda, apa pun hasil panggilannya (kita sudah dianggap keluar).
+ * ------------------------------------------------------------------------ */
+
+const signingOutAll = ref(false)
+
+async function onSignOutAllDevices() {
+  const ok = await confirm({
+    title: 'Keluar dari semua perangkat?',
+    description:
+      'Semua sesi Zenko akan diakhiri, termasuk perangkat yang sedang kamu pakai sekarang. Kamu perlu masuk lagi di tiap perangkat setelah ini.',
+    confirmLabel: 'Keluar dari semua',
+    cancelLabel: 'Batal',
+  })
+  if (!ok) return
+
+  signingOutAll.value = true
+  try {
+    await signOutAllDevices()
+  }
+  finally {
+    // signOutAllDevices() sudah membersihkan state auth di blok finally-nya,
+    // jadi kita selalu dianggap keluar dari perangkat ini juga — pergi ke
+    // beranda sama seperti alur logout biasa.
+    await navigateTo('/')
+  }
+}
 </script>
 
 <template>
@@ -490,7 +522,7 @@ async function onSubmit() {
       </DashboardPanel>
     </div>
 
-    <div v-show="activeTab === 'kata-sandi'" id="panel-kata-sandi" role="tabpanel" aria-labelledby="tab-kata-sandi">
+    <div v-show="activeTab === 'kata-sandi'" id="panel-kata-sandi" class="grid gap-6" role="tabpanel" aria-labelledby="tab-kata-sandi">
       <DashboardPanel
         title="Kata sandi"
         description="Ganti kata sandi yang kamu pakai untuk masuk dengan email."
@@ -587,6 +619,40 @@ async function onSubmit() {
             Jika kamu mendaftar atau selalu masuk menggunakan akun Google, kamu bisa mengatur kata sandi baru melalui <NuxtLink to="/lupa-password" class="font-semibold text-primary hover:text-primary-light">tautan pemulihan kata sandi</NuxtLink>.
           </p>
         </form>
+      </DashboardPanel>
+
+      <!-- Keamanan lintas perangkat: akhiri semua sesi sekaligus, termasuk
+           perangkat ini. Ditaruh di tab yang sama dengan kata sandi karena
+           keduanya soal mengamankan akses masuk. -->
+      <DashboardPanel
+        title="Perangkat lain"
+        description="Akhiri semua sesi yang masih masuk ke akun Zenko-mu sekaligus."
+      >
+        <div class="grid max-w-125 gap-4">
+          <div class="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-alt text-muted"
+            >
+              <AppIcon name="devices" :size="20" />
+            </span>
+            <p class="text-[0.9rem] text-muted">
+              Kalau kamu pernah masuk di perangkat umum atau merasa akunmu dipakai orang lain, keluarkan akun dari semua tempat sekaligus. Tindakan ini <strong class="font-semibold text-ink">mengeluarkan akun dari semua perangkat, termasuk yang sedang kamu pakai sekarang</strong> — kamu perlu masuk lagi setelahnya.
+            </p>
+          </div>
+
+          <div>
+            <AppButton
+              variant="danger"
+              size="sm"
+              :disabled="signingOutAll"
+              @click="onSignOutAllDevices"
+            >
+              <AppIcon name="sign-out" :size="16" />
+              {{ signingOutAll ? 'Mengeluarkan…' : 'Keluar dari semua perangkat' }}
+            </AppButton>
+          </div>
+        </div>
       </DashboardPanel>
     </div>
   </div>
