@@ -24,7 +24,7 @@ import type { MenuItem } from '~/components/core/AppDropdownMenu.vue'
 const props = defineProps<{
   productId: string
   sections: TutorSection[]
-  /** Only "Custom" exam types mix question kinds across sections — the "Tipe soal" note in TutorQuestionForm is noise otherwise. */
+  /** The section default is used as the initial answer type for new questions. */
   isCustom?: boolean
 }>()
 

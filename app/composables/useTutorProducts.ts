@@ -33,7 +33,9 @@ export function useExamTypes() {
     default: () => [],
   })
 
-  return { data, pending, error }
+  const sortedData = computed(() => data.value.slice().sort((left, right) => left.label.localeCompare(right.label, 'id')))
+
+  return { data: sortedData, pending, error }
 }
 
 /** The caller's own products. Call `refresh()` from onMounted. */

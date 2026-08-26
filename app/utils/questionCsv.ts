@@ -76,23 +76,12 @@ function wrapOptionCellHtml(cell: string): string {
  * persis untuk impor per subtes maupun gabungan, cuma diberi arti baris/kolom
  * `subtes` tambahan di pemanggil masing-masing.
  *
- * `expectedKind` adalah `defaultKind` subtes tujuan baris ini — server
- * mengunci kind soal ke defaultKind section-nya, jadi baris yang menyebut
- * kind lain ditolak di sini juga (bukan cuma setelah upload). `undefined`
- * kalau pemanggil belum bisa menentukan section baris ini (mis. impor
- * gabungan dengan `subtes` yang tidak cocok section manapun) — cek kind
- * dilewati saat itu, baris tetap dilaporkan lewat `problems` server.
+ * `expectedKind` is retained for callers that still pass the section default;
+ * answer type is now selected per row, so it is only used as a template hint.
  */
-function parseQuestionRow(cell: (name: string) => string, expectedKind: QuestionKind | undefined): RowParseResult {
+function parseQuestionRow(cell: (name: string) => string, _expectedKind: QuestionKind | undefined): RowParseResult {
   const kind = KIND_BY_CELL[cell('tipe').toLowerCase()]
   if (!kind) return { ok: false, error: `tipe "${cell('tipe')}" tidak dikenal.` }
-  if (expectedKind && kind !== expectedKind) {
-    return {
-      ok: false,
-      error: `tipe "${cell('tipe')}" tidak sesuai tipe subtes ini — harus "${TEMPLATE_KIND_CELL[expectedKind]}".`,
-    }
-  }
-
   const stimulus = cell('wacana')
   const prompt = cell('pertanyaan')
   const explanation = cell('pembahasan')

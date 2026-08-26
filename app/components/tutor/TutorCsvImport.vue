@@ -159,7 +159,7 @@ function reset() {
         Kolom yang tidak terpakai boleh kosong. Kolom
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> harus
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">{{ TEMPLATE_KIND_CELL[section.defaultKind] }}</code>
-        di setiap baris — tipe soal mengikuti subtes ini, tidak bisa berbeda per baris.
+        sebagai contoh awal. Tipe soal dapat berbeda di setiap baris.
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">kunci</code>
         berisi huruf A–E untuk pilihan ganda, atau daftar B/S dipisah ";" untuk
         soal Benar/Salah. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">jawabanIsian</code>
@@ -170,7 +170,7 @@ function reset() {
         Header sama seperti template per subtes, ditambah kolom pertama
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code> (wajib diisi).
         Kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> tiap baris
-        harus sesuai tipe soal subtes yang dituju (lihat contoh di template).
+        menentukan tipe jawaban untuk baris tersebut (lihat contoh di template).
       </p>
       <button
         type="button"

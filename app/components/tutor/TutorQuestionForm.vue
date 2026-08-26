@@ -11,9 +11,8 @@ import type {
 
 /**
  * Editor satu soal (kontrak §6 — "Editor Soal & Ergonomi Tutor 10/10").
- * Bentuk formnya mengikuti `kind`, yang selalu sama dengan `defaultKind`
- * subtes ini — server mengunci tiap soal ke `defaultKind` section-nya, jadi
- * form ini tidak lagi menawarkan pilihan tipe soal, hanya menampilkannya:
+ * Bentuk formnya mengikuti `kind`, which starts from the section default but
+ * can be changed for each question:
  * - single_choice: opsi A–E + pilih kunci jawaban
  * - weighted: opsi A–E + bobot 0–5 per opsi (gaya TKP)
  * - true_false: daftar pernyataan dengan toggle Benar/Salah
@@ -29,7 +28,7 @@ import type {
 const props = defineProps<{
   initial: TutorQuestion | null
   defaultKind: QuestionKind
-  /** Only "Custom" exam types mix question kinds across sections — elsewhere every section already follows one fixed template, so the locked-kind note is noise. */
+  /** Section default used as the initial suggestion for new questions. */
   isCustom?: boolean
   saving: boolean
   productId: string
@@ -68,10 +67,8 @@ const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
   { value: 'ordering', label: 'Mengurutkan langkah' },
 ]
 
-// `kind` selalu sama dengan `defaultKind` subtes — server mengunci ini, tidak
-// ada lagi pilihan bebas per soal (lihat komentar berkas di atas).
-const kind = ref<QuestionKind>(props.defaultKind)
-const kindLabel = computed(() => KIND_OPTIONS.find(option => option.value === props.defaultKind)?.label ?? props.defaultKind)
+const kind = ref<QuestionKind>(props.initial?.kind ?? props.defaultKind)
+const kindLabel = computed(() => KIND_OPTIONS.find(option => option.value === kind.value)?.label ?? kind.value)
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
@@ -450,8 +447,7 @@ function restoreDraft() {
       matchingPairs?: Record<string, string>
       ordering?: string[]
     }
-    // `kind` tidak dipulihkan dari draft lama — selalu mengikuti `defaultKind`
-    // subtes saat ini, bahkan kalau draft tersimpan sebelum kind dikunci.
+    if (snapshot.kind && KIND_OPTIONS.some(option => option.value === snapshot.kind)) kind.value = snapshot.kind
     stimulus.value = snapshot.stimulus ?? ''
     if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
@@ -565,19 +561,12 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </span>
     </AppSectionMessage>
 
-    <!-- Hanya relevan untuk exam type "Custom": subtesnya beda-beda kind,
-         jadi tutor perlu diingatkan tipe soal di sini terkunci. Untuk
-         template baku (SNBT/SKD/dst) semua subtes sudah satu kind yang
-         sama, jadi catatan ini cuma noise. -->
-    <div v-if="isCustom">
-      <span :class="FIELD_LABEL_CLASS">Tipe soal</span>
-      <p class="flex items-center gap-1.5 text-[0.9rem] text-muted">
-        <AppIcon name="lock-simple" :size="14" class="shrink-0 text-faint" />
-        <span>{{ kindLabel }}</span>
-      </p>
-      <p class="mt-1 text-[0.78rem] text-faint">
-        Tipe soal mengikuti pengaturan subtes ini dan tidak bisa diganti per soal.
-      </p>
+    <div class="max-w-xl">
+      <label :for="`${uid}-question-kind`" :class="FIELD_LABEL_CLASS">Answer type</label>
+      <select :id="`${uid}-question-kind`" v-model="kind" :class="FIELD_CLASS" :aria-label="`Answer type, currently ${kindLabel}`">
+        <option v-for="option in KIND_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
+      </select>
+      <p class="mt-1 text-[0.78rem] text-faint">The section default is preselected, and each question can use a different answer type.</p>
     </div>
 
     <div>
