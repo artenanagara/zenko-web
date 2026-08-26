@@ -605,3 +605,47 @@
     overflow: hidden;
   }
 }
+
+/* ---------------------------------------------------------------- exam lock
+ *
+ * Applied to <html> by useExamContentGuard while a sitting is running, so the
+ * rules can reach the print sheet and the whole document — neither of which a
+ * scoped component style can touch.
+ *
+ * On the limits of this: a web page cannot block a screenshot. There is no API
+ * for it, and Print Screen, the OS snipping tool, and a phone camera all
+ * happen outside anything the page can see. What is genuinely enforceable is
+ * the cheap, high-volume route — select, right-click, copy, drag, print — and
+ * that is what these rules close.
+ */
+.exam-locked .exam-protected,
+.exam-locked .exam-protected * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* The student's own answer field stays fully usable — the point is to stop the
+   question text leaving, not to stop someone editing what they typed. */
+.exam-locked .exam-protected input,
+.exam-locked .exam-protected textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Printing (and "Save as PDF", which goes through the same path) yields a
+   notice instead of the paper. */
+@media print {
+  .exam-locked body > * {
+    display: none !important;
+  }
+
+  .exam-locked body::after {
+    content: "Soal try out Zenko tidak dapat dicetak.";
+    display: block;
+    padding: 4rem 2rem;
+    font-family: inherit;
+    font-size: 1rem;
+    text-align: center;
+  }
+}
