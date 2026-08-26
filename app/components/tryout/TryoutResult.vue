@@ -203,9 +203,14 @@ function openReview() {
       >
         Kerjakan lagi
       </AppButton>
+      <!-- `selesai=1` is what tells the package page this visit is the one
+           straight after a sitting, which is when it offers the review modal.
+           Carrying it in the link rather than inferring it from "has attempts"
+           keeps the prompt to the moment the student actually just finished,
+           instead of every later visit to the page. -->
       <AppButton
         v-if="!simulate"
-        :to="`/akun/paket/${packageSlug}`"
+        :to="`/akun/paket/${packageSlug}?selesai=1`"
         variant="light"
         size="lg"
         class="border border-hairline-strong shadow-none"

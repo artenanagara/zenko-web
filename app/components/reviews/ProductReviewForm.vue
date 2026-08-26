@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { ProductReviewInput } from '#shared/types/product-review'
 
-const props = defineProps<{ slug: string, productTitle: string }>()
+/**
+ * `embedded` drops the card chrome and the heading: inside AppModal the dialog
+ * already supplies both, and keeping them would render a card inside a card
+ * under a duplicated title.
+ */
+const props = defineProps<{ slug: string, productTitle: string, embedded?: boolean }>()
 const emit = defineEmits<{ submitted: [] }>()
 const reviews = useProductReviews(props.slug)
 const rating = ref(0)
@@ -44,8 +49,12 @@ async function submit() {
 </script>
 
 <template>
-  <form class="grid gap-5 rounded-lg border border-hairline bg-surface p-5 md:p-6" @submit.prevent="submit">
-    <div>
+  <form
+    class="grid gap-5"
+    :class="embedded ? '' : 'rounded-lg border border-hairline bg-surface p-5 md:p-6'"
+    @submit.prevent="submit"
+  >
+    <div v-if="!embedded">
       <h3 class="font-bold">{{ reviews.mine ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman try out ini?' }}</h3>
       <p class="mt-1 text-[0.88rem] text-muted">Ulasan hanya tersedia setelah kamu menyelesaikan try out. Tidak ada upload gambar.</p>
     </div>
