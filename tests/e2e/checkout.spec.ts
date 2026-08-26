@@ -47,6 +47,6 @@ test.describe('checkout (/checkout/[slug])', () => {
 
     await expect(page.getByText('Masuk dulu supaya paket ini tercatat di akunmu')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Bayar sekarang' })).toHaveCount(0)
-    await expect(page.getByRole('link', { name: 'Masuk untuk melanjutkan' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Masuk untuk melanjutkan' })).toBeVisible()
   })
 })

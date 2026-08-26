@@ -6,6 +6,7 @@
  * mengikuti panel gambar di TutorOptionField.vue.
  */
 const model = defineModel<string>({ default: '' })
+const props = defineProps<{ disabled?: boolean }>()
 
 const uid = useId()
 const uploading = ref(false)
@@ -52,14 +53,15 @@ async function onFileSelected(event: Event) {
         type="url"
         placeholder="https://..."
         class="h-10 min-w-0 flex-1 rounded-xs border border-line bg-surface px-3 text-[0.86rem]"
+        :disabled="props.disabled"
       >
-      <label class="inline-flex h-10 shrink-0 cursor-pointer items-center rounded-xs border border-line bg-surface px-3.5 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink">
+      <label class="inline-flex h-10 shrink-0 cursor-pointer items-center rounded-xs border border-line bg-surface px-3.5 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink" :class="props.disabled && 'pointer-events-none opacity-50'">
         {{ uploading ? 'Mengunggah…' : 'Unggah Gambar' }}
         <input
           type="file"
           accept="image/png,image/jpeg,image/gif,image/webp"
           class="hidden"
-          :disabled="uploading"
+          :disabled="uploading || props.disabled"
           @change="onFileSelected"
         >
       </label>
@@ -68,6 +70,7 @@ async function onFileSelected(event: Event) {
         type="button"
         class="shrink-0 text-[0.82rem] font-semibold text-danger hover:underline"
         @click="model = ''"
+        :disabled="props.disabled"
       >
         Hapus
       </button>

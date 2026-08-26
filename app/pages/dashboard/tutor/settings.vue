@@ -27,18 +27,20 @@ const router = useRouter()
  * ------------------------------------------------------------------------ */
 
 const SETTINGS_TABS = [
-  { id: 'profil', label: 'Profil tutor' },
+  { id: 'profil', label: 'Identitas akun' },
+  { id: 'publik', label: 'Profil publik' },
+  { id: 'ulasan', label: 'Ulasan siswa' },
   { id: 'rekening', label: 'Rekening bank' },
 ]
-const activeTab = ref(route.hash === '#rekening' ? 'rekening' : 'profil')
+const activeTab = ref(route.hash === '#rekening' ? 'rekening' : route.hash === '#publik' ? 'publik' : route.hash === '#ulasan' ? 'ulasan' : 'profil')
 
 watch(() => route.hash, (hash) => {
-  const nextTab = hash === '#rekening' ? 'rekening' : 'profil'
+  const nextTab = hash === '#rekening' ? 'rekening' : hash === '#publik' ? 'publik' : hash === '#ulasan' ? 'ulasan' : 'profil'
   if (activeTab.value !== nextTab) activeTab.value = nextTab
 })
 
 watch(activeTab, (tab) => {
-  const nextHash = tab === 'rekening' ? '#rekening' : ''
+  const nextHash = tab === 'rekening' ? '#rekening' : tab === 'publik' ? '#publik' : tab === 'ulasan' ? '#ulasan' : ''
   if (route.hash !== nextHash) void router.replace({ hash: nextHash })
 })
 
@@ -49,6 +51,8 @@ const {
   refresh: refreshChangeRequest,
 } = useTutorBankAccountChangeRequest()
 const { data: tutorProfile, pending: tutorProfilePending, refresh: refreshTutorProfile } = useTutorProfile()
+const tutorReviews = useTutorReviews()
+const replyDrafts = reactive<Record<string, string>>({})
 
 // Client-only fetch: the session cookie never reaches the Nuxt server, so
 // this resolves after hydration (see useTutorEarnings).
@@ -56,7 +60,16 @@ onMounted(() => {
   refreshBankAccount()
   refreshChangeRequest()
   refreshTutorProfile()
+  tutorReviews.refresh()
 })
+
+watch(() => tutorReviews.data.value, (reviews) => {
+  for (const review of reviews) replyDrafts[review.id] = review.tutorReplyText || ''
+}, { deep: true })
+
+async function replyToReview(reviewId: string) {
+  await tutorReviews.reply(reviewId, replyDrafts[reviewId] || '')
+}
 
 /* --------------------------------------------------------------------------
  * Profil publik tutor — bio, pengalaman, spesialisasi, pendidikan, tautan.
@@ -66,6 +79,9 @@ onMounted(() => {
  * ------------------------------------------------------------------------ */
 
 const profileForm = reactive({
+  displayName: '',
+  avatarUrl: '',
+  username: '',
   bio: '',
   experience: '',
   specializations: [] as string[],
@@ -97,6 +113,32 @@ watch(tutorProfile, (profile) => {
   profileForm.youtubeUrl = profile.youtubeUrl
   profileForm.websiteUrl = profile.websiteUrl
 }, { immediate: true })
+
+const publicAvatarInputRef = useTemplateRef('publicAvatarInputRef')
+const publicAvatarUploading = ref(false)
+const publicAvatarError = ref('')
+
+function pickPublicAvatar() {
+  publicAvatarInputRef.value?.click()
+}
+
+async function onPublicAvatarSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  publicAvatarError.value = ''
+  publicAvatarUploading.value = true
+  try {
+    profileForm.avatarUrl = await uploadTutorImage(file)
+  }
+  catch (cause) {
+    publicAvatarError.value = tutorApiMessage(cause, 'Gagal mengunggah foto publik.')
+  }
+  finally {
+    publicAvatarUploading.value = false
+    input.value = ''
+  }
+}
 
 function addSpecialization() {
   const tag = specializationInput.value.trim()
@@ -265,7 +307,7 @@ async function submitChangeRequest() {
       aria-labelledby="tab-profil"
       class="grid gap-6"
     >
-      <DashboardPanel title="Profil tutor" description="Nama dan foto tampil di seluruh Zenko, termasuk katalog paketmu.">
+      <DashboardPanel title="Identitas akun" description="Nama dan foto akun dipakai untuk login, komunikasi internal, dan area privat.">
         <div v-if="user" class="flex items-center gap-4">
           <img
             v-if="user.avatarUrl"
@@ -287,11 +329,21 @@ async function submitChangeRequest() {
         </div>
 
         <AppSectionMessage appearance="information" class="mt-5">
-          Nama dan foto profil diubah lewat
-          <NuxtLink to="/akun/profil" class="font-semibold underline">Akun saya</NuxtLink>. Bio,
-          pengalaman, dan tautan sosial media ada di bawah ini.
+          Nama dan foto akun diubah lewat
+          <NuxtLink to="/akun/profil" class="font-semibold underline">Akun saya</NuxtLink>. Identitas ini
+          berbeda dari nama dan foto yang tampil di halaman publik tutor.
         </AppSectionMessage>
       </DashboardPanel>
+
+    </div>
+
+    <div
+      v-show="activeTab === 'publik'"
+      id="panel-publik"
+      role="tabpanel"
+      aria-labelledby="tab-publik"
+      class="grid gap-6"
+    >
 
       <DashboardPanel
         title="Profil publik tutor"
@@ -300,6 +352,28 @@ async function submitChangeRequest() {
         <DashboardSkeleton v-if="tutorProfilePending && !tutorProfile" :count="4" label="Memuat profil..." />
 
         <form v-else class="grid gap-5" @submit.prevent="saveProfile">
+        <div class="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+          <div>
+            <img v-if="profileForm.avatarUrl" :src="profileForm.avatarUrl" alt="" class="h-20 w-20 rounded-full object-cover">
+            <span v-else class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary-soft text-2xl font-bold text-primary">{{ (profileForm.displayName || user?.name || '?').trim().charAt(0).toUpperCase() }}</span>
+          </div>
+          <div>
+            <p class="font-semibold">Foto profil publik</p>
+            <p class="mt-1 text-[0.82rem] text-muted">Dipakai di katalog dan halaman publik tutor. Jika kosong, foto akun dipakai sebagai fallback.</p>
+            <button type="button" class="mt-3 rounded-sm border border-line px-3 py-2 text-[0.84rem] font-semibold text-primary hover:bg-primary-soft" :disabled="publicAvatarUploading" @click="pickPublicAvatar">
+              {{ publicAvatarUploading ? 'Mengunggah…' : 'Pilih foto' }}
+            </button>
+            <input ref="publicAvatarInputRef" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" @change="onPublicAvatarSelected">
+            <AppInlineMessage v-if="publicAvatarError" class="mt-2" type="error">{{ publicAvatarError }}</AppInlineMessage>
+          </div>
+        </div>
+
+        <FormField id="tutor-display-name" v-model="profileForm.displayName" label="Nama tampilan publik" :placeholder="user?.name || 'Nama yang tampil di katalog'" hint="Boleh berbeda dari nama akun, misalnya Kak Budi SNBT." />
+        <div>
+          <FormField id="tutor-username" v-model="profileForm.username" label="Username profil publik" placeholder="kaksnbt" hint="3–30 karakter, huruf kecil, angka, atau tanda hubung. Perubahan maksimal 1x per 30 hari." />
+          <p v-if="profileForm.username" class="mt-2 text-[0.82rem] text-muted">Link publik: <span class="font-semibold text-ink">zenkoedu.id/tutor/{{ profileForm.username.toLowerCase() }}</span></p>
+        </div>
+
         <div>
           <label for="tutor-bio" class="mb-2 block text-[0.9rem] font-semibold">Bio singkat</label>
           <textarea
@@ -371,10 +445,10 @@ async function submitChangeRequest() {
         />
 
         <div class="grid gap-5 sm:grid-cols-2">
-          <FormField id="tutor-instagram" v-model="profileForm.instagramUrl" type="url" label="Instagram" placeholder="https://instagram.com/..." />
-          <FormField id="tutor-tiktok" v-model="profileForm.tiktokUrl" type="url" label="TikTok" placeholder="https://tiktok.com/@..." />
-          <FormField id="tutor-linkedin" v-model="profileForm.linkedinUrl" type="url" label="LinkedIn" placeholder="https://linkedin.com/in/..." />
-          <FormField id="tutor-youtube" v-model="profileForm.youtubeUrl" type="url" label="YouTube" placeholder="https://youtube.com/@..." />
+          <AppPrefixedUrlField id="tutor-instagram" v-model="profileForm.instagramUrl" label="Instagram" prefix="instagram.com/" placeholder="username" />
+          <AppPrefixedUrlField id="tutor-tiktok" v-model="profileForm.tiktokUrl" label="TikTok" prefix="tiktok.com/@" placeholder="username" />
+          <AppPrefixedUrlField id="tutor-linkedin" v-model="profileForm.linkedinUrl" label="LinkedIn" prefix="linkedin.com/in/" placeholder="username" />
+          <AppPrefixedUrlField id="tutor-youtube" v-model="profileForm.youtubeUrl" label="YouTube" prefix="youtube.com/@" placeholder="channel" />
         </div>
 
         <FormField id="tutor-website" v-model="profileForm.websiteUrl" type="url" label="Website" placeholder="https://..." />
@@ -388,6 +462,36 @@ async function submitChangeRequest() {
           </AppButton>
         </div>
         </form>
+      </DashboardPanel>
+    </div>
+
+    <div
+      v-show="activeTab === 'ulasan'"
+      id="panel-ulasan"
+      role="tabpanel"
+      aria-labelledby="tab-ulasan"
+      class="grid gap-6"
+    >
+      <DashboardPanel title="Ulasan siswa" description="Baca masukan siswa yang sudah mengerjakan paketmu dan balas jika perlu.">
+        <DashboardSkeleton v-if="tutorReviews.pending.value" :count="3" label="Memuat ulasan..." />
+        <AppInlineMessage v-else-if="tutorReviews.error.value" type="error">{{ tutorReviews.error.value }}</AppInlineMessage>
+        <div v-else-if="tutorReviews.data.value.length" class="grid gap-4">
+          <article v-for="review in tutorReviews.data.value" :key="review.id" class="rounded-md border border-hairline bg-surface-alt p-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div><p class="font-semibold">{{ review.isAnonymous ? 'Siswa anonim' : review.authorName }}</p><p class="mt-1 text-[0.8rem] text-muted">{{ review.productTitle }}</p></div>
+              <span class="text-star">{{ '★'.repeat(review.rating) }}</span>
+            </div>
+            <p v-if="review.reviewText" class="mt-3 leading-[1.6] text-muted">{{ review.reviewText }}</p>
+            <details class="mt-4">
+              <summary class="cursor-pointer text-[0.86rem] font-semibold text-primary">{{ review.tutorReplyText ? 'Edit balasan' : 'Balas ulasan' }}</summary>
+              <form class="mt-3 flex gap-2" @submit.prevent="replyToReview(review.id)">
+                <textarea v-model="replyDrafts[review.id]" rows="2" maxlength="1000" class="min-w-0 flex-1 rounded-sm border border-line bg-surface px-3 py-2 text-[0.86rem]" placeholder="Tulis balasan yang membantu siswa..." />
+                <AppButton type="submit" size="sm">Kirim</AppButton>
+              </form>
+            </details>
+          </article>
+        </div>
+        <p v-else class="text-muted">Belum ada ulasan siswa.</p>
       </DashboardPanel>
     </div>
 
@@ -536,3 +640,6 @@ async function submitChangeRequest() {
     </div>
   </div>
 </template>
+  profileForm.displayName = profile.displayName
+  profileForm.avatarUrl = profile.avatarUrl
+  profileForm.username = profile.username

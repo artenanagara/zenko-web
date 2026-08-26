@@ -211,7 +211,6 @@ async function exitSimulation() {
               :doubtful-count="session.doubtfulCount.value"
               :total-questions="session.displayTotal.value"
               :status-of="session.statusOf"
-              :label-of="session.labelOf"
               @jump="session.goTo"
             />
           </div>
@@ -239,7 +238,6 @@ async function exitSimulation() {
           :doubtful-count="session.doubtfulCount.value"
           :total-questions="session.displayTotal.value"
           :status-of="session.statusOf"
-          :label-of="session.labelOf"
           :is-last-section="session.isLastSection.value"
           @jump="session.goTo"
           @end-section="requestEndSection"

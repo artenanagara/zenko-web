@@ -13,6 +13,11 @@ const related = useRelatedPackages(detail.value.category, slug)
 // page that would just redirect there anyway.
 const { isSignedIn } = useAuth()
 const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.value)
+const productReviews = useProductReviews(slug)
+
+onMounted(() => {
+  productReviews.refresh()
+})
 
 const discountPercent = computed(() => {
   const { price, priceOriginal } = detail.value
@@ -150,6 +155,26 @@ useHead({
               {{ item }}
             </li>
           </ul>
+
+          <div class="mt-10 grid gap-5">
+            <div>
+              <h2 class="mb-1 text-[1.35rem] font-bold tracking-[-0.03em]">Ulasan siswa</h2>
+              <p class="text-[0.88rem] text-muted">Rating dan masukan dari siswa yang sudah mengerjakan paket ini.</p>
+            </div>
+            <div v-if="productReviews.data.value.length" class="grid gap-4">
+              <article v-for="review in productReviews.data.value" :key="review.id" class="rounded-md border border-hairline bg-surface p-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <p class="font-semibold">{{ review.isAnonymous ? 'Siswa anonim' : review.authorName }}</p>
+                  <p class="text-star" :aria-label="`${review.rating} dari 5 bintang`">{{ '★'.repeat(review.rating) }}<span class="text-faint">{{ '★'.repeat(5 - review.rating) }}</span></p>
+                </div>
+                <p v-if="review.tags.length" class="mt-2 text-[0.8rem] text-muted">{{ review.tags.join(' · ') }}</p>
+                <p v-if="review.reviewText" class="mt-3 leading-[1.65] text-muted">{{ review.reviewText }}</p>
+                <div v-if="review.tutorReplyText" class="mt-4 border-l-2 border-primary/30 pl-3 text-[0.88rem] text-muted"><span class="font-semibold text-ink">Balasan tutor:</span> {{ review.tutorReplyText }}</div>
+              </article>
+            </div>
+            <p v-else class="rounded-md border border-dashed border-line px-4 py-6 text-center text-muted">Belum ada ulasan. Jadilah yang pertama setelah mengerjakan paket ini.</p>
+            <ProductReviewForm v-if="isSignedIn" :slug="slug" :product-title="detail.title" @submitted="productReviews.refresh" />
+          </div>
         </div>
 
         <!-- Right column: purchase card, sticks while the content scrolls -->

@@ -31,9 +31,9 @@ test.describe('catalog (/paket)', () => {
     expect(await firstCardTitle()).toBe(FIRST_BY_SORT.featured)
 
     await page.getByRole('button', { name: /Urutkan/ }).click()
-    await page.getByRole('menuitemradio', { name: 'Terlaris' }).click()
+    await page.getByRole('menuitemradio', { name: 'Banyak dikerjakan' }).click()
 
-    await expect(page.getByRole('button', { name: /Terlaris/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Banyak dikerjakan/ })).toBeVisible()
 
     // "Terlaris" (bestseller) orders purely by units sold, so the curated
     // package that leads the default view is displaced by the actual top

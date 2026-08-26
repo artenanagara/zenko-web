@@ -75,6 +75,8 @@ const form = reactive({
   examTypeSlug: '',
   mode: 'simulasi' as ProductMode,
   sectionTitle: '',
+  questionTarget: null as number | null,
+  durationMinutes: null as number | null,
   title: '',
   description: '',
   thumbnailUrl: '',
@@ -93,12 +95,41 @@ function cleanIncludes(rows: string[]): string[] {
   return rows.map(row => row.trim()).filter(row => row.length > 0)
 }
 
-function addIncludeRow() {
-  form.includes.push('')
+const INCLUDE_OPTIONS = [
+  { label: 'Pembahasan video untuk setiap soal', category: null },
+  { label: 'Pembahasan tertulis tiap soal', category: null },
+  { label: 'Analisis skor per subtes', category: null },
+  { label: 'Akses selamanya, bisa diulang kapan saja', category: null },
+  { label: 'Grup diskusi bersama tutor', category: null },
+  { label: 'Perhitungan skor dengan skema IRT', category: 'SNBT' },
+  { label: 'Perhitungan skor dengan skema IRT', category: 'TKA' },
+  { label: 'Simulasi antarmuka CAT BKN', category: 'SKD' },
+  { label: 'Simulasi antarmuka CAT BKN', category: 'Kedinasan' },
+  { label: 'Simulasi antarmuka CAT BKN', category: 'SKB' },
+].filter((option, index, options) => options.findIndex(item => item.label === option.label) === index)
+
+const includeOptions = computed(() => {
+  const category = selectedExamType.value?.category?.toLowerCase() ?? ''
+  return [...INCLUDE_OPTIONS].sort((a, b) => {
+    const aRelevant = a.category ? category.includes(a.category.toLowerCase()) : false
+    const bRelevant = b.category ? category.includes(b.category.toLowerCase()) : false
+    return Number(bRelevant) - Number(aRelevant)
+  })
+})
+
+function toggleInclude(label: string) {
+  const index = form.includes.indexOf(label)
+  if (index >= 0) form.includes.splice(index, 1)
+  else form.includes.push(label)
 }
 
-function removeIncludeRow(index: number) {
-  form.includes.splice(index, 1)
+const customInclude = ref('')
+
+function addCustomInclude() {
+  const value = customInclude.value.trim()
+  if (!value || form.includes.includes(value)) return
+  form.includes.push(value)
+  customInclude.value = ''
 }
 
 /** Bundle membership, in display order. */
@@ -125,7 +156,17 @@ const derivedCategory = computed(() => {
 // A stale subtest choice from a previous exam type (or from switching back to
 // Simulasi) must never leak into a later mini-tryout submission.
 watch([() => form.examTypeSlug, () => form.mode], () => {
+  if (isEdit.value) return
   form.sectionTitle = ''
+  form.questionTarget = null
+  form.durationMinutes = null
+})
+
+watch(() => form.sectionTitle, (title) => {
+  const section = selectedExamType.value?.sections.find(item => item.title === title)
+  if (!section || (isEdit.value && detail.value?.sections?.[0]?.title === title)) return
+  form.questionTarget = section.questionTarget
+  form.durationMinutes = section.durationMinutes
 })
 
 const PRODUCT_TYPE_OPTIONS: { value: ProductType, label: string }[] = [
@@ -178,6 +219,8 @@ const savedFields = ref<{
   includes: string[]
   price: number
   priceOriginal: number
+  sectionQuestionTarget: number
+  sectionDurationMinutes: number
   items: string[]
   shuffleQuestions: boolean
 } | null>(null)
@@ -191,10 +234,13 @@ watch(detail, (loaded) => {
   form.type = loaded.type
   form.examTypeSlug = loaded.examType ?? ''
   form.mode = loaded.mode ?? 'simulasi'
+  form.sectionTitle = loaded.sections?.[0]?.title ?? ''
   form.title = loaded.title
   form.description = loaded.description ?? ''
   form.thumbnailUrl = loaded.thumbnailUrl ?? ''
   form.includes = [...(loaded.includes ?? [])]
+  form.questionTarget = loaded.sections?.[0]?.questionTarget ?? null
+  form.durationMinutes = loaded.sections?.[0]?.durationMinutes ?? null
   form.price = PRICE_INPUT_DISABLED ? 0 : (loaded.price > 0 ? loaded.price : null)
   form.priceOriginal = loaded.priceOriginal > 0 ? loaded.priceOriginal : null
   form.shuffleQuestions = loaded.shuffleQuestions ?? false
@@ -210,21 +256,29 @@ watch(detail, (loaded) => {
     includes: cleanIncludes(form.includes),
     price: loaded.price,
     priceOriginal: loaded.priceOriginal,
+    sectionQuestionTarget: loaded.sections?.[0]?.questionTarget ?? 0,
+    sectionDurationMinutes: loaded.sections?.[0]?.durationMinutes ?? 0,
     items: [...selectedItems.value],
     shuffleQuestions: loaded.shuffleQuestions ?? false,
   }
 })
 
-/** Tutor hanya boleh mengedit draft/rejected; sisanya dapat panel penjelasan. */
+/** Live products keep their structure locked but allow commercial fields. */
 const canEditProduct = computed(() => {
   if (!isEdit.value) return true
   if (!detail.value) return false
-  return detail.value.status === 'draft' || detail.value.status === 'rejected'
+  return ['draft', 'rejected', 'live'].includes(detail.value.status)
 })
+
+function isFieldEditable(field: 'title' | 'price' | 'priceOriginal' | 'section' | 'details') {
+  if (!isEdit.value || !detail.value) return true
+  if (detail.value.status === 'draft' || detail.value.status === 'rejected') return true
+  return detail.value.status === 'live' && ['title', 'price', 'priceOriginal'].includes(field)
+}
 
 const LOCKED_EXPLANATION: Partial<Record<TutorProductDetail['status'], string>> = {
   review: 'Produk sedang ditinjau tim Zenko. Kamu bisa mengeditnya lagi jika hasil tinjauan keluar.',
-  live: 'Produk sudah tayang di katalog. Arsipkan dulu dari daftar produk jika ingin menariknya.',
+  live: 'Produk sudah tayang. Judul dan harga masih bisa diubah; field lain terkunci karena produk sudah tayang.',
   archived: 'Produk sudah diarsipkan dan tidak tampil di katalog.',
 }
 
@@ -253,6 +307,23 @@ function buildPatch(): UpdateProductRequest {
   if (cleanedIncludes.join('\n') !== saved.includes.join('\n')) patch.includes = cleanedIncludes
   if ((form.price ?? 0) !== saved.price) patch.price = form.price ?? 0
   if ((form.priceOriginal ?? 0) !== saved.priceOriginal) patch.priceOriginal = form.priceOriginal ?? 0
+  const currentSection = detail.value?.sections?.[0]
+  if (
+    currentSection
+    && isFieldEditable('section')
+    && ((form.questionTarget ?? 0) !== saved.sectionQuestionTarget || (form.durationMinutes ?? 0) !== saved.sectionDurationMinutes)
+  ) {
+    patch.sections = (detail.value?.sections ?? []).map(section => ({
+      id: section.id,
+      title: section.title,
+      questionTarget: section.id === currentSection.id ? (form.questionTarget ?? section.questionTarget) : section.questionTarget,
+      durationMinutes: section.id === currentSection.id ? (form.durationMinutes ?? section.durationMinutes) : section.durationMinutes,
+      scoringMode: section.scoringMode,
+      pointsCorrect: section.pointsCorrect,
+      passingGrade: section.passingGrade,
+      defaultKind: section.defaultKind,
+    }))
+  }
   if (form.type === 'bundle' && selectedItems.value.join('|') !== saved.items.join('|')) {
     patch.items = [...selectedItems.value]
   }
@@ -286,6 +357,8 @@ async function persist(): Promise<boolean> {
         includes: cleanIncludes(form.includes),
         price: form.price ?? 0,
         priceOriginal: form.priceOriginal ?? 0,
+        sectionQuestionTarget: form.questionTarget ?? 0,
+        sectionDurationMinutes: form.durationMinutes ?? 0,
         items: [...selectedItems.value],
         shuffleQuestions: form.shuffleQuestions,
       }
@@ -316,11 +389,19 @@ function initialStep(): number {
   const raw = Array.isArray(route.query.langkah) ? route.query.langkah[0] : route.query.langkah
   const parsed = Number.parseInt(raw ?? '', 10)
   const max = isEdit.value ? 4 : 2
+  if (isEdit.value && detail.value?.status === 'live' && Number.isNaN(parsed)) return 2
   return Number.isNaN(parsed) ? 1 : Math.min(Math.max(parsed, 1), max)
 }
 
 const step = ref(initialStep())
 const stepError = ref('')
+
+watch(() => detail.value?.status, (status) => {
+  if (status === 'live' && step.value !== 2) {
+    step.value = 2
+    syncQuery()
+  }
+})
 
 function syncQuery() {
   router.replace({ query: { ...route.query, langkah: String(step.value) } })
@@ -328,6 +409,10 @@ function syncQuery() {
 
 /** Validasi minimum sebelum melangkah maju; server tetap memvalidasi penuh. */
 function validateThrough(target: number): boolean {
+  if (isEdit.value && detail.value?.status === 'live' && target !== 2) {
+    stepError.value = 'Produk tayang hanya bisa mengubah judul dan harga di langkah Info produk.'
+    return false
+  }
   if (target > 1 && isSingle.value && !form.examTypeSlug) {
     stepError.value = 'Pilih kategori ujian dulu sebelum lanjut.'
     return false
@@ -347,6 +432,10 @@ function validateThrough(target: number): boolean {
     stepError.value = 'Isi judul produk dulu sebelum lanjut.'
     return false
   }
+  if (target > 2 && cleanIncludes(form.includes).length === 0) {
+    stepError.value = 'Pilih minimal satu poin yang kamu dapatkan.'
+    return false
+  }
   return true
 }
 
@@ -355,6 +444,7 @@ async function goTo(target: number) {
   stepError.value = ''
 
   if (target > step.value && !validateThrough(target)) return
+  if (isEdit.value && detail.value?.status === 'live' && target !== 2) return
 
   // Create mode: past step 2 the draft must exist first.
   if (!props.productId && target >= 3) {
@@ -380,8 +470,10 @@ async function createAndContinue() {
       type: form.type,
       title: form.title.trim(),
       examTypeSlug: isSingle.value ? form.examTypeSlug : undefined,
-      mode: form.mode,
+        mode: form.mode,
       ...(form.mode === 'mini_tryout' ? { sectionTitle: form.sectionTitle } : {}),
+      ...(form.mode === 'mini_tryout' && form.questionTarget ? { questionTarget: form.questionTarget } : {}),
+      ...(form.mode === 'mini_tryout' && form.durationMinutes ? { durationMinutes: form.durationMinutes } : {}),
     })
 
     const patch: UpdateProductRequest = {}
@@ -416,7 +508,8 @@ async function createAndContinue() {
   }
 }
 
-const stepReachable = (target: number) => isEdit.value || target <= 2
+const stepReachable = (target: number) =>
+  detail.value?.status === 'live' ? target === 2 : isEdit.value || target <= 2
 
 /* ------------------------------------------------------------ leave guard */
 
@@ -821,6 +914,18 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 placeholder="Pilih subtes"
                 @update:model-value="(value) => { form.sectionTitle = String(value) }"
               />
+
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="product-question-target" :class="FIELD_LABEL_CLASS">Jumlah soal</label>
+                  <input id="product-question-target" v-model.number="form.questionTarget" type="number" min="1" max="200" placeholder="30" :disabled="!isFieldEditable('section')" :class="FIELD_CLASS">
+                </div>
+                <div>
+                  <label for="product-duration-minutes" :class="FIELD_LABEL_CLASS">Durasi (menit)</label>
+                  <input id="product-duration-minutes" v-model.number="form.durationMinutes" type="number" min="1" max="300" placeholder="60" :disabled="!isFieldEditable('section')" :class="FIELD_CLASS">
+                </div>
+              </div>
+              <p class="mt-2 text-[0.82rem] text-muted">Boleh berbeda dari template subtes. Maksimal 200 soal dan 300 menit.</p>
             </div>
           </template>
 
@@ -839,6 +944,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             v-model="form.title"
             label="Judul"
             placeholder="Contoh: Try Out SNBT Lengkap 2026"
+            :disabled="!isFieldEditable('title')"
           />
 
           <div>
@@ -850,45 +956,54 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               placeholder="Jelaskan isi try-out, untuk siapa, dan apa yang membedakannya."
               class="resize-y"
               :class="FIELD_CLASS"
+              :disabled="!isFieldEditable('details')"
             />
           </div>
 
-          <TutorThumbnailField v-model="form.thumbnailUrl" />
+          <TutorThumbnailField v-model="form.thumbnailUrl" :disabled="!isFieldEditable('details')" />
 
           <div>
             <span :class="FIELD_LABEL_CLASS">Yang kamu dapatkan</span>
-            <p class="-mt-1 mb-3 text-[0.82rem] text-muted">
-              Poin yang tampil sebagai checklist di halaman detail paket. Contoh: "Akses selamanya",
-              "Pembahasan tiap soal". Kosongkan semua untuk memakai daftar bawaan sesuai kategori ujian.
-            </p>
+            <p class="-mt-1 mb-3 text-[0.82rem] text-muted">Pilih minimal satu manfaat yang benar-benar tersedia di paket ini.</p>
             <div class="grid gap-2.5">
-              <div
-                v-for="(_, index) in form.includes"
-                :key="index"
-                class="flex items-center gap-3"
+              <label
+                v-for="option in includeOptions"
+                :key="option.label"
+                class="flex items-start gap-3 rounded-sm border border-hairline bg-surface px-3.5 py-3 text-[0.9rem]"
+                :class="!isFieldEditable('details') && 'opacity-60'"
               >
                 <input
-                  v-model="form.includes[index]"
-                  type="text"
-                  placeholder="Contoh: Akses selamanya, bisa diulang kapan saja"
-                  :class="FIELD_CLASS"
+                  type="checkbox"
+                  class="mt-0.5 h-4 w-4 accent-primary"
+                  :checked="form.includes.includes(option.label)"
+                  :disabled="!isFieldEditable('details')"
+                  @change="toggleInclude(option.label)"
                 >
-                <button
-                  type="button"
-                  class="shrink-0 text-[0.86rem] font-semibold text-danger hover:underline"
-                  @click="removeIncludeRow(index)"
-                >
-                  Hapus
-                </button>
-              </div>
+                <span>{{ option.label }}</span>
+              </label>
             </div>
-            <button
-              type="button"
-              class="mt-3 text-[0.9rem] font-semibold text-primary hover:underline"
-              @click="addIncludeRow"
-            >
-              + Tambah poin
-            </button>
+            <div class="mt-3 flex gap-2">
+              <input
+                v-model="customInclude"
+                type="text"
+                placeholder="Tambahan lain (opsional)"
+                :disabled="!isFieldEditable('details')"
+                :class="FIELD_CLASS"
+                @keydown.enter.prevent="addCustomInclude"
+              >
+              <button
+                type="button"
+                class="shrink-0 rounded-sm border border-line px-3 text-[0.86rem] font-semibold text-primary hover:bg-primary-soft disabled:opacity-50"
+                :disabled="!isFieldEditable('details') || !customInclude.trim()"
+                @click="addCustomInclude"
+              >
+                Tambah
+              </button>
+            </div>
+            <p v-if="cleanIncludes(form.includes).some(item => !INCLUDE_OPTIONS.some(option => option.label === item))" class="mt-2 text-[0.82rem] text-muted">
+              Poin tambahan tersimpan: {{ cleanIncludes(form.includes).filter(item => !INCLUDE_OPTIONS.some(option => option.label === item)).join(', ') }}
+            </p>
+            <p v-if="cleanIncludes(form.includes).length === 0" class="mt-2 text-[0.82rem] text-danger-ink">Pilih minimal satu poin.</p>
           </div>
 
           <div class="grid gap-5 sm:grid-cols-2">
@@ -898,7 +1013,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 id="product-price"
                 v-model="form.price"
                 placeholder="149.000"
-                :disabled="PRICE_INPUT_DISABLED"
+                :disabled="PRICE_INPUT_DISABLED || !isFieldEditable('price')"
                 :ariaDescribedby="priceHint ? 'product-price-hint' : undefined"
                 :ariaInvalid="priceHintBlocking || undefined"
               />
@@ -917,6 +1032,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
                 id="product-price-original"
                 v-model="form.priceOriginal"
                 placeholder="199.000"
+                :disabled="!isFieldEditable('priceOriginal')"
                 ariaDescribedby="product-price-original-hint"
               />
               <p id="product-price-original-hint" class="mt-2 text-[0.82rem] text-muted">
@@ -948,6 +1064,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors"
               :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
               @click="form.shuffleQuestions = !form.shuffleQuestions"
+              :disabled="!isFieldEditable('details')"
             >
               <span
                 class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"

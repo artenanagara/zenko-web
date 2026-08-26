@@ -191,6 +191,9 @@ export interface CreateProductRequest {
   mode?: ProductMode
   /** Wajib saat mode `mini_tryout` — judul template subtes yang dipilih. */
   sectionTitle?: string
+  /** Optional mini try-out override; omitted means the template default. */
+  questionTarget?: number
+  durationMinutes?: number
 }
 
 /** Editable shape of one subtes for custom exam types; no id = new. */

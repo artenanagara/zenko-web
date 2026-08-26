@@ -3,4 +3,5 @@
     <NuxtPage />
   </NuxtLayout>
   <ConfirmDialog />
+  <CookieConsent />
 </template>

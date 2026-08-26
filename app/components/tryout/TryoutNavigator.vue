@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OptionLabel, TryoutQuestion } from '#shared/types/tryout'
+import type { TryoutQuestion } from '#shared/types/tryout'
 import type { TryoutNavigatorGroup } from '~/composables/useTryoutSession'
 
 /**
@@ -32,7 +32,6 @@ const props = withDefaults(
     doubtfulCount: number
     totalQuestions: number
     statusOf: (id: string) => 'answered' | 'doubtful' | 'unanswered'
-    labelOf: (id: string) => OptionLabel | null
     variant?: 'panel' | 'sheet'
   }>(),
   { variant: 'panel' },
@@ -40,8 +39,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ jump: [index: number] }>()
 
-function numberFor(question: TryoutQuestion, displayNumber: number) {
-  return props.labelOf(question.id) ?? String(displayNumber)
+function numberFor(_question: TryoutQuestion, displayNumber: number) {
+  return String(displayNumber)
 }
 </script>
 
@@ -70,7 +69,7 @@ function numberFor(question: TryoutQuestion, displayNumber: number) {
         </li>
         <li class="flex items-center gap-2">
           <span class="h-3 w-3 shrink-0 rounded-[3px] border border-success bg-success-soft" />
-          Sudah dijawab (menampilkan pilihan)
+          Sudah dijawab
         </li>
       </ul>
     </div>

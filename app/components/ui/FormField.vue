@@ -15,6 +15,7 @@ const props = withDefaults(
     autocomplete?: string
     error?: string
     hint?: string
+    disabled?: boolean
   }>(),
   { type: 'text' },
 )
@@ -78,6 +79,7 @@ const describedBy = computed(() => {
         :type="resolvedType"
         :placeholder="placeholder"
         :autocomplete="autocomplete"
+        :disabled="disabled"
         :inputmode="inputMode"
         class="w-full rounded-sm border bg-surface py-2.5 pl-3.5 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:outline-none"
         :class="[

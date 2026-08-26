@@ -69,7 +69,7 @@ const stimulusId = useId()
       <div
         v-show="stimulusOpen"
         :id="stimulusId"
-        class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-muted md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80"
+        class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-ink md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80"
         v-html="question.stimulus"
       />
     </div>

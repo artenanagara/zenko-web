@@ -43,6 +43,19 @@ export default defineNuxtConfig({
     ],
   },
 
+  // Session cookies belong to zenko-api's origin, so Nuxt cannot resolve
+  // these protected screens during SSR. Serving them as an SPA route avoids
+  // rendering an account/dashboard layout that the client auth middleware
+  // immediately replaces with /masuk or another role home.
+  routeRules: {
+    '/akun': { ssr: false },
+    '/akun/**': { ssr: false },
+    '/dashboard': { ssr: false },
+    '/dashboard/**': { ssr: false },
+    '/pembayaran': { ssr: false },
+    '/pembayaran/**': { ssr: false },
+  },
+
   css: ['~/assets/css/main.css'],
 
   // Components are grouped into folders by domain (ui, layout, home, …) purely

@@ -7,6 +7,10 @@
  */
 export interface TutorProfile {
   accountId: string
+  displayName: string
+  avatarUrl: string
+  username: string
+  usernameChangedAt: number
   bio: string
   experience: string
   specializations: string[]
@@ -22,4 +26,4 @@ export interface TutorProfile {
 }
 
 /** Body of PUT /tutor/profile — everything but accountId/updatedAt, which the server fills in. */
-export type TutorProfileInput = Omit<TutorProfile, 'accountId' | 'updatedAt'>
+export type TutorProfileInput = Omit<TutorProfile, 'accountId' | 'updatedAt' | 'usernameChangedAt'>

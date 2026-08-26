@@ -18,8 +18,8 @@ test.describe('home page', () => {
   test('search form submits into /paket', async ({ page }) => {
     await gotoHydrated(page, '/')
 
-    await page.getByPlaceholder('Cari paket, topik, atau tutor').fill('SNBT')
-    await page.getByRole('button', { name: 'Cari paket' }).click()
+    await page.getByPlaceholder('Cari paket soal, topik materi, atau nama tutor...').fill('SNBT')
+    await page.getByRole('button', { name: 'Cari Paket' }).click()
 
     await expect(page).toHaveURL(/\/paket\?q=SNBT/)
   })
