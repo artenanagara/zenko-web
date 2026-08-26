@@ -44,6 +44,16 @@ const KIND_BY_CELL: Record<string, QuestionKind> = {
   true_false: 'true_false',
   isian_singkat: 'short_answer',
   short_answer: 'short_answer',
+  pilihan_ganda_kompleks: 'multiple_choice',
+  multiple_choice: 'multiple_choice',
+  sebab_akibat: 'assertion_reason',
+  assertion_reason: 'assertion_reason',
+  asosiatif: 'associative_choice',
+  associative_choice: 'associative_choice',
+  menjodohkan: 'matching',
+  matching: 'matching',
+  mengurutkan: 'ordering',
+  ordering: 'ordering',
 }
 
 type RowParseResult =
@@ -118,6 +128,21 @@ function parseQuestionRow(cell: (name: string) => string, expectedKind: Question
     return { ok: true, question: { kind, prompt, explanation, options, ...base } }
   }
 
+  if (kind === 'multiple_choice' || kind === 'assertion_reason' || kind === 'associative_choice') {
+    const correct = new Set(cell('kunci').toUpperCase().split(/[;,]/).map(value => value.trim()).filter(Boolean))
+    const options: QuestionOption[] = []
+    OPTION_LETTERS.forEach((letter, at) => {
+      const optionText = optionTexts[at]
+      if (!optionText) return
+      options.push({ label: letter, text: optionText, isCorrect: correct.has(letter) })
+    })
+    const requiredCorrect = kind === 'multiple_choice' ? 2 : 1
+    if (options.length < 2 || options.filter(option => option.isCorrect).length < requiredCorrect) {
+      return { ok: false, error: kind === 'multiple_choice' ? 'kolom kunci harus memuat minimal dua huruf opsi.' : 'kolom kunci harus memuat satu huruf opsi.' }
+    }
+    return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+  }
+
   if (kind === 'weighted') {
     const options: QuestionOption[] = []
     let weightProblem = false
@@ -151,6 +176,28 @@ function parseQuestionRow(cell: (name: string) => string, expectedKind: Question
       isCorrect: keys[at] === true,
     }))
     return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+  }
+
+  if (kind === 'matching') {
+    const rightItems = cell('jawabanisian').split(';').map((text, index) => ({ id: String(index + 1), text: text.trim() })).filter(item => item.text)
+    const leftOptions = optionTexts.map((text, index) => text ? { label: String(index + 1), text } : null).filter((option): option is QuestionOption => option !== null)
+    const pairs = Object.fromEntries(cell('kunci').split(';').map(pair => pair.split('=').map(value => value.trim())).filter(pair => pair.length === 2 && pair[0] && pair[1]))
+    if (leftOptions.length < 2 || rightItems.length !== leftOptions.length || leftOptions.some(option => !pairs[option.label])) {
+      return { ok: false, error: 'matching membutuhkan jumlah item kiri/kanan yang sama dan pasangan pada kolom kunci.' }
+    }
+    return { ok: true, question: { kind, prompt, explanation, options: leftOptions, matching: { items: rightItems, pairs }, ...base } }
+  }
+
+  if (kind === 'ordering') {
+    const options: QuestionOption[] = []
+    optionTexts.forEach((text, index) => {
+      if (text) options.push({ label: OPTION_LETTERS[index]!, text })
+    })
+    const ordering = cell('kunci').toUpperCase().split(/[;,]/).map(value => value.trim()).filter(Boolean)
+    if (options.length < 2 || ordering.length !== options.length || new Set(ordering).size !== options.length || options.some(option => !ordering.includes(option.label))) {
+      return { ok: false, error: 'ordering membutuhkan urutan semua label opsi pada kolom kunci.' }
+    }
+    return { ok: true, question: { kind, prompt, explanation, options, ordering, ...base } }
   }
 
   // isian_singkat
@@ -272,9 +319,14 @@ const CSV_TEMPLATE_HEADER = [
 /** Nilai kolom `tipe` yang diharapkan untuk tiap kind — dipakai template dan pesan error. */
 export const TEMPLATE_KIND_CELL: Record<QuestionKind, string> = {
   single_choice: 'pilihan_ganda',
+  multiple_choice: 'pilihan_ganda_kompleks',
   weighted: 'berbobot',
   true_false: 'benar_salah',
   short_answer: 'isian_singkat',
+  assertion_reason: 'sebab_akibat',
+  associative_choice: 'asosiatif',
+  matching: 'menjodohkan',
+  ordering: 'mengurutkan',
 }
 
 /**
@@ -319,7 +371,7 @@ export function downloadCsvTemplate(section: Pick<TutorSection, 'title' | 'defau
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `template-soal-${slugifyFilename(section.title)}.csv`
+  link.download = `question-template-${slugifyFilename(section.title)}.csv`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

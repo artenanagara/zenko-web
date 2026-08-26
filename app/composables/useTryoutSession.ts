@@ -1,7 +1,9 @@
 import type { MaybeRefOrGetter } from 'vue'
 import type {
   OptionLabel,
+  CognitiveBreakdowns,
   TryoutAnswerState,
+  TryoutAnswerValue,
   TryoutBlueprint,
   TryoutQuestion,
   TryoutResult,
@@ -50,6 +52,16 @@ function maxOf(scores: Record<OptionLabel, number> | undefined): number {
   return values.length ? Math.max(...values) : 0
 }
 
+function answerValue(answer: TryoutAnswerState | undefined): TryoutAnswerValue {
+  return answer?.value ?? answer?.selected ?? null
+}
+
+function sameSet(left: string[], right: string[]) {
+  if (left.length !== right.length) return false
+  const values = new Set(left)
+  return right.every(value => values.has(value))
+}
+
 /**
  * Grades one item in the browser. Every field it reads is optional on
  * TryoutQuestion because the public sample ships without an answer key — a
@@ -62,9 +74,68 @@ function scoreQuestion(question: TryoutQuestion, answer: TryoutAnswerState | und
     const correct = !!question.correct && answer?.selected === question.correct
     return { points: correct ? max : 0, max, correct }
   }
-  const max = maxOf(question.scores)
-  const points = answer?.selected ? (question.scores?.[answer.selected] ?? 0) : 0
-  return { points, max, correct: max > 0 && points === max }
+  if (question.kind === 'situational') {
+    const max = maxOf(question.scores)
+    const points = answer?.selected ? (question.scores?.[answer.selected] ?? 0) : 0
+    return { points, max, correct: max > 0 && points === max }
+  }
+
+  const pointsPerItem = question.points ?? 0
+  if (question.kind === 'multiple_choice') {
+    const selected = Array.isArray(answerValue(answer)) ? answerValue(answer) as string[] : []
+    const correct = question.correctOptions ?? []
+    const hits = selected.filter(value => correct.includes(value)).length
+    const max = pointsPerItem
+    const points = correct.length ? Math.round(max * hits / correct.length) : 0
+    return { points, max, correct: sameSet(selected, correct) }
+  }
+
+  if (question.kind === 'true_false') {
+    const selected = answerValue(answer)
+    const values = selected && typeof selected === 'object' && !Array.isArray(selected)
+      ? selected as Record<string, string | boolean>
+      : {}
+    const expected = question.correctStatements ?? {}
+    const total = Object.keys(expected).length
+    const hits = Object.entries(expected).filter(([label, value]) => values[label] === value).length
+    return { points: hits * pointsPerItem, max: total * pointsPerItem, correct: total > 0 && hits === total }
+  }
+
+  if (question.kind === 'short_answer') {
+    const value = typeof answerValue(answer) === 'string' ? String(answerValue(answer)).trim().toLowerCase() : ''
+    const correct = (question.answers ?? []).some(item => item.trim().toLowerCase() === value)
+    return { points: correct ? pointsPerItem : 0, max: pointsPerItem, correct }
+  }
+
+  if (question.kind === 'assertion_reason' || question.kind === 'associative_choice') {
+    const correct = answer?.selected === question.correct
+    return { points: correct ? pointsPerItem : 0, max: pointsPerItem, correct }
+  }
+
+  if (question.kind === 'matching') {
+    const selected = answerValue(answer)
+    const values = selected && typeof selected === 'object' && !Array.isArray(selected)
+      ? selected as Record<string, string | boolean>
+      : {}
+    const expected = question.matchingPairs ?? {}
+    const total = Object.keys(expected).length
+    const hits = Object.entries(expected).filter(([left, right]) => values[left] === right).length
+    const max = pointsPerItem
+    return { points: total ? Math.round(max * hits / total) : 0, max, correct: total > 0 && hits === total }
+  }
+
+  if (question.kind === 'ordering') {
+    const selected = answerValue(answer)
+    const values = Array.isArray(selected) ? selected : []
+    const expected = question.ordering ?? []
+    const hits = expected.filter((value, index) => values[index] === value).length
+    return {
+      points: expected.length ? Math.round(pointsPerItem * hits / expected.length) : 0,
+      max: pointsPerItem,
+      correct: expected.length > 0 && hits === expected.length,
+    }
+  }
+  return { points: 0, max: pointsPerItem, correct: false }
 }
 
 export interface TryoutSessionOptions {
@@ -251,7 +322,10 @@ export function useTryoutSession(
     allQuestions.value.slice(bounds.value[0], bounds.value[1] + 1).map(entry => entry.question),
   )
   const answeredCount = computed(
-    () => navigableQuestions.value.filter(q => !!answers.value[q.id]?.selected).length,
+    () => navigableQuestions.value.filter(q => {
+      const answer = answers.value[q.id]
+      return answer?.selected != null || answer?.value != null
+    }).length,
   )
   const doubtfulCount = computed(
     () => navigableQuestions.value.filter(q => answers.value[q.id]?.doubtful).length,
@@ -291,7 +365,17 @@ export function useTryoutSession(
     if (!question) return
     answers.value = {
       ...answers.value,
-      [question.id]: { selected: label, doubtful: answers.value[question.id]?.doubtful ?? false },
+      [question.id]: { selected: label, value: label, doubtful: answers.value[question.id]?.doubtful ?? false },
+    }
+    persist()
+  }
+
+  function setAnswerValue(value: TryoutAnswerValue, selected: OptionLabel | null = null) {
+    const question = currentQuestion.value
+    if (!question) return
+    answers.value = {
+      ...answers.value,
+      [question.id]: { selected, value, doubtful: answers.value[question.id]?.doubtful ?? false },
     }
     persist()
   }
@@ -302,7 +386,7 @@ export function useTryoutSession(
     const existing = answers.value[question.id]
     answers.value = {
       ...answers.value,
-      [question.id]: { selected: existing?.selected ?? null, doubtful: !existing?.doubtful },
+      [question.id]: { selected: existing?.selected ?? null, value: existing?.value ?? existing?.selected ?? null, doubtful: !existing?.doubtful },
     }
     persist()
   }
@@ -380,7 +464,12 @@ export function useTryoutSession(
     gradeFailed.value = false
     try {
       const scored = await grade(answers.value)
-      result.value = { finishedAt: Math.floor(Date.now() / 1000), ...scored }
+      const currentBlueprint = blueprint.value
+      result.value = {
+        finishedAt: Math.floor(Date.now() / 1000),
+        ...scored,
+        ...(currentBlueprint ? { cognitive: cognitiveBreakdown(currentBlueprint) } : {}),
+      }
     }
     catch {
       gradeFailed.value = true
@@ -416,7 +505,29 @@ export function useTryoutSession(
       score: sections.reduce((sum, s) => sum + s.score, 0),
       maxScore: sections.reduce((sum, s) => sum + s.maxScore, 0),
       sections,
+      cognitive: cognitiveBreakdown(currentBlueprint),
     }
+  }
+
+  function cognitiveBreakdown(currentBlueprint: TryoutBlueprint): CognitiveBreakdowns | undefined {
+    const levels: CognitiveBreakdowns = {
+      L1: { correct: 0, total: 0, score: 0, maxScore: 0 },
+      L2: { correct: 0, total: 0, score: 0, maxScore: 0 },
+      L3: { correct: 0, total: 0, score: 0, maxScore: 0 },
+    }
+    let hasExplicitLevel = false
+    for (const section of currentBlueprint.sections) {
+      for (const question of section.questions) {
+        if (question.cognitiveLevel) hasExplicitLevel = true
+        const bucket = levels[question.cognitiveLevel ?? 'L1']
+        const outcome = scoreQuestion(question, answers.value[question.id])
+        bucket.total += 1
+        bucket.score += outcome.points
+        bucket.maxScore += outcome.max
+        if (outcome.correct) bucket.correct += 1
+      }
+    }
+    return hasExplicitLevel ? levels : undefined
   }
 
   function warnBeforeUnload(event: BeforeUnloadEvent) {
@@ -491,6 +602,7 @@ export function useTryoutSession(
     labelOf,
     start,
     selectAnswer,
+    setAnswerValue,
     toggleDoubt,
     goTo,
     next,

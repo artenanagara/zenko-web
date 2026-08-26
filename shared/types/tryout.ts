@@ -5,13 +5,20 @@
  * the only source for these shapes.
  */
 
-export type OptionLabel = 'A' | 'B' | 'C' | 'D' | 'E'
+export type OptionLabel = string
+
+export type TryoutAnswerValue = string | string[] | Record<string, string | boolean> | null
 
 export interface TryoutOption {
   label: OptionLabel
   text: string
   /** Optional figure or diagram uploaded by the tutor. */
   imageUrl?: string
+}
+
+export interface TryoutMatchingItem {
+  id: string
+  text: string
 }
 
 /**
@@ -35,6 +42,7 @@ export type TryoutQuestion =
     options: TryoutOption[]
     correct?: OptionLabel
     points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
     explanation?: string
   }
@@ -45,7 +53,75 @@ export type TryoutQuestion =
     text: string
     options: TryoutOption[]
     scores?: Record<OptionLabel, number>
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
+    explanation?: string
+  }
+  | {
+    id: string
+    kind: 'multiple_choice'
+    stimulus?: string
+    text: string
+    options: TryoutOption[]
+    correctOptions?: OptionLabel[]
+    points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
+    explanation?: string
+  }
+  | {
+    id: string
+    kind: 'true_false'
+    stimulus?: string
+    text: string
+    options: TryoutOption[]
+    correctStatements?: Record<string, boolean>
+    points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
+    explanation?: string
+  }
+  | {
+    id: string
+    kind: 'short_answer'
+    stimulus?: string
+    text: string
+    options: TryoutOption[]
+    answers?: string[]
+    points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
+    explanation?: string
+  }
+  | {
+    id: string
+    kind: 'assertion_reason' | 'associative_choice'
+    stimulus?: string
+    text: string
+    options: TryoutOption[]
+    correct?: OptionLabel
+    points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
+    explanation?: string
+  }
+  | {
+    id: string
+    kind: 'matching'
+    stimulus?: string
+    text: string
+    options: TryoutOption[]
+    matching?: TryoutMatchingItem[]
+    matchingPairs?: Record<string, string>
+    points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
+    explanation?: string
+  }
+  | {
+    id: string
+    kind: 'ordering'
+    stimulus?: string
+    text: string
+    options: TryoutOption[]
+    ordering?: string[]
+    points?: number
+    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
 
@@ -88,6 +164,7 @@ export interface TryoutBlueprint {
 /** Per-question answer state kept while a session is running. */
 export interface TryoutAnswerState {
   selected: OptionLabel | null
+  value?: TryoutAnswerValue
   doubtful: boolean
 }
 
@@ -98,6 +175,15 @@ export interface TryoutSectionResult {
   score: number
   maxScore: number
 }
+
+export interface CognitiveBreakdown {
+  correct: number
+  total: number
+  score: number
+  maxScore: number
+}
+
+export type CognitiveBreakdowns = Record<'L1' | 'L2' | 'L3', CognitiveBreakdown>
 
 /**
  * What POST /packages/:slug/sample/score returns: the same tally as
@@ -116,6 +202,7 @@ export interface TryoutResult {
   score: number
   maxScore: number
   sections: TryoutSectionResult[]
+  cognitive?: CognitiveBreakdowns
 }
 
 /**
@@ -127,6 +214,7 @@ export interface TryoutResult {
  */
 export type TryoutReviewQuestion = TryoutQuestion & {
   selected?: OptionLabel
+  value?: TryoutAnswerValue
   doubtful?: boolean
   /** Judged server-side against the real answer key, never trusted from the client. */
   isCorrect: boolean

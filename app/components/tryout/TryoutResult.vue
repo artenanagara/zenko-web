@@ -144,6 +144,18 @@ function openReview() {
       </ul>
     </DashboardPanel>
 
+    <DashboardPanel v-if="result.cognitive" title="Analisis level kognitif" description="Performa berdasarkan tingkat berpikir pada soal yang dikerjakan.">
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div v-for="level in ['L1', 'L2', 'L3'] as const" :key="level" class="rounded-sm border border-hairline bg-surface-alt p-3.5">
+          <p class="text-[0.78rem] font-bold tracking-wide text-faint uppercase">{{ level }}</p>
+          <p class="mt-1 text-lg font-extrabold tabular-nums">
+            {{ result.cognitive[level].maxScore === 0 ? 0 : Math.round((result.cognitive[level].score / result.cognitive[level].maxScore) * 100) }}%
+          </p>
+          <p class="text-[0.78rem] text-muted">{{ result.cognitive[level].correct }} dari {{ result.cognitive[level].total }} tepat</p>
+        </div>
+      </div>
+    </DashboardPanel>
+
     <DashboardPanel
       v-if="canReview && showReview"
       id="pembahasan"

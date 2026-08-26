@@ -58,9 +58,14 @@ const isDirty = computed(() => JSON.stringify(rows.value) !== savedSnapshot.valu
 
 const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
   { value: 'single_choice', label: 'Pilihan ganda' },
+  { value: 'multiple_choice', label: 'Pilihan ganda kompleks' },
   { value: 'weighted', label: 'Berbobot (TKP)' },
   { value: 'true_false', label: 'Benar/Salah' },
   { value: 'short_answer', label: 'Isian singkat' },
+  { value: 'assertion_reason', label: 'Sebab-akibat' },
+  { value: 'associative_choice', label: 'Asosiatif' },
+  { value: 'matching', label: 'Menjodohkan' },
+  { value: 'ordering', label: 'Mengurutkan' },
 ]
 
 const SCORING_MODE_OPTIONS: { value: ScoringMode, label: string }[] = [

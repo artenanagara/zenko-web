@@ -62,6 +62,7 @@ export interface OwnedPackage {
  */
 export interface RecordAttemptAnswer {
   selected: string | null
+  value?: string | string[] | Record<string, string | boolean> | null
   doubtful: boolean
 }
 

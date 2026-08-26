@@ -111,8 +111,10 @@ function requestEndSection() {
           :index="session.displayIndex.value"
           :total="session.displayTotal.value"
           :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
+          :value="session.answers.value[session.currentQuestion.value.id]?.value"
           :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
           @select="session.selectAnswer"
+          @answer="session.setAnswerValue"
         />
 
         <!-- Rail nomor soal: desktop saja. Di HP tempatnya bottom sheet di

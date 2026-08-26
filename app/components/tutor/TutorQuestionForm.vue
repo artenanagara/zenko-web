@@ -5,6 +5,8 @@ import type {
   QuestionKind,
   QuestionOption,
   TutorQuestion,
+  CognitiveLevel,
+  MatchingData,
 } from '#shared/types/tutor-product'
 
 /**
@@ -56,9 +58,14 @@ const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const
 
 const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
   { value: 'single_choice', label: 'Pilihan ganda (A–E, satu benar)' },
+  { value: 'multiple_choice', label: 'Pilihan ganda kompleks (minimal dua benar)' },
   { value: 'weighted', label: 'Berbobot (semua opsi bernilai, gaya TKP)' },
   { value: 'true_false', label: 'Benar/Salah (daftar pernyataan)' },
   { value: 'short_answer', label: 'Isian singkat' },
+  { value: 'assertion_reason', label: 'Sebab-akibat (A–E)' },
+  { value: 'associative_choice', label: 'Asosiatif (1, 2, 3, 4)' },
+  { value: 'matching', label: 'Menjodohkan' },
+  { value: 'ordering', label: 'Mengurutkan langkah' },
 ]
 
 // `kind` selalu sama dengan `defaultKind` subtes — server mengunci ini, tidak
@@ -69,6 +76,7 @@ const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
 const explanation = ref(props.initial?.explanation ?? '')
+const cognitiveLevel = ref<CognitiveLevel>(props.initial?.cognitiveLevel ?? 'L1')
 
 /* Per-kind state, hydrated from `initial` where the kind matches. */
 
@@ -78,7 +86,7 @@ function initialOptions(): QuestionOption[] {
 
 // single_choice & weighted: lima baris tetap A–E; baris kosong tidak dikirim.
 const choiceRows = ref(OPTION_LETTERS.map((letter, index) => {
-  const source = props.initial && props.initial.kind !== 'true_false'
+  const source = props.initial && !['true_false', 'matching', 'short_answer'].includes(props.initial.kind)
     ? initialOptions()[index]
     : undefined
   return {
@@ -90,9 +98,15 @@ const choiceRows = ref(OPTION_LETTERS.map((letter, index) => {
 }))
 
 const correctIndex = ref(
-  props.initial?.kind === 'single_choice'
+  ['single_choice', 'assertion_reason', 'associative_choice'].includes(props.initial?.kind ?? '')
     ? initialOptions().findIndex(option => option.isCorrect)
     : -1,
+)
+
+const correctIndexes = ref(
+  props.initial?.kind === 'multiple_choice'
+    ? initialOptions().flatMap((option, index) => option.isCorrect ? [index] : [])
+    : [],
 )
 
 // true_false: pernyataan + kuncinya.
@@ -108,6 +122,14 @@ const answers = ref(
     ? [...props.initial.answers]
     : [''],
 )
+
+const matchingLeftRows = ref(Array.from({ length: 5 }, (_, index) => ({
+  label: String(index + 1),
+  text: props.initial?.kind === 'matching' ? initialOptions()[index]?.text ?? '' : '',
+})))
+const matchingItems = ref<MatchingData['items']>(props.initial?.kind === 'matching' ? [...(props.initial.matching?.items ?? [])] : [{ id: 'a', text: '' }, { id: 'b', text: '' }])
+const matchingPairs = ref<Record<string, string>>(props.initial?.kind === 'matching' ? { ...(props.initial.matching?.pairs ?? {}) } : {})
+const ordering = ref<string[]>(props.initial?.kind === 'ordering' ? [...(props.initial.ordering ?? [])] : [])
 
 const errorMessage = ref('')
 
@@ -125,6 +147,27 @@ function addAnswer() {
 
 function removeAnswer(index: number) {
   answers.value.splice(index, 1)
+}
+
+function addMatchingItem() {
+  matchingItems.value.push({ id: `item-${matchingItems.value.length + 1}`, text: '' })
+}
+
+function removeMatchingItem(index: number) {
+  const removed = matchingItems.value[index]
+  if (!removed) return
+  matchingItems.value.splice(index, 1)
+  for (const left of Object.keys(matchingPairs.value)) {
+    if (matchingPairs.value[left] === removed.id) delete matchingPairs.value[left]
+  }
+}
+
+function choiceKind(value: QuestionKind) {
+  return ['single_choice', 'multiple_choice', 'weighted', 'assertion_reason', 'associative_choice', 'ordering'].includes(value)
+}
+
+function correctChoiceKind(value: QuestionKind) {
+  return ['single_choice', 'multiple_choice', 'assertion_reason', 'associative_choice'].includes(value)
 }
 
 /**
@@ -145,10 +188,11 @@ function buildDraft(): QuestionDraft | null {
     kind: kind.value,
     prompt: prompt.value.trim(),
     explanation: explanation.value.trim(),
+    cognitiveLevel: cognitiveLevel.value,
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
-  if (kind.value === 'single_choice' || kind.value === 'weighted') {
+  if (choiceKind(kind.value)) {
     // stripHtmlToText, bukan row.text.trim(): text sekarang HTML, dan
     // ".trim()" pada string HTML tidak lagi berarti "kosong" — sebuah
     // paragraf berisi cuma spasi tetap dianggap non-kosong oleh Tiptap
@@ -163,7 +207,7 @@ function buildDraft(): QuestionDraft | null {
       return null
     }
 
-    if (kind.value === 'single_choice') {
+    if (correctChoiceKind(kind.value) && kind.value !== 'multiple_choice') {
       if (!filled.some(row => row.index === correctIndex.value)) {
         errorMessage.value = 'Pilih kunci jawaban dari opsi yang terisi.'
         return null
@@ -177,6 +221,36 @@ function buildDraft(): QuestionDraft | null {
           isCorrect: row.index === correctIndex.value,
           ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}),
         })),
+      }
+    }
+
+    if (kind.value === 'multiple_choice') {
+      if (correctIndexes.value.length < 2) {
+        errorMessage.value = 'Pilih minimal dua kunci jawaban.'
+        return null
+      }
+      return {
+        ...base,
+        options: filled.map((row, at) => ({
+          label: OPTION_LETTERS[at]!,
+          text: row.text.trim(),
+          isCorrect: correctIndexes.value.includes(row.index),
+          ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}),
+        })),
+      }
+    }
+
+    if (kind.value === 'ordering') {
+      const labels = filled.map((_, at) => OPTION_LETTERS[at]!)
+      const ordered = ordering.value.filter(label => labels.includes(label as typeof labels[number]))
+      if (ordered.length !== labels.length || new Set(ordered).size !== labels.length) {
+        errorMessage.value = 'Tentukan urutan semua item.'
+        return null
+      }
+      return {
+        ...base,
+        options: filled.map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text.trim(), ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}) })),
+        ordering: ordered,
       }
     }
 
@@ -215,6 +289,24 @@ function buildDraft(): QuestionDraft | null {
     }
   }
 
+  if (kind.value === 'matching') {
+    const left = matchingLeftRows.value.filter(row => stripHtmlToText(row.text))
+    const right = matchingItems.value.filter(item => stripHtmlToText(item.text))
+    if (left.length < 2 || right.length !== left.length) {
+      errorMessage.value = 'Isi jumlah item kiri dan kanan yang sama, minimal dua.'
+      return null
+    }
+    if (left.some(row => !matchingPairs.value[row.label] || !right.some(item => item.id === matchingPairs.value[row.label]))) {
+      errorMessage.value = 'Tentukan pasangan untuk setiap item kiri.'
+      return null
+    }
+    return {
+      ...base,
+      options: left.map(row => ({ label: row.label, text: row.text.trim() })),
+      matching: { items: right.map(item => ({ id: item.id, text: item.text.trim() })), pairs: Object.fromEntries(left.map(row => [row.label, matchingPairs.value[row.label]!])) },
+    }
+  }
+
   const accepted = answers.value.map(answer => answer.trim()).filter(Boolean)
   if (accepted.length === 0) {
     errorMessage.value = 'Isi minimal satu jawaban yang diterima.'
@@ -234,10 +326,11 @@ const previewDraft = computed<QuestionDraft>(() => {
     kind: kind.value,
     prompt: prompt.value,
     explanation: explanation.value,
+    cognitiveLevel: cognitiveLevel.value,
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
-  if (kind.value === 'single_choice' || kind.value === 'weighted') {
+  if (choiceKind(kind.value)) {
     return {
       ...base,
       options: choiceRows.value
@@ -245,9 +338,9 @@ const previewDraft = computed<QuestionDraft>(() => {
         .map((row, at) => ({
           label: OPTION_LETTERS[at]!,
           text: row.text,
-          ...(kind.value === 'single_choice'
-            ? { isCorrect: choiceRows.value.indexOf(row) === correctIndex.value }
-            : { weight: row.weight ?? 0 }),
+          ...(correctChoiceKind(kind.value)
+            ? { isCorrect: kind.value === 'multiple_choice' ? correctIndexes.value.includes(choiceRows.value.indexOf(row)) : choiceRows.value.indexOf(row) === correctIndex.value }
+            : kind.value === 'weighted' ? { weight: row.weight ?? 0 } : {}),
           ...(row.imageUrl ? { imageUrl: row.imageUrl } : {}),
         })),
     }
@@ -264,6 +357,22 @@ const previewDraft = computed<QuestionDraft>(() => {
           isCorrect: statement.isCorrect,
           ...(statement.imageUrl ? { imageUrl: statement.imageUrl } : {}),
         })),
+    }
+  }
+
+  if (kind.value === 'matching') {
+    return {
+      ...base,
+      options: matchingLeftRows.value.filter(row => stripHtmlToText(row.text)).map(row => ({ label: row.label, text: row.text })),
+      matching: { items: matchingItems.value.filter(item => stripHtmlToText(item.text)), pairs: matchingPairs.value },
+    }
+  }
+
+  if (kind.value === 'ordering') {
+    return {
+      ...base,
+      options: choiceRows.value.filter(row => stripHtmlToText(row.text)).map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text })),
+      ordering: ordering.value,
     }
   }
 
@@ -291,17 +400,23 @@ function scheduleAutosave() {
       stimulus: stimulus.value,
       prompt: prompt.value,
       explanation: explanation.value,
+      cognitiveLevel: cognitiveLevel.value,
       choiceRows: choiceRows.value,
       correctIndex: correctIndex.value,
+      correctIndexes: correctIndexes.value,
       statements: statements.value,
       answers: answers.value,
+      matchingLeftRows: matchingLeftRows.value,
+      matchingItems: matchingItems.value,
+      matchingPairs: matchingPairs.value,
+      ordering: ordering.value,
     }
     window.localStorage.setItem(draftKey.value, JSON.stringify(snapshot))
   }, 2000)
 }
 
 watch(
-  [kind, stimulus, prompt, explanation, choiceRows, correctIndex, statements, answers],
+  [kind, stimulus, prompt, explanation, cognitiveLevel, choiceRows, correctIndex, correctIndexes, statements, answers, matchingLeftRows, matchingItems, matchingPairs, ordering],
   scheduleAutosave,
   { deep: true },
 )
@@ -326,8 +441,14 @@ function restoreDraft() {
       explanation?: string
       choiceRows?: typeof choiceRows.value
       correctIndex?: number
+      correctIndexes?: number[]
       statements?: typeof statements.value
       answers?: string[]
+      cognitiveLevel?: CognitiveLevel
+      matchingLeftRows?: typeof matchingLeftRows.value
+      matchingItems?: typeof matchingItems.value
+      matchingPairs?: Record<string, string>
+      ordering?: string[]
     }
     // `kind` tidak dipulihkan dari draft lama — selalu mengikuti `defaultKind`
     // subtes saat ini, bahkan kalau draft tersimpan sebelum kind dikunci.
@@ -335,10 +456,16 @@ function restoreDraft() {
     if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
     explanation.value = snapshot.explanation ?? ''
+    cognitiveLevel.value = snapshot.cognitiveLevel ?? 'L1'
     if (snapshot.choiceRows) choiceRows.value = snapshot.choiceRows
     if (typeof snapshot.correctIndex === 'number') correctIndex.value = snapshot.correctIndex
+    if (snapshot.correctIndexes) correctIndexes.value = snapshot.correctIndexes
     if (snapshot.statements) statements.value = snapshot.statements
     if (snapshot.answers) answers.value = snapshot.answers
+    if (snapshot.matchingLeftRows) matchingLeftRows.value = snapshot.matchingLeftRows
+    if (snapshot.matchingItems) matchingItems.value = snapshot.matchingItems
+    if (snapshot.matchingPairs) matchingPairs.value = snapshot.matchingPairs
+    if (snapshot.ordering) ordering.value = snapshot.ordering
   }
   catch {
     // Entri rusak — abaikan saja, biarkan form mulai kosong seperti biasa.
@@ -490,14 +617,36 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       />
     </div>
 
-    <!-- single_choice & weighted: opsi A–E -->
-    <fieldset v-if="kind === 'single_choice' || kind === 'weighted'" class="grid gap-3">
+    <div class="max-w-xs">
+      <label :for="`${uid}-cognitive-level`" :class="FIELD_LABEL_CLASS">Cognitive level</label>
+      <select :id="`${uid}-cognitive-level`" v-model="cognitiveLevel" :class="FIELD_CLASS">
+        <option value="L1">L1 — Recall and recognition</option>
+        <option value="L2">L2 — Application and reasoning</option>
+        <option value="L3">L3 — Analysis and evaluation</option>
+      </select>
+    </div>
+
+    <!-- Choice-based kinds share the same option editor. -->
+    <fieldset v-if="choiceKind(kind)" class="grid gap-3">
       <legend :class="FIELD_LABEL_CLASS">
-        {{ kind === 'single_choice' ? 'Opsi jawaban — tandai kunci yang benar' : 'Opsi jawaban + bobot (umumnya 1–5)' }}
+        {{ kind === 'weighted' ? 'Opsi jawaban + bobot (umumnya 1–5)' : kind === 'multiple_choice' ? 'Opsi jawaban — tandai semua kunci yang benar' : kind === 'ordering' ? 'Item yang akan diurutkan' : 'Opsi jawaban — tandai kunci yang benar' }}
       </legend>
 
       <div v-for="(row, index) in choiceRows" :key="row.letter" class="flex items-start gap-2.5">
-        <template v-if="kind === 'single_choice'">
+        <template v-if="kind === 'multiple_choice'">
+          <input
+            :id="`${uid}-correct-${row.letter}`"
+            v-model="correctIndexes"
+            type="checkbox"
+            :value="index"
+            :disabled="!stripHtmlToText(row.text)"
+            class="mt-3 h-4 w-4 shrink-0 accent-primary"
+          >
+          <label :for="`${uid}-correct-${row.letter}`" class="sr-only">
+            Kunci jawaban opsi {{ row.letter }}
+          </label>
+        </template>
+        <template v-else-if="correctChoiceKind(kind)">
           <input
             :id="`${uid}-correct-${row.letter}`"
             v-model="correctIndex"
@@ -524,9 +673,48 @@ function jumpBetweenOptions(event: KeyboardEvent) {
           class="flex-1"
         />
       </div>
+
+      <div v-if="kind === 'ordering'" class="grid gap-2">
+        <span :class="FIELD_LABEL_CLASS">Correct order</span>
+        <div v-for="(row, position) in choiceRows.filter(row => stripHtmlToText(row.text))" :key="`order-${row.letter}`" class="flex items-center gap-2">
+          <span class="w-6 text-sm font-bold text-muted">{{ position + 1 }}.</span>
+          <select v-model="ordering[position]" :class="FIELD_CLASS" :aria-label="`Correct order position ${position + 1}`">
+            <option value="">Select an item</option>
+            <option v-for="candidate in choiceRows.filter(option => stripHtmlToText(option.text))" :key="candidate.letter" :value="candidate.letter">
+              {{ candidate.letter }} — {{ stripHtmlToText(candidate.text) }}
+            </option>
+          </select>
+        </div>
+      </div>
     </fieldset>
 
-    <!-- true_false: daftar pernyataan -->
+    <!-- Matching pairs map each left prompt to one right-hand item. -->
+    <fieldset v-else-if="kind === 'matching'" class="grid gap-3">
+      <legend :class="FIELD_LABEL_CLASS">Matching pairs</legend>
+      <div v-for="(row, index) in matchingLeftRows" :key="row.label" class="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <TutorOptionField
+          :ref="(el) => { optionFieldRefs[index] = el as InstanceType<typeof TutorOptionField> | null }"
+          v-model:text="row.text"
+          :letter="row.label"
+          :row-index="index"
+          :placeholder="`Left item ${row.label}`"
+        />
+        <select v-model="matchingPairs[row.label]" :class="FIELD_CLASS" :aria-label="`Match for left item ${row.label}`">
+          <option value="">Select a right item</option>
+          <option v-for="item in matchingItems" :key="item.id" :value="item.id">{{ item.text || item.id }}</option>
+        </select>
+      </div>
+      <div class="grid gap-2">
+        <span :class="FIELD_LABEL_CLASS">Right-hand items</span>
+        <div v-for="(item, index) in matchingItems" :key="item.id" class="flex items-center gap-2">
+          <input v-model="item.text" type="text" :class="FIELD_CLASS" :placeholder="`Right item ${index + 1}`">
+          <button v-if="matchingItems.length > 2" type="button" class="shrink-0 text-[0.82rem] font-semibold text-danger hover:underline" @click="removeMatchingItem(index)">Remove</button>
+        </div>
+        <button type="button" class="justify-self-start text-[0.86rem] font-semibold text-primary hover:underline" @click="addMatchingItem">+ Add right item</button>
+      </div>
+    </fieldset>
+
+    <!-- true_false: one key per statement. -->
     <fieldset v-else-if="kind === 'true_false'" class="grid gap-3">
       <legend :class="FIELD_LABEL_CLASS">Pernyataan (tentukan kunci Benar atau Salah)</legend>
 
