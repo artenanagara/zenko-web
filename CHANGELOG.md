@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.9.0](https://github.com/artenanagara/zenko-web/compare/v0.8.1...v0.9.0) (2026-08-27)
+
+
+### Features
+
+* 10 UX fixes across tutor, admin, and student dashboards ([f42e322](https://github.com/artenanagara/zenko-web/commit/f42e3229df910818c52e362605a4b25b1b4294c5))
+* add complete TKA question types ([a48e52a](https://github.com/artenanagara/zenko-web/commit/a48e52ab9bfb96acb85d2b0313059222be08f49f))
+* allow per-question TKA answer types ([d100e7f](https://github.com/artenanagara/zenko-web/commit/d100e7f8e32ef15ac4b1ea6dc7b823355791131b))
+* **auth:** add "log out of all devices" action ([e82a956](https://github.com/artenanagara/zenko-web/commit/e82a9565daa3b2f60f89650ee555c14f87309392))
+* **catalog:** link the tutor name, and gate the review form on ownership ([7698ed8](https://github.com/artenanagara/zenko-web/commit/7698ed8d8696716a0f0f9b603fda7d4d162837f8))
+* deter copying questions out of a running sitting ([eb45bc5](https://github.com/artenanagara/zenko-web/commit/eb45bc530ddf076a87fc0bd04d037c1a13c446e8))
+* **help-center:** expand help center with articles ([1afda63](https://github.com/artenanagara/zenko-web/commit/1afda63e7e589618e0aedb1831a5fc72f68ff784))
+* improve product profiles and qa consent flow ([5912706](https://github.com/artenanagara/zenko-web/commit/59127065c6cae14f6e3c296256b8597818dea8ff))
+* let tutors edit a live product's price ([2093113](https://github.com/artenanagara/zenko-web/commit/20931133715b1af2af27f3333f2ccc0d5e121ac3))
+* make TKA paket say what the real exam actually is ([41f3bf1](https://github.com/artenanagara/zenko-web/commit/41f3bf1df060eafc4b121640570293291bbbb6ce))
+* prompt for a review after finishing a sitting ([a1e2a4d](https://github.com/artenanagara/zenko-web/commit/a1e2a4d4b5665f0038e6142f8c4e1ad6090bd4ea))
+* rebuild the public tutor profile, and fix the product wizard and question editor ([67ce584](https://github.com/artenanagara/zenko-web/commit/67ce584fabc86774b8aeb873f3a01d043794e9b5))
+* report form outcomes with toasts and jump to the field at fault ([b90604a](https://github.com/artenanagara/zenko-web/commit/b90604ad96e5b6befaeec855c5aea0aa62973c07))
+* report review outcomes with toasts and gate re-reviews behind edit ([d89a90f](https://github.com/artenanagara/zenko-web/commit/d89a90fa172d10005b708fe18787b273b6c062a3))
+* **tutor-profile:** rebuild the public profile around Produk/Tentang/Ulasan tabs ([ba02ab9](https://github.com/artenanagara/zenko-web/commit/ba02ab9fe5b04b41816d07711038050ab6f23bc4))
+
+
+### Bug Fixes
+
+* crop remaining brand assets to remove lopsided padding ([0b90b7b](https://github.com/artenanagara/zenko-web/commit/0b90b7b62cebc4a09f93d8182ec5d90ca25a0d78))
+* lay the tryout legend out horizontally ([39743ac](https://github.com/artenanagara/zenko-web/commit/39743ac07aca9664d26875c667dd9c4148644136))
+* make locked form fields look locked ([39f4070](https://github.com/artenanagara/zenko-web/commit/39f40705f492ccc117c0499e565e7277179c57e0))
+* **tutor:** make the ordering editor's letters mean one thing ([fe0e917](https://github.com/artenanagara/zenko-web/commit/fe0e917d38911d42ff23dbb1e1310bc3fb93caf8))
+* **tutor:** translate the question editor and shrink the navbar logo ([6e560c6](https://github.com/artenanagara/zenko-web/commit/6e560c65f417722307784c4c7160ab7a9f551393))
+* **wizard:** stop the subtes prefill from overwriting a typed question count ([7df60cf](https://github.com/artenanagara/zenko-web/commit/7df60cfa9d5be279948e8f7b4d3022c5e750e1f4))
+
 ## [0.8.1](https://github.com/artenanagara/zenko-web/compare/v0.8.0...v0.8.1) (2026-08-25)
 
 
