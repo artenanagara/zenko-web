@@ -70,7 +70,15 @@ const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
 ]
 
 const kind = ref<QuestionKind>(props.initial?.kind ?? props.defaultKind)
-const kindLabel = computed(() => KIND_OPTIONS.find(option => option.value === kind.value)?.label ?? kind.value)
+
+/**
+ * AppSelect works in plain string|number; narrow its `update:modelValue` back
+ * onto the typed field instead of casting (same guard TutorCustomSections.vue
+ * uses for the section-level "Tipe soal bawaan" select).
+ */
+function isQuestionKind(value: string | number): value is QuestionKind {
+  return KIND_OPTIONS.some(option => option.value === value)
+}
 
 /**
  * Advice, not a block: a paket that claims to simulate TKA should not quietly
@@ -89,6 +97,16 @@ const explanation = ref(props.initial?.explanation ?? '')
  * See docs/plan-produk-tka-lengkap.md §6.
  */
 const cognitiveLevel = ref<CognitiveLevel | ''>(props.initial?.cognitiveLevel ?? '')
+
+const COGNITIVE_LEVEL_OPTIONS: { value: CognitiveLevel, label: string }[] = [
+  { value: 'L1', label: 'L1 — Pengetahuan dan pemahaman' },
+  { value: 'L2', label: 'L2 — Aplikasi konsep' },
+  { value: 'L3', label: 'L3 — Penalaran dan analisis' },
+]
+
+function isCognitiveLevel(value: string | number): value is CognitiveLevel {
+  return COGNITIVE_LEVEL_OPTIONS.some(option => option.value === value)
+}
 
 /* Per-kind state, hydrated from `initial` where the kind matches. */
 
@@ -142,6 +160,29 @@ const matchingLeftRows = ref(Array.from({ length: 5 }, (_, index) => ({
 const matchingItems = ref<MatchingData['items']>(props.initial?.kind === 'matching' ? [...(props.initial.matching?.items ?? [])] : [{ id: 'a', text: '' }, { id: 'b', text: '' }])
 const matchingPairs = ref<Record<string, string>>(props.initial?.kind === 'matching' ? { ...(props.initial.matching?.pairs ?? {}) } : {})
 const ordering = ref<string[]>(props.initial?.kind === 'ordering' ? [...(props.initial.ordering ?? [])] : [])
+
+/**
+ * Baris opsi yang sudah ada isinya. Dipakai kind `ordering` untuk dua hal
+ * sekaligus — berapa posisi yang perlu diisi, dan apa saja kandidat tiap
+ * posisi — yang sebelumnya masing-masing memfilter ulang di template.
+ */
+const filledChoiceRows = computed(() => choiceRows.value.filter(row => stripHtmlToText(row.text)))
+
+/** Kandidat isi tiap posisi urutan, dalam bentuk yang dipakai AppSelect. */
+const orderingOptions = computed(() => filledChoiceRows.value.map(row => ({
+  value: row.letter,
+  label: `${row.letter} — ${stripHtmlToText(row.text)}`,
+})))
+
+/**
+ * Item kanan yang bisa dipasangkan ke tiap item kiri. Item yang belum diberi
+ * teks tetap terdaftar dengan id-nya sebagai label, sama seperti sebelumnya:
+ * tutor kadang menyusun pasangannya lebih dulu, baru menulis teksnya.
+ */
+const matchingItemOptions = computed(() => matchingItems.value.map(item => ({
+  value: item.id,
+  label: item.text || item.id,
+})))
 
 /**
  * Which block a validation failure belongs to, so submit() can put the tutor
@@ -632,14 +673,19 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </AppSectionMessage>
 
     <div class="max-w-xl">
-      <label :for="`${uid}-question-kind`" :class="FIELD_LABEL_CLASS">Answer type</label>
-      <select :id="`${uid}-question-kind`" v-model="kind" :class="FIELD_CLASS" :aria-label="`Answer type, currently ${kindLabel}`">
-        <option v-for="option in KIND_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
-      </select>
+      <!-- Same control and wording as the section-level "Tipe soal bawaan"
+           (TutorCustomSections.vue), so the tutor reads the two as one
+           setting: the subtes sets the default, the soal may override it. -->
+      <AppSelect
+        :options="KIND_OPTIONS"
+        :model-value="kind"
+        label="Tipe soal"
+        @update:model-value="(value) => { if (isQuestionKind(value)) kind = value }"
+      />
       <AppInlineMessage v-if="kindWarning" type="warning" class="mt-2">
         {{ kindWarning }} Soal ini tetap bisa disimpan, tapi simulasinya jadi berbeda dari ujian aslinya.
       </AppInlineMessage>
-      <p class="mt-1 text-[0.78rem] text-faint">The section default is preselected, and each question can use a different answer type.</p>
+      <p class="mt-2 text-[0.78rem] text-faint">Terisi otomatis dari tipe bawaan subtes, dan tiap soal boleh memakai tipe yang berbeda.</p>
     </div>
 
     <div>
@@ -680,18 +726,17 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </div>
 
     <div ref="levelBlockRef" class="max-w-xs scroll-mt-24">
-      <label :for="`${uid}-cognitive-level`" :class="FIELD_LABEL_CLASS">Cognitive level</label>
-      <select
-        :id="`${uid}-cognitive-level`"
-        v-model="cognitiveLevel"
-        :class="FIELD_CLASS"
-        :aria-invalid="cognitiveLevel === '' || undefined"
-      >
-        <option value="" disabled>Pilih level kognitif</option>
-        <option value="L1">L1 — Pengetahuan dan pemahaman</option>
-        <option value="L2">L2 — Aplikasi konsep</option>
-        <option value="L3">L3 — Penalaran dan analisis</option>
-      </select>
+      <!-- `invalid` sampai levelnya dipilih: kosong memang bukan nilai yang
+           sah di sini (lihat komentar di `cognitiveLevel`), dan pesannya sudah
+           dibawa toast validasi, jadi field cukup menandai dirinya. -->
+      <AppSelect
+        :options="COGNITIVE_LEVEL_OPTIONS"
+        :model-value="cognitiveLevel"
+        label="Level kognitif"
+        placeholder="Pilih level kognitif"
+        :invalid="cognitiveLevel === ''"
+        @update:model-value="(value) => { if (isCognitiveLevel(value)) cognitiveLevel = value }"
+      />
       <p class="mt-2 text-[0.82rem] text-muted">
         Menentukan rapor penguasaan L1/L2/L3 yang dilihat siswa setelah mengerjakan.
       </p>
@@ -746,42 +791,57 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </div>
 
       <div v-if="kind === 'ordering'" class="grid gap-2">
-        <span :class="FIELD_LABEL_CLASS">Correct order</span>
-        <div v-for="(row, position) in choiceRows.filter(row => stripHtmlToText(row.text))" :key="`order-${row.letter}`" class="flex items-center gap-2">
+        <span :class="FIELD_LABEL_CLASS">Urutan yang benar</span>
+        <div v-for="(row, position) in filledChoiceRows" :key="`order-${row.letter}`" class="flex items-center gap-2">
           <span class="w-6 text-sm font-bold text-muted">{{ position + 1 }}.</span>
-          <select v-model="ordering[position]" :class="FIELD_CLASS" :aria-label="`Correct order position ${position + 1}`">
-            <option value="">Select an item</option>
-            <option v-for="candidate in choiceRows.filter(option => stripHtmlToText(option.text))" :key="candidate.letter" :value="candidate.letter">
-              {{ candidate.letter }} — {{ stripHtmlToText(candidate.text) }}
-            </option>
-          </select>
+          <!-- Nama aksesibel sama persis dengan yang didengar siswa di
+               TryoutQuestion.vue ("Item urutan 1"), supaya tutor dan siswa
+               menyebut kontrol yang sama dengan istilah yang sama. -->
+          <AppSelect
+            :options="orderingOptions"
+            :model-value="ordering[position] ?? ''"
+            :aria-label="`Item urutan ${position + 1}`"
+            placeholder="Pilih item"
+            @update:model-value="(value) => { ordering[position] = String(value) }"
+          />
         </div>
       </div>
     </fieldset>
 
     <!-- Matching pairs map each left prompt to one right-hand item. -->
     <fieldset v-else-if="kind === 'matching'" ref="matchingBlockRef" class="grid scroll-mt-24 gap-3">
-      <legend :class="FIELD_LABEL_CLASS">Matching pairs</legend>
+      <legend :class="FIELD_LABEL_CLASS">Pasangan menjodohkan</legend>
       <div v-for="(row, index) in matchingLeftRows" :key="row.label" class="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <TutorOptionField
           :ref="(el) => { optionFieldRefs[index] = el as InstanceType<typeof TutorOptionField> | null }"
           v-model:text="row.text"
           :letter="row.label"
           :row-index="index"
-          :placeholder="`Left item ${row.label}`"
+          :placeholder="`Item kiri ${row.label}`"
         />
-        <select v-model="matchingPairs[row.label]" :class="FIELD_CLASS" :aria-label="`Match for left item ${row.label}`">
-          <option value="">Select a right item</option>
-          <option v-for="item in matchingItems" :key="item.id" :value="item.id">{{ item.text || item.id }}</option>
-        </select>
+        <AppSelect
+          :options="matchingItemOptions"
+          :model-value="matchingPairs[row.label] ?? ''"
+          :aria-label="`Pasangan untuk item kiri ${row.label}`"
+          placeholder="Pilih pasangan"
+          @update:model-value="(value) => { matchingPairs[row.label] = String(value) }"
+        />
       </div>
       <div class="grid gap-2">
-        <span :class="FIELD_LABEL_CLASS">Right-hand items</span>
+        <span :class="FIELD_LABEL_CLASS">Item kanan</span>
         <div v-for="(item, index) in matchingItems" :key="item.id" class="flex items-center gap-2">
-          <input v-model="item.text" type="text" :class="FIELD_CLASS" :placeholder="`Right item ${index + 1}`">
-          <button v-if="matchingItems.length > 2" type="button" class="shrink-0 text-[0.82rem] font-semibold text-danger hover:underline" @click="removeMatchingItem(index)">Remove</button>
+          <!-- aria-label, bukan cuma placeholder: placeholder hilang begitu
+               diketik, dan pola ini sudah dipakai daftar "Jawaban diterima". -->
+          <input
+            v-model="item.text"
+            type="text"
+            :class="FIELD_CLASS"
+            :aria-label="`Item kanan ${index + 1}`"
+            :placeholder="`Item kanan ${index + 1}`"
+          >
+          <button v-if="matchingItems.length > 2" type="button" class="shrink-0 text-[0.82rem] font-semibold text-danger hover:underline" @click="removeMatchingItem(index)">Hapus</button>
         </div>
-        <button type="button" class="justify-self-start text-[0.86rem] font-semibold text-primary hover:underline" @click="addMatchingItem">+ Add right item</button>
+        <button type="button" class="justify-self-start text-[0.86rem] font-semibold text-primary hover:underline" @click="addMatchingItem">+ Tambah item kanan</button>
       </div>
     </fieldset>
 

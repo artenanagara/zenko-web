@@ -123,7 +123,13 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
   >
     <nav class="container-page flex min-h-16 items-center justify-between gap-2 md:min-h-20" aria-label="Navigasi utama">
       <div class="flex min-w-0 items-center gap-9">
-        <BrandMark img-class="h-9 sm:h-11 md:h-12 w-auto object-contain" />
+        <!-- 80% dari 36/44/48px sebelumnya. Nilai px eksplisit karena 20% tidak
+             mendarat di skala Tailwind mana pun; membulatkannya ke h-7/h-9
+             akan meleset sampai 4px di breakpoint md. Tinggi header sendiri
+             dipatok min-h-16/md:min-h-20, jadi mengecilkan logo tidak
+             menggeser apa pun yang menempel di bawahnya (strip tab profil
+             tutor memakai top-16/md:top-20). -->
+        <BrandMark img-class="h-[29px] sm:h-[35px] md:h-[38px] w-auto object-contain" />
 
         <div class="hidden items-center gap-7 font-medium text-muted md:flex">
           <NuxtLink
