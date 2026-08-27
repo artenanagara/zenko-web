@@ -159,7 +159,36 @@ const matchingLeftRows = ref(Array.from({ length: 5 }, (_, index) => ({
 })))
 const matchingItems = ref<MatchingData['items']>(props.initial?.kind === 'matching' ? [...(props.initial.matching?.items ?? [])] : [{ id: 'a', text: '' }, { id: 'b', text: '' }])
 const matchingPairs = ref<Record<string, string>>(props.initial?.kind === 'matching' ? { ...(props.initial.matching?.pairs ?? {}) } : {})
-const ordering = ref<string[]>(props.initial?.kind === 'ordering' ? [...(props.initial.ordering ?? [])] : [])
+/**
+ * `ordering` menyimpan IDENTITAS BARIS (huruf tetap baris A–E, sama dengan
+ * yang tertulis di sebelah kotak teksnya), bukan label yang dikirim ke server.
+ *
+ * Keduanya berbeda karena menyimpan melabeli ulang opsi berdasarkan posisi,
+ * supaya baris kosong di tengah tidak menyisakan celah di mata siswa (lihat
+ * komentar di buildDraft). Jadi baris A, B, D yang terisi tersimpan sebagai
+ * opsi A, B, C. Dulu editor mengirim huruf barisnya apa adanya ("D") ke
+ * validasi yang sudah berpikir posisional ("C"), pilihan itu terbuang, dan
+ * tutor kena "Tentukan urutan semua item." tanpa ada cara memenuhinya.
+ *
+ * Perbaikannya menaruh penerjemahan di batas simpan (orderingAsLabels), bukan
+ * di tampilan: huruf yang dilihat tutor tetap huruf barisnya, tidak ikut
+ * bergeser saat baris lain dikosongkan, dan pilihan yang sudah dibuat tetap
+ * menempel pada item yang sama.
+ */
+function initialOrdering(): string[] {
+  if (props.initial?.kind !== 'ordering') return []
+  // Opsi tersimpan sudah rapat, jadi posisinya = baris tempat ia dimuat.
+  const savedLabels = initialOptions().map(option => option.label)
+  return (props.initial.ordering ?? []).map((label) => {
+    const at = savedLabels.indexOf(label)
+    // Label yang tidak dikenal (soal lama/impor yang datanya tidak sinkron)
+    // jadi posisi kosong, bukan pilihan hantu: tutor melihat satu dropdown
+    // yang belum terisi, bukan error saat baru membuka soalnya.
+    return at >= 0 ? OPTION_LETTERS[at] ?? '' : ''
+  })
+}
+
+const ordering = ref<string[]>(initialOrdering())
 
 /**
  * Baris opsi yang sudah ada isinya. Dipakai kind `ordering` untuk dua hal
@@ -168,11 +197,54 @@ const ordering = ref<string[]>(props.initial?.kind === 'ordering' ? [...(props.i
  */
 const filledChoiceRows = computed(() => choiceRows.value.filter(row => stripHtmlToText(row.text)))
 
-/** Kandidat isi tiap posisi urutan, dalam bentuk yang dipakai AppSelect. */
+/**
+ * Kandidat isi tiap posisi urutan. `value` adalah identitas baris supaya
+ * pilihan tetap menempel pada itemnya, `label` memakai huruf baris + teksnya
+ * supaya cocok dengan apa yang tertulis di editor opsi tepat di atasnya.
+ */
 const orderingOptions = computed(() => filledChoiceRows.value.map(row => ({
   value: row.letter,
   label: `${row.letter} — ${stripHtmlToText(row.text)}`,
 })))
+
+/** Huruf yang akan tersimpan untuk tiap baris terisi: A, B, C, ... rapat. */
+const orderingLabelByRow = computed(
+  // Tuple eksplisit: tanpa ini kunci Map mewarisi tipe literal 'A'|..|'E' dari
+  // OPTION_LETTERS, dan `ordering` yang bertipe string[] tidak bisa mencarinya.
+  () => new Map(filledChoiceRows.value.map((row, at) => [row.letter, OPTION_LETTERS[at]!] as [string, string])),
+)
+
+/** Pilihan tutor diterjemahkan ke label posisional — bentuk yang dikirim. */
+function orderingAsLabels(): string[] {
+  return ordering.value
+    .slice(0, filledChoiceRows.value.length)
+    .flatMap((rowLetter) => {
+      const label = orderingLabelByRow.value.get(rowLetter)
+      return label ? [label] : []
+    })
+}
+
+/**
+ * Menjaga satu invarian: `ordering` hanya boleh berisi baris yang masih ada
+ * isinya. Tanpa ini, mengosongkan satu baris meninggalkan pilihan yang
+ * menunjuk item yang sudah tidak ada di dropdown — bug yang sama lewat pintu
+ * lain.
+ *
+ * Sisanya dirapatkan, bukan dikosongkan: jawaban `ordering` itu SEBUAH URUTAN,
+ * dan yang berarti di situ adalah item mana sebelum item mana. Menghapus satu
+ * item memang menggeser semua nomor sesudahnya — jadi "A, B, D" yang kehilangan
+ * B menjadi "A, D" utuh dan bisa langsung disimpan, bukan menyisakan posisi
+ * kosong yang harus tutor isi ulang dengan jawaban yang sama.
+ */
+function pruneOrdering() {
+  const available = new Set<string>(filledChoiceRows.value.map(row => row.letter))
+  ordering.value = ordering.value
+    .filter(rowLetter => available.has(rowLetter))
+    .slice(0, filledChoiceRows.value.length)
+}
+
+// Dipicu hanya saat KUMPULAN baris terisi berubah, bukan tiap ketukan huruf.
+watch(() => filledChoiceRows.value.map(row => row.letter).join(','), pruneOrdering)
 
 /**
  * Item kanan yang bisa dipasangkan ke tiap item kiri. Item yang belum diberi
@@ -345,9 +417,11 @@ function buildDraft(): QuestionDraft | null {
     }
 
     if (kind.value === 'ordering') {
-      const labels = filled.map((_, at) => OPTION_LETTERS[at]!)
-      const ordered = ordering.value.filter(label => labels.includes(label as typeof labels[number]))
-      if (ordered.length !== labels.length || new Set(ordered).size !== labels.length) {
+      const ordered = orderingAsLabels()
+      if (new Set(ordered).size !== ordered.length) {
+        return fail('Tiap item cuma boleh dipakai sekali dalam urutan.', 'choices')
+      }
+      if (ordered.length !== filled.length) {
         return fail('Tentukan urutan semua item.', 'choices')
       }
       return {
@@ -472,8 +546,10 @@ const previewDraft = computed<QuestionDraft>(() => {
   if (kind.value === 'ordering') {
     return {
       ...base,
-      options: choiceRows.value.filter(row => stripHtmlToText(row.text)).map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text })),
-      ordering: ordering.value,
+      options: filledChoiceRows.value.map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text })),
+      // Lewat penerjemah yang sama seperti simpan: pratinjau memakai opsi yang
+      // sudah dilabeli ulang, jadi urutannya harus bicara bahasa yang sama.
+      ordering: orderingAsLabels(),
     }
   }
 
@@ -566,6 +642,10 @@ function restoreDraft() {
     if (snapshot.matchingItems) matchingItems.value = snapshot.matchingItems
     if (snapshot.matchingPairs) matchingPairs.value = snapshot.matchingPairs
     if (snapshot.ordering) ordering.value = snapshot.ordering
+    // Draft lama bisa menyimpan pilihan yang barisnya sudah dikosongkan sejak
+    // itu (termasuk draft yang ditulis sebelum perbaikan ini) — samakan dulu
+    // dengan invariannya sebelum tutor melihatnya.
+    pruneOrdering()
   }
   catch {
     // Entri rusak — abaikan saja, biarkan form mulai kosong seperti biasa.
