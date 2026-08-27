@@ -3,7 +3,14 @@ name: CI
 on:
   push:
     branches: [main]
+  # `edited` is not in GitHub's default set (opened/synchronize/reopened), and
+  # without it the pull-request-title job below is a trap: it fails on a
+  # non-conventional title, and then retitling the PR never re-runs it, so the
+  # check stays red until someone pushes an unrelated commit. Re-running the
+  # failed job does not help either — a re-run replays the original event
+  # payload, which still carries the old title.
   pull_request:
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:
