@@ -68,7 +68,7 @@ const describedBy = computed(() => {
 <template>
   <div>
     <div class="mb-2 flex items-center justify-between gap-3">
-      <label :for="id" class="text-[0.9rem] font-semibold">{{ label }}</label>
+      <label :for="id" :class="FIELD_LABEL_TEXT_CLASS">{{ label }}</label>
       <slot name="action" />
     </div>
 

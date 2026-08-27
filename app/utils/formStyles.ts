@@ -1,6 +1,11 @@
 /**
  * Class strings for raw inputs in the tutor wizard, mirroring FormField.vue so
  * fields FormField cannot express (number, select, textarea) look identical.
+ *
+ * The label constants below are the shared source of truth: FormField.vue and
+ * core/AppSelect.vue import them from here (Nuxt auto-imports `app/utils`, and
+ * this module imports nothing, so there is no cycle) instead of each keeping
+ * its own copy of the class string.
  */
 
 /**
@@ -19,7 +24,27 @@ export const FIELD_CLASS
     + 'focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)] focus:outline-none '
     + DISABLED_FIELD_CLASS
 
-export const FIELD_LABEL_CLASS = 'mb-2 block text-[0.9rem] font-semibold'
+/**
+ * The one definition of what a field label looks like. FormField.vue and
+ * AppSelect.vue read it from here rather than repeating the class string —
+ * three copies had already drifted (AppSelect rendered its label at 12px/700
+ * while FIELD_LABEL_CLASS and FormField rendered 14.4px/600), which put two
+ * label sizes in a single wizard form.
+ */
+export const FIELD_LABEL_TEXT_CLASS = 'text-[0.9rem] font-semibold'
+
+/**
+ * The compact label used by toolbar-density controls (AppSelect `size="sm"`).
+ * Kept deliberately smaller than FIELD_LABEL_TEXT_CLASS, and matched to the
+ * design system's AppTextField label — a dashboard toolbar puts an AppTextField
+ * and an AppSelect side by side, and AppTextField ships from
+ * @artenanagara/zenko-design-system at this size, so a compact AppSelect has to
+ * agree with its neighbour rather than with the form field scale.
+ */
+export const COMPACT_FIELD_LABEL_TEXT_CLASS = 'text-xs font-bold text-ink'
+
+/** Field label including its own block layout, for raw `<label>`/`<span>` markup. */
+export const FIELD_LABEL_CLASS = `mb-2 block ${FIELD_LABEL_TEXT_CLASS}`
 
 /** Bordered neutral button, the counterpart of AppButton for secondary actions. */
 export const SECONDARY_BUTTON_CLASS
