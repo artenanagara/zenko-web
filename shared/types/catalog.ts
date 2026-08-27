@@ -6,6 +6,12 @@
 export interface Author {
   name: string
   avatarUrl: string
+  /**
+   * Handle for `/tutor/:username`. Empty string for seeded packages that have
+   * no tutor account behind them — those render the name as plain text, since
+   * a link to `/tutor/` would 404.
+   */
+  username: string
 }
 
 export interface Package {

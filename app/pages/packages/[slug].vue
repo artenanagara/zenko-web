@@ -25,7 +25,7 @@ onMounted(() => {
 })
 
 /**
- * Satu ulasan per siswa per paket. Begitu ulasannya ada, form di bawah daftar
+ * Satu ulasan per siswa per paket. Begitu ulasannya ada, form di atas daftar
  * hilang — memperbaruinya dimulai dari tombol "Edit ulasan" pada ulasan itu
  * sendiri, yang membuka form ini di dalam modal.
  */
@@ -129,7 +129,17 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <span class="flex items-center gap-2">
+            <!-- Linked only when the tutor actually has a public profile;
+                 seeded paket carry an empty username and stay plain text. -->
+            <NuxtLink
+              v-if="detail.author.username"
+              :to="`/tutor/${detail.author.username}`"
+              class="-my-2 flex items-center gap-2 py-2 font-semibold text-ink transition-colors duration-200 ease-smooth hover:text-primary hover:underline"
+            >
+              <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
+              {{ detail.author.name }}
+            </NuxtLink>
+            <span v-else class="flex items-center gap-2">
               <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
               <span class="font-semibold text-ink">{{ detail.author.name }}</span>
             </span>
@@ -182,6 +192,18 @@ useHead({
               <h2 class="mb-1 text-[1.35rem] font-bold tracking-[-0.03em]">Ulasan siswa</h2>
               <p class="text-[0.88rem] text-muted">Rating dan masukan dari siswa yang sudah mengerjakan paket ini.</p>
             </div>
+            <!-- Di atas daftar, bukan di bawahnya: siswa yang baru selesai
+                 mengerjakan datang ke sini untuk menulis, bukan untuk membaca
+                 ulasan orang lain dulu. `ownsPackage` bukan sekadar cosmetic —
+                 tanpa itu form muncul untuk siapa pun yang login, termasuk
+                 orang yang belum pernah membeli paket ini, dan mereka baru
+                 tahu tidak boleh mengulas setelah menulis dan ditolak server. -->
+            <ProductReviewForm
+              v-if="isSignedIn && ownsPackage && !myReview"
+              :slug="slug"
+              @submitted="onReviewSubmitted"
+            />
+
             <div v-if="productReviews.data.value.length" class="grid gap-4">
               <ProductReviewItem
                 v-for="review in productReviews.data.value"
@@ -213,11 +235,6 @@ useHead({
               </button>
             </div>
 
-            <ProductReviewForm
-              v-if="isSignedIn && !myReview"
-              :slug="slug"
-              @submitted="onReviewSubmitted"
-            />
           </div>
         </div>
 
@@ -301,7 +318,7 @@ useHead({
       </div>
     </section>
 
-    <!-- Form yang sama dengan yang tampil di bawah daftar untuk siswa yang
+    <!-- Form yang sama dengan yang tampil di atas daftar untuk siswa yang
          belum mengulas — di sini ia hanya muncul lewat tombol "Edit ulasan". -->
     <AppModal
       v-model="reviewEditorOpen"

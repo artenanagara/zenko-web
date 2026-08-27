@@ -37,6 +37,8 @@ import {
   SAMPLE_BLUEPRINTS,
   scoreSample,
   TESTIMONIALS,
+  TUTOR_REVIEWS_BY_USERNAME,
+  TUTORS,
 } from './catalog.ts'
 
 const PORT = Number(process.env.STUB_API_PORT ?? 8787)
@@ -135,6 +137,22 @@ function route(pathname, query, method, body) {
     return detail
       ? { status: 200, body: detail }
       : { status: 404, body: apiError('paket tidak ditemukan') }
+  }
+
+  // Public tutor profile. The reviews path is matched first for the same
+  // reason as /packages/:slug/sample — the detail route below would otherwise
+  // read "budi-santoso/reviews" as one unknown username.
+  const tutorReviewsMatch = /^\/tutors\/([^/]+)\/reviews$/.exec(path)
+  if (tutorReviewsMatch) {
+    const reviews = TUTOR_REVIEWS_BY_USERNAME[decodeURIComponent(tutorReviewsMatch[1])]
+    return { status: 200, body: reviews ?? [] }
+  }
+
+  if (path.startsWith('/tutors/')) {
+    const tutor = TUTORS[decodeURIComponent(path.slice('/tutors/'.length))]
+    return tutor
+      ? { status: 200, body: tutor }
+      : { status: 404, body: apiError('tutor tidak ditemukan') }
   }
 
   if (path === '/testimonials') return { status: 200, body: TESTIMONIALS }

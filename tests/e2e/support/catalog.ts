@@ -27,6 +27,13 @@
 export interface FixtureAuthor {
   name: string
   avatarUrl: string
+  /**
+   * Mirrors the real wire format. One fixture carries a handle and the rest
+   * are empty, so the suite covers both PackageCard branches: a tutor name
+   * that links to `/tutor/:username`, and a seeded paket whose name stays
+   * plain text because there is no profile to link to.
+   */
+  username: string
 }
 
 /** GET /api/v1/packages — one element of the (bare, unenveloped) array. */
@@ -93,7 +100,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Latihan CPNS 2026 Intensif SKD & SKB',
     category: 'SKD/CPNS',
     thumbnailUrl: thumb('photo-1522202176988-66273c2fd55f'),
-    author: { name: 'Budi Santoso', avatarUrl: avatar(12) },
+    author: { name: 'Budi Santoso', avatarUrl: avatar(12), username: 'budi-santoso' },
     rating: 4.9,
     soldLabel: '2.1rb',
     price: 189_000,
@@ -105,7 +112,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Prediksi BUMN 2026 Profesional',
     category: 'BUMN',
     thumbnailUrl: thumb('photo-1523240795612-9a054b0db644'),
-    author: { name: 'Mira Azzahra', avatarUrl: avatar(32) },
+    author: { name: 'Mira Azzahra', avatarUrl: avatar(32), username: '' },
     rating: 4.8,
     soldLabel: '1.8rb',
     price: 149_000,
@@ -117,7 +124,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'SNBT Master Class 2026',
     category: 'SNBT',
     thumbnailUrl: thumb('photo-1516321318423-f06f85e504b3'),
-    author: { name: 'Dimas Prasetya', avatarUrl: avatar(15) },
+    author: { name: 'Dimas Prasetya', avatarUrl: avatar(15), username: '' },
     rating: 4.7,
     soldLabel: '1.2rb',
     price: 219_000,
@@ -126,10 +133,10 @@ export const PACKAGES: Record<string, FixturePackage> = {
   'tka-saintek-full-simulasi': {
     id: 'pkg_04',
     slug: 'tka-saintek-full-simulasi',
-    title: 'TKA Saintek Full Simulasi',
-    category: 'TKA',
+    title: 'Try Out Ujian Mandiri PTN — Saintek',
+    category: 'Ujian Mandiri',
     thumbnailUrl: thumb('photo-1434030216411-0b793f4b4173'),
-    author: { name: 'Rani Kusuma', avatarUrl: avatar(45) },
+    author: { name: 'Rani Kusuma', avatarUrl: avatar(45), username: '' },
     rating: 4.9,
     soldLabel: '980',
     price: 179_000,
@@ -141,7 +148,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Paket Hemat SKD Kedinasan',
     category: 'Kedinasan',
     thumbnailUrl: thumb('photo-1509062522246-3755977927d7'),
-    author: { name: 'Agus Wijaya', avatarUrl: avatar(51) },
+    author: { name: 'Agus Wijaya', avatarUrl: avatar(51), username: '' },
     rating: 4.6,
     soldLabel: '3.4rb',
     price: 99_000,
@@ -153,7 +160,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Tes Wawasan Kebangsaan Lengkap',
     category: 'SKD/CPNS',
     thumbnailUrl: thumb('photo-1427504494785-3a9ca7044f45'),
-    author: { name: 'Sinta Dewi', avatarUrl: avatar(20) },
+    author: { name: 'Sinta Dewi', avatarUrl: avatar(20), username: '' },
     rating: 4.8,
     soldLabel: '1.5rb',
     price: 129_000,
@@ -165,7 +172,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'AKHLAK BUMN & Core Values',
     category: 'BUMN',
     thumbnailUrl: thumb('photo-1456513080510-7bf3a84b82f8'),
-    author: { name: 'Rizky Ananda', avatarUrl: avatar(60) },
+    author: { name: 'Rizky Ananda', avatarUrl: avatar(60), username: '' },
     rating: 4.7,
     soldLabel: '760',
     price: 119_000,
@@ -177,7 +184,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Literasi Bahasa Inggris SNBT',
     category: 'SNBT',
     thumbnailUrl: thumb('photo-1497633762265-9d179a990aa6'),
-    author: { name: 'Putri Maharani', avatarUrl: avatar(5) },
+    author: { name: 'Putri Maharani', avatarUrl: avatar(5), username: '' },
     rating: 4.9,
     soldLabel: '1.1rb',
     price: 139_000,
@@ -189,7 +196,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Penalaran Matematika Intensif',
     category: 'SNBT',
     thumbnailUrl: thumb('photo-1491841550275-ad7854e35ca6'),
-    author: { name: 'Hendra Gunawan', avatarUrl: avatar(68) },
+    author: { name: 'Hendra Gunawan', avatarUrl: avatar(68), username: '' },
     rating: 4.6,
     soldLabel: '640',
     price: 159_000,
@@ -201,7 +208,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Simulasi CAT SKB Guru',
     category: 'SKB',
     thumbnailUrl: thumb('photo-1503676260728-1c00da094a0b'),
-    author: { name: 'Nadia Salsabila', avatarUrl: avatar(25) },
+    author: { name: 'Nadia Salsabila', avatarUrl: avatar(25), username: '' },
     rating: 4.8,
     soldLabel: '890',
     price: 199_000,
@@ -213,7 +220,7 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'Psikotes & TKD BUMN Lengkap',
     category: 'BUMN',
     thumbnailUrl: thumb('photo-1454165804606-c3d57bc86b40'),
-    author: { name: 'Fajar Ramadhan', avatarUrl: avatar(33) },
+    author: { name: 'Fajar Ramadhan', avatarUrl: avatar(33), username: '' },
     rating: 4.7,
     soldLabel: '1.3rb',
     price: 109_000,
@@ -222,10 +229,10 @@ export const PACKAGES: Record<string, FixturePackage> = {
   'tka-soshum-prediksi-2026': {
     id: 'pkg_12',
     slug: 'tka-soshum-prediksi-2026',
-    title: 'TKA Soshum Prediksi 2026',
-    category: 'TKA',
+    title: 'Try Out Ujian Mandiri PTN — Soshum',
+    category: 'Ujian Mandiri',
     thumbnailUrl: thumb('photo-1513258496099-48168024aec0'),
-    author: { name: 'Laras Ayu', avatarUrl: avatar(47) },
+    author: { name: 'Laras Ayu', avatarUrl: avatar(47), username: '' },
     rating: 4.8,
     soldLabel: '520',
     price: 169_000,
@@ -574,7 +581,143 @@ export const CATEGORIES: FixtureCategory[] = [
   { slug: 'skd-cpns', label: 'SKD/CPNS', count: 2 },
   { slug: 'bumn', label: 'BUMN', count: 3 },
   { slug: 'snbt', label: 'SNBT', count: 3 },
-  { slug: 'tka', label: 'TKA', count: 2 },
+  { slug: 'ujian-mandiri', label: 'Ujian Mandiri', count: 2 },
   { slug: 'kedinasan', label: 'Kedinasan', count: 1 },
   { slug: 'skb', label: 'SKB', count: 1 },
 ]
+
+/* ------------------------------------------------------------------ tutor
+ *
+ * GET /api/v1/tutors/:username and .../reviews, backing /tutor/:username.
+ *
+ * The counts are picked to exercise the page's client-side paging and star
+ * filter rather than to look realistic: 15 products against a 12-per-page
+ * limit, and 11 reviews against 8, so both "muat lagi" buttons appear and both
+ * disappear after exactly one press. The rating spread deliberately leaves
+ * 2 bintang empty — a bucket with no reviews must render as a dead label, not
+ * a filter button that would produce a blank list.
+ */
+
+const TUTOR_USERNAME = 'budi-santoso'
+
+/** Categories dealt round-robin across the tutor's products. */
+export const TUTOR_CATEGORY_CYCLE = ['SKD/CPNS', 'SNBT', 'BUMN']
+
+/** Index of the one product given a 5.0, ranked above every other. */
+export const TUTOR_TOP_RATED_INDEX = 9
+
+/** 6×5★, 3×4★, 1×3★, 1×1★ — average 46/11 = 4.18, shown as "4.2". */
+const REVIEW_RATINGS = [5, 5, 5, 5, 5, 5, 4, 4, 4, 3, 1]
+
+export const TUTOR_REVIEW_COUNT = REVIEW_RATINGS.length
+export const TUTOR_PRODUCT_COUNT = 15
+
+export const TUTOR = {
+  id: 'usr_budi',
+  username: TUTOR_USERNAME,
+  name: 'Budi Santoso',
+  avatarUrl: avatar(12),
+  verified: true,
+  profile: {
+    accountId: 'usr_budi',
+    displayName: 'Budi Santoso',
+    avatarUrl: avatar(12),
+    username: TUTOR_USERNAME,
+    usernameChangedAt: 0,
+    bio: 'Pengajar SKD sejak 2016.',
+    experience: 'Mengajar bimbel CPNS selama 8 tahun.',
+    specializations: ['SKD/CPNS', 'TIU'],
+    education: 'S1 Statistika',
+    portfolioUrl: '',
+    instagramUrl: 'https://instagram.com/budi',
+    tiktokUrl: '',
+    linkedinUrl: '',
+    youtubeUrl: '',
+    websiteUrl: '',
+    updatedAt: 1_760_000_000,
+  },
+  products: Array.from({ length: TUTOR_PRODUCT_COUNT }, (_, i) => ({
+    id: `prd_${i + 1}`,
+    type: i % 5 === 0 ? 'bundle' : 'single',
+    title: `Paket latihan nomor ${i + 1}`,
+    slug: `paket-latihan-${i + 1}`,
+    // Three categories, so the profile's category dropdown has something to
+    // choose between. A single-category tutor hides that control entirely,
+    // which TUTOR_SINGLE_CATEGORY below covers instead.
+    category: TUTOR_CATEGORY_CYCLE[i % TUTOR_CATEGORY_CYCLE.length],
+    thumbnailUrl: thumb('photo-1522202176988-66273c2fd55f'),
+    // i = 0 is the only free paket, and the cheapest; price climbs with i, so
+    // "harga terendah" and "harga tertinggi" have unambiguous winners.
+    price: i === 0 ? 0 : 50_000 + i * 1000,
+    priceOriginal: i === 0 ? 0 : 80_000 + i * 1000,
+    status: 'live',
+    questionCount: 100 + i,
+    questionTarget: 100 + i,
+    // Descending with i apart from one deliberate standout, so "rating
+    // tertinggi" has a single unambiguous winner that is not also the newest.
+    rating: i === TUTOR_TOP_RATED_INDEX ? 5 : Math.round((4.8 - i * 0.1) * 10) / 10,
+    attemptLabel: String(i * 10),
+    updatedAt: 1_760_000_000 - i,
+  })),
+  stats: {
+    activePackages: TUTOR_PRODUCT_COUNT,
+    ratingAverage: REVIEW_RATINGS.reduce((sum, r) => sum + r, 0) / REVIEW_RATINGS.length,
+    ratingCount: TUTOR_REVIEW_COUNT,
+  },
+}
+
+export const TUTOR_REVIEWS = REVIEW_RATINGS.map((rating, i) => ({
+  id: `rev_${i + 1}`,
+  productId: `prd_${(i % TUTOR_PRODUCT_COUNT) + 1}`,
+  attemptId: `att_${i + 1}`,
+  productSlug: `paket-latihan-${(i % TUTOR_PRODUCT_COUNT) + 1}`,
+  productTitle: `Paket latihan nomor ${(i % TUTOR_PRODUCT_COUNT) + 1}`,
+  authorName: `Siswa ${i + 1}`,
+  rating,
+  tags: [],
+  reviewText: `Ulasan contoh nomor ${i + 1}.`,
+  isAnonymous: i === 0,
+  isPublished: true,
+  createdAt: 1_760_000_000 - i * 86_400,
+  updatedAt: 1_760_000_000 - i * 86_400,
+}))
+
+/**
+ * A tutor with everything in one category and no reviews. Exists to pin the
+ * two "hide the control" rules: a category dropdown with a single option is
+ * noise, and a rating summary needs ratings to summarise.
+ */
+export const TUTOR_SOLO_USERNAME = 'sinta-dewi'
+export const TUTOR_SOLO_PRODUCT_COUNT = 3
+
+export const TUTOR_SOLO = {
+  ...TUTOR,
+  id: 'usr_sinta',
+  username: TUTOR_SOLO_USERNAME,
+  name: 'Sinta Dewi',
+  verified: false,
+  profile: {
+    ...TUTOR.profile,
+    accountId: 'usr_sinta',
+    displayName: 'Sinta Dewi',
+    username: TUTOR_SOLO_USERNAME,
+    specializations: ['SNBT'],
+  },
+  products: TUTOR.products.slice(0, TUTOR_SOLO_PRODUCT_COUNT).map((product, i) => ({
+    ...product,
+    id: `sol_${i + 1}`,
+    slug: `paket-sinta-${i + 1}`,
+    title: `Paket Sinta nomor ${i + 1}`,
+    category: 'SNBT',
+  })),
+  stats: { activePackages: TUTOR_SOLO_PRODUCT_COUNT, ratingAverage: 0, ratingCount: 0 },
+}
+
+export const TUTORS = {
+  [TUTOR_USERNAME]: TUTOR,
+  [TUTOR_SOLO_USERNAME]: TUTOR_SOLO,
+}
+export const TUTOR_REVIEWS_BY_USERNAME = {
+  [TUTOR_USERNAME]: TUTOR_REVIEWS,
+  [TUTOR_SOLO_USERNAME]: [],
+}
