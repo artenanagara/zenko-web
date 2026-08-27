@@ -10,15 +10,25 @@ import type { QuestionDraft, QuestionImportDraft, TutorSection } from '#shared/t
  *   baris ke section produk ini dan melaporkan baris yang gagal cocok/valid
  *   di `problems`, tanpa membatalkan baris lain yang valid.
  *
+ * Produk mini_tryout selalu punya tepat satu subtes (ditegakkan server) —
+ * mode gabungan tidak ada gunanya di sana (kolom `subtes` ekstra hanya
+ * membingungkan tutor untuk satu-satunya subtes yang ada), jadi picker dua
+ * tab disembunyikan total dan hanya form "per subtes" yang dirender. Dideteksi
+ * dari `sections.length <= 1` — bukan lewat prop `mode` terpisah, karena
+ * `sections` (daftar semua subtes produk ini) sudah tersedia di sini.
+ *
  * Dirender sebagai isi tab "Impor CSV/Excel" di TutorSectionEditor.vue — lihat
  * docs/tutor-flow-contract.md §6 dan §7.4.
  */
 const props = defineProps<{
   productId: string
   section: TutorSection
-  /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota. */
+  /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota, dan untuk mendeteksi produk mini_tryout (1 subtes). */
   sections: TutorSection[]
 }>()
+
+/** mini_tryout: selalu tepat 1 subtes (§7.2 kontrak) — picker mode disembunyikan dan `mode` tidak pernah berpindah dari 'section'. */
+const isSingleSection = computed(() => props.sections.length <= 1)
 
 const emit = defineEmits<{ refresh: [] }>()
 
@@ -47,23 +57,22 @@ const parsed = ref<QuestionDraft[]>([])
 const combinedParsed = ref<QuestionImportDraft[]>([])
 const parseErrors = ref<string[]>([])
 const importing = ref(false)
-const importError = ref('')
-const importedCount = ref(0)
-/** Baris bermasalah dari respons server (`problems`) — hanya mode gabungan. */
+/**
+ * Baris bermasalah dari respons server (`problems`) — hanya mode gabungan.
+ * Stays on the panel rather than going to a toast: it is a list the tutor has
+ * to work through row by row, not a one-line outcome.
+ */
 const importProblems = ref<string[]>([])
+const toast = useToast()
 
 function switchMode(next: ImportMode) {
   if (mode.value === next) return
   mode.value = next
   reset()
-  importError.value = ''
-  importedCount.value = 0
   importProblems.value = []
 }
 
 async function onFileChange(event: Event) {
-  importError.value = ''
-  importedCount.value = 0
   importProblems.value = []
   parsed.value = []
   combinedParsed.value = []
@@ -99,22 +108,28 @@ async function importQuestions() {
   if (rowCount.value === 0) return
 
   importing.value = true
-  importError.value = ''
   try {
+    let imported: number
     if (mode.value === 'combined') {
       const result = await importTutorQuestions(props.productId, combinedParsed.value)
-      importedCount.value = result.imported
+      imported = result.imported
       importProblems.value = result.problems
     }
     else {
       await createTutorQuestionBatch(props.productId, props.section.id, parsed.value)
-      importedCount.value = parsed.value.length
+      imported = parsed.value.length
     }
     reset()
     emit('refresh')
+    toast.success(
+      `${imported} soal terimpor.`,
+      importProblems.value.length
+        ? `${importProblems.value.length} baris dilewati — lihat daftarnya di panel impor.`
+        : undefined,
+    )
   }
   catch (cause) {
-    importError.value = tutorApiMessage(cause, 'Gagal mengimpor soal. Coba lagi.')
+    toast.error('Gagal mengimpor soal.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     importing.value = false
@@ -132,9 +147,9 @@ function reset() {
 
 <template>
   <div class="grid gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
-    <AppTabs :tabs="MODE_TABS" :model-value="mode" aria-label="Mode impor" @update:model-value="selectMode" />
+    <AppTabs v-if="!isSingleSection" :tabs="MODE_TABS" :model-value="mode" aria-label="Mode impor" @update:model-value="selectMode" />
 
-    <p v-if="mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
+    <p v-if="!isSingleSection && mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
       Satu file CSV bisa berisi soal dari beberapa subtes produk ini sekaligus — kolom
       <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
       di tiap baris menentukan section tujuannya (dicocokkan ke nama subtes produk ini,
@@ -145,22 +160,27 @@ function reset() {
     <div class="flex flex-wrap items-start justify-between gap-3">
       <p v-if="mode === 'section'" class="max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
         Header yang dikenali:
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe,level,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
         Kolom yang tidak terpakai boleh kosong. Kolom
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> harus
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">{{ TEMPLATE_KIND_CELL[section.defaultKind] }}</code>
-        di setiap baris — tipe soal mengikuti subtes ini, tidak bisa berbeda per baris.
+        sebagai contoh awal. Tipe soal dapat berbeda di setiap baris.
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">kunci</code>
         berisi huruf A–E untuk pilihan ganda, atau daftar B/S dipisah ";" untuk
         soal Benar/Salah. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">jawabanIsian</code>
         dipisah ";" untuk isian singkat. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
         dan <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">gambarOpsi*</code> opsional.
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">level</code> diisi
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">L1</code>, <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">L2</code>, atau
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">L3</code> — boleh dikosongkan, tapi baris tanpa level
+        dihitung sebagai L1, dan rapor level kognitif siswa jadi tidak berarti kalau
+        semua soal menumpuk di sana.
       </p>
       <p v-else class="max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
         Header sama seperti template per subtes, ditambah kolom pertama
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code> (wajib diisi).
         Kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> tiap baris
-        harus sesuai tipe soal subtes yang dituju (lihat contoh di template).
+        menentukan tipe jawaban untuk baris tersebut (lihat contoh di template).
       </p>
       <button
         type="button"
@@ -188,12 +208,6 @@ function reset() {
         <li v-for="problem in parseErrors" :key="problem">{{ problem }}</li>
       </ul>
     </AppSectionMessage>
-
-    <AppSectionMessage v-if="importError" appearance="warning">{{ importError }}</AppSectionMessage>
-
-    <AppInlineMessage v-if="importedCount" type="confirmation">
-      {{ importedCount }} soal berhasil diimpor.
-    </AppInlineMessage>
 
     <AppSectionMessage v-if="importProblems.length" appearance="warning" title="Beberapa baris tidak diimpor:">
       <ul class="grid list-disc gap-1 pl-5">

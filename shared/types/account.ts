@@ -54,14 +54,32 @@ export interface OwnedPackage {
 }
 
 /**
- * Body of POST /me/packages/:slug/attempts: only the result is persisted, not
- * the questions. `finishedAt` is optional — the server stamps its own clock
- * when it is omitted.
+ * One question's answer as posted alongside a finished sitting. Mirrors
+ * TryoutAnswerState in shared/types/tryout, kept as its own shape here
+ * (rather than imported) so this file keeps deriving from nothing else, per
+ * the header note above — selected is `string | null` rather than
+ * `OptionLabel | null` for the same reason.
+ */
+export interface RecordAttemptAnswer {
+  selected: string | null
+  value?: string | string[] | Record<string, string | boolean> | null
+  doubtful: boolean
+}
+
+/**
+ * Body of POST /me/packages/:slug/attempts. `finishedAt` is optional — the
+ * server stamps its own clock when it is omitted. `answers` is what feeds
+ * "Lihat pembahasan" later: zenko-api judges each one against its own copy
+ * of the product (never trusting a client-claimed correctness) and stores
+ * the result as the attempt's review snapshot — see TryoutAttemptReview in
+ * shared/types/tryout. Optional so a sitting that could not build a full
+ * answer map still gets its aggregate score saved.
  */
 export interface RecordAttemptRequest {
   score: number
   sections: AttemptSection[]
   finishedAt?: number
+  answers?: Record<string, RecordAttemptAnswer>
 }
 
 /** One package line on an invoice. Whole rupiah, like the catalogue API. */

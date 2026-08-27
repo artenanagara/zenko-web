@@ -12,7 +12,18 @@ export type ProductMode = 'simulasi' | 'mini_tryout'
 /** draft → review → live | rejected (→ draft again after edits) → archived */
 export type ProductStatus = 'draft' | 'review' | 'live' | 'rejected' | 'archived'
 
-export type QuestionKind = 'single_choice' | 'weighted' | 'true_false' | 'short_answer'
+export type QuestionKind =
+  | 'single_choice'
+  | 'multiple_choice'
+  | 'weighted'
+  | 'true_false'
+  | 'short_answer'
+  | 'assertion_reason'
+  | 'associative_choice'
+  | 'matching'
+  | 'ordering'
+
+export type CognitiveLevel = 'L1' | 'L2' | 'L3'
 
 export type ScoringMode = 'flat' | 'weighted'
 
@@ -52,18 +63,31 @@ export interface QuestionOption {
   imageUrl?: string
 }
 
+export interface MatchingItem {
+  id: string
+  text: string
+}
+
+export interface MatchingData {
+  items: MatchingItem[]
+  pairs: Record<string, string>
+}
+
 export interface TutorQuestion {
   id: string
   kind: QuestionKind
   /** Shared reading passage for literacy/case-study question groups. */
   stimulus?: string
   prompt: string
+  cognitiveLevel?: CognitiveLevel
   /** Pembahasan — must be non-empty before submit. */
   explanation: string
   position: number
   options?: QuestionOption[]
   /** short_answer only: accepted answers. */
   answers?: string[]
+  matching?: MatchingData
+  ordering?: string[]
 }
 
 /** Wire shape for creating/replacing a question; id/position are server-assigned. */
@@ -72,8 +96,11 @@ export interface QuestionDraft {
   stimulus?: string
   prompt: string
   explanation: string
+  cognitiveLevel?: CognitiveLevel
   options?: QuestionOption[]
   answers?: string[]
+  matching?: MatchingData
+  ordering?: string[]
 }
 
 /**
@@ -133,6 +160,12 @@ export interface BundleItem {
  */
 export interface TutorProductDetail extends TutorProductSummary {
   description: string
+  /**
+   * Checklist "Yang kamu dapatkan" yang diisi tutor sendiri, ditampilkan di
+   * halaman detail publik. Kosong/absen berarti tutor belum mengisinya — API
+   * publik memakai template kategori sebagai gantinya (lihat catalog.go).
+   */
+  includes?: string[]
   /** single only: exam type slug (`snbt`, `cpns-skd`, `custom`, …). */
   examType?: string
   durationMinutes?: number
@@ -185,6 +218,9 @@ export interface CreateProductRequest {
   mode?: ProductMode
   /** Wajib saat mode `mini_tryout` — judul template subtes yang dipilih. */
   sectionTitle?: string
+  /** Optional mini try-out override; omitted means the template default. */
+  questionTarget?: number
+  durationMinutes?: number
 }
 
 /** Editable shape of one subtes for custom exam types; no id = new. */
@@ -198,6 +234,8 @@ export interface UpdateProductRequest {
   description?: string
   category?: string
   thumbnailUrl?: string
+  /** "Yang kamu dapatkan" — lihat TutorProductDetail.includes. */
+  includes?: string[]
   price?: number
   priceOriginal?: number
   durationMinutes?: number

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { OptionLabel } from '#shared/types/tryout'
 import type { TryoutNavigatorGroup } from '~/composables/useTryoutSession'
 
 /**
@@ -28,7 +27,6 @@ const props = defineProps<{
   doubtfulCount: number
   totalQuestions: number
   statusOf: (id: string) => 'answered' | 'doubtful' | 'unanswered'
-  labelOf: (id: string) => OptionLabel | null
   isLastSection: boolean
 }>()
 
@@ -147,7 +145,6 @@ onBeforeUnmount(() => {
             :doubtful-count="doubtfulCount"
             :total-questions="totalQuestions"
             :status-of="statusOf"
-            :label-of="labelOf"
             @jump="jump"
           />
         </div>

@@ -1,8 +1,12 @@
 /**
- * Resolves the session once, on the client, before the app renders anything
- * that depends on it. Without this every component would have to trigger its
- * own /auth/me call.
+ * Resolve the session once after Nuxt has hydrated the SSR markup. The API
+ * session cookie belongs to another origin, so the server cannot render the
+ * signed-in state. Updating `user` before hydration would make the client
+ * render a different header/layout tree and produce Vue hydration warnings.
+ * Protected routes still call refresh from the route middleware when needed.
  */
-export default defineNuxtPlugin(async () => {
-  await useAuth().refresh()
+export default defineNuxtPlugin(() => {
+  onNuxtReady(() => {
+    void useAuth().refresh()
+  })
 })

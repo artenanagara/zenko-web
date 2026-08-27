@@ -32,6 +32,7 @@ const bestLabels = computed<string[]>(() => {
   // Kunci jawaban selalu ada di layar review — paket ini sudah dimiliki. Nilai
   // kosong hanya mungkin pada payload tanpa kunci (contoh gratis), yang tidak
   // pernah sampai ke sini, jadi jangan sampai bikin halaman ini meledak.
+  if (question.kind !== 'situational') return []
   const scores: Record<string, number> = question.scores ?? {}
   const values = Object.values(scores)
   if (!values.length) return []

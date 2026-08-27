@@ -31,6 +31,16 @@ const totalMinutes = computed(() => blueprint.value?.sections.reduce((sum, s) =>
 
 const nextSection = computed(() => blueprint.value?.sections[session.sectionIndex.value + 1] ?? null)
 
+/**
+ * Copy/print deterrents, live only while a sitting is actually running — the
+ * intro, the section break, and the result screen have nothing to protect, and
+ * leaving the guard on there would just make the page feel broken.
+ * `obscured` covers the exam once this tab stops being the one in front of the
+ * student. See useExamContentGuard for what this genuinely stops and what it
+ * cannot (screenshots).
+ */
+const { obscured } = useExamContentGuard(computed(() => session.phase.value === 'running'))
+
 const showEndConfirm = ref(false)
 
 /** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
@@ -49,12 +59,21 @@ function confirmEndSection() {
 // Persist the result once, when the sitting finishes. Live this POSTs to
 // zenko-api; a failure is swallowed on purpose — the result screen already
 // shows the locally computed score, and a lost network write must not blank it.
+//
+// recordedAttemptId is what makes "Lihat pembahasan" a real page instead of
+// an inline toggle: TryoutResult only renders that button once this holds a
+// real id, since a review page has nothing to load without one. It stays
+// null on a failed write — a smaller loss (one sitting whose pembahasan
+// cannot be reopened) than blanking the score already shown from the
+// finished session, which recording best-effort is here to avoid.
 let recorded = false
+const recordedAttemptId = ref<string | null>(null)
 watch(session.phase, async (phase) => {
   if (phase === 'finished' && session.result.value && !recorded) {
     recorded = true
     try {
-      await recordAttempt(slug, session.result.value)
+      const attempt = await recordAttempt(slug, session.result.value, session.answers.value)
+      recordedAttemptId.value = attempt?.id ?? null
     }
     catch {
       // Best-effort: the score is still shown from the finished session.
@@ -64,6 +83,7 @@ watch(session.phase, async (phase) => {
 
 function retry() {
   recorded = false
+  recordedAttemptId.value = null
   session.start()
 }
 </script>
@@ -161,15 +181,23 @@ function retry() {
            the whole page — each column scrolls inside itself instead.
            min-h-0 is what lets a grid child shrink below its content size at
            all; without it overflow-y-auto has no effect. -->
-      <main class="container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
+      <!-- exam-protected is what the exam-locked CSS in main.css targets: no
+           text selection, no callout, on the questions and the answer options
+           (the student's own input stays selectable). -->
+      <main
+        class="exam-protected container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24"
+        :class="obscured && 'blur-lg'"
+      >
         <div class="min-h-0 md:overflow-y-auto md:pr-1">
           <TryoutQuestion
             :question="session.currentQuestion.value"
             :index="session.displayIndex.value"
             :total="session.displayTotal.value"
             :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
+            :value="session.answers.value[session.currentQuestion.value.id]?.value"
             :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
             @select="session.selectAnswer"
+            @answer="session.setAnswerValue"
           />
         </div>
 
@@ -183,7 +211,6 @@ function retry() {
             :doubtful-count="session.doubtfulCount.value"
             :total-questions="session.displayTotal.value"
             :status-of="session.statusOf"
-            :label-of="session.labelOf"
             @jump="session.goTo"
           />
         </div>
@@ -203,6 +230,25 @@ function retry() {
         @open-navigator="navOpen = true"
       />
 
+      <!-- Tab berpindah / window kehilangan fokus: tutup tampilan soal. Waktu
+           sengaja tetap berjalan di baliknya — itu perilaku jujur untuk sebuah
+           ujian, dan menghentikannya justru membuat "pindah tab" jadi tombol
+           jeda gratis. -->
+      <div
+        v-if="obscured"
+        class="fixed inset-0 z-[60] grid place-items-center bg-surface/95 p-6 text-center backdrop-blur-md"
+      >
+        <div class="max-w-sm">
+          <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-sunken text-muted">
+            <IconEye off class="h-6 w-6" />
+          </span>
+          <h2 class="mt-4 font-bold tracking-[-0.02em]">Tampilan soal disembunyikan</h2>
+          <p class="mt-2 text-[0.9rem] text-muted">
+            Kembali ke tab ini untuk melanjutkan pengerjaan. Waktu ujian tetap berjalan.
+          </p>
+        </div>
+      </div>
+
       <!-- Panel nomor soal versi HP. Tidak dirender sama sekali di md+. -->
       <TryoutNavigatorSheet
         v-model:open="navOpen"
@@ -212,7 +258,6 @@ function retry() {
         :doubtful-count="session.doubtfulCount.value"
         :total-questions="session.displayTotal.value"
         :status-of="session.statusOf"
-        :label-of="session.labelOf"
         :is-last-section="session.isLastSection.value"
         @jump="session.goTo"
         @end-section="requestEndSection"
@@ -282,6 +327,7 @@ function retry() {
       :package-slug="slug"
       :blueprint="blueprint"
       :answers="session.answers.value"
+      :attempt-id="recordedAttemptId"
       @retry="retry"
     />
     </template>

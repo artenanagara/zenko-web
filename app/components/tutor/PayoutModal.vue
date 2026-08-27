@@ -9,9 +9,8 @@ const props = defineProps<{
   hasBankAccount: boolean
   availableBalance: number
   minimum: number
+  /** Live field validation, shown on the field. Submit outcomes go to a toast. */
   amountError: string
-  payoutError: string
-  payoutSuccess: string
   submitting: boolean
   canSubmit: boolean
 }>()
@@ -53,9 +52,6 @@ const modalDescription = computed(() =>
           Saldo tersedia: {{ formatRupiah(availableBalance) }}
         </p>
       </div>
-
-      <AppInlineMessage v-if="payoutError" type="error">{{ payoutError }}</AppInlineMessage>
-      <AppInlineMessage v-else-if="payoutSuccess" type="confirmation">{{ payoutSuccess }}</AppInlineMessage>
 
       <div>
         <AppButton type="submit" size="sm" :disabled="!canSubmit">

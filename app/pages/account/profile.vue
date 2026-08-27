@@ -17,7 +17,8 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { user } = useAuth()
+const { user, signOutAllDevices } = useAuth()
+const { confirm } = useConfirm()
 
 const ROLE_LABEL: Record<Role, string> = {
   student: 'Siswa',
@@ -37,6 +38,8 @@ const ROLE_TONE: Record<Role, 'neutral' | 'brand'> = {
  * dipisah tab supaya halamannya tidak sepanjang gulungan.
  * ------------------------------------------------------------------------ */
 
+const toast = useToast()
+
 const TABS = [
   { id: 'profil', label: 'Profil' },
   { id: 'kata-sandi', label: 'Kata sandi' },
@@ -54,35 +57,49 @@ const draftName = ref('')
 const draftEmail = ref('')
 
 const profileSaving = ref(false)
-const profileError = ref('')
-const profileSaved = ref(false)
+
+/**
+ * Field-level errors only. The outcome of a save — succeeded, or failed and
+ * why — goes to a toast instead: this form sits far down a scrolled page, and
+ * a line under the buttons is the one place the person who just pressed Simpan
+ * is not looking.
+ */
+const nameError = ref('')
+const emailError = ref('')
+
+function clearFieldErrors() {
+  nameError.value = ''
+  emailError.value = ''
+}
 
 function startEditing() {
   draftName.value = user.value?.name ?? ''
   draftEmail.value = user.value?.email ?? ''
-  profileError.value = ''
-  profileSaved.value = false
+  clearFieldErrors()
   editing.value = true
 }
 
 function cancelEditing() {
   editing.value = false
-  profileError.value = ''
+  clearFieldErrors()
   cancelEmailStep()
 }
 
 async function saveProfile() {
-  profileError.value = ''
-  profileSaved.value = false
+  clearFieldErrors()
 
   const trimmedName = draftName.value.trim()
   if (!trimmedName) {
-    profileError.value = 'Nama tidak boleh kosong.'
+    nameError.value = 'Nama tidak boleh kosong.'
+    focusField('account-name')
+    toast.error('Nama belum diisi.')
     return
   }
   const trimmedEmail = draftEmail.value.trim().toLowerCase()
   if (!trimmedEmail) {
-    profileError.value = 'Email tidak boleh kosong.'
+    emailError.value = 'Email tidak boleh kosong.'
+    focusField('account-email')
+    toast.error('Email belum diisi.')
     return
   }
   const emailChanged = trimmedEmail !== user.value?.email
@@ -105,11 +122,11 @@ async function saveProfile() {
     }
     else {
       editing.value = false
-      profileSaved.value = true
+      toast.success('Profil tersimpan.')
     }
   }
   catch (cause) {
-    profileError.value = accountApiMessage(cause, 'Gagal menyimpan profil. Coba lagi sebentar lagi.')
+    toast.error('Gagal menyimpan profil.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     profileSaving.value = false
@@ -124,7 +141,6 @@ async function saveProfile() {
 
 const avatarInputRef = useTemplateRef('avatarInputRef')
 const avatarUploading = ref(false)
-const avatarError = ref('')
 
 function pickAvatar() {
   avatarInputRef.value?.click()
@@ -135,13 +151,13 @@ async function onAvatarSelected(event: Event) {
   const file = input.files?.[0]
   if (!file) return
 
-  avatarError.value = ''
   avatarUploading.value = true
   try {
     await uploadAccountAvatar(file)
+    toast.success('Foto profil diperbarui.')
   }
   catch (cause) {
-    avatarError.value = accountApiMessage(cause, 'Gagal mengunggah foto. Coba lagi sebentar lagi.')
+    toast.error('Gagal mengunggah foto.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     avatarUploading.value = false
@@ -196,7 +212,7 @@ async function confirmEmailCode() {
     emailStep.value = 'idle'
     emailCode.value = ''
     editing.value = false
-    profileSaved.value = true
+    toast.success('Email baru aktif.', 'Mulai sekarang pakai alamat itu untuk masuk.')
   }
   catch (cause) {
     emailConfirmError.value = accountApiMessage(cause, 'Kode salah atau sudah kedaluwarsa.')
@@ -280,9 +296,24 @@ function validate() {
   return Object.keys(errors).length === 0
 }
 
+/** Field ids in the order they appear, so the first invalid one gets the caret. */
+const PASSWORD_FIELD_IDS: Record<keyof typeof errors, string> = {
+  current: 'current-password',
+  next: 'new-password',
+  confirm: 'confirm-password',
+}
+
 async function onSubmit() {
   reset()
-  if (!validate()) return
+  if (!validate()) {
+    const firstInvalid = (Object.keys(PASSWORD_FIELD_IDS) as (keyof typeof errors)[])
+      .find(key => errors[key])
+    if (firstInvalid) {
+      focusField(PASSWORD_FIELD_IDS[firstInvalid])
+      toast.error('Ada kolom yang belum benar.', errors[firstInvalid])
+    }
+    return
+  }
 
   await change(form.current, form.next)
 
@@ -290,6 +321,46 @@ async function onSubmit() {
     form.current = ''
     form.next = ''
     form.confirm = ''
+    toast.success('Kata sandi berhasil diganti.', 'Pakai yang baru saat masuk berikutnya.')
+  }
+  // "Belum tersambung" is the password-change endpoint being switched off, not
+  // a failure the person did anything to cause — an amber toast, not a red one.
+  else if (state.value === 'not-connected') {
+    toast.warning('Ganti kata sandi belum tersambung.', error.value)
+  }
+  else if (state.value === 'error') {
+    toast.error('Gagal mengganti kata sandi.', error.value)
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Keluar dari semua perangkat — server mem-bump session_version, jadi semua
+ * sesi (termasuk perangkat ini) langsung tidak berlaku. Perlakukan sama
+ * seperti logout biasa: bersihkan state auth lalu tinggalkan halaman terkunci
+ * ini menuju beranda, apa pun hasil panggilannya (kita sudah dianggap keluar).
+ * ------------------------------------------------------------------------ */
+
+const signingOutAll = ref(false)
+
+async function onSignOutAllDevices() {
+  const ok = await confirm({
+    title: 'Keluar dari semua perangkat?',
+    description:
+      'Semua sesi Zenko akan diakhiri, termasuk perangkat yang sedang kamu pakai sekarang. Kamu perlu masuk lagi di tiap perangkat setelah ini.',
+    confirmLabel: 'Keluar dari semua',
+    cancelLabel: 'Batal',
+  })
+  if (!ok) return
+
+  signingOutAll.value = true
+  try {
+    await signOutAllDevices()
+  }
+  finally {
+    // signOutAllDevices() sudah membersihkan state auth di blok finally-nya,
+    // jadi kita selalu dianggap keluar dari perangkat ini juga — pergi ke
+    // beranda sama seperti alur logout biasa.
+    await navigateTo('/')
   }
 }
 </script>
@@ -314,11 +385,11 @@ async function onSubmit() {
             </AppButton>
           </div>
 
-          <!-- Identitas mengalir dari atas ke bawah dan terpusat: foto, nama,
-               peran, email, lalu status verifikasi — tanpa kartu berbingkai,
-               yang dulu membuat blok ini terbaca sebagai widget tersendiri
-               alih-alih bagian isi panel. -->
-          <div class="flex flex-col items-center gap-3 text-center">
+          <!-- Identitas berjalan horizontal: foto di kiri, kolom teks rata kiri
+               di kanannya (nama, peran, email, status verifikasi) — tanpa kartu
+               berbingkai, yang dulu membuat blok ini terbaca sebagai widget
+               tersendiri alih-alih bagian isi panel. -->
+          <div class="flex items-center gap-4">
             <span class="relative inline-flex shrink-0 rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift">
               <img
                 v-if="user.avatarUrl"
@@ -362,24 +433,24 @@ async function onSubmit() {
               >
             </span>
 
-            <p class="text-[1.2rem] font-bold tracking-[-0.03em]">{{ user.name }}</p>
+            <div class="min-w-0 flex-1">
+              <p class="text-[1.2rem] font-bold tracking-[-0.03em]">{{ user.name }}</p>
 
-            <DashboardBadge :tone="ROLE_TONE[user.role]">{{ ROLE_LABEL[user.role] }}</DashboardBadge>
+              <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <DashboardBadge :tone="ROLE_TONE[user.role]">{{ ROLE_LABEL[user.role] }}</DashboardBadge>
+                <p class="text-[0.9rem] break-all text-muted">{{ user.email }}</p>
+              </div>
 
-            <p class="text-[0.9rem] break-all text-muted">{{ user.email }}</p>
-
-            <div class="flex flex-wrap items-center justify-center gap-3">
-              <DashboardBadge :tone="user.verified ? 'success' : 'warning'">
-                {{ user.verified ? 'Email terverifikasi' : 'Email belum terverifikasi' }}
-              </DashboardBadge>
-              <AppButton v-if="!user.verified" to="/verifikasi-email" variant="light" size="sm">
-                Verifikasi email
-              </AppButton>
+              <div class="mt-2 flex flex-wrap items-center gap-3">
+                <DashboardBadge :tone="user.verified ? 'success' : 'warning'">
+                  {{ user.verified ? 'Email terverifikasi' : 'Email belum terverifikasi' }}
+                </DashboardBadge>
+                <AppButton v-if="!user.verified" to="/verifikasi-email" variant="light" size="sm">
+                  Verifikasi email
+                </AppButton>
+              </div>
             </div>
           </div>
-
-          <AppInlineMessage v-if="avatarError" type="error">{{ avatarError }}</AppInlineMessage>
-          <AppInlineMessage v-if="!editing && profileSaved" type="confirmation">Profil tersimpan.</AppInlineMessage>
 
           <!-- Mode edit: nama dan email jadi bisa diubah, dikunci di balik
                tombol Edit di atas sampai ditekan. -->
@@ -394,6 +465,8 @@ async function onSubmit() {
               label="Nama lengkap"
               placeholder="Nama kamu"
               autocomplete="name"
+              :error="nameError"
+              class="scroll-mt-24"
             />
 
             <FormField
@@ -404,9 +477,9 @@ async function onSubmit() {
               placeholder="email@contoh.com"
               autocomplete="email"
               hint="Kalau diubah, kami kirim kode konfirmasi ke alamat barunya dulu."
+              :error="emailError"
+              class="scroll-mt-24"
             />
-
-            <AppInlineMessage v-if="profileError" type="error">{{ profileError }}</AppInlineMessage>
 
             <div class="flex items-center gap-3">
               <AppButton type="submit" size="sm" :disabled="profileSaving" :loading="profileSaving">
@@ -487,7 +560,7 @@ async function onSubmit() {
       </DashboardPanel>
     </div>
 
-    <div v-show="activeTab === 'kata-sandi'" id="panel-kata-sandi" role="tabpanel" aria-labelledby="tab-kata-sandi">
+    <div v-show="activeTab === 'kata-sandi'" id="panel-kata-sandi" class="grid gap-6" role="tabpanel" aria-labelledby="tab-kata-sandi">
       <DashboardPanel
         title="Kata sandi"
         description="Ganti kata sandi yang kamu pakai untuk masuk dengan email."
@@ -546,34 +619,6 @@ async function onSubmit() {
             :error="errors.confirm"
           />
 
-          <p
-            v-if="state === 'success'"
-            class="rounded-sm border border-success/30 bg-success-soft px-4 py-3 text-[0.86rem] text-success-ink"
-            role="status"
-          >
-            Kata sandi berhasil diganti. Pakai yang baru saat masuk berikutnya.
-          </p>
-
-          <!-- "Belum tersambung" is an amber notice, not a failure. -->
-          <p
-            v-else-if="state === 'not-connected'"
-            class="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-[0.86rem] text-amber-900"
-            role="status"
-          >
-            {{ error }}
-          </p>
-
-          <!-- A real failure (wrong password, server down) is red, like the
-               field errors — never amber, which reads as a mere warning. -->
-          <p
-            v-else-if="state === 'error'"
-            class="flex items-start gap-2 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-[0.86rem] text-red-700"
-            role="alert"
-          >
-            <IconAlert class="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{{ error }}</span>
-          </p>
-
           <div>
             <AppButton type="submit" size="sm" :disabled="isSubmitting">
               {{ isSubmitting ? 'Menyimpan…' : 'Simpan kata sandi' }}
@@ -584,6 +629,40 @@ async function onSubmit() {
             Jika kamu mendaftar atau selalu masuk menggunakan akun Google, kamu bisa mengatur kata sandi baru melalui <NuxtLink to="/lupa-password" class="font-semibold text-primary hover:text-primary-light">tautan pemulihan kata sandi</NuxtLink>.
           </p>
         </form>
+      </DashboardPanel>
+
+      <!-- Keamanan lintas perangkat: akhiri semua sesi sekaligus, termasuk
+           perangkat ini. Ditaruh di tab yang sama dengan kata sandi karena
+           keduanya soal mengamankan akses masuk. -->
+      <DashboardPanel
+        title="Perangkat lain"
+        description="Akhiri semua sesi yang masih masuk ke akun Zenko-mu sekaligus."
+      >
+        <div class="grid max-w-125 gap-4">
+          <div class="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-alt text-muted"
+            >
+              <AppIcon name="devices" :size="20" />
+            </span>
+            <p class="text-[0.9rem] text-muted">
+              Kalau kamu pernah masuk di perangkat umum atau merasa akunmu dipakai orang lain, keluarkan akun dari semua tempat sekaligus. Tindakan ini <strong class="font-semibold text-ink">mengeluarkan akun dari semua perangkat, termasuk yang sedang kamu pakai sekarang</strong> — kamu perlu masuk lagi setelahnya.
+            </p>
+          </div>
+
+          <div>
+            <AppButton
+              variant="danger"
+              size="sm"
+              :disabled="signingOutAll"
+              @click="onSignOutAllDevices"
+            >
+              <AppIcon name="sign-out" :size="16" />
+              {{ signingOutAll ? 'Mengeluarkan…' : 'Keluar dari semua perangkat' }}
+            </AppButton>
+          </div>
+        </div>
       </DashboardPanel>
     </div>
   </div>

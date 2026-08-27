@@ -43,4 +43,12 @@ export { expect }
  */
 export async function gotoHydrated(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: 'networkidle' })
+
+  // Every fresh browser context starts without a consent choice. Keep the
+  // existing suite focused on its feature under test while still exercising
+  // the real banner and its keyboard-accessible controls.
+  const rejectOptional = page.getByRole('button', { name: 'Tolak opsional' })
+  if (await rejectOptional.isVisible().catch(() => false)) {
+    await rejectOptional.click()
+  }
 }

@@ -13,6 +13,32 @@ const related = useRelatedPackages(detail.value.category, slug)
 // page that would just redirect there anyway.
 const { isSignedIn } = useAuth()
 const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.value)
+const productReviews = useProductReviews(slug)
+
+// refreshMine() runs for everyone, signed in or not: the session cookie rides
+// along with the request either way, and waiting for useAuth to resolve first
+// would only delay knowing whether this visitor already has an ulasan here.
+// A signed-out visitor gets a 401, which the composable reads as "none".
+onMounted(() => {
+  productReviews.refresh()
+  productReviews.refreshMine()
+})
+
+/**
+ * Satu ulasan per siswa per paket. Begitu ulasannya ada, form di atas daftar
+ * hilang — memperbaruinya dimulai dari tombol "Edit ulasan" pada ulasan itu
+ * sendiri, yang membuka form ini di dalam modal.
+ */
+const myReview = computed(() => productReviews.mine.value)
+const reviewEditorOpen = ref(false)
+
+// refreshMine() matters as much as refresh(): the form saves through its own
+// composable instance, so without this the page still believes this visitor
+// has no ulasan and keeps offering a blank form under the list.
+async function onReviewSubmitted() {
+  reviewEditorOpen.value = false
+  await Promise.all([productReviews.refresh(), productReviews.refreshMine()])
+}
 
 const discountPercent = computed(() => {
   const { price, priceOriginal } = detail.value
@@ -32,9 +58,50 @@ const updatedLabel = computed(() =>
   }),
 )
 
-useHead({
+const canonicalUrl = `https://zenkoedu.id/paket/${detail.value.slug}`
+
+useSeoMeta({
   title: `${detail.value.title} | Zenko`,
-  meta: [{ name: 'description', content: detail.value.description.slice(0, 160) }],
+  description: detail.value.description.slice(0, 160),
+  ogTitle: `${detail.value.title} | Zenko`,
+  ogDescription: detail.value.description.slice(0, 160),
+  ogImage: detail.value.thumbnailUrl,
+  ogUrl: canonicalUrl,
+  twitterCard: 'summary_large_image',
+})
+
+// Product (not Course): a fixed-price bundle of practice questions with a
+// rating and review count fits Google's Product/Offer guidance better than
+// Course, which is meant for instructor-led educational content.
+const productJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: detail.value.title,
+  description: detail.value.description,
+  category: detail.value.category,
+  image: detail.value.thumbnailUrl,
+  brand: { '@type': 'Brand', name: detail.value.author.name },
+  offers: {
+    '@type': 'Offer',
+    price: detail.value.price,
+    priceCurrency: 'IDR',
+    availability: 'https://schema.org/InStock',
+    url: canonicalUrl,
+  },
+  ...(detail.value.reviewCount > 0
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: detail.value.rating,
+          reviewCount: detail.value.reviewCount,
+        },
+      }
+    : {}),
+}
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl }],
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(productJsonLd) }],
 })
 </script>
 
@@ -62,7 +129,17 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <span class="flex items-center gap-2">
+            <!-- Linked only when the tutor actually has a public profile;
+                 seeded paket carry an empty username and stay plain text. -->
+            <NuxtLink
+              v-if="detail.author.username"
+              :to="`/tutor/${detail.author.username}`"
+              class="-my-2 flex items-center gap-2 py-2 font-semibold text-ink transition-colors duration-200 ease-smooth hover:text-primary hover:underline"
+            >
+              <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
+              {{ detail.author.name }}
+            </NuxtLink>
+            <span v-else class="flex items-center gap-2">
               <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
               <span class="font-semibold text-ink">{{ detail.author.name }}</span>
             </span>
@@ -109,6 +186,56 @@ useHead({
               {{ item }}
             </li>
           </ul>
+
+          <div class="mt-10 grid gap-5">
+            <div>
+              <h2 class="mb-1 text-[1.35rem] font-bold tracking-[-0.03em]">Ulasan siswa</h2>
+              <p class="text-[0.88rem] text-muted">Rating dan masukan dari siswa yang sudah mengerjakan paket ini.</p>
+            </div>
+            <!-- Di atas daftar, bukan di bawahnya: siswa yang baru selesai
+                 mengerjakan datang ke sini untuk menulis, bukan untuk membaca
+                 ulasan orang lain dulu. `ownsPackage` bukan sekadar cosmetic —
+                 tanpa itu form muncul untuk siapa pun yang login, termasuk
+                 orang yang belum pernah membeli paket ini, dan mereka baru
+                 tahu tidak boleh mengulas setelah menulis dan ditolak server. -->
+            <ProductReviewForm
+              v-if="isSignedIn && ownsPackage && !myReview"
+              :slug="slug"
+              @submitted="onReviewSubmitted"
+            />
+
+            <div v-if="productReviews.data.value.length" class="grid gap-4">
+              <ProductReviewItem
+                v-for="review in productReviews.data.value"
+                :key="review.id"
+                :review="review"
+                :is-mine="review.id === myReview?.id"
+                @edit="reviewEditorOpen = true"
+              />
+            </div>
+            <p v-else class="rounded-md border border-dashed border-line px-4 py-6 text-center text-muted">Belum ada ulasan. Jadilah yang pertama setelah mengerjakan paket ini.</p>
+
+            <!-- Ulasan siswa ini belum dipublikasikan (masih dimoderasi), jadi
+                 tidak ada di daftar di atas dan tidak punya tombol edit di
+                 sana — panel ringkas ini yang menyediakannya. -->
+            <div
+              v-if="myReview && !productReviews.data.value.some(review => review.id === myReview!.id)"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/30 bg-primary-soft/20 px-4 py-3"
+            >
+              <p class="text-[0.88rem] text-muted">
+                Ulasanmu sudah terkirim dan sedang menunggu tayang.
+              </p>
+              <button
+                type="button"
+                class="inline-flex cursor-pointer items-center gap-1.5 text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
+                @click="reviewEditorOpen = true"
+              >
+                <AppIcon name="pencil-simple" :size="15" weight="bold" />
+                Edit ulasan
+              </button>
+            </div>
+
+          </div>
         </div>
 
         <!-- Right column: purchase card, sticks while the content scrolls -->
@@ -190,5 +317,20 @@ useHead({
         </div>
       </div>
     </section>
+
+    <!-- Form yang sama dengan yang tampil di atas daftar untuk siswa yang
+         belum mengulas — di sini ia hanya muncul lewat tombol "Edit ulasan". -->
+    <AppModal
+      v-model="reviewEditorOpen"
+      title="Perbarui ulasanmu"
+      description="Ulasan yang tersimpan akan menggantikan versi sebelumnya."
+    >
+      <ProductReviewForm
+        :slug="slug"
+        :existing="myReview"
+        embedded
+        @submitted="onReviewSubmitted"
+      />
+    </AppModal>
   </main>
 </template>

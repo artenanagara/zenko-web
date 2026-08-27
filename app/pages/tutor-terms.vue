@@ -7,15 +7,20 @@
 // terms.vue's Bagian 4/7 already commit to.
 definePageMeta({ path: '/syarat-tutor' })
 
-useHead({
+useSeoMeta({
   title: 'Syarat dan Ketentuan Tutor | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Syarat dan Ketentuan Tutor Zenko: kelayakan, kurasi, kepemilikan konten, bagi hasil 70:30, pencairan, standar mutu, dan tanggung jawab tutor.',
-    },
-  ],
+  description:
+    'Syarat dan Ketentuan Tutor Zenko: kelayakan, kurasi, kepemilikan konten, bagi hasil 70:30, pencairan, standar mutu, dan tanggung jawab tutor.',
+  ogTitle: 'Syarat dan Ketentuan Tutor | Zenko',
+  ogDescription:
+    'Syarat dan Ketentuan Tutor Zenko: kelayakan, kurasi, kepemilikan konten, bagi hasil 70:30, pencairan, standar mutu, dan tanggung jawab tutor.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/syarat-tutor',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/syarat-tutor' }],
 })
 </script>
 

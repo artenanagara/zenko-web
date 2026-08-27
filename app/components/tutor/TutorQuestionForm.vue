@@ -5,13 +5,14 @@ import type {
   QuestionKind,
   QuestionOption,
   TutorQuestion,
+  CognitiveLevel,
+  MatchingData,
 } from '#shared/types/tutor-product'
 
 /**
  * Editor satu soal (kontrak §6 — "Editor Soal & Ergonomi Tutor 10/10").
- * Bentuk formnya mengikuti `kind`, yang selalu sama dengan `defaultKind`
- * subtes ini — server mengunci tiap soal ke `defaultKind` section-nya, jadi
- * form ini tidak lagi menawarkan pilihan tipe soal, hanya menampilkannya:
+ * Bentuk formnya mengikuti `kind`, which starts from the section default but
+ * can be changed for each question:
  * - single_choice: opsi A–E + pilih kunci jawaban
  * - weighted: opsi A–E + bobot 0–5 per opsi (gaya TKP)
  * - true_false: daftar pernyataan dengan toggle Benar/Salah
@@ -27,11 +28,13 @@ import type {
 const props = defineProps<{
   initial: TutorQuestion | null
   defaultKind: QuestionKind
-  /** Only "Custom" exam types mix question kinds across sections — elsewhere every section already follows one fixed template, so the locked-kind note is noise. */
+  /** Section default used as the initial suggestion for new questions. */
   isCustom?: boolean
   saving: boolean
   productId: string
   sectionId: string
+  /** Exam type of the paket, used to flag answer types the real TKA never uses. */
+  examTypeSlug?: string
 }>()
 
 const emit = defineEmits<{
@@ -56,19 +59,54 @@ const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const
 
 const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
   { value: 'single_choice', label: 'Pilihan ganda (A–E, satu benar)' },
+  { value: 'multiple_choice', label: 'Pilihan ganda kompleks (minimal dua benar)' },
   { value: 'weighted', label: 'Berbobot (semua opsi bernilai, gaya TKP)' },
   { value: 'true_false', label: 'Benar/Salah (daftar pernyataan)' },
   { value: 'short_answer', label: 'Isian singkat' },
+  { value: 'assertion_reason', label: 'Sebab-akibat (A–E)' },
+  { value: 'associative_choice', label: 'Asosiatif (1, 2, 3, 4)' },
+  { value: 'matching', label: 'Menjodohkan' },
+  { value: 'ordering', label: 'Mengurutkan langkah' },
 ]
 
-// `kind` selalu sama dengan `defaultKind` subtes — server mengunci ini, tidak
-// ada lagi pilihan bebas per soal (lihat komentar berkas di atas).
-const kind = ref<QuestionKind>(props.defaultKind)
-const kindLabel = computed(() => KIND_OPTIONS.find(option => option.value === props.defaultKind)?.label ?? props.defaultKind)
+const kind = ref<QuestionKind>(props.initial?.kind ?? props.defaultKind)
+
+/**
+ * AppSelect works in plain string|number; narrow its `update:modelValue` back
+ * onto the typed field instead of casting (same guard TutorCustomSections.vue
+ * uses for the section-level "Tipe soal bawaan" select).
+ */
+function isQuestionKind(value: string | number): value is QuestionKind {
+  return KIND_OPTIONS.some(option => option.value === value)
+}
+
+/**
+ * Advice, not a block: a paket that claims to simulate TKA should not quietly
+ * drill a format the real exam has never asked. See docs/plan-produk-tka-lengkap.md §5B.
+ */
+const kindWarning = computed(() => nonTkaKindWarning(props.examTypeSlug, kind.value))
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
 const explanation = ref(props.initial?.explanation ?? '')
+/**
+ * Starts unset for a new question so the tutor has to say which level it is.
+ * It used to default to L1, and the server still falls back to L1 for anything
+ * it is not told — which meant an untouched dropdown quietly filed every soal
+ * under L1 and made the student's cognitive report read "100% L1".
+ * See docs/plan-produk-tka-lengkap.md §6.
+ */
+const cognitiveLevel = ref<CognitiveLevel | ''>(props.initial?.cognitiveLevel ?? '')
+
+const COGNITIVE_LEVEL_OPTIONS: { value: CognitiveLevel, label: string }[] = [
+  { value: 'L1', label: 'L1 — Pengetahuan dan pemahaman' },
+  { value: 'L2', label: 'L2 — Aplikasi konsep' },
+  { value: 'L3', label: 'L3 — Penalaran dan analisis' },
+]
+
+function isCognitiveLevel(value: string | number): value is CognitiveLevel {
+  return COGNITIVE_LEVEL_OPTIONS.some(option => option.value === value)
+}
 
 /* Per-kind state, hydrated from `initial` where the kind matches. */
 
@@ -78,7 +116,7 @@ function initialOptions(): QuestionOption[] {
 
 // single_choice & weighted: lima baris tetap A–E; baris kosong tidak dikirim.
 const choiceRows = ref(OPTION_LETTERS.map((letter, index) => {
-  const source = props.initial && props.initial.kind !== 'true_false'
+  const source = props.initial && !['true_false', 'matching', 'short_answer'].includes(props.initial.kind)
     ? initialOptions()[index]
     : undefined
   return {
@@ -90,9 +128,15 @@ const choiceRows = ref(OPTION_LETTERS.map((letter, index) => {
 }))
 
 const correctIndex = ref(
-  props.initial?.kind === 'single_choice'
+  ['single_choice', 'assertion_reason', 'associative_choice'].includes(props.initial?.kind ?? '')
     ? initialOptions().findIndex(option => option.isCorrect)
     : -1,
+)
+
+const correctIndexes = ref(
+  props.initial?.kind === 'multiple_choice'
+    ? initialOptions().flatMap((option, index) => option.isCorrect ? [index] : [])
+    : [],
 )
 
 // true_false: pernyataan + kuncinya.
@@ -109,7 +153,160 @@ const answers = ref(
     : [''],
 )
 
-const errorMessage = ref('')
+const matchingLeftRows = ref(Array.from({ length: 5 }, (_, index) => ({
+  label: String(index + 1),
+  text: props.initial?.kind === 'matching' ? initialOptions()[index]?.text ?? '' : '',
+})))
+const matchingItems = ref<MatchingData['items']>(props.initial?.kind === 'matching' ? [...(props.initial.matching?.items ?? [])] : [{ id: 'a', text: '' }, { id: 'b', text: '' }])
+const matchingPairs = ref<Record<string, string>>(props.initial?.kind === 'matching' ? { ...(props.initial.matching?.pairs ?? {}) } : {})
+/**
+ * `ordering` menyimpan IDENTITAS BARIS (huruf tetap baris A–E, sama dengan
+ * yang tertulis di sebelah kotak teksnya), bukan label yang dikirim ke server.
+ *
+ * Keduanya berbeda karena menyimpan melabeli ulang opsi berdasarkan posisi,
+ * supaya baris kosong di tengah tidak menyisakan celah di mata siswa (lihat
+ * komentar di buildDraft). Jadi baris A, B, D yang terisi tersimpan sebagai
+ * opsi A, B, C. Dulu editor mengirim huruf barisnya apa adanya ("D") ke
+ * validasi yang sudah berpikir posisional ("C"), pilihan itu terbuang, dan
+ * tutor kena "Tentukan urutan semua item." tanpa ada cara memenuhinya.
+ *
+ * Perbaikannya menaruh penerjemahan di batas simpan (orderingAsLabels), bukan
+ * di tampilan: huruf yang dilihat tutor tetap huruf barisnya, tidak ikut
+ * bergeser saat baris lain dikosongkan, dan pilihan yang sudah dibuat tetap
+ * menempel pada item yang sama.
+ */
+function initialOrdering(): string[] {
+  if (props.initial?.kind !== 'ordering') return []
+  // Opsi tersimpan sudah rapat, jadi posisinya = baris tempat ia dimuat.
+  const savedLabels = initialOptions().map(option => option.label)
+  return (props.initial.ordering ?? []).map((label) => {
+    const at = savedLabels.indexOf(label)
+    // Label yang tidak dikenal (soal lama/impor yang datanya tidak sinkron)
+    // jadi posisi kosong, bukan pilihan hantu: tutor melihat satu dropdown
+    // yang belum terisi, bukan error saat baru membuka soalnya.
+    return at >= 0 ? OPTION_LETTERS[at] ?? '' : ''
+  })
+}
+
+const ordering = ref<string[]>(initialOrdering())
+
+/**
+ * Baris opsi yang sudah ada isinya. Dipakai kind `ordering` untuk dua hal
+ * sekaligus — berapa posisi yang perlu diisi, dan apa saja kandidat tiap
+ * posisi — yang sebelumnya masing-masing memfilter ulang di template.
+ */
+const filledChoiceRows = computed(() => choiceRows.value.filter(row => stripHtmlToText(row.text)))
+
+/**
+ * Kandidat isi tiap posisi urutan. `value` adalah identitas baris supaya
+ * pilihan tetap menempel pada itemnya, `label` memakai huruf baris + teksnya
+ * supaya cocok dengan apa yang tertulis di editor opsi tepat di atasnya.
+ */
+const orderingOptions = computed(() => filledChoiceRows.value.map(row => ({
+  value: row.letter,
+  label: `${row.letter} — ${stripHtmlToText(row.text)}`,
+})))
+
+/** Huruf yang akan tersimpan untuk tiap baris terisi: A, B, C, ... rapat. */
+const orderingLabelByRow = computed(
+  // Tuple eksplisit: tanpa ini kunci Map mewarisi tipe literal 'A'|..|'E' dari
+  // OPTION_LETTERS, dan `ordering` yang bertipe string[] tidak bisa mencarinya.
+  () => new Map(filledChoiceRows.value.map((row, at) => [row.letter, OPTION_LETTERS[at]!] as [string, string])),
+)
+
+/** Pilihan tutor diterjemahkan ke label posisional — bentuk yang dikirim. */
+function orderingAsLabels(): string[] {
+  return ordering.value
+    .slice(0, filledChoiceRows.value.length)
+    .flatMap((rowLetter) => {
+      const label = orderingLabelByRow.value.get(rowLetter)
+      return label ? [label] : []
+    })
+}
+
+/**
+ * Menjaga satu invarian: `ordering` hanya boleh berisi baris yang masih ada
+ * isinya. Tanpa ini, mengosongkan satu baris meninggalkan pilihan yang
+ * menunjuk item yang sudah tidak ada di dropdown — bug yang sama lewat pintu
+ * lain.
+ *
+ * Sisanya dirapatkan, bukan dikosongkan: jawaban `ordering` itu SEBUAH URUTAN,
+ * dan yang berarti di situ adalah item mana sebelum item mana. Menghapus satu
+ * item memang menggeser semua nomor sesudahnya — jadi "A, B, D" yang kehilangan
+ * B menjadi "A, D" utuh dan bisa langsung disimpan, bukan menyisakan posisi
+ * kosong yang harus tutor isi ulang dengan jawaban yang sama.
+ */
+function pruneOrdering() {
+  const available = new Set<string>(filledChoiceRows.value.map(row => row.letter))
+  ordering.value = ordering.value
+    .filter(rowLetter => available.has(rowLetter))
+    .slice(0, filledChoiceRows.value.length)
+}
+
+// Dipicu hanya saat KUMPULAN baris terisi berubah, bukan tiap ketukan huruf.
+watch(() => filledChoiceRows.value.map(row => row.letter).join(','), pruneOrdering)
+
+/**
+ * Item kanan yang bisa dipasangkan ke tiap item kiri. Item yang belum diberi
+ * teks tetap terdaftar dengan id-nya sebagai label, sama seperti sebelumnya:
+ * tutor kadang menyusun pasangannya lebih dulu, baru menulis teksnya.
+ */
+const matchingItemOptions = computed(() => matchingItems.value.map(item => ({
+  value: item.id,
+  label: item.text || item.id,
+})))
+
+/**
+ * Which block a validation failure belongs to, so submit() can put the tutor
+ * in front of it. This form is long — nine question kinds, each with its own
+ * editor — and "Isi minimal dua opsi." shown at the very bottom told them
+ * nothing about where to scroll.
+ */
+type ValidationAnchor = 'prompt' | 'level' | 'choices' | 'statements' | 'matching' | 'answers'
+
+const promptBlockRef = ref<HTMLElement | null>(null)
+const levelBlockRef = ref<HTMLElement | null>(null)
+const choicesBlockRef = ref<HTMLElement | null>(null)
+const statementsBlockRef = ref<HTMLElement | null>(null)
+const matchingBlockRef = ref<HTMLElement | null>(null)
+const answersBlockRef = ref<HTMLElement | null>(null)
+
+const ANCHOR_REFS: Record<ValidationAnchor, Ref<HTMLElement | null>> = {
+  prompt: promptBlockRef,
+  level: levelBlockRef,
+  choices: choicesBlockRef,
+  statements: statementsBlockRef,
+  matching: matchingBlockRef,
+  answers: answersBlockRef,
+}
+
+interface ValidationFailure {
+  message: string
+  anchor: ValidationAnchor
+}
+
+/** Set by buildDraft() on the way out; read by submit() to raise the toast. */
+let validationFailure: ValidationFailure | null = null
+
+/** Records why the draft is invalid and returns null, the shape buildDraft() wants. */
+function fail(message: string, anchor: ValidationAnchor): null {
+  validationFailure = { message, anchor }
+  return null
+}
+
+/**
+ * Read-and-clear. Going through a function rather than reading the variable
+ * directly also keeps TypeScript honest: at the call site it has just seen
+ * `validationFailure = null` and would otherwise narrow the type to `null`,
+ * blind to buildDraft() having written to it in between.
+ */
+function takeValidationFailure(): ValidationFailure | null {
+  const failure = validationFailure
+  validationFailure = null
+  return failure
+}
+
+const toast = useToast()
 
 function addStatement() {
   statements.value.push({ text: '', isCorrect: true, imageUrl: '' })
@@ -127,6 +324,27 @@ function removeAnswer(index: number) {
   answers.value.splice(index, 1)
 }
 
+function addMatchingItem() {
+  matchingItems.value.push({ id: `item-${matchingItems.value.length + 1}`, text: '' })
+}
+
+function removeMatchingItem(index: number) {
+  const removed = matchingItems.value[index]
+  if (!removed) return
+  matchingItems.value.splice(index, 1)
+  for (const left of Object.keys(matchingPairs.value)) {
+    if (matchingPairs.value[left] === removed.id) delete matchingPairs.value[left]
+  }
+}
+
+function choiceKind(value: QuestionKind) {
+  return ['single_choice', 'multiple_choice', 'weighted', 'assertion_reason', 'associative_choice', 'ordering'].includes(value)
+}
+
+function correctChoiceKind(value: QuestionKind) {
+  return ['single_choice', 'multiple_choice', 'assertion_reason', 'associative_choice'].includes(value)
+}
+
 /**
  * Validasi ringan sesuai aturan kind; server tetap sumber kebenaran.
  * Pembahasan boleh kosong di sini — server hanya mewajibkannya saat submit
@@ -136,8 +354,12 @@ function removeAnswer(index: number) {
  */
 function buildDraft(): QuestionDraft | null {
   if (!stripHtmlToText(prompt.value)) {
-    errorMessage.value = 'Tulis pertanyaannya dulu.'
-    return null
+    return fail('Tulis pertanyaannya dulu.', 'prompt')
+  }
+
+  const level = cognitiveLevel.value
+  if (!level) {
+    return fail('Pilih level kognitif soal ini (L1, L2, atau L3).', 'level')
   }
 
   const trimmedStimulus = stripHtmlToText(stimulus.value) ? stimulus.value.trim() : ''
@@ -145,10 +367,11 @@ function buildDraft(): QuestionDraft | null {
     kind: kind.value,
     prompt: prompt.value.trim(),
     explanation: explanation.value.trim(),
+    cognitiveLevel: level,
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
-  if (kind.value === 'single_choice' || kind.value === 'weighted') {
+  if (choiceKind(kind.value)) {
     // stripHtmlToText, bukan row.text.trim(): text sekarang HTML, dan
     // ".trim()" pada string HTML tidak lagi berarti "kosong" — sebuah
     // paragraf berisi cuma spasi tetap dianggap non-kosong oleh Tiptap
@@ -159,14 +382,12 @@ function buildDraft(): QuestionDraft | null {
       .filter(row => stripHtmlToText(row.text))
 
     if (filled.length < 2) {
-      errorMessage.value = 'Isi minimal dua opsi.'
-      return null
+      return fail('Isi minimal dua opsi.', 'choices')
     }
 
-    if (kind.value === 'single_choice') {
+    if (correctChoiceKind(kind.value) && kind.value !== 'multiple_choice') {
       if (!filled.some(row => row.index === correctIndex.value)) {
-        errorMessage.value = 'Pilih kunci jawaban dari opsi yang terisi.'
-        return null
+        return fail('Pilih kunci jawaban dari opsi yang terisi.', 'choices')
       }
       return {
         ...base,
@@ -180,12 +401,41 @@ function buildDraft(): QuestionDraft | null {
       }
     }
 
+    if (kind.value === 'multiple_choice') {
+      if (correctIndexes.value.length < 2) {
+        return fail('Pilih minimal dua kunci jawaban.', 'choices')
+      }
+      return {
+        ...base,
+        options: filled.map((row, at) => ({
+          label: OPTION_LETTERS[at]!,
+          text: row.text.trim(),
+          isCorrect: correctIndexes.value.includes(row.index),
+          ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}),
+        })),
+      }
+    }
+
+    if (kind.value === 'ordering') {
+      const ordered = orderingAsLabels()
+      if (new Set(ordered).size !== ordered.length) {
+        return fail('Tiap item cuma boleh dipakai sekali dalam urutan.', 'choices')
+      }
+      if (ordered.length !== filled.length) {
+        return fail('Tentukan urutan semua item.', 'choices')
+      }
+      return {
+        ...base,
+        options: filled.map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text.trim(), ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}) })),
+        ordering: ordered,
+      }
+    }
+
     const missingWeight = filled.some(
       row => row.weight === null || !Number.isInteger(row.weight) || row.weight < 0,
     )
     if (missingWeight) {
-      errorMessage.value = 'Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.'
-      return null
+      return fail('Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.', 'choices')
     }
     return {
       ...base,
@@ -201,8 +451,7 @@ function buildDraft(): QuestionDraft | null {
   if (kind.value === 'true_false') {
     const filled = statements.value.filter(statement => stripHtmlToText(statement.text))
     if (filled.length === 0) {
-      errorMessage.value = 'Tulis minimal satu pernyataan.'
-      return null
+      return fail('Tulis minimal satu pernyataan.', 'statements')
     }
     return {
       ...base,
@@ -215,10 +464,25 @@ function buildDraft(): QuestionDraft | null {
     }
   }
 
+  if (kind.value === 'matching') {
+    const left = matchingLeftRows.value.filter(row => stripHtmlToText(row.text))
+    const right = matchingItems.value.filter(item => stripHtmlToText(item.text))
+    if (left.length < 2 || right.length !== left.length) {
+      return fail('Isi jumlah item kiri dan kanan yang sama, minimal dua.', 'matching')
+    }
+    if (left.some(row => !matchingPairs.value[row.label] || !right.some(item => item.id === matchingPairs.value[row.label]))) {
+      return fail('Tentukan pasangan untuk setiap item kiri.', 'matching')
+    }
+    return {
+      ...base,
+      options: left.map(row => ({ label: row.label, text: row.text.trim() })),
+      matching: { items: right.map(item => ({ id: item.id, text: item.text.trim() })), pairs: Object.fromEntries(left.map(row => [row.label, matchingPairs.value[row.label]!])) },
+    }
+  }
+
   const accepted = answers.value.map(answer => answer.trim()).filter(Boolean)
   if (accepted.length === 0) {
-    errorMessage.value = 'Isi minimal satu jawaban yang diterima.'
-    return null
+    return fail('Isi minimal satu jawaban yang diterima.', 'answers')
   }
   return { ...base, answers: accepted }
 }
@@ -234,10 +498,14 @@ const previewDraft = computed<QuestionDraft>(() => {
     kind: kind.value,
     prompt: prompt.value,
     explanation: explanation.value,
+    // The preview is best-effort and runs before the form is valid, so it
+    // shows a level even when none is picked yet. buildDraft() is the one that
+    // insists on a real choice.
+    cognitiveLevel: cognitiveLevel.value || 'L1',
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
-  if (kind.value === 'single_choice' || kind.value === 'weighted') {
+  if (choiceKind(kind.value)) {
     return {
       ...base,
       options: choiceRows.value
@@ -245,9 +513,9 @@ const previewDraft = computed<QuestionDraft>(() => {
         .map((row, at) => ({
           label: OPTION_LETTERS[at]!,
           text: row.text,
-          ...(kind.value === 'single_choice'
-            ? { isCorrect: choiceRows.value.indexOf(row) === correctIndex.value }
-            : { weight: row.weight ?? 0 }),
+          ...(correctChoiceKind(kind.value)
+            ? { isCorrect: kind.value === 'multiple_choice' ? correctIndexes.value.includes(choiceRows.value.indexOf(row)) : choiceRows.value.indexOf(row) === correctIndex.value }
+            : kind.value === 'weighted' ? { weight: row.weight ?? 0 } : {}),
           ...(row.imageUrl ? { imageUrl: row.imageUrl } : {}),
         })),
     }
@@ -264,6 +532,24 @@ const previewDraft = computed<QuestionDraft>(() => {
           isCorrect: statement.isCorrect,
           ...(statement.imageUrl ? { imageUrl: statement.imageUrl } : {}),
         })),
+    }
+  }
+
+  if (kind.value === 'matching') {
+    return {
+      ...base,
+      options: matchingLeftRows.value.filter(row => stripHtmlToText(row.text)).map(row => ({ label: row.label, text: row.text })),
+      matching: { items: matchingItems.value.filter(item => stripHtmlToText(item.text)), pairs: matchingPairs.value },
+    }
+  }
+
+  if (kind.value === 'ordering') {
+    return {
+      ...base,
+      options: filledChoiceRows.value.map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text })),
+      // Lewat penerjemah yang sama seperti simpan: pratinjau memakai opsi yang
+      // sudah dilabeli ulang, jadi urutannya harus bicara bahasa yang sama.
+      ordering: orderingAsLabels(),
     }
   }
 
@@ -291,17 +577,23 @@ function scheduleAutosave() {
       stimulus: stimulus.value,
       prompt: prompt.value,
       explanation: explanation.value,
+      cognitiveLevel: cognitiveLevel.value,
       choiceRows: choiceRows.value,
       correctIndex: correctIndex.value,
+      correctIndexes: correctIndexes.value,
       statements: statements.value,
       answers: answers.value,
+      matchingLeftRows: matchingLeftRows.value,
+      matchingItems: matchingItems.value,
+      matchingPairs: matchingPairs.value,
+      ordering: ordering.value,
     }
     window.localStorage.setItem(draftKey.value, JSON.stringify(snapshot))
   }, 2000)
 }
 
 watch(
-  [kind, stimulus, prompt, explanation, choiceRows, correctIndex, statements, answers],
+  [kind, stimulus, prompt, explanation, cognitiveLevel, choiceRows, correctIndex, correctIndexes, statements, answers, matchingLeftRows, matchingItems, matchingPairs, ordering],
   scheduleAutosave,
   { deep: true },
 )
@@ -326,19 +618,34 @@ function restoreDraft() {
       explanation?: string
       choiceRows?: typeof choiceRows.value
       correctIndex?: number
+      correctIndexes?: number[]
       statements?: typeof statements.value
       answers?: string[]
+      cognitiveLevel?: CognitiveLevel | ''
+      matchingLeftRows?: typeof matchingLeftRows.value
+      matchingItems?: typeof matchingItems.value
+      matchingPairs?: Record<string, string>
+      ordering?: string[]
     }
-    // `kind` tidak dipulihkan dari draft lama — selalu mengikuti `defaultKind`
-    // subtes saat ini, bahkan kalau draft tersimpan sebelum kind dikunci.
+    if (snapshot.kind && KIND_OPTIONS.some(option => option.value === snapshot.kind)) kind.value = snapshot.kind
     stimulus.value = snapshot.stimulus ?? ''
     if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
     explanation.value = snapshot.explanation ?? ''
+    cognitiveLevel.value = snapshot.cognitiveLevel ?? ''
     if (snapshot.choiceRows) choiceRows.value = snapshot.choiceRows
     if (typeof snapshot.correctIndex === 'number') correctIndex.value = snapshot.correctIndex
+    if (snapshot.correctIndexes) correctIndexes.value = snapshot.correctIndexes
     if (snapshot.statements) statements.value = snapshot.statements
     if (snapshot.answers) answers.value = snapshot.answers
+    if (snapshot.matchingLeftRows) matchingLeftRows.value = snapshot.matchingLeftRows
+    if (snapshot.matchingItems) matchingItems.value = snapshot.matchingItems
+    if (snapshot.matchingPairs) matchingPairs.value = snapshot.matchingPairs
+    if (snapshot.ordering) ordering.value = snapshot.ordering
+    // Draft lama bisa menyimpan pilihan yang barisnya sudah dikosongkan sejak
+    // itu (termasuk draft yang ditulis sebelum perbaikan ini) — samakan dulu
+    // dengan invariannya sebelum tutor melihatnya.
+    pruneOrdering()
   }
   catch {
     // Entri rusak — abaikan saja, biarkan form mulai kosong seperti biasa.
@@ -359,9 +666,16 @@ function clearDraft() {
  * ---------------------------------------------------------------------- */
 
 function submit(mode: 'save' | 'save-and-next') {
-  errorMessage.value = ''
+  validationFailure = null
   const draft = buildDraft()
-  if (!draft) return
+  if (!draft) {
+    const failure = takeValidationFailure()
+    if (failure) {
+      focusField(ANCHOR_REFS[failure.anchor].value)
+      toast.error('Soal belum bisa disimpan.', failure.message)
+    }
+    return
+  }
   clearDraft()
   if (mode === 'save') emit('save', draft)
   else emit('saveAndNext', draft)
@@ -438,19 +752,20 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </span>
     </AppSectionMessage>
 
-    <!-- Hanya relevan untuk exam type "Custom": subtesnya beda-beda kind,
-         jadi tutor perlu diingatkan tipe soal di sini terkunci. Untuk
-         template baku (SNBT/SKD/dst) semua subtes sudah satu kind yang
-         sama, jadi catatan ini cuma noise. -->
-    <div v-if="isCustom">
-      <span :class="FIELD_LABEL_CLASS">Tipe soal</span>
-      <p class="flex items-center gap-1.5 text-[0.9rem] text-muted">
-        <AppIcon name="lock-simple" :size="14" class="shrink-0 text-faint" />
-        <span>{{ kindLabel }}</span>
-      </p>
-      <p class="mt-1 text-[0.78rem] text-faint">
-        Tipe soal mengikuti pengaturan subtes ini dan tidak bisa diganti per soal.
-      </p>
+    <div class="max-w-xl">
+      <!-- Same control and wording as the section-level "Tipe soal bawaan"
+           (TutorCustomSections.vue), so the tutor reads the two as one
+           setting: the subtes sets the default, the soal may override it. -->
+      <AppSelect
+        :options="KIND_OPTIONS"
+        :model-value="kind"
+        label="Tipe soal"
+        @update:model-value="(value) => { if (isQuestionKind(value)) kind = value }"
+      />
+      <AppInlineMessage v-if="kindWarning" type="warning" class="mt-2">
+        {{ kindWarning }} Soal ini tetap bisa disimpan, tapi simulasinya jadi berbeda dari ujian aslinya.
+      </AppInlineMessage>
+      <p class="mt-2 text-[0.78rem] text-faint">Terisi otomatis dari tipe bawaan subtes, dan tiap soal boleh memakai tipe yang berbeda.</p>
     </div>
 
     <div>
@@ -481,7 +796,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </div>
     </div>
 
-    <div>
+    <div ref="promptBlockRef" class="scroll-mt-24">
       <span :class="FIELD_LABEL_CLASS">Pertanyaan</span>
       <RichTextEditor
         v-model="prompt"
@@ -490,14 +805,44 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       />
     </div>
 
-    <!-- single_choice & weighted: opsi A–E -->
-    <fieldset v-if="kind === 'single_choice' || kind === 'weighted'" class="grid gap-3">
+    <div ref="levelBlockRef" class="max-w-xs scroll-mt-24">
+      <!-- `invalid` sampai levelnya dipilih: kosong memang bukan nilai yang
+           sah di sini (lihat komentar di `cognitiveLevel`), dan pesannya sudah
+           dibawa toast validasi, jadi field cukup menandai dirinya. -->
+      <AppSelect
+        :options="COGNITIVE_LEVEL_OPTIONS"
+        :model-value="cognitiveLevel"
+        label="Level kognitif"
+        placeholder="Pilih level kognitif"
+        :invalid="cognitiveLevel === ''"
+        @update:model-value="(value) => { if (isCognitiveLevel(value)) cognitiveLevel = value }"
+      />
+      <p class="mt-2 text-[0.82rem] text-muted">
+        Menentukan rapor penguasaan L1/L2/L3 yang dilihat siswa setelah mengerjakan.
+      </p>
+    </div>
+
+    <!-- Choice-based kinds share the same option editor. -->
+    <fieldset v-if="choiceKind(kind)" ref="choicesBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">
-        {{ kind === 'single_choice' ? 'Opsi jawaban — tandai kunci yang benar' : 'Opsi jawaban + bobot (umumnya 1–5)' }}
+        {{ kind === 'weighted' ? 'Opsi jawaban + bobot (umumnya 1–5)' : kind === 'multiple_choice' ? 'Opsi jawaban — tandai semua kunci yang benar' : kind === 'ordering' ? 'Item yang akan diurutkan' : 'Opsi jawaban — tandai kunci yang benar' }}
       </legend>
 
       <div v-for="(row, index) in choiceRows" :key="row.letter" class="flex items-start gap-2.5">
-        <template v-if="kind === 'single_choice'">
+        <template v-if="kind === 'multiple_choice'">
+          <input
+            :id="`${uid}-correct-${row.letter}`"
+            v-model="correctIndexes"
+            type="checkbox"
+            :value="index"
+            :disabled="!stripHtmlToText(row.text)"
+            class="mt-3 h-4 w-4 shrink-0 accent-primary"
+          >
+          <label :for="`${uid}-correct-${row.letter}`" class="sr-only">
+            Kunci jawaban opsi {{ row.letter }}
+          </label>
+        </template>
+        <template v-else-if="correctChoiceKind(kind)">
           <input
             :id="`${uid}-correct-${row.letter}`"
             v-model="correctIndex"
@@ -524,10 +869,64 @@ function jumpBetweenOptions(event: KeyboardEvent) {
           class="flex-1"
         />
       </div>
+
+      <div v-if="kind === 'ordering'" class="grid gap-2">
+        <span :class="FIELD_LABEL_CLASS">Urutan yang benar</span>
+        <div v-for="(row, position) in filledChoiceRows" :key="`order-${row.letter}`" class="flex items-center gap-2">
+          <span class="w-6 text-sm font-bold text-muted">{{ position + 1 }}.</span>
+          <!-- Nama aksesibel sama persis dengan yang didengar siswa di
+               TryoutQuestion.vue ("Item urutan 1"), supaya tutor dan siswa
+               menyebut kontrol yang sama dengan istilah yang sama. -->
+          <AppSelect
+            :options="orderingOptions"
+            :model-value="ordering[position] ?? ''"
+            :aria-label="`Item urutan ${position + 1}`"
+            placeholder="Pilih item"
+            @update:model-value="(value) => { ordering[position] = String(value) }"
+          />
+        </div>
+      </div>
     </fieldset>
 
-    <!-- true_false: daftar pernyataan -->
-    <fieldset v-else-if="kind === 'true_false'" class="grid gap-3">
+    <!-- Matching pairs map each left prompt to one right-hand item. -->
+    <fieldset v-else-if="kind === 'matching'" ref="matchingBlockRef" class="grid scroll-mt-24 gap-3">
+      <legend :class="FIELD_LABEL_CLASS">Pasangan menjodohkan</legend>
+      <div v-for="(row, index) in matchingLeftRows" :key="row.label" class="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <TutorOptionField
+          :ref="(el) => { optionFieldRefs[index] = el as InstanceType<typeof TutorOptionField> | null }"
+          v-model:text="row.text"
+          :letter="row.label"
+          :row-index="index"
+          :placeholder="`Item kiri ${row.label}`"
+        />
+        <AppSelect
+          :options="matchingItemOptions"
+          :model-value="matchingPairs[row.label] ?? ''"
+          :aria-label="`Pasangan untuk item kiri ${row.label}`"
+          placeholder="Pilih pasangan"
+          @update:model-value="(value) => { matchingPairs[row.label] = String(value) }"
+        />
+      </div>
+      <div class="grid gap-2">
+        <span :class="FIELD_LABEL_CLASS">Item kanan</span>
+        <div v-for="(item, index) in matchingItems" :key="item.id" class="flex items-center gap-2">
+          <!-- aria-label, bukan cuma placeholder: placeholder hilang begitu
+               diketik, dan pola ini sudah dipakai daftar "Jawaban diterima". -->
+          <input
+            v-model="item.text"
+            type="text"
+            :class="FIELD_CLASS"
+            :aria-label="`Item kanan ${index + 1}`"
+            :placeholder="`Item kanan ${index + 1}`"
+          >
+          <button v-if="matchingItems.length > 2" type="button" class="shrink-0 text-[0.82rem] font-semibold text-danger hover:underline" @click="removeMatchingItem(index)">Hapus</button>
+        </div>
+        <button type="button" class="justify-self-start text-[0.86rem] font-semibold text-primary hover:underline" @click="addMatchingItem">+ Tambah item kanan</button>
+      </div>
+    </fieldset>
+
+    <!-- true_false: one key per statement. -->
+    <fieldset v-else-if="kind === 'true_false'" ref="statementsBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">Pernyataan (tentukan kunci Benar atau Salah)</legend>
 
       <div v-for="(statement, index) in statements" :key="index" class="flex items-start gap-2.5">
@@ -580,7 +979,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </fieldset>
 
     <!-- short_answer: daftar jawaban diterima -->
-    <fieldset v-else class="grid gap-2.5">
+    <fieldset v-else ref="answersBlockRef" class="grid scroll-mt-24 gap-2.5">
       <legend :class="FIELD_LABEL_CLASS">Jawaban yang diterima</legend>
 
       <div v-for="(answer, index) in answers" :key="index" class="flex items-center gap-2.5">
@@ -619,7 +1018,6 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       />
     </div>
 
-    <AppInlineMessage v-if="errorMessage" type="error">{{ errorMessage }}</AppInlineMessage>
 
     <div class="flex flex-wrap items-center gap-3">
       <AppButton type="submit" size="sm" :disabled="saving">

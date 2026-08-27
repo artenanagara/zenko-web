@@ -6,15 +6,21 @@ const sort = ref<SortKey>('featured')
 const { data: packages, pending, error } = usePackages(sort)
 const { data: testimonials } = useTestimonials()
 
-useHead({
+useSeoMeta({
   title: 'Paket Try Out Online SKD, BUMN, SNBT, dan TKA | Zenko',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Latihan try out online untuk SKD CPNS, BUMN, SNBT, dan TKA. Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
-    },
-  ],
+  description:
+    'Latihan try out online untuk SKD CPNS, BUMN, SNBT, dan TKA. Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
+  ogTitle: 'Paket Try Out Online SKD, BUMN, SNBT, dan TKA | Zenko',
+  ogDescription:
+    'Latihan try out online untuk SKD CPNS, BUMN, SNBT, dan TKA. Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
+  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ogUrl: 'https://zenkoedu.id/',
+  twitterCard: 'summary_large_image',
+})
+
+useHead({
+  link: [{ rel: 'canonical', href: 'https://zenkoedu.id/' }],
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(useOrganizationSchema()) }],
 })
 </script>
 

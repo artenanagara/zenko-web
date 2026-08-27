@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /dashboard
+Disallow: /akun
+Disallow: /masuk
+Disallow: /daftar
+Disallow: /lupa-password
+Disallow: /password-baru
+Disallow: /verifikasi-email

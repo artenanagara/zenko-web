@@ -103,6 +103,26 @@ export function useAuth() {
     }
   }
 
+  /**
+   * Signs out of every device: the API bumps the account's session_version,
+   * so all session cookies — including this device's — are rejected on the
+   * next request. That makes it a superset of signOut(), so it clears the
+   * local user the same way; the caller sends the reader somewhere public
+   * afterwards, exactly as it does after an ordinary sign-out.
+   */
+  async function signOutAllDevices() {
+    try {
+      await $fetch('/auth/logout-all', {
+        baseURL: config.apiBase,
+        method: 'POST',
+        credentials: 'include',
+      })
+    }
+    finally {
+      user.value = null
+    }
+  }
+
   return {
     user,
     isSignedIn,
@@ -112,6 +132,7 @@ export function useAuth() {
     signInWithEmail,
     registerWithEmail,
     signOut,
+    signOutAllDevices,
   }
 }
 

@@ -20,6 +20,34 @@ export function questionCompletionState(question: TutorQuestion): CompletionStat
       if (!options.some(o => o.isCorrect)) return 'incomplete'
       break
     }
+    case 'multiple_choice': {
+      const options = question.options ?? []
+      if (options.length < 2 || options.some(o => !stripHtmlToText(o.text))) return 'incomplete'
+      if (options.filter(o => o.isCorrect).length < 2) return 'incomplete'
+      break
+    }
+    case 'assertion_reason':
+    case 'associative_choice': {
+      const options = question.options ?? []
+      if (options.length < 2 || options.some(o => !stripHtmlToText(o.text))) return 'incomplete'
+      if (options.filter(o => o.isCorrect).length !== 1) return 'incomplete'
+      break
+    }
+    case 'matching': {
+      const left = question.options ?? []
+      const right = question.matching?.items ?? []
+      const pairs = question.matching?.pairs ?? {}
+      if (left.length < 2 || right.length !== left.length || left.some(o => !stripHtmlToText(o.text))) return 'incomplete'
+      if (left.some(o => !pairs[o.label] || !right.some(item => item.id === pairs[o.label] && stripHtmlToText(item.text)))) return 'incomplete'
+      break
+    }
+    case 'ordering': {
+      const options = question.options ?? []
+      const ordering = question.ordering ?? []
+      if (options.length < 2 || options.some(o => !stripHtmlToText(o.text))) return 'incomplete'
+      if (ordering.length !== options.length || new Set(ordering).size !== options.length || options.some(o => !ordering.includes(o.label))) return 'incomplete'
+      break
+    }
     case 'weighted': {
       const options = question.options ?? []
       if (options.length < 2) return 'incomplete'

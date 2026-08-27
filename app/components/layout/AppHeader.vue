@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { homePathFor } from '#shared/types/user'
-
 const { user, isSignedIn } = useAuth()
 const route = useRoute()
 
@@ -10,14 +8,6 @@ const NAV_LINKS = [
   { label: 'Tentang Kami', to: '/tentang' },
   { label: 'Jadi Tutor', to: '/jadi-tutor' },
 ] as const
-
-/**
- * Only tutors and admins have a dashboard; a student's own surfaces all live in
- * the account menu, so they get no link to a page that is not theirs.
- */
-const dashboardPath = computed(() =>
-  user.value && user.value.role !== 'student' ? homePathFor(user.value.role) : null,
-)
 
 const isScrolled = ref(false)
 
@@ -133,7 +123,13 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
   >
     <nav class="container-page flex min-h-16 items-center justify-between gap-2 md:min-h-20" aria-label="Navigasi utama">
       <div class="flex min-w-0 items-center gap-9">
-        <BrandMark img-class="h-9 sm:h-11 md:h-12 w-auto object-contain" />
+        <!-- 80% dari 36/44/48px sebelumnya. Nilai px eksplisit karena 20% tidak
+             mendarat di skala Tailwind mana pun; membulatkannya ke h-7/h-9
+             akan meleset sampai 4px di breakpoint md. Tinggi header sendiri
+             dipatok min-h-16/md:min-h-20, jadi mengecilkan logo tidak
+             menggeser apa pun yang menempel di bawahnya (strip tab profil
+             tutor memakai top-16/md:top-20). -->
+        <BrandMark img-class="h-[29px] sm:h-[35px] md:h-[38px] w-auto object-contain" />
 
         <div class="hidden items-center gap-7 font-medium text-muted md:flex">
           <NuxtLink
@@ -156,13 +152,6 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
         </a>
 
         <template v-if="isSignedIn && user">
-          <NuxtLink
-            v-if="dashboardPath"
-            :to="dashboardPath"
-            class="hidden rounded-xs px-3.5 py-2.5 font-semibold transition-colors hover:bg-surface-alt md:block"
-          >
-            Dashboard
-          </NuxtLink>
           <ProfileMenu :user="user" />
         </template>
 
@@ -229,14 +218,6 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
             class="flex min-h-12 items-center rounded-sm px-3 font-medium text-ink transition-colors hover:bg-surface-alt"
             active-class="bg-primary-soft font-semibold text-primary"
           >{{ link.label }}</NuxtLink>
-
-          <NuxtLink
-            v-if="dashboardPath"
-            :to="dashboardPath"
-            class="flex min-h-12 items-center rounded-sm px-3 font-medium text-ink transition-colors hover:bg-surface-alt"
-          >
-            Dashboard
-          </NuxtLink>
 
           <NuxtLink
             v-if="!isSignedIn"

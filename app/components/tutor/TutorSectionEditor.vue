@@ -24,8 +24,10 @@ import type { MenuItem } from '~/components/core/AppDropdownMenu.vue'
 const props = defineProps<{
   productId: string
   sections: TutorSection[]
-  /** Only "Custom" exam types mix question kinds across sections — the "Tipe soal" note in TutorQuestionForm is noise otherwise. */
+  /** The section default is used as the initial answer type for new questions. */
   isCustom?: boolean
+  /** Passed straight through to the question editor's TKA format check. */
+  examTypeSlug?: string
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -291,6 +293,7 @@ const activeSectionDotClass = computed(() =>
             :initial="questionBeingEdited(activeSection!)"
             :default-kind="activeSection!.defaultKind"
             :is-custom="isCustom"
+            :exam-type-slug="examTypeSlug"
             :saving="saving"
             :product-id="productId"
             :section-id="activeSection!.id"

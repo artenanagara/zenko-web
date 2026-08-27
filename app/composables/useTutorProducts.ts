@@ -33,7 +33,9 @@ export function useExamTypes() {
     default: () => [],
   })
 
-  return { data, pending, error }
+  const sortedData = computed(() => data.value.slice().sort((left, right) => left.label.localeCompare(right.label, 'id')))
+
+  return { data: sortedData, pending, error }
 }
 
 /** The caller's own products. Call `refresh()` from onMounted. */
@@ -363,7 +365,12 @@ export const PRODUCT_MODE_LABEL: Record<ProductMode, string> = {
 
 export const QUESTION_KIND_LABEL: Record<QuestionKind, string> = {
   single_choice: 'Pilihan ganda',
+  multiple_choice: 'Pilihan ganda kompleks',
   weighted: 'Berbobot (TKP)',
   true_false: 'Benar/Salah',
   short_answer: 'Isian singkat',
+  assertion_reason: 'Sebab-akibat',
+  associative_choice: 'Asosiatif',
+  matching: 'Menjodohkan',
+  ordering: 'Mengurutkan',
 }

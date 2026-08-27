@@ -9,7 +9,9 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { data: item, pending, error, refresh } = useOwnedPackage(route.params.slug as string)
+const slug = route.params.slug as string
+const { data: item, pending, error, refresh } = useOwnedPackage(slug)
+const reviews = useProductReviews(slug)
 
 useHead({
   title: computed(() => (item.value ? `${item.value.title} | Paket Saya | Zenko` : 'Paket Saya | Zenko')),
@@ -24,6 +26,66 @@ const stats = computed<PackageStats>(() => (item.value ? packageStats(item.value
 const attempts = computed(() =>
   item.value ? [...item.value.attempts].sort((a, b) => b.finishedAt - a.finishedAt) : [],
 )
+
+/** Percobaan terbaru — tujuan tombol "Lihat pembahasan" di header. */
+const latestAttempt = computed(() => attempts.value[0] ?? null)
+
+/* ------------------------------------------------------------------ ulasan */
+
+/**
+ * Modal ulasan hanya untuk satu momen: siswa baru saja menyelesaikan sesi dan
+ * menekan "Lihat progres paket" di layar ringkasan, yang menautkan ke sini
+ * dengan `?selesai=1`. Di luar itu halaman ini tidak menodong siapa pun —
+ * panel "Ulasanmu" di bawah tetap terbuka kapan saja.
+ *
+ * Yang sudah pernah mengulas dilewati sepenuhnya, sesuai aturan satu ulasan
+ * per paket: memperbarui ulasan adalah keputusan siswa, bukan sesuatu yang
+ * perlu ditanyakan ulang setiap kali selesai mengerjakan.
+ */
+const reviewModalOpen = ref(false)
+
+/** refreshMine() sudah selesai; sebelum itu "belum punya ulasan" belum tentu benar. */
+const myReviewLoaded = ref(false)
+
+/** Modal ini sekali seumur kunjungan, bahkan kalau datanya dimuat ulang. */
+const reviewPrompted = ref(false)
+
+const hasReviewed = computed(() => !!reviews.mine.value)
+
+onMounted(async () => {
+  await reviews.refreshMine()
+  myReviewLoaded.value = true
+})
+
+// Dua sumber data yang datang terpisah: ulasan sendiri dan detail paket
+// (yang menentukan sudah pernah dikerjakan atau belum). Menunggu keduanya di
+// satu effect lebih jujur daripada menebak mana yang selesai duluan.
+watchEffect(() => {
+  if (reviewPrompted.value || !myReviewLoaded.value) return
+  if (route.query.selesai !== '1') return
+  if (stats.value.attemptCount === 0 || hasReviewed.value) return
+
+  reviewPrompted.value = true
+  reviewModalOpen.value = true
+
+  // Buang penandanya supaya muat-ulang halaman tidak menodong ulang.
+  const { selesai: _dismissed, ...rest } = route.query
+  void navigateTo({ path: route.path, query: rest }, { replace: true })
+})
+
+/**
+ * Modal yang sama dipakai dua arah: ajakan setelah sesi selesai (di atas) dan
+ * tombol "Edit ulasan" pada ulasan yang sudah ada. Judulnya ikut berubah
+ * supaya siswa tahu mana yang sedang ia lakukan.
+ */
+function openReviewEditor() {
+  reviewModalOpen.value = true
+}
+
+async function onReviewSubmitted() {
+  reviewModalOpen.value = false
+  await reviews.refreshMine()
+}
 
 /** Selisih skor terhadap percobaan sebelumnya; null untuk percobaan pertama. */
 function scoreDelta(attempt: Attempt): number | null {
@@ -130,9 +192,24 @@ function barTone(percent: number) {
           </p>
         </div>
 
-        <AppButton :to="`/akun/paket/${item.slug}/kerjakan`" size="md" class="shrink-0">
-          {{ stats.attemptCount === 0 ? 'Mulai try out' : 'Kerjakan lagi' }}
-        </AppButton>
+        <!-- Pembahasan menunjuk percobaan terakhir. Riwayat di bawah tetap
+             menautkan pembahasan tiap percobaan satu per satu; yang di sini
+             adalah jalan pintas ke yang baru saja dikerjakan, karena itu yang
+             dicari orang begitu selesai. -->
+        <div class="flex shrink-0 flex-wrap items-center gap-2.5">
+          <AppButton
+            v-if="latestAttempt"
+            :to="`/akun/paket/${item.slug}/kerjakan/pembahasan/${latestAttempt.id}`"
+            variant="light"
+            size="md"
+            class="border border-hairline-strong shadow-none"
+          >
+            Lihat pembahasan
+          </AppButton>
+          <AppButton :to="`/akun/paket/${item.slug}/kerjakan`" size="md">
+            {{ stats.attemptCount === 0 ? 'Mulai try out' : 'Kerjakan lagi' }}
+          </AppButton>
+        </div>
       </header>
 
       <!-- Belum pernah dikerjakan: satu ajakan yang jelas lebih berguna daripada
@@ -223,6 +300,7 @@ function barTone(percent: number) {
                   <th class="pb-2.5 font-bold">Selisih</th>
                   <th class="pb-2.5 font-bold">Benar</th>
                   <th class="pb-2.5 font-bold">Peringkat</th>
+                  <th class="pb-2.5 font-bold" />
                 </tr>
               </thead>
               <tbody>
@@ -252,7 +330,15 @@ function barTone(percent: number) {
                   <td class="py-3.5 pr-4 text-[0.9rem] text-muted tabular-nums">
                     {{ accuracyOf(attempt).correct }}/{{ accuracyOf(attempt).total }}
                   </td>
-                  <td class="py-3.5 text-[0.9rem] text-muted tabular-nums">{{ attempt.rank }}</td>
+                  <td class="py-3.5 pr-4 text-[0.9rem] text-muted tabular-nums">{{ attempt.rank }}</td>
+                  <td class="py-3.5 text-right">
+                    <NuxtLink
+                      :to="`/akun/paket/${item.slug}/kerjakan/pembahasan/${attempt.id}`"
+                      class="text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
+                    >
+                      Lihat pembahasan
+                    </NuxtLink>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -291,10 +377,69 @@ function barTone(percent: number) {
                 {{ accuracyOf(attempt).correct }}/{{ accuracyOf(attempt).total }} benar
                 <template v-if="attempt.rank !== '—' && attempt.rank !== '-'"> · Peringkat {{ attempt.rank }}</template>
               </p>
+              <NuxtLink
+                :to="`/akun/paket/${item.slug}/kerjakan/pembahasan/${attempt.id}`"
+                class="mt-2.5 inline-block text-[0.86rem] font-semibold text-primary transition-colors hover:text-primary-light"
+              >
+                Lihat pembahasan
+              </NuxtLink>
             </li>
           </ul>
         </DashboardPanel>
+
+        <!-- Panel ulasan permanen: tempat siswa yang menutup modal tadi (atau
+             yang ingin memperbarui ulasannya) menyelesaikannya, tanpa harus
+             kembali ke halaman katalog publik. -->
+        <DashboardPanel
+          id="ulasan"
+          :title="hasReviewed ? 'Ulasanmu' : 'Beri ulasan'"
+          :description="hasReviewed
+            ? 'Ulasan ini tampil di halaman paket dan profil tutornya. Kamu bisa memperbaruinya kapan saja.'
+            : 'Bantu tutor dan siswa lain dengan menilai paket yang sudah kamu kerjakan.'"
+        >
+          <!-- Sudah pernah mengulas: yang tampil adalah ulasannya, bukan form
+               kosong kedua. Memperbaruinya lewat "Edit ulasan" di kartu itu,
+               yang membuka form yang sama di dalam modal. -->
+          <ProductReviewItem
+            v-if="reviews.mine.value"
+            :review="reviews.mine.value"
+            is-mine
+            @edit="openReviewEditor"
+          />
+          <ProductReviewForm
+            v-else
+            :slug="item.slug"
+            embedded
+            @submitted="onReviewSubmitted"
+          />
+        </DashboardPanel>
       </template>
+
+      <!-- Ajakan sekali jalan, tepat setelah sesi selesai. Isinya form yang
+           sama dengan panel di atas — satu sumber, dua tempat munculnya. -->
+      <AppModal
+        v-model="reviewModalOpen"
+        :title="hasReviewed ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman try out ini?'"
+        :description="hasReviewed
+          ? 'Ulasan yang tersimpan akan menggantikan versi sebelumnya.'
+          : 'Bantu tutor dan rekan pejuang lainnya dengan memberikan ulasan singkat.'"
+      >
+        <ProductReviewForm
+          :slug="item.slug"
+          :existing="reviews.mine.value"
+          embedded
+          @submitted="onReviewSubmitted"
+        />
+        <template #footer="{ close }">
+          <button
+            type="button"
+            class="text-[0.88rem] font-semibold text-muted transition-colors hover:text-ink"
+            @click="close"
+          >
+            {{ hasReviewed ? 'Batal' : 'Nanti saja' }}
+          </button>
+        </template>
+      </AppModal>
     </template>
   </div>
 </template>

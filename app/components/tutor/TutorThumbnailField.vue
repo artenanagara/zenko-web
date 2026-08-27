@@ -6,10 +6,11 @@
  * mengikuti panel gambar di TutorOptionField.vue.
  */
 const model = defineModel<string>({ default: '' })
+const props = defineProps<{ disabled?: boolean }>()
 
 const uid = useId()
 const uploading = ref(false)
-const uploadError = ref('')
+const toast = useToast()
 
 async function onFileSelected(event: Event) {
   const input = event.target as HTMLInputElement
@@ -18,12 +19,11 @@ async function onFileSelected(event: Event) {
   if (!file) return
 
   uploading.value = true
-  uploadError.value = ''
   try {
     model.value = await uploadTutorImage(file)
   }
   catch (cause) {
-    uploadError.value = tutorApiMessage(cause, 'Gagal mengunggah gambar.')
+    toast.error('Gagal mengunggah gambar.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     uploading.value = false
@@ -33,7 +33,11 @@ async function onFileSelected(event: Event) {
 
 <template>
   <div class="grid gap-3">
-    <label :for="`${uid}-url`" :class="FIELD_LABEL_CLASS">Thumbnail</label>
+    <!-- Judul sectionnya dipasang pemanggil (kolom kanan langkah Info
+         produk di TutorProductWizard.vue), jadi label ini tinggal
+         menamai input URL-nya untuk pembaca layar — kalau ikut tampil,
+         hasilnya dua judul beruntun yang mengatakan hal yang sama. -->
+    <label :for="`${uid}-url`" class="sr-only">Tautan thumbnail</label>
 
     <div v-if="model" class="aspect-[16/10] w-full max-w-80 overflow-hidden rounded-md border border-hairline bg-surface-alt">
       <img :src="model" alt="" class="h-full w-full object-cover">
@@ -52,14 +56,15 @@ async function onFileSelected(event: Event) {
         type="url"
         placeholder="https://..."
         class="h-10 min-w-0 flex-1 rounded-xs border border-line bg-surface px-3 text-[0.86rem]"
+        :disabled="props.disabled"
       >
-      <label class="inline-flex h-10 shrink-0 cursor-pointer items-center rounded-xs border border-line bg-surface px-3.5 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink">
+      <label class="inline-flex h-10 shrink-0 cursor-pointer items-center rounded-xs border border-line bg-surface px-3.5 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink" :class="props.disabled && 'pointer-events-none opacity-50'">
         {{ uploading ? 'Mengunggah…' : 'Unggah Gambar' }}
         <input
           type="file"
           accept="image/png,image/jpeg,image/gif,image/webp"
           class="hidden"
-          :disabled="uploading"
+          :disabled="uploading || props.disabled"
           @change="onFileSelected"
         >
       </label>
@@ -68,12 +73,12 @@ async function onFileSelected(event: Event) {
         type="button"
         class="shrink-0 text-[0.82rem] font-semibold text-danger hover:underline"
         @click="model = ''"
+        :disabled="props.disabled"
       >
         Hapus
       </button>
     </div>
 
     <p class="text-[0.82rem] text-muted">Opsional. Gambar sampul produk di katalog, rasio 16:10.</p>
-    <AppInlineMessage v-if="uploadError" type="error">{{ uploadError }}</AppInlineMessage>
   </div>
 </template>

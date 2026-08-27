@@ -1,15 +1,18 @@
-import type { QuestionDraft, QuestionImportDraft, QuestionKind, QuestionOption, TutorSection } from '#shared/types/tutor-product'
+import type { CognitiveLevel, QuestionDraft, QuestionImportDraft, QuestionKind, QuestionOption, TutorSection } from '#shared/types/tutor-product'
 
 /**
  * Parser CSV impor soal — per subtes (satu section per file) dan gabungan
  * (banyak subtes dalam satu file, lewat kolom `subtes` tambahan). Parse di
  * client, kirim batch/impor ke endpoint terkait.
  *
- * Header per subtes (kontrak, docs/tutor-flow-contract.md §6): tipe,wacana,
- * pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,
+ * Header per subtes (kontrak, docs/tutor-flow-contract.md §6): tipe,level,
+ * wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,
  * bobotA..bobotE,jawabanIsian. Header gabungan (§7.4): sama, ditambah kolom
  * pertama `subtes` (wajib, dicocokkan ke section.title di server). Kolom tak
- * terpakai boleh kosong. `tipe` menerima nilai Indonesia (pilihan_ganda,
+ * terpakai boleh kosong. `level` opsional (L1/L2/L3) supaya file lama tetap
+ * terimpor, tapi mengosongkannya berarti soal itu masuk L1 di server dan
+ * rapor level kognitif siswa jadi tidak berarti — lihat
+ * docs/plan-produk-tka-lengkap.md §6. `tipe` menerima nilai Indonesia (pilihan_ganda,
  * berbobot, benar_salah, isian_singkat) maupun alias Inggris (single_choice,
  * weighted, true_false, short_answer) — tapi harus sama dengan `defaultKind`
  * subtes tujuannya; server mengunci kind ke defaultKind section, jadi baris
@@ -44,6 +47,16 @@ const KIND_BY_CELL: Record<string, QuestionKind> = {
   true_false: 'true_false',
   isian_singkat: 'short_answer',
   short_answer: 'short_answer',
+  pilihan_ganda_kompleks: 'multiple_choice',
+  multiple_choice: 'multiple_choice',
+  sebab_akibat: 'assertion_reason',
+  assertion_reason: 'assertion_reason',
+  asosiatif: 'associative_choice',
+  associative_choice: 'associative_choice',
+  menjodohkan: 'matching',
+  matching: 'matching',
+  mengurutkan: 'ordering',
+  ordering: 'ordering',
 }
 
 type RowParseResult =
@@ -66,30 +79,30 @@ function wrapOptionCellHtml(cell: string): string {
  * persis untuk impor per subtes maupun gabungan, cuma diberi arti baris/kolom
  * `subtes` tambahan di pemanggil masing-masing.
  *
- * `expectedKind` adalah `defaultKind` subtes tujuan baris ini — server
- * mengunci kind soal ke defaultKind section-nya, jadi baris yang menyebut
- * kind lain ditolak di sini juga (bukan cuma setelah upload). `undefined`
- * kalau pemanggil belum bisa menentukan section baris ini (mis. impor
- * gabungan dengan `subtes` yang tidak cocok section manapun) — cek kind
- * dilewati saat itu, baris tetap dilaporkan lewat `problems` server.
+ * `expectedKind` is retained for callers that still pass the section default;
+ * answer type is now selected per row, so it is only used as a template hint.
  */
-function parseQuestionRow(cell: (name: string) => string, expectedKind: QuestionKind | undefined): RowParseResult {
+function parseQuestionRow(cell: (name: string) => string, _expectedKind: QuestionKind | undefined): RowParseResult {
   const kind = KIND_BY_CELL[cell('tipe').toLowerCase()]
   if (!kind) return { ok: false, error: `tipe "${cell('tipe')}" tidak dikenal.` }
-  if (expectedKind && kind !== expectedKind) {
-    return {
-      ok: false,
-      error: `tipe "${cell('tipe')}" tidak sesuai tipe subtes ini — harus "${TEMPLATE_KIND_CELL[expectedKind]}".`,
-    }
-  }
-
   const stimulus = cell('wacana')
   const prompt = cell('pertanyaan')
   const explanation = cell('pembahasan')
   if (!prompt) return { ok: false, error: 'kolom pertanyaan kosong.' }
   if (!explanation) return { ok: false, error: 'pembahasan wajib diisi.' }
 
-  const base = stimulus ? { stimulus } : {}
+  // Optional column: files written before `level` existed still import, and
+  // the server falls back to L1 for anything it is not told. Left blank on
+  // purpose here rather than defaulting to 'L1' in the parser — a silent L1 is
+  // what makes a cognitive report read "100% L1" for a paket nobody ever
+  // levelled. See docs/plan-produk-tka-lengkap.md §6.
+  const rawLevel = cell('level').toUpperCase()
+  if (rawLevel && !['L1', 'L2', 'L3'].includes(rawLevel)) {
+    return { ok: false, error: `level "${cell('level')}" tidak dikenal — isi L1, L2, atau L3.` }
+  }
+  const level = rawLevel ? { cognitiveLevel: rawLevel as CognitiveLevel } : {}
+
+  const base = { ...level, ...(stimulus ? { stimulus } : {}) }
   // Sel opsi CSV masih teks polos + `$..$` (tutor tidak bisa mengetik HTML
   // mentah di Excel) — tapi QuestionOption.text sekarang HTML kaya, kontrak
   // sama seperti Question.Prompt (lihat TutorOptionField.vue), jadi tiap sel
@@ -114,6 +127,21 @@ function parseQuestionRow(cell: (name: string) => string, expectedKind: Question
     if (options.length < 2) return { ok: false, error: 'minimal dua opsi terisi.' }
     if (!options.some(option => option.isCorrect)) {
       return { ok: false, error: 'kolom kunci harus salah satu huruf opsi yang terisi (A–E).' }
+    }
+    return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+  }
+
+  if (kind === 'multiple_choice' || kind === 'assertion_reason' || kind === 'associative_choice') {
+    const correct = new Set(cell('kunci').toUpperCase().split(/[;,]/).map(value => value.trim()).filter(Boolean))
+    const options: QuestionOption[] = []
+    OPTION_LETTERS.forEach((letter, at) => {
+      const optionText = optionTexts[at]
+      if (!optionText) return
+      options.push({ label: letter, text: optionText, isCorrect: correct.has(letter) })
+    })
+    const requiredCorrect = kind === 'multiple_choice' ? 2 : 1
+    if (options.length < 2 || options.filter(option => option.isCorrect).length < requiredCorrect) {
+      return { ok: false, error: kind === 'multiple_choice' ? 'kolom kunci harus memuat minimal dua huruf opsi.' : 'kolom kunci harus memuat satu huruf opsi.' }
     }
     return { ok: true, question: { kind, prompt, explanation, options, ...base } }
   }
@@ -151,6 +179,28 @@ function parseQuestionRow(cell: (name: string) => string, expectedKind: Question
       isCorrect: keys[at] === true,
     }))
     return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+  }
+
+  if (kind === 'matching') {
+    const rightItems = cell('jawabanisian').split(';').map((text, index) => ({ id: String(index + 1), text: text.trim() })).filter(item => item.text)
+    const leftOptions = optionTexts.map((text, index) => text ? { label: String(index + 1), text } : null).filter((option): option is QuestionOption => option !== null)
+    const pairs = Object.fromEntries(cell('kunci').split(';').map(pair => pair.split('=').map(value => value.trim())).filter(pair => pair.length === 2 && pair[0] && pair[1]))
+    if (leftOptions.length < 2 || rightItems.length !== leftOptions.length || leftOptions.some(option => !pairs[option.label])) {
+      return { ok: false, error: 'matching membutuhkan jumlah item kiri/kanan yang sama dan pasangan pada kolom kunci.' }
+    }
+    return { ok: true, question: { kind, prompt, explanation, options: leftOptions, matching: { items: rightItems, pairs }, ...base } }
+  }
+
+  if (kind === 'ordering') {
+    const options: QuestionOption[] = []
+    optionTexts.forEach((text, index) => {
+      if (text) options.push({ label: OPTION_LETTERS[index]!, text })
+    })
+    const ordering = cell('kunci').toUpperCase().split(/[;,]/).map(value => value.trim()).filter(Boolean)
+    if (options.length < 2 || ordering.length !== options.length || new Set(ordering).size !== options.length || options.some(option => !ordering.includes(option.label))) {
+      return { ok: false, error: 'ordering membutuhkan urutan semua label opsi pada kolom kunci.' }
+    }
+    return { ok: true, question: { kind, prompt, explanation, options, ordering, ...base } }
   }
 
   // isian_singkat
@@ -263,7 +313,7 @@ function parseTrueFalse(raw: string): boolean | null {
 }
 
 const CSV_TEMPLATE_HEADER = [
-  'tipe', 'wacana', 'pertanyaan', 'pembahasan',
+  'tipe', 'level', 'wacana', 'pertanyaan', 'pembahasan',
   'opsiA', 'opsiB', 'opsiC', 'opsiD', 'opsiE',
   'gambarOpsiA', 'gambarOpsiB', 'gambarOpsiC', 'gambarOpsiD', 'gambarOpsiE',
   'kunci', 'bobotA', 'bobotB', 'bobotC', 'bobotD', 'bobotE', 'jawabanIsian',
@@ -272,9 +322,14 @@ const CSV_TEMPLATE_HEADER = [
 /** Nilai kolom `tipe` yang diharapkan untuk tiap kind — dipakai template dan pesan error. */
 export const TEMPLATE_KIND_CELL: Record<QuestionKind, string> = {
   single_choice: 'pilihan_ganda',
+  multiple_choice: 'pilihan_ganda_kompleks',
   weighted: 'berbobot',
   true_false: 'benar_salah',
   short_answer: 'isian_singkat',
+  assertion_reason: 'sebab_akibat',
+  associative_choice: 'asosiatif',
+  matching: 'menjodohkan',
+  ordering: 'mengurutkan',
 }
 
 /**
@@ -282,9 +337,13 @@ export const TEMPLATE_KIND_CELL: Record<QuestionKind, string> = {
  * berisi `tipe` sesuai `defaultKind` subtes, supaya tutor tinggal isi.
  */
 export function buildQuestionCsvTemplate(section: Pick<TutorSection, 'defaultKind'>): string {
-  const exampleRow = CSV_TEMPLATE_HEADER.map(column =>
-    column === 'tipe' ? TEMPLATE_KIND_CELL[section.defaultKind] : '',
-  )
+  const exampleRow = CSV_TEMPLATE_HEADER.map((column) => {
+    if (column === 'tipe') return TEMPLATE_KIND_CELL[section.defaultKind]
+    // A filled-in example, not a blank: a level left empty imports as L1, and
+    // a whole file of those makes the cognitive report meaningless.
+    if (column === 'level') return 'L1'
+    return ''
+  })
   return [CSV_TEMPLATE_HEADER, exampleRow].map(row => row.map(csvCell).join(',')).join('\r\n')
 }
 
@@ -302,6 +361,7 @@ export function buildCombinedQuestionCsvTemplate(
     CSV_TEMPLATE_HEADER_COMBINED.map((column) => {
       if (column === 'subtes') return section.title
       if (column === 'tipe') return TEMPLATE_KIND_CELL[section.defaultKind]
+      if (column === 'level') return 'L1'
       return ''
     }),
   )
@@ -319,7 +379,7 @@ export function downloadCsvTemplate(section: Pick<TutorSection, 'title' | 'defau
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `template-soal-${slugifyFilename(section.title)}.csv`
+  link.download = `question-template-${slugifyFilename(section.title)}.csv`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

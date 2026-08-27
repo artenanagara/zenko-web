@@ -6,6 +6,7 @@ import IconHome from '~/components/icons/IconHome.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
 import IconSettings from '~/components/icons/IconSettings.vue'
 import IconUser from '~/components/icons/IconUser.vue'
+import IconUsers from '~/components/icons/IconUsers.vue'
 import IconWallet from '~/components/icons/IconWallet.vue'
 
 /** Roles that have a dashboard. A student's home is the account area instead. */
@@ -53,8 +54,21 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
     title: 'Dashboard admin',
     items: [
       { label: 'Ringkasan', to: '/dashboard/admin', icon: IconHome, exact: true },
-      { label: 'Pengajuan tutor', to: '/dashboard/admin/applications', icon: IconUser },
-      { label: 'Tutor', to: '/dashboard/admin/tutors', icon: IconGrid },
+      {
+        label: 'Tutor',
+        to: '/dashboard/admin/tutors',
+        icon: IconUser,
+        // Two distinct tables (pengajuan vs daftar tutor aktif), so one page
+        // each behind a sub-menu instead of top-level tabs — same shape as
+        // Rekening bank below. The roster child shares its path with the
+        // parent, hence `exact` — prefix matching would light it up on any
+        // future nested tutor route too.
+        children: [
+          { label: 'Pengajuan Tutor', to: '/dashboard/admin/applications' },
+          { label: 'Daftar Tutor', to: '/dashboard/admin/tutors', exact: true },
+        ],
+      },
+      { label: 'Daftar Siswa', to: '/dashboard/admin/students', icon: IconUsers },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
       { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet },
       {

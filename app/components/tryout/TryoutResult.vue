@@ -21,10 +21,21 @@ const props = withDefaults(
      */
     blueprint?: TryoutBlueprint | null
     answers?: Record<string, TryoutAnswerState>
+    /**
+     * Id of the attempt zenko-api just stored for this sitting — set once
+     * recordAttempt() resolves in the caller (see account/tryout.vue). Once
+     * present, "Lihat pembahasan" is a real page instead of the inline panel
+     * below: a persisted attempt is what makes it reopenable later from
+     * Riwayat pengerjaan, so there is nothing left for the inline panel to
+     * do. Null while the write is in flight or failed, and always null in
+     * `simulate` mode, which never calls recordAttempt at all (see
+     * TryoutSimulation.vue) — the inline panel is what simulate keeps using.
+     */
+    attemptId?: string | null
     /** Simulasi tutor/admin: sembunyikan tautan progres paket milik siswa. */
     simulate?: boolean
   }>(),
-  { blueprint: null, answers: () => ({}), simulate: false },
+  { blueprint: null, answers: () => ({}), attemptId: null, simulate: false },
 )
 
 const emit = defineEmits<{ retry: [] }>()
@@ -74,8 +85,25 @@ const reviewRows = computed<ReviewRow[]>(() => {
   return rows
 })
 
-const canReview = computed(() => reviewRows.value.length > 0)
+/**
+ * Two ways "Lihat pembahasan" can be reachable, mutually exclusive:
+ *
+ * - A real, persisted sitting (attemptId set): the button is a link to the
+ *   dedicated review page, reopenable later from Riwayat pengerjaan.
+ * - `simulate` (tutor/admin preview, or a real sitting whose write failed):
+ *   there is no attempt to link to, so the button falls back to the inline
+ *   panel below, built straight from the blueprint+answers already in memory.
+ */
+const canReview = computed(() => !!props.attemptId || (props.simulate && reviewRows.value.length > 0))
 const showReview = ref(false)
+
+function openReview() {
+  if (props.attemptId) {
+    void navigateTo(`/akun/paket/${props.packageSlug}/kerjakan/pembahasan/${props.attemptId}`)
+    return
+  }
+  showReview.value = !showReview.value
+}
 </script>
 
 <template>
@@ -116,16 +144,24 @@ const showReview = ref(false)
       </ul>
     </DashboardPanel>
 
+    <DashboardPanel v-if="result.cognitive" title="Analisis level kognitif" description="Performa berdasarkan tingkat berpikir pada soal yang dikerjakan.">
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div v-for="level in ['L1', 'L2', 'L3'] as const" :key="level" class="rounded-sm border border-hairline bg-surface-alt p-3.5">
+          <p class="text-[0.78rem] font-bold tracking-wide text-faint uppercase">{{ level }}</p>
+          <p class="mt-1 text-lg font-extrabold tabular-nums">
+            {{ result.cognitive[level].maxScore === 0 ? 0 : Math.round((result.cognitive[level].score / result.cognitive[level].maxScore) * 100) }}%
+          </p>
+          <p class="text-[0.78rem] text-muted">{{ result.cognitive[level].correct }} dari {{ result.cognitive[level].total }} tepat</p>
+        </div>
+      </div>
+    </DashboardPanel>
+
     <DashboardPanel
       v-if="canReview && showReview"
       id="pembahasan"
       title="Pembahasan"
       description="Semua soal sesi ini, lengkap dengan kunci jawaban dan penjelasan tutornya."
     >
-      <AccountNotice>
-        Pembahasan ini hanya tersedia sekarang — tidak bisa dibuka lagi lewat Riwayat pengerjaan.
-      </AccountNotice>
-
       <ul class="mt-4 grid gap-4">
         <li v-for="row in reviewRows" :key="row.question.id">
           <p
@@ -154,11 +190,11 @@ const showReview = ref(false)
       <AppButton
         v-if="canReview"
         size="lg"
-        :aria-expanded="showReview"
-        aria-controls="pembahasan"
-        @click="showReview = !showReview"
+        :aria-expanded="attemptId ? undefined : showReview"
+        :aria-controls="attemptId ? undefined : 'pembahasan'"
+        @click="openReview"
       >
-        {{ showReview ? 'Sembunyikan pembahasan' : 'Lihat pembahasan' }}
+        {{ !attemptId && showReview ? 'Sembunyikan pembahasan' : 'Lihat pembahasan' }}
       </AppButton>
       <AppButton
         size="lg"
@@ -167,9 +203,14 @@ const showReview = ref(false)
       >
         Kerjakan lagi
       </AppButton>
+      <!-- `selesai=1` is what tells the package page this visit is the one
+           straight after a sitting, which is when it offers the review modal.
+           Carrying it in the link rather than inferring it from "has attempts"
+           keeps the prompt to the moment the student actually just finished,
+           instead of every later visit to the page. -->
       <AppButton
         v-if="!simulate"
-        :to="`/akun/paket/${packageSlug}`"
+        :to="`/akun/paket/${packageSlug}?selesai=1`"
         variant="light"
         size="lg"
         class="border border-hairline-strong shadow-none"

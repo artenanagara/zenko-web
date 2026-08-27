@@ -196,8 +196,10 @@ async function exitSimulation() {
               :index="session.displayIndex.value"
               :total="session.displayTotal.value"
               :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
+              :value="session.answers.value[session.currentQuestion.value.id]?.value"
               :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
               @select="session.selectAnswer"
+              @answer="session.setAnswerValue"
             />
           </div>
 
@@ -211,7 +213,6 @@ async function exitSimulation() {
               :doubtful-count="session.doubtfulCount.value"
               :total-questions="session.displayTotal.value"
               :status-of="session.statusOf"
-              :label-of="session.labelOf"
               @jump="session.goTo"
             />
           </div>
@@ -239,7 +240,6 @@ async function exitSimulation() {
           :doubtful-count="session.doubtfulCount.value"
           :total-questions="session.displayTotal.value"
           :status-of="session.statusOf"
-          :label-of="session.labelOf"
           :is-last-section="session.isLastSection.value"
           @jump="session.goTo"
           @end-section="requestEndSection"

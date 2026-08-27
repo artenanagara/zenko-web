@@ -68,12 +68,9 @@ const bankAccountLast4 = computed(() => {
 const payoutModalOpen = ref(false)
 const amount = ref<number | null>(null)
 const payoutSubmitting = ref(false)
-const payoutError = ref('')
-const payoutSuccess = ref('')
+const toast = useToast()
 
 function openPayoutModal() {
-  payoutError.value = ''
-  payoutSuccess.value = ''
   amount.value = null
   payoutModalOpen.value = true
 }
@@ -99,22 +96,22 @@ const canRequestPayout = computed(() =>
 async function submitPayout() {
   if (!canRequestPayout.value || amount.value === null) return
 
-  payoutError.value = ''
-  payoutSuccess.value = ''
   payoutSubmitting.value = true
   try {
     await requestTutorPayout(amount.value)
-    payoutSuccess.value = 'Pengajuan pencairan berhasil dikirim. Tim kami akan memproses transfer dalam 1 sampai 3 hari kerja.'
     amount.value = null
+    // Closes straight away now the confirmation is a toast: the old code held
+    // the dialog open for 1.4s so an inline message had time to be read, which
+    // only delayed the balance card and history table already updating behind it.
+    payoutModalOpen.value = false
+    toast.success(
+      'Pengajuan pencairan terkirim.',
+      'Tim kami memproses transfernya dalam 1 sampai 3 hari kerja.',
+    )
     await Promise.all([refreshBalance(), refreshPayouts()])
-    // Brief success state so the confirmation actually registers, then close
-    // — the balance card and history table behind it are already live.
-    setTimeout(() => {
-      payoutModalOpen.value = false
-    }, 1400)
   }
   catch (cause) {
-    payoutError.value = tutorApiMessage(cause, 'Gagal mengajukan pencairan. Coba lagi sebentar lagi.')
+    toast.error('Gagal mengajukan pencairan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     payoutSubmitting.value = false
@@ -240,8 +237,6 @@ async function submitPayout() {
       :available-balance="balance.available"
       :minimum="PAYOUT_MINIMUM"
       :amount-error="amountError"
-      :payout-error="payoutError"
-      :payout-success="payoutSuccess"
       :submitting="payoutSubmitting"
       :can-submit="canRequestPayout"
       @submit="submitPayout"
