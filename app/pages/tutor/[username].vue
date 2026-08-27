@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import type { Author } from '#shared/types/catalog'
+
 definePageMeta({ path: '/tutor/:username()' })
 
 const route = useRoute()
+const router = useRouter()
 const username = String(route.params.username)
 const tutor = await usePublicTutor(username)
 const tutorReviews = usePublicTutorReviews(username)
@@ -10,87 +13,185 @@ const displayName = computed(() => tutor.value.name || profile.value.displayName
 const avatarUrl = computed(() => tutor.value.avatarUrl || profile.value.avatarUrl)
 const canonicalUrl = computed(() => `https://zenkoedu.id/tutor/${tutor.value.username || username}`)
 
+/**
+ * `public_tutors.go` already sends live products only; the filter is a cheap
+ * guard so a future API change can never leak a draft into a public grid.
+ */
+const products = computed(() => tutor.value.products.filter(item => item.status === 'live'))
+
+/**
+ * Every card in the Produk tab is by this tutor, so the author the catalogue's
+ * PackageCard expects is assembled once here rather than per product.
+ *
+ * `username` is deliberately blank. PackageCard links the author name to
+ * `/tutor/:username`, which on this page is the page you are already on —
+ * twelve links back to themselves, and twelve extra tab stops that go nowhere.
+ * PackageCard already renders a blank username as plain text (that is how
+ * seeded packages behave), so this needs no change on its side.
+ */
+const cardAuthor = computed<Author>(() => ({
+  name: displayName.value,
+  avatarUrl: avatarUrl.value,
+  username: '',
+}))
+
+/**
+ * The links a visitor can actually follow, built from the fields that are
+ * filled in — nothing here renders a dead icon for a URL the tutor never gave.
+ */
+const links = computed(() => [
+  { key: profile.value.websiteUrl, label: 'Website', icon: 'globe' },
+  { key: profile.value.portfolioUrl, label: 'Portofolio', icon: 'briefcase' },
+  { key: profile.value.instagramUrl, label: 'Instagram', icon: 'instagram-logo' },
+  { key: profile.value.tiktokUrl, label: 'TikTok', icon: 'tiktok-logo' },
+  { key: profile.value.youtubeUrl, label: 'YouTube', icon: 'youtube-logo' },
+  { key: profile.value.linkedinUrl, label: 'LinkedIn', icon: 'linkedin-logo' },
+].filter(link => !!link.key).map(link => ({ label: link.label, href: link.key, icon: link.icon })))
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+
+const TAB_IDS = ['produk', 'tentang', 'ulasan'] as const
+const DEFAULT_TAB = 'produk'
+
+function normalizeTab(value: unknown): string {
+  return TAB_IDS.includes(String(value) as typeof TAB_IDS[number]) ? String(value) : DEFAULT_TAB
+}
+
+// Read on setup, not onMounted, so a shared `?tab=ulasan` link renders the
+// right panel server-side instead of flashing Produk first.
+const activeTab = ref(normalizeTab(route.query.tab))
+
+const tabs = computed(() => [
+  { id: 'produk', label: 'Produk', count: products.value.length },
+  { id: 'tentang', label: 'Tentang' },
+  { id: 'ulasan', label: 'Ulasan', count: tutor.value.stats.ratingCount },
+])
+
+// Back/forward and in-page selection have to agree. `replace` keeps a tab
+// switch out of the history stack — it isn't a navigation the back button
+// should have to walk through one entry at a time.
+watch(() => route.query.tab, value => (activeTab.value = normalizeTab(value)))
+watch(activeTab, (tab) => {
+  if (normalizeTab(route.query.tab) === tab) return
+  const query = { ...route.query, tab: tab === DEFAULT_TAB ? undefined : tab }
+  void router.replace({ query })
+})
+
+const tabStrip = ref<HTMLElement | null>(null)
+
+/**
+ * Reached from the hero CTA and the stat pills. Scrolling puts the panel in
+ * view, otherwise clicking "Lihat paket" from a tall hero looks like nothing
+ * happened. `scrollIntoView()` without an explicit behavior inherits the
+ * global `scroll-behavior`, which is already switched off under
+ * prefers-reduced-motion.
+ */
+function goToTab(tab: string) {
+  activeTab.value = normalizeTab(tab)
+  nextTick(() => tabStrip.value?.scrollIntoView({ block: 'start' }))
+}
+
 onMounted(() => tutorReviews.refresh())
+
+/* ── SEO ───────────────────────────────────────────────────────────────── */
+
+const metaDescription = computed(() =>
+  (profile.value.bio || `Profil tutor ${displayName.value} di Zenko.`).slice(0, 160),
+)
 
 useSeoMeta({
   title: `${displayName.value} | Tutor Zenko`,
-  description: profile.value.bio || `Profil tutor ${displayName.value} di Zenko.`,
+  description: metaDescription.value,
   ogTitle: `${displayName.value} | Tutor Zenko`,
-  ogDescription: profile.value.bio || `Profil tutor ${displayName.value} di Zenko.`,
+  ogDescription: metaDescription.value,
   ogImage: avatarUrl.value || undefined,
   ogUrl: canonicalUrl.value,
 })
-useHead({ link: [{ rel: 'canonical', href: canonicalUrl.value }] })
+
+// Person, not Organization: this page is one human's public profile. `sameAs`
+// only carries links the tutor actually filled in.
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: displayName.value,
+  url: canonicalUrl.value,
+  ...(avatarUrl.value ? { image: avatarUrl.value } : {}),
+  ...(profile.value.bio ? { description: profile.value.bio } : {}),
+  ...(profile.value.specializations.length ? { knowsAbout: profile.value.specializations } : {}),
+  ...(links.value.length ? { sameAs: links.value.map(link => link.href) } : {}),
+}
+
+useHead({
+  link: [{ rel: 'canonical', href: canonicalUrl.value }],
+  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(personJsonLd) }],
+})
 </script>
 
 <template>
   <main>
-    <section class="border-b border-line bg-surface-alt">
-      <div class="container-page py-10 md:py-14">
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <img v-if="avatarUrl" :src="avatarUrl" :alt="`Foto ${displayName}`" class="h-24 w-24 rounded-full object-cover ring-4 ring-surface">
-          <span v-else class="inline-flex h-24 w-24 items-center justify-center rounded-full bg-primary-soft text-3xl font-bold text-primary">{{ displayName.charAt(0).toUpperCase() }}</span>
-          <div>
-            <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-[clamp(1.8rem,4vw,2.6rem)] tracking-[-0.04em]">{{ displayName }}</h1>
-              <span v-if="tutor.verified" class="rounded-pill bg-success-soft px-2.5 py-1 text-[0.76rem] font-bold text-success-ink">Tutor terverifikasi</span>
-            </div>
-            <p v-if="profile.specializations.length" class="mt-2 text-muted">{{ profile.specializations.join(' · ') }}</p>
-            <div class="mt-4 flex flex-wrap gap-5 text-[0.88rem] text-muted">
-              <span><strong class="text-ink">{{ tutor.stats.activePackages }}</strong> paket aktif</span>
-              <span><strong class="text-ink">{{ tutor.stats.ratingCount ? tutor.stats.ratingAverage.toFixed(1) : '—' }}</strong> rating</span>
-            </div>
-          </div>
-        </div>
+    <TutorProfileHero
+      :tutor="tutor"
+      :display-name="displayName"
+      :avatar-url="avatarUrl"
+      @select-tab="goToTab"
+    />
+
+    <!-- Sticky under the header (64px, 80px from md) so the section switcher
+         stays reachable down a long product grid. z-30 keeps it below the
+         header (z-50) and the mobile nav overlay (z-40). -->
+    <div
+      ref="tabStrip"
+      class="sticky top-16 z-30 scroll-mt-16 border-b border-line bg-surface/95 backdrop-blur-md md:top-20 md:scroll-mt-20"
+    >
+      <!-- Top padding only: the tabs' own bottom border has to land on this
+           wrapper's border-b, so any bottom padding would float the active
+           underline above the rule instead of on it. -->
+      <div class="container-page pt-3">
+        <TutorProfileTabs v-model="activeTab" :tabs="tabs" aria-label="Bagian profil tutor" />
       </div>
-    </section>
+    </div>
 
-    <section class="container-page grid gap-10 py-10 md:py-14 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
-      <article class="grid content-start gap-7">
-        <div>
-          <h2 class="text-[1.25rem] font-bold">Tentang pengajar</h2>
-          <p class="mt-3 whitespace-pre-line leading-[1.75] text-muted">{{ profile.bio || 'Tutor ini belum menambahkan bio.' }}</p>
-        </div>
-        <div v-if="profile.education || profile.experience" class="grid gap-4 border-t border-line pt-6">
-          <div v-if="profile.education"><h3 class="font-semibold">Pendidikan</h3><p class="mt-1 text-muted">{{ profile.education }}</p></div>
-          <div v-if="profile.experience"><h3 class="font-semibold">Pengalaman</h3><p class="mt-1 whitespace-pre-line text-muted">{{ profile.experience }}</p></div>
-        </div>
-        <div v-if="profile.websiteUrl || profile.instagramUrl || profile.tiktokUrl || profile.linkedinUrl || profile.youtubeUrl" class="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-6 text-[0.88rem] font-semibold">
-          <a v-if="profile.websiteUrl" :href="profile.websiteUrl" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">Website</a>
-          <a v-if="profile.instagramUrl" :href="profile.instagramUrl" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">Instagram</a>
-          <a v-if="profile.tiktokUrl" :href="profile.tiktokUrl" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">TikTok</a>
-          <a v-if="profile.linkedinUrl" :href="profile.linkedinUrl" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">LinkedIn</a>
-          <a v-if="profile.youtubeUrl" :href="profile.youtubeUrl" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">YouTube</a>
-        </div>
-      </article>
-
-      <section>
-        <div class="flex items-end justify-between gap-4"><div><h2 class="text-[1.25rem] font-bold">Paket try out</h2><p class="mt-1 text-[0.88rem] text-muted">Paket aktif yang dibuat {{ displayName }}.</p></div></div>
-        <div v-if="tutor.products.length" class="mt-5 grid gap-5 sm:grid-cols-2">
-          <NuxtLink v-for="item in tutor.products" :key="item.id" :to="`/paket/${item.slug}`" class="group rounded-lg border border-hairline bg-surface p-3 transition-shadow hover:shadow-lift">
-            <img :src="item.thumbnailUrl" :alt="`Thumbnail ${item.title}`" class="aspect-16/10 w-full rounded-md bg-surface-alt object-cover">
-            <p class="mt-3 clamp-2 font-bold leading-[1.35]">{{ item.title }}</p>
-            <p class="mt-2 text-[0.82rem] text-muted">{{ item.category }} · {{ item.questionCount }} soal</p>
-            <p class="mt-3 font-bold text-primary">{{ item.price > 0 ? formatRupiah(item.price) : 'Gratis' }}</p>
-          </NuxtLink>
-        </div>
-        <div v-else class="mt-5 rounded-lg border border-dashed border-line px-5 py-10 text-center text-muted">Belum ada paket yang tayang.</div>
-      </section>
-    </section>
-
-    <section class="border-t border-line bg-surface-alt py-10 md:py-14">
-      <div class="container-page">
-        <h2 class="text-[1.25rem] font-bold">Ulasan siswa</h2>
-        <div v-if="tutorReviews.data.value.length" class="mt-5 grid max-w-180 gap-4">
-          <article v-for="review in tutorReviews.data.value" :key="review.id" class="rounded-md border border-hairline bg-surface p-4">
-            <div class="flex items-center justify-between gap-3"><span class="font-semibold">{{ review.isAnonymous ? 'Siswa anonim' : review.authorName }}</span><span class="text-star">{{ '★'.repeat(review.rating) }}</span></div>
-            <p v-if="review.productTitle" class="mt-1 text-[0.8rem] text-muted">{{ review.productTitle }}</p>
-            <p v-if="review.reviewText" class="mt-2 leading-[1.65] text-muted">{{ review.reviewText }}</p>
-            <p v-if="review.tutorReplyText" class="mt-3 border-l-2 border-primary/30 pl-3 text-[0.86rem] text-muted"><span class="font-semibold text-ink">Balasan tutor:</span> {{ review.tutorReplyText }}</p>
-          </article>
-        </div>
-        <p v-else class="mt-4 text-muted">Belum ada ulasan publik.</p>
+    <!-- v-show, not v-if: the reviews fetch runs once on mount, and unmounting
+         the panel would throw that result away on every tab round-trip. -->
+    <div class="container-page py-8 md:py-12">
+      <div
+        v-show="activeTab === 'produk'"
+        id="tutor-panel-produk"
+        role="tabpanel"
+        aria-labelledby="tutor-tab-produk"
+        tabindex="0"
+      >
+        <TutorProfileProducts :items="products" :author="cardAuthor" :tutor-name="displayName" />
       </div>
-    </section>
+
+      <div
+        v-show="activeTab === 'tentang'"
+        id="tutor-panel-tentang"
+        role="tabpanel"
+        aria-labelledby="tutor-tab-tentang"
+        tabindex="0"
+      >
+        <TutorProfileAbout :profile="profile" :tutor-name="displayName" :links="links" />
+      </div>
+
+      <div
+        v-show="activeTab === 'ulasan'"
+        id="tutor-panel-ulasan"
+        role="tabpanel"
+        aria-labelledby="tutor-tab-ulasan"
+        tabindex="0"
+      >
+        <TutorProfileReviews
+          :reviews="tutorReviews.data.value"
+          :pending="tutorReviews.pending.value"
+          :failed="tutorReviews.error.value"
+          :rating-average="tutor.stats.ratingAverage"
+          :rating-count="tutor.stats.ratingCount"
+          :tutor-name="displayName"
+          :has-products="products.length > 0"
+          @retry="tutorReviews.refresh()"
+        />
+      </div>
+    </div>
   </main>
 </template>

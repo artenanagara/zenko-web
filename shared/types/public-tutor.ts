@@ -31,6 +31,10 @@ export interface PublicTutorProduct {
   status: ProductStatus
   questionCount: number
   questionTarget: number
+  /** Average of this product's published reviews; 0 when it has none yet. */
+  rating: number
+  /** Times taken, already formatted for display ("0", "740", "1.2rb"). */
+  attemptLabel: string
   updatedAt: number
 }
 
