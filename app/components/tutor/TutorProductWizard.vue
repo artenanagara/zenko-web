@@ -153,6 +153,16 @@ const derivedCategory = computed(() => {
   return detail.value?.category || selectedExamType.value?.category || ''
 })
 
+/**
+ * Angka template yang terakhir kali diisikan sendiri oleh wizard ke dua field
+ * di bawah. Ini yang membedakan "angka ini datang dari template" dari "angka
+ * ini diketik tutor" — lihat prefill di bawah.
+ */
+const appliedTemplate = reactive({
+  questionTarget: null as number | null,
+  durationMinutes: null as number | null,
+})
+
 // A stale subtest choice from a previous exam type (or from switching back to
 // Simulasi) must never leak into a later mini-tryout submission.
 watch([() => form.examTypeSlug, () => form.mode], () => {
@@ -160,13 +170,34 @@ watch([() => form.examTypeSlug, () => form.mode], () => {
   form.sectionTitle = ''
   form.questionTarget = null
   form.durationMinutes = null
+  appliedTemplate.questionTarget = null
+  appliedTemplate.durationMinutes = null
 })
 
+/**
+ * Memilih subtes mengisikan angka template sebagai titik awal — tapi hanya ke
+ * field yang masih memegang angka template itu (atau masih kosong). Begitu
+ * tutor mengetik angkanya sendiri, angka itu bertahan: mengganti subtes, atau
+ * memilih subtes setelah angkanya terlanjur diketik, tidak boleh menimpanya.
+ *
+ * Ini bug yang dilaporkan sebagai "jumlah soal custom, tapi di isi soal masih
+ * sesuai template": versi lama menimpa kedua field tanpa syarat setiap kali
+ * `sectionTitle` berubah, jadi tutor yang mengetik "35" lebih dulu lalu memilih
+ * subtes diam-diam kembali ke 30 — dan angka template itulah yang terkirim ke
+ * POST /tutor/products. Durasi lewat jalur yang sama persis, jadi ikut kena.
+ */
 watch(() => form.sectionTitle, (title) => {
   const section = selectedExamType.value?.sections.find(item => item.title === title)
   if (!section || (isEdit.value && detail.value?.sections?.[0]?.title === title)) return
-  form.questionTarget = section.questionTarget
-  form.durationMinutes = section.durationMinutes
+
+  if (form.questionTarget === null || form.questionTarget === appliedTemplate.questionTarget) {
+    form.questionTarget = section.questionTarget
+  }
+  if (form.durationMinutes === null || form.durationMinutes === appliedTemplate.durationMinutes) {
+    form.durationMinutes = section.durationMinutes
+  }
+  appliedTemplate.questionTarget = section.questionTarget
+  appliedTemplate.durationMinutes = section.durationMinutes
 })
 
 const PRODUCT_TYPE_OPTIONS: { value: ProductType, label: string }[] = [
@@ -200,12 +231,23 @@ const electiveModeWarning = computed(() =>
     : '',
 )
 
-const sectionTitleOptions = computed(() =>
-  (selectedExamType.value?.sections ?? []).map(section => ({
+/**
+ * Pilihan subtes untuk mode mini try out.
+ *
+ * Saat edit, subtesnya sudah terkunci dan yang perlu tampil hanya subtes milik
+ * produk ini — tanpa angka template di labelnya, karena angka produk boleh
+ * berbeda dari template (justru itu inti fitur "jumlah soal custom"), dan
+ * menempelkan angka template di sini akan berbohong tentang isi produknya.
+ */
+const sectionTitleOptions = computed(() => {
+  const savedSection = isEdit.value ? detail.value?.sections?.[0] : null
+  if (savedSection) return [{ value: savedSection.title, label: savedSection.title }]
+
+  return (selectedExamType.value?.sections ?? []).map(section => ({
     value: section.title,
     label: `${section.title} (${section.questionTarget} soal · ${section.durationMinutes} menit)`,
-  })),
-)
+  }))
+})
 
 // AppSelect works in plain string|number; narrow its `update:modelValue`
 // back onto these typed fields instead of casting.
@@ -301,6 +343,36 @@ const LOCKED_EXPLANATION: Partial<Record<TutorProductDetail['status'], string>> 
   live: 'Produk sudah tayang. Hanya harga yang masih bisa diubah; field lain terkunci karena produk sudah dibeli dan tampil di katalog.',
   archived: 'Produk sudah diarsipkan dan tidak tampil di katalog.',
 }
+
+/**
+ * Kalimat "kenapa terkunci" untuk status produk saat ini, dipasang di atas
+ * seluruh langkah wizard.
+ *
+ * Sebelumnya LOCKED_EXPLANATION hanya terpakai di cabang `!canEditProduct`
+ * (review/archived) — padahal justru status `live` yang tetap membuka wizard
+ * sambil mengunci hampir semua field, jadi satu-satunya status yang benar-benar
+ * butuh penjelasan ini malah tidak pernah menampilkannya.
+ *
+ * Untuk `live` kalimatnya ditulis ulang saat PRICE_INPUT_DISABLED menyala:
+ * kalimat aslinya menjanjikan "hanya harga yang masih bisa diubah", dan itu
+ * tidak benar selama input harganya sendiri ikut dimatikan.
+ */
+const statusLockNotice = computed(() => {
+  if (!isEdit.value || !detail.value) return ''
+  if (detail.value.status === 'live' && PRICE_INPUT_DISABLED) {
+    return 'Produk sudah tayang, jadi field-nya terkunci karena produk sudah dibeli dan tampil di katalog. '
+      + 'Harga pun belum bisa diubah selama pembayaran belum tersedia.'
+  }
+  return LOCKED_EXPLANATION[detail.value.status] ?? ''
+})
+
+/**
+ * Apakah ada field yang terkunci oleh status produk (bukan oleh urutan
+ * langkah). Dipakai untuk memutuskan apakah penjelasan di atas perlu tampil.
+ */
+const hasStatusLockedFields = computed(() =>
+  isEdit.value && !(['title', 'price', 'priceOriginal', 'section', 'details'] as const).every(isFieldEditable),
+)
 
 /* ------------------------------------------------------------ save state */
 
@@ -863,6 +935,17 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
         {{ detail.rejectReason }}. Silakan sesuaikan materi soal, lalu ajukan kembali.
       </AppAlert>
 
+      <!-- Kenapa field-field di bawah tampil abu-abu dan tidak bisa diisi.
+           Ini soal STATUS produk; penjelasan "terkunci karena sudah dibuat"
+           (tipe/kategori/jenis/subtes) berdiri sendiri di langkah 1. -->
+      <AppAlert
+        v-if="hasStatusLockedFields && statusLockNotice"
+        variant="info"
+        title="Sebagian field terkunci"
+      >
+        {{ statusLockNotice }}
+      </AppAlert>
+
       <!-- Step nav -->
       <ol class="flex flex-wrap gap-2" aria-label="Langkah wizard">
         <li v-for="item in STEPS" :key="item.n">
@@ -890,9 +973,13 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
       <DashboardPanel v-if="step === 1">
         <div class="grid max-w-160 gap-5">
           <!-- The selects below are disabled in edit mode; without this the
-               only cue is that they don't respond. -->
+               only cue is that they don't respond. Terkunci di sini bukan
+               karena status produk (lihat pemberitahuan di atas wizard) tapi
+               karena bentuk produknya sudah terlanjur dibuat: server pun
+               menolak mengubahnya. -->
           <AppInlineMessage v-if="isEdit" type="info">
-            Tipe dan kategori ujian terkunci setelah produk dibuat.
+            Tipe, kategori ujian, jenis ujian, dan subtes terkunci setelah produk dibuat.
+            Jumlah soal dan durasi masih bisa disesuaikan selama produk berstatus draft.
           </AppInlineMessage>
 
           <div>
@@ -918,11 +1005,17 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
               <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
                 Gagal memuat kategori ujian. Muat ulang halaman untuk mencoba lagi.
               </p>
+              <!-- Namanya lewat `aria-label`, bukan prop `label`: label yang
+                   tampak adalah <span> di atas, dan di antara keduanya ada
+                   state memuat/gagal. Memindahkannya ke dalam AppSelect akan
+                   menghilangkan label itu justru saat memuat/gagal, karena
+                   selectnya sendiri belum dirender. -->
               <AppSelect
                 v-else
                 :options="examTypeOptions"
                 :model-value="form.examTypeSlug"
                 :disabled="isEdit"
+                aria-label="Kategori ujian"
                 placeholder="Pilih kategori ujian"
                 @update:model-value="(value) => { form.examTypeSlug = String(value) }"
               />
@@ -946,20 +1039,14 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
             </div>
 
             <div v-if="form.mode === 'mini_tryout' && selectedExamType?.sections.length" ref="sectionBlockRef" class="scroll-mt-24">
-              <template v-if="isEdit">
-                <label for="product-section-title" :class="FIELD_LABEL_CLASS">Subtes</label>
-                <input
-                  id="product-section-title"
-                  type="text"
-                  :value="detail?.sections?.[0]?.title ?? ''"
-                  readonly
-                  :class="[FIELD_CLASS, 'bg-surface-sunken text-muted']"
-                >
-              </template>
+              <!-- Satu kontrol untuk kedua keadaan: saat edit ini AppSelect
+                   yang disabled, bukan input readonly yang menyamar jadi
+                   select. Tutor melihat field yang sama dengan saat membuat,
+                   hanya terkunci. -->
               <AppSelect
-                v-else
                 :options="sectionTitleOptions"
                 :model-value="form.sectionTitle"
+                :disabled="isEdit"
                 label="Subtes"
                 placeholder="Pilih subtes"
                 @update:model-value="(value) => { form.sectionTitle = String(value) }"
@@ -988,140 +1075,158 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
 
       <!-- ================================================ Langkah 2: Info produk -->
       <DashboardPanel v-else-if="step === 2">
-        <div class="grid max-w-160 gap-5">
-          <FormField
-            id="product-title"
-            v-model="form.title"
-            label="Judul"
-            placeholder="Contoh: Try Out SNBT Lengkap 2026"
-            :disabled="!isFieldEditable('title')"
-          />
-
-          <div>
-            <label for="product-description" :class="FIELD_LABEL_CLASS">Deskripsi</label>
-            <textarea
-              id="product-description"
-              v-model="form.description"
-              rows="4"
-              placeholder="Jelaskan isi try-out, untuk siapa, dan apa yang membedakannya."
-              class="resize-y"
-              :class="FIELD_CLASS"
-              :disabled="!isFieldEditable('details')"
+        <!-- Dua kolom: form di kiri, thumbnail sebagai section sendiri di
+             kanan. `items-start` menahan kedua kolom di puncaknya — tanpa itu
+             item grid meregang setinggi baris dan `sticky` tidak punya ruang
+             untuk bergerak. Di bawah 1024px keduanya menumpuk mengikuti urutan
+             DOM: form dulu, thumbnail sesudahnya (thumbnail opsional, jadi
+             tidak pantas mendorong judul/deskripsi ke bawah layar). -->
+        <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div class="grid max-w-160 gap-5">
+            <FormField
+              id="product-title"
+              v-model="form.title"
+              label="Judul"
+              placeholder="Contoh: Try Out SNBT Lengkap 2026"
+              :disabled="!isFieldEditable('title')"
             />
-          </div>
 
-          <TutorThumbnailField v-model="form.thumbnailUrl" :disabled="!isFieldEditable('details')" />
-
-          <div ref="includesBlockRef" class="scroll-mt-24">
-            <span :class="FIELD_LABEL_CLASS">Yang kamu dapatkan</span>
-            <p class="-mt-1 mb-3 text-[0.82rem] text-muted">Pilih minimal satu manfaat yang benar-benar tersedia di paket ini.</p>
-            <div class="grid gap-2.5">
-              <label
-                v-for="option in includeOptions"
-                :key="option.label"
-                class="flex items-start gap-3 rounded-sm border border-hairline bg-surface px-3.5 py-3 text-[0.9rem]"
-                :class="!isFieldEditable('details') && 'opacity-60'"
-              >
-                <input
-                  type="checkbox"
-                  class="mt-0.5 h-4 w-4 accent-primary"
-                  :checked="form.includes.includes(option.label)"
-                  :disabled="!isFieldEditable('details')"
-                  @change="toggleInclude(option.label)"
-                >
-                <span>{{ option.label }}</span>
-              </label>
-            </div>
-            <div class="mt-3 flex gap-2">
-              <input
-                v-model="customInclude"
-                type="text"
-                placeholder="Tambahan lain (opsional)"
-                :disabled="!isFieldEditable('details')"
+            <div>
+              <label for="product-description" :class="FIELD_LABEL_CLASS">Deskripsi</label>
+              <textarea
+                id="product-description"
+                v-model="form.description"
+                rows="4"
+                placeholder="Jelaskan isi try-out, untuk siapa, dan apa yang membedakannya."
+                class="resize-y"
                 :class="FIELD_CLASS"
-                @keydown.enter.prevent="addCustomInclude"
-              >
+                :disabled="!isFieldEditable('details')"
+              />
+            </div>
+
+            <div ref="includesBlockRef" class="scroll-mt-24">
+              <span :class="FIELD_LABEL_CLASS">Yang kamu dapatkan</span>
+              <p class="-mt-1 mb-3 text-[0.82rem] text-muted">Pilih minimal satu manfaat yang benar-benar tersedia di paket ini.</p>
+              <div class="grid gap-2.5">
+                <label
+                  v-for="option in includeOptions"
+                  :key="option.label"
+                  class="flex items-start gap-3 rounded-sm border border-hairline px-3.5 py-3 text-[0.9rem]"
+                  :class="isFieldEditable('details') ? 'bg-surface' : 'cursor-not-allowed bg-surface-sunken text-muted'"
+                >
+                  <input
+                    type="checkbox"
+                    class="mt-0.5 h-4 w-4 accent-primary disabled:cursor-not-allowed"
+                    :checked="form.includes.includes(option.label)"
+                    :disabled="!isFieldEditable('details')"
+                    @change="toggleInclude(option.label)"
+                  >
+                  <span>{{ option.label }}</span>
+                </label>
+              </div>
+              <div class="mt-3 flex gap-2">
+                <input
+                  v-model="customInclude"
+                  type="text"
+                  placeholder="Tambahan lain (opsional)"
+                  :disabled="!isFieldEditable('details')"
+                  :class="FIELD_CLASS"
+                  @keydown.enter.prevent="addCustomInclude"
+                >
+                <button
+                  type="button"
+                  class="shrink-0 rounded-sm border border-line px-3 text-[0.86rem] font-semibold text-primary hover:bg-primary-soft disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="!isFieldEditable('details') || !customInclude.trim()"
+                  @click="addCustomInclude"
+                >
+                  Tambah
+                </button>
+              </div>
+              <p v-if="cleanIncludes(form.includes).some(item => !INCLUDE_OPTIONS.some(option => option.label === item))" class="mt-2 text-[0.82rem] text-muted">
+                Poin tambahan tersimpan: {{ cleanIncludes(form.includes).filter(item => !INCLUDE_OPTIONS.some(option => option.label === item)).join(', ') }}
+              </p>
+              <p v-if="cleanIncludes(form.includes).length === 0" class="mt-2 text-[0.82rem] text-danger-ink">Pilih minimal satu poin.</p>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label for="product-price" :class="FIELD_LABEL_CLASS">Harga</label>
+                <AppCurrencyField
+                  id="product-price"
+                  v-model="form.price"
+                  placeholder="149.000"
+                  :disabled="PRICE_INPUT_DISABLED || !isFieldEditable('price')"
+                  :ariaDescribedby="priceHint ? 'product-price-hint' : undefined"
+                  :ariaInvalid="priceHintBlocking || undefined"
+                />
+                <p
+                  v-if="priceHint"
+                  id="product-price-hint"
+                  class="mt-2 text-[0.82rem]"
+                  :class="priceHintBlocking ? 'text-danger-ink' : 'text-muted'"
+                >
+                  {{ priceHint }}
+                </p>
+              </div>
+              <div>
+                <label for="product-price-original" :class="FIELD_LABEL_CLASS">Harga coret</label>
+                <AppCurrencyField
+                  id="product-price-original"
+                  v-model="form.priceOriginal"
+                  placeholder="199.000"
+                  :disabled="!isFieldEditable('priceOriginal')"
+                  ariaDescribedby="product-price-original-hint"
+                />
+                <p id="product-price-original-hint" class="mt-2 text-[0.82rem] text-muted">
+                  Opsional. Tampil tercoret di samping harga jual.
+                </p>
+              </div>
+            </div>
+
+            <div
+              v-if="isSingle"
+              class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5"
+            >
+              <div>
+                <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
+                  Acak urutan soal saat dikerjakan siswa
+                </label>
+                <p class="mt-1 text-[0.82rem] text-muted">
+                  Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
+                  selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
+                  soal ini tidak berubah.
+                </p>
+              </div>
               <button
+                id="product-shuffle-questions"
                 type="button"
-                class="shrink-0 rounded-sm border border-line px-3 text-[0.86rem] font-semibold text-primary hover:bg-primary-soft disabled:opacity-50"
-                :disabled="!isFieldEditable('details') || !customInclude.trim()"
-                @click="addCustomInclude"
+                role="switch"
+                :aria-checked="form.shuffleQuestions"
+                aria-labelledby="product-shuffle-questions-label"
+                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
+                @click="form.shuffleQuestions = !form.shuffleQuestions"
+                :disabled="!isFieldEditable('details')"
               >
-                Tambah
+                <span
+                  class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
+                  :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
+                />
               </button>
             </div>
-            <p v-if="cleanIncludes(form.includes).some(item => !INCLUDE_OPTIONS.some(option => option.label === item))" class="mt-2 text-[0.82rem] text-muted">
-              Poin tambahan tersimpan: {{ cleanIncludes(form.includes).filter(item => !INCLUDE_OPTIONS.some(option => option.label === item)).join(', ') }}
-            </p>
-            <p v-if="cleanIncludes(form.includes).length === 0" class="mt-2 text-[0.82rem] text-danger-ink">Pilih minimal satu poin.</p>
           </div>
 
-          <div class="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label for="product-price" :class="FIELD_LABEL_CLASS">Harga</label>
-              <AppCurrencyField
-                id="product-price"
-                v-model="form.price"
-                placeholder="149.000"
-                :disabled="PRICE_INPUT_DISABLED || !isFieldEditable('price')"
-                :ariaDescribedby="priceHint ? 'product-price-hint' : undefined"
-                :ariaInvalid="priceHintBlocking || undefined"
-              />
-              <p
-                v-if="priceHint"
-                id="product-price-hint"
-                class="mt-2 text-[0.82rem]"
-                :class="priceHintBlocking ? 'text-danger-ink' : 'text-muted'"
-              >
-                {{ priceHint }}
-              </p>
-            </div>
-            <div>
-              <label for="product-price-original" :class="FIELD_LABEL_CLASS">Harga coret</label>
-              <AppCurrencyField
-                id="product-price-original"
-                v-model="form.priceOriginal"
-                placeholder="199.000"
-                :disabled="!isFieldEditable('priceOriginal')"
-                ariaDescribedby="product-price-original-hint"
-              />
-              <p id="product-price-original-hint" class="mt-2 text-[0.82rem] text-muted">
-                Opsional. Tampil tercoret di samping harga jual.
-              </p>
-            </div>
-          </div>
-
-          <div
-            v-if="isSingle"
-            class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5"
-          >
-            <div>
-              <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
-                Acak urutan soal saat dikerjakan siswa
-              </label>
-              <p class="mt-1 text-[0.82rem] text-muted">
-                Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
-                selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
-                soal ini tidak berubah.
-              </p>
-            </div>
-            <button
-              id="product-shuffle-questions"
-              type="button"
-              role="switch"
-              :aria-checked="form.shuffleQuestions"
-              aria-labelledby="product-shuffle-questions-label"
-              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors"
-              :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
-              @click="form.shuffleQuestions = !form.shuffleQuestions"
-              :disabled="!isFieldEditable('details')"
-            >
-              <span
-                class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
-                :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
-              />
-            </button>
-          </div>
+          <!-- Thumbnail: section sendiri di kolom kanan, ikut menempel saat
+               kolom form di-scroll. `self-start` wajib (item grid akan
+               meregang setinggi kolom kiri tanpa itu, dan sticky tidak pernah
+               aktif). Offset `top-20` = 80px, mengukur header dashboard yang
+               benar-benar ada di layar ini (`sticky top-0`, tinggi 65px) plus
+               sedikit jarak — bukan `top-24` milik header situs publik di
+               pages/packages/[slug].vue. -->
+          <aside class="self-start lg:sticky lg:top-20">
+            <h3 :class="FIELD_LABEL_CLASS">Sampul produk</h3>
+            <TutorThumbnailField v-model="form.thumbnailUrl" :disabled="!isFieldEditable('details')" />
+          </aside>
         </div>
       </DashboardPanel>
 

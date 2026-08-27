@@ -33,7 +33,11 @@ async function onFileSelected(event: Event) {
 
 <template>
   <div class="grid gap-3">
-    <label :for="`${uid}-url`" :class="FIELD_LABEL_CLASS">Thumbnail</label>
+    <!-- Judul sectionnya dipasang pemanggil (kolom kanan langkah Info
+         produk di TutorProductWizard.vue), jadi label ini tinggal
+         menamai input URL-nya untuk pembaca layar — kalau ikut tampil,
+         hasilnya dua judul beruntun yang mengatakan hal yang sama. -->
+    <label :for="`${uid}-url`" class="sr-only">Tautan thumbnail</label>
 
     <div v-if="model" class="aspect-[16/10] w-full max-w-80 overflow-hidden rounded-md border border-hairline bg-surface-alt">
       <img :src="model" alt="" class="h-full w-full object-cover">
