@@ -7,7 +7,6 @@ import type {
   QuestionDraft,
   QuestionImportDraft,
   QuestionImportResult,
-  QuestionKind,
   TutorPricingEligibility,
   TutorProductDetail,
   TutorProductSummary,
@@ -50,7 +49,7 @@ export function useTutorProducts() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TutorProductSummary[]>('/tutor/products', {
+      data.value = await useApiFetch<TutorProductSummary[]>('/tutor/products', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -78,7 +77,7 @@ export function useTutorProductDetail(id: string) {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TutorProductDetail>(`/tutor/products/${id}`, {
+      data.value = await useApiFetch<TutorProductDetail>(`/tutor/products/${id}`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -115,7 +114,7 @@ export function useTutorPricingEligibility() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TutorPricingEligibility>('/tutor/product-pricing', {
+      data.value = await useApiFetch<TutorPricingEligibility>('/tutor/product-pricing', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -135,7 +134,7 @@ export function useTutorPricingEligibility() {
 export async function createTutorProduct(body: CreateProductRequest): Promise<TutorProductDetail> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<TutorProductDetail>('/tutor/products', {
+  return await useApiFetch<TutorProductDetail>('/tutor/products', {
     baseURL: config.apiBase,
     method: 'POST',
     body,
@@ -147,7 +146,7 @@ export async function createTutorProduct(body: CreateProductRequest): Promise<Tu
 export async function updateTutorProduct(id: string, patch: UpdateProductRequest): Promise<TutorProductDetail> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<TutorProductDetail>(`/tutor/products/${id}`, {
+  return await useApiFetch<TutorProductDetail>(`/tutor/products/${id}`, {
     baseURL: config.apiBase,
     method: 'PATCH',
     body: patch,
@@ -163,7 +162,7 @@ export async function createTutorQuestion(
 ): Promise<TutorQuestion> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<TutorQuestion>(
+  return await useApiFetch<TutorQuestion>(
     `/tutor/products/${productId}/sections/${sectionId}/questions`,
     { baseURL: config.apiBase, method: 'POST', body: question, credentials: 'include' },
   )
@@ -180,7 +179,7 @@ export async function uploadTutorImage(file: File): Promise<string> {
   const body = new FormData()
   body.append('image', file)
 
-  const result = await $fetch<{ url: string }>('/tutor/uploads', {
+  const result = await useApiFetch<{ url: string }>('/tutor/uploads', {
     baseURL: config.apiBase,
     method: 'POST',
     body,
@@ -197,7 +196,7 @@ export async function createTutorQuestionBatch(
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/tutor/products/${productId}/sections/${sectionId}/questions`, {
+  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/questions`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { questions },
@@ -218,7 +217,7 @@ export async function importTutorQuestions(
 ): Promise<QuestionImportResult> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<QuestionImportResult>(`/tutor/products/${productId}/questions/import`, {
+  return await useApiFetch<QuestionImportResult>(`/tutor/products/${productId}/questions/import`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { questions },
@@ -235,7 +234,7 @@ export async function updateTutorQuestion(
 ): Promise<TutorQuestion> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<TutorQuestion>(
+  return await useApiFetch<TutorQuestion>(
     `/tutor/products/${productId}/sections/${sectionId}/questions/${questionId}`,
     { baseURL: config.apiBase, method: 'PATCH', body: question, credentials: 'include' },
   )
@@ -248,7 +247,7 @@ export async function deleteTutorQuestion(
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/tutor/products/${productId}/sections/${sectionId}/questions/${questionId}`, {
+  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/questions/${questionId}`, {
     baseURL: config.apiBase,
     method: 'DELETE',
     credentials: 'include',
@@ -267,7 +266,7 @@ export async function reorderTutorQuestions(
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/tutor/products/${productId}/sections/${sectionId}/questions/reorder`, {
+  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/questions/reorder`, {
     baseURL: config.apiBase,
     method: 'PUT',
     body: { questionIds },
@@ -282,7 +281,7 @@ export async function reorderTutorQuestions(
 export async function submitTutorProduct(id: string): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/tutor/products/${id}/submit`, {
+  await useApiFetch(`/tutor/products/${id}/submit`, {
     baseURL: config.apiBase,
     method: 'POST',
     credentials: 'include',
@@ -297,7 +296,7 @@ export async function submitTutorProduct(id: string): Promise<void> {
 export async function archiveTutorProduct(id: string): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/tutor/products/${id}/archive`, {
+  await useApiFetch(`/tutor/products/${id}/archive`, {
     baseURL: config.apiBase,
     method: 'POST',
     credentials: 'include',
@@ -312,7 +311,7 @@ export async function archiveTutorProduct(id: string): Promise<void> {
 export async function deleteTutorProduct(id: string): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/tutor/products/${id}`, {
+  await useApiFetch(`/tutor/products/${id}`, {
     baseURL: config.apiBase,
     method: 'DELETE',
     credentials: 'include',
@@ -361,16 +360,4 @@ export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
 export const PRODUCT_MODE_LABEL: Record<ProductMode, string> = {
   simulasi: 'Simulasi (semua subtes)',
   mini_tryout: 'Mini Try Out (satu subtes)',
-}
-
-export const QUESTION_KIND_LABEL: Record<QuestionKind, string> = {
-  single_choice: 'Pilihan ganda',
-  multiple_choice: 'Pilihan ganda kompleks',
-  weighted: 'Berbobot (TKP)',
-  true_false: 'Benar/Salah',
-  short_answer: 'Isian singkat',
-  assertion_reason: 'Sebab-akibat',
-  associative_choice: 'Asosiatif',
-  matching: 'Menjodohkan',
-  ordering: 'Mengurutkan',
 }

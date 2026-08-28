@@ -42,7 +42,7 @@ export function useTutorSales() {
     error.value = ''
     try {
       // $fetch drops undefined query values, so an empty filter sends none.
-      const response = await $fetch<TutorSalesResponse>('/tutor/sales', {
+      const response = await useApiFetch<TutorSalesResponse>('/tutor/sales', {
         baseURL: config.apiBase,
         credentials: 'include',
         query,
@@ -73,7 +73,7 @@ export function useTutorBalance() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TutorBalance>('/tutor/balance', {
+      data.value = await useApiFetch<TutorBalance>('/tutor/balance', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -102,7 +102,7 @@ export function useTutorBankAccount() {
   async function refresh() {
     pending.value = true
     try {
-      data.value = await $fetch<BankAccount>('/tutor/bank-account', {
+      data.value = await useApiFetch<BankAccount>('/tutor/bank-account', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -126,7 +126,7 @@ export function useTutorBankAccount() {
 export async function saveTutorBankAccount(account: BankAccountInput): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch('/tutor/bank-account', {
+  await useApiFetch('/tutor/bank-account', {
     baseURL: config.apiBase,
     method: 'PUT',
     body: account,
@@ -148,7 +148,7 @@ export function useTutorBankAccountChangeRequest() {
   async function refresh() {
     pending.value = true
     try {
-      data.value = await $fetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
+      data.value = await useApiFetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -175,7 +175,7 @@ export async function requestTutorBankAccountChange(
 ): Promise<BankAccountChangeRequest> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
+  return await useApiFetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
     baseURL: config.apiBase,
     method: 'POST',
     body: account,
@@ -195,7 +195,7 @@ export function useTutorPayouts() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TutorPayout[]>('/tutor/payouts', {
+      data.value = await useApiFetch<TutorPayout[]>('/tutor/payouts', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -215,7 +215,7 @@ export function useTutorPayouts() {
 export async function requestTutorPayout(amount: number): Promise<TutorPayout> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<TutorPayout>('/tutor/payouts', {
+  return await useApiFetch<TutorPayout>('/tutor/payouts', {
     baseURL: config.apiBase,
     method: 'POST',
     body: { amount },

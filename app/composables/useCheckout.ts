@@ -84,7 +84,7 @@ export function useCheckout() {
     pollHandle = setInterval(async () => {
       let latest: Purchase
       try {
-        latest = await $fetch<Purchase>(`/me/purchases/${invoice}`, {
+        latest = await useApiFetch<Purchase>(`/me/purchases/${invoice}`, {
           baseURL: config.apiBase,
           credentials: 'include',
         })
@@ -150,7 +150,7 @@ export function useCheckout() {
 
     state.value = 'submitting'
     try {
-      const created = await $fetch<Purchase>('/orders', {
+      const created = await useApiFetch<Purchase>('/orders', {
         baseURL: config.apiBase,
         method: 'POST',
         body: request,

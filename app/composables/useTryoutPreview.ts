@@ -73,7 +73,7 @@ export function useTryoutPreview(
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TryoutBlueprint>(`/${scope}/products/${productId}/preview`, {
+      data.value = await useApiFetch<TryoutBlueprint>(`/${scope}/products/${productId}/preview`, {
         baseURL: config.apiBase,
         credentials: 'include',
         query: { section },

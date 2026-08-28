@@ -52,7 +52,7 @@ export function useAdminProductsAll() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<AdminProductSummary[]>('/admin/products', {
+      data.value = await useApiFetch<AdminProductSummary[]>('/admin/products', {
         baseURL: config.apiBase,
         credentials: 'include',
         query: { status: 'all' },

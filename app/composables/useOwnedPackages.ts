@@ -99,7 +99,7 @@ export async function recordAttempt(
     answers,
   }
 
-  return await $fetch<Attempt>(`/me/packages/${slug}/attempts`, {
+  return await useApiFetch<Attempt>(`/me/packages/${slug}/attempts`, {
     baseURL: config.apiBase,
     method: 'POST',
     body,
@@ -174,7 +174,7 @@ export function usePackageOwnershipGuard(slug: string, enabled: () => boolean): 
     if (!enabled()) return
 
     try {
-      await $fetch(`/me/packages/${slug}`, {
+      await useApiFetch(`/me/packages/${slug}`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })

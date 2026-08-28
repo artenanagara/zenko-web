@@ -45,8 +45,3 @@ export const COMPACT_FIELD_LABEL_TEXT_CLASS = 'text-xs font-bold text-ink'
 
 /** Field label including its own block layout, for raw `<label>`/`<span>` markup. */
 export const FIELD_LABEL_CLASS = `mb-2 block ${FIELD_LABEL_TEXT_CLASS}`
-
-/** Bordered neutral button, the counterpart of AppButton for secondary actions. */
-export const SECONDARY_BUTTON_CLASS
-  = 'inline-flex min-h-12 items-center justify-center rounded-xs border border-line bg-surface px-7 '
-    + 'font-semibold text-muted transition-colors hover:text-ink disabled:opacity-50'

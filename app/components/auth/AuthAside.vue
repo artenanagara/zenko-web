@@ -14,6 +14,7 @@ defineProps<{
 // The panel is above the fold here, so this fires on mount rather than on
 // scroll — it still reuses one observer instead of a second timing path.
 const { target, ready, isInView } = useInView(0.1)
+void target
 </script>
 
 <template>

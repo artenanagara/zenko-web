@@ -9,6 +9,7 @@ User=zenko
 Group=zenko
 WorkingDirectory=/opt/zenko/web-staging/current
 EnvironmentFile=/etc/zenko/web-staging.env
+Environment=HOST=127.0.0.1
 ExecStart=/usr/bin/node /opt/zenko/web-staging/current/server/index.mjs
 Restart=on-failure
 RestartSec=3

@@ -25,7 +25,7 @@ export function useAdminTutorApplications() {
 export async function submitTutorApplication(draft: TutorApplicationDraft): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch('/tutor-applications', {
+  await useApiFetch('/tutor-applications', {
     baseURL: config.apiBase,
     method: 'POST',
     body: draft,
@@ -49,7 +49,7 @@ export function useMyTutorApplication() {
   async function refresh() {
     pending.value = true
     try {
-      data.value = await $fetch<TutorApplication>('/tutor-applications/me', {
+      data.value = await useApiFetch<TutorApplication>('/tutor-applications/me', {
         baseURL: config.apiBase,
         credentials: 'include',
       })

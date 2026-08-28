@@ -32,7 +32,7 @@ export function useAdminProductQueue() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<AdminProductSummary[]>('/admin/products', {
+      data.value = await useApiFetch<AdminProductSummary[]>('/admin/products', {
         baseURL: config.apiBase,
         credentials: 'include',
         query: { status: 'review' },
@@ -53,7 +53,7 @@ export function useAdminProductQueue() {
 export async function fetchAdminProduct(id: string): Promise<AdminProductDetail> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<AdminProductDetail>(`/admin/products/${id}`, {
+  return await useApiFetch<AdminProductDetail>(`/admin/products/${id}`, {
     baseURL: config.apiBase,
     credentials: 'include',
   })
@@ -63,7 +63,7 @@ export async function fetchAdminProduct(id: string): Promise<AdminProductDetail>
 export async function decideAdminProduct(id: string, decision: ProductDecisionRequest): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/admin/products/${id}/decision`, {
+  await useApiFetch(`/admin/products/${id}/decision`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: decision,
@@ -86,7 +86,7 @@ export function useAdminPayoutQueue() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<AdminPayout[]>('/admin/payouts', {
+      data.value = await useApiFetch<AdminPayout[]>('/admin/payouts', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -106,7 +106,7 @@ export function useAdminPayoutQueue() {
 export async function decideAdminPayout(id: string, decision: PayoutDecisionRequest): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/admin/payouts/${id}/decision`, {
+  await useApiFetch(`/admin/payouts/${id}/decision`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: decision,
@@ -126,7 +126,7 @@ export function useAdminBankAccounts() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<AdminBankAccount[]>('/admin/bank-accounts', {
+      data.value = await useApiFetch<AdminBankAccount[]>('/admin/bank-accounts', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -146,7 +146,7 @@ export function useAdminBankAccounts() {
 export async function verifyAdminBankAccount(accountId: string): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/admin/bank-accounts/${accountId}/verify`, {
+  await useApiFetch(`/admin/bank-accounts/${accountId}/verify`, {
     baseURL: config.apiBase,
     method: 'POST',
     credentials: 'include',
@@ -169,7 +169,7 @@ export function useAdminBankAccountChangeRequests() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<AdminBankAccountChangeRequest[]>('/admin/bank-account-change-requests', {
+      data.value = await useApiFetch<AdminBankAccountChangeRequest[]>('/admin/bank-account-change-requests', {
         baseURL: config.apiBase,
         credentials: 'include',
         query: { status: 'pending' },
@@ -190,7 +190,7 @@ export function useAdminBankAccountChangeRequests() {
 export async function decideAdminBankAccountChange(id: string, decision: BankAccountChangeDecisionRequest): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch(`/admin/bank-account-change-requests/${id}/decision`, {
+  await useApiFetch(`/admin/bank-account-change-requests/${id}/decision`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: decision,
@@ -218,7 +218,7 @@ export function useAdminSummary() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<AdminSummary>('/admin/summary', {
+      data.value = await useApiFetch<AdminSummary>('/admin/summary', {
         baseURL: config.apiBase,
         credentials: 'include',
       })

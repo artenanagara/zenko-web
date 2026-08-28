@@ -29,16 +29,6 @@ export function apiErrorStatus(cause: unknown): number | undefined {
   return err?.statusCode ?? err?.status ?? err?.response?.status
 }
 
-/** A resource that is already resolved — the mock path, or any static value. */
-export function settledResource<T>(value: T): AsyncResource<T> {
-  return {
-    data: ref(value) as Ref<T>,
-    pending: ref(false),
-    error: ref<unknown>(null),
-    refresh: async () => {},
-  }
-}
-
 /** A GET returning a list. Starts pending so SSR renders a skeleton, resolves on mount. */
 export function useSessionCollection<T>(path: string): AsyncResource<T[]> {
   const { public: config } = useRuntimeConfig()
@@ -51,7 +41,7 @@ export function useSessionCollection<T>(path: string): AsyncResource<T[]> {
     pending.value = true
     error.value = null
     try {
-      data.value = await $fetch<T[]>(path, {
+      data.value = await useApiFetch<T[]>(path, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -85,7 +75,7 @@ export function useSessionItem<T>(path: string, notFoundMessage: string): AsyncR
     pending.value = true
     error.value = null
     try {
-      data.value = await $fetch<T>(path, {
+      data.value = await useApiFetch<T>(path, {
         baseURL: config.apiBase,
         credentials: 'include',
       })

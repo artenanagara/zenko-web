@@ -148,7 +148,9 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext
   }
 }
 
-async function removeQuestion(section: TutorSection, question: TutorQuestion) {
+async function removeQuestion(section: TutorSection, questionId: string) {
+  const question = section.questions.find(item => item.id === questionId)
+  if (!question) return
   if (!window.confirm('Hapus soal ini? Tindakan tidak bisa dibatalkan.')) return
 
   errorMessage.value = ''
@@ -351,6 +353,7 @@ const activeSectionDotClass = computed(() =>
           :compact="editorFor !== ''"
           @select="selectQuestion"
           @reorder="ids => reorderQuestions(activeSection!, ids)"
+          @remove="id => removeQuestion(activeSection!, id)"
         />
       </div>
     </div>

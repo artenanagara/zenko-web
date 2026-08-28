@@ -22,7 +22,7 @@ export function useAdminTutors() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<User[]>('/admin/tutors', {
+      data.value = await useApiFetch<User[]>('/admin/tutors', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -42,7 +42,7 @@ export function useAdminTutors() {
 export async function fetchAdminTutor(accountId: string): Promise<AdminTutorDetail> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<AdminTutorDetail>(`/admin/tutors/${accountId}`, {
+  return await useApiFetch<AdminTutorDetail>(`/admin/tutors/${accountId}`, {
     baseURL: config.apiBase,
     credentials: 'include',
   })

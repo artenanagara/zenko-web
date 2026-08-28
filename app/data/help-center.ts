@@ -1082,7 +1082,3 @@ export function getHelpArticle(slug: string): HelpArticle | undefined {
 export function getHelpCategory(slug: string): HelpCategory | undefined {
   return helpCategories.find(category => category.slug === slug)
 }
-
-export function getArticlesByCategory(categorySlug: string): HelpArticle[] {
-  return helpArticles.filter(article => article.categorySlug === categorySlug)
-}

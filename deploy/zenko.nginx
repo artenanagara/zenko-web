@@ -78,6 +78,12 @@ server {
         root /var/www/zenko-maintenance;
         add_header Retry-After 600 always;
         add_header Cache-Control "no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Strict-Transport-Security "max-age=31536000" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; connect-src 'self' https://zenkoedu.id; frame-src 'none'; upgrade-insecure-requests" always;
         try_files /index.html =503;
     }
 
@@ -157,6 +163,8 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "DENY" always;
+    # Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
 }
 
 # --- Staging (reuses this VPS: zenko-api-staging on 8081, zenko-web-staging
@@ -178,6 +186,11 @@ server {
     }
 
     location / {
+        # Keep staging private over HTTP too; the ACME location above remains
+        # public so certificate renewal can continue to work.
+        allow 127.0.0.1;
+        allow ::1;
+        deny all;
         return 308 https://staging.zenkoedu.id$request_uri;
     }
 }
@@ -188,6 +201,12 @@ server {
 
     server_name staging.zenkoedu.id;
     client_max_body_size 2m;
+
+    # Staging is private by default. Add an explicit private CIDR here when
+    # remote testers need access; never open it to the public internet.
+    allow 127.0.0.1;
+    allow ::1;
+    deny all;
 
     ssl_certificate /etc/letsencrypt/live/staging.zenkoedu.id/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/staging.zenkoedu.id/privkey.pem;
@@ -254,6 +273,8 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "DENY" always;
+    # Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
 }
 
 # --- Design System (reuses this VPS: zenko-design on port 3002 — see
@@ -307,4 +328,6 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "DENY" always;
+    # Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
 }

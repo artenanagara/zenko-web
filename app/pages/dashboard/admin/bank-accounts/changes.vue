@@ -41,7 +41,7 @@ async function refresh() {
   pending.value = true
   error.value = ''
   try {
-    changeRequests.value = await $fetch<AdminBankAccountChangeRequest[]>('/admin/bank-account-change-requests', {
+    changeRequests.value = await useApiFetch<AdminBankAccountChangeRequest[]>('/admin/bank-account-change-requests', {
       baseURL: config.apiBase,
       credentials: 'include',
       query: { status: 'all' },

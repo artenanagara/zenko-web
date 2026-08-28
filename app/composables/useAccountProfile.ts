@@ -11,7 +11,7 @@ export async function updateAccountName(name: string): Promise<void> {
   const { public: config } = useRuntimeConfig()
   const { user } = useAuth()
 
-  user.value = await $fetch<User>('/auth/profile', {
+  user.value = await useApiFetch<User>('/auth/profile', {
     baseURL: config.apiBase,
     method: 'PUT',
     body: { name },
@@ -27,7 +27,7 @@ export async function uploadAccountAvatar(file: File): Promise<void> {
   const form = new FormData()
   form.append('image', file)
 
-  user.value = await $fetch<User>('/auth/avatar', {
+  user.value = await useApiFetch<User>('/auth/avatar', {
     baseURL: config.apiBase,
     method: 'POST',
     body: form,
@@ -44,7 +44,7 @@ export async function uploadAccountAvatar(file: File): Promise<void> {
 export async function requestEmailChange(newEmail: string): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await $fetch('/auth/email/change/request', {
+  await useApiFetch('/auth/email/change/request', {
     baseURL: config.apiBase,
     method: 'POST',
     body: { newEmail },
@@ -57,7 +57,7 @@ export async function confirmEmailChange(newEmail: string, code: string): Promis
   const { public: config } = useRuntimeConfig()
   const { user } = useAuth()
 
-  user.value = await $fetch<User>('/auth/email/change/confirm', {
+  user.value = await useApiFetch<User>('/auth/email/change/confirm', {
     baseURL: config.apiBase,
     method: 'POST',
     body: { newEmail, code },

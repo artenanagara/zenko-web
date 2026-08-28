@@ -56,7 +56,7 @@ export function useAccountRecovery() {
     }
 
     try {
-      await $fetch(path, {
+      await useApiFetch(path, {
         baseURL: config.apiBase,
         method: 'POST',
         body,
@@ -94,7 +94,7 @@ export function useAccountRecovery() {
     }
 
     try {
-      await $fetch('/auth/email/verify', {
+      await useApiFetch('/auth/email/verify', {
         baseURL: config.apiBase,
         method: 'POST',
         body: { email, code },

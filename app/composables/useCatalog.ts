@@ -102,7 +102,7 @@ export async function gradeSampleAnswers(
     if (answer?.selected) picked[questionId] = answer.selected
   }
 
-  return await $fetch<TryoutSampleScore>(`/packages/${slug}/sample/score`, {
+  return await useApiFetch<TryoutSampleScore>(`/packages/${slug}/sample/score`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { answers: picked },

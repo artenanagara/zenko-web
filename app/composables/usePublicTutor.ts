@@ -29,7 +29,7 @@ export function usePublicTutorReviews(username: string) {
   async function refresh() {
     pending.value = true
     error.value = false
-    try { data.value = await $fetch<ProductReview[]>(`/tutors/${encodeURIComponent(username)}/reviews`, { baseURL: config.apiBase }) }
+    try { data.value = await useApiFetch<ProductReview[]>(`/tutors/${encodeURIComponent(username)}/reviews`, { baseURL: config.apiBase }) }
     catch { error.value = true }
     finally { pending.value = false }
   }

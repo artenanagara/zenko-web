@@ -32,7 +32,7 @@ export function useAuth() {
 
     isLoading.value = true
     try {
-      user.value = await $fetch<User>('/auth/me', {
+      user.value = await useApiFetch<User>('/auth/me', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -57,7 +57,7 @@ export function useAuth() {
     remember: boolean,
   ): Promise<EmailLoginResult> {
     try {
-      const signedIn = await $fetch<User>('/auth/login', {
+      const signedIn = await useApiFetch<User>('/auth/login', {
         baseURL: config.apiBase,
         method: 'POST',
         body: { email, password, remember },
@@ -77,7 +77,7 @@ export function useAuth() {
     password: string,
   ): Promise<EmailRegistrationResult> {
     try {
-      const created = await $fetch<{ email: string }>('/auth/register', {
+      const created = await useApiFetch<{ email: string }>('/auth/register', {
         baseURL: config.apiBase,
         method: 'POST',
         body: { name, email, password },
@@ -92,7 +92,7 @@ export function useAuth() {
 
   async function signOut() {
     try {
-      await $fetch('/auth/logout', {
+      await useApiFetch('/auth/logout', {
         baseURL: config.apiBase,
         method: 'POST',
         credentials: 'include',
@@ -112,7 +112,7 @@ export function useAuth() {
    */
   async function signOutAllDevices() {
     try {
-      await $fetch('/auth/logout-all', {
+      await useApiFetch('/auth/logout-all', {
         baseURL: config.apiBase,
         method: 'POST',
         credentials: 'include',

@@ -4,6 +4,7 @@ const checks = ['Tutor terverifikasi', 'Pembahasan lengkap', 'Soal sesuai kisi-k
 // One observer starts all three panels, but each card carries its own --cycle
 // (4s / 6s / 8s) so the loops drift apart instead of pulsing in unison.
 const { target, ready, isInView } = useInView(0.2)
+void target
 </script>
 
 <template>

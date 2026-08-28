@@ -139,6 +139,9 @@ const mockFormFields = ['Nama lengkap', 'Email', 'Bidang keahlian']
 const { target: benefitRef, ready: benefitReady, isInView: benefitInView } = useInView(0.15)
 const { target: advantageRef, ready: advantageReady, isInView: advantageInView } = useInView(0.15)
 const { target: flowRef, ready: flowReady, isInView: flowInView } = useInView(0.2)
+void benefitRef
+void advantageRef
+void flowRef
 
 const EXPERTISE_OPTIONS = ['SKD / CPNS', 'BUMN', 'SNBT', 'TKA', 'Lainnya']
 

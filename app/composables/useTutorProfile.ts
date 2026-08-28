@@ -20,7 +20,7 @@ export function useTutorProfile() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<TutorProfile>('/tutor/profile', {
+      data.value = await useApiFetch<TutorProfile>('/tutor/profile', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -40,7 +40,7 @@ export function useTutorProfile() {
 export async function saveTutorProfile(input: TutorProfileInput): Promise<TutorProfile> {
   const { public: config } = useRuntimeConfig()
 
-  return await $fetch<TutorProfile>('/tutor/profile', {
+  return await useApiFetch<TutorProfile>('/tutor/profile', {
     baseURL: config.apiBase,
     method: 'PUT',
     body: input,

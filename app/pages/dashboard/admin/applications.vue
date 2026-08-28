@@ -184,7 +184,7 @@ async function submitDecision() {
   decisionBusy.value = true
   decisionError.value = ''
   try {
-    await $fetch(`/admin/tutor-applications/${app.id}/decision`, {
+    await useApiFetch(`/admin/tutor-applications/${app.id}/decision`, {
       baseURL: config.apiBase,
       method: 'POST',
       body: { status: decisionStatus.value },

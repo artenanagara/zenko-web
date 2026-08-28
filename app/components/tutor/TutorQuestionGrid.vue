@@ -27,6 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   select: [id: string]
   reorder: [questionIds: string[]]
+  remove: [id: string]
 }>()
 
 /** Jumlah soal + satu kotak "+ tambah" kalau target belum terpenuhi. */
@@ -160,6 +161,14 @@ const STATE_TITLE = COMPLETION_STATE_TITLE
       >
         Pindah ke belakang
         <AppIcon name="arrow-right" :size="14" />
+      </button>
+      <button
+        type="button"
+        class="ml-auto inline-flex items-center gap-1 font-semibold text-danger hover:underline"
+        @click="emit('remove', questions[activeIndex]!.id)"
+      >
+        <AppIcon name="trash" :size="14" />
+        Hapus soal
       </button>
     </div>
   </div>

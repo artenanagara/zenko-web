@@ -20,7 +20,7 @@ export function useAdminStudents() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await $fetch<User[]>('/admin/students', {
+      data.value = await useApiFetch<User[]>('/admin/students', {
         baseURL: config.apiBase,
         credentials: 'include',
       })

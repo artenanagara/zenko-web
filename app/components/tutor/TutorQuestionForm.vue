@@ -8,6 +8,7 @@ import type {
   CognitiveLevel,
   MatchingData,
 } from '#shared/types/tutor-product'
+import { buildQuestionDraft, type QuestionDraftState } from '~/utils/questionDraft'
 
 /**
  * Editor satu soal (kontrak §6 — "Editor Soal & Ergonomi Tutor 10/10").
@@ -44,7 +45,6 @@ const emit = defineEmits<{
 }>()
 
 const uid = useId()
-const formRef = ref<HTMLFormElement | null>(null)
 
 /**
  * Ref per baris opsi (choiceRows ATAU statements — cuma satu yang pernah
@@ -345,146 +345,26 @@ function correctChoiceKind(value: QuestionKind) {
   return ['single_choice', 'multiple_choice', 'assertion_reason', 'associative_choice'].includes(value)
 }
 
-/**
- * Validasi ringan sesuai aturan kind; server tetap sumber kebenaran.
- * Pembahasan boleh kosong di sini — server hanya mewajibkannya saat submit
- * produk (lihat internal/handler/tutor_products.go, buildQuestion), supaya
- * tutor bisa menulis semua soal dulu lalu mengisi pembahasan belakangan. Itu
- * yang membuat status 🟡 "belum ada pembahasan" di grid navigasi berarti.
- */
 function buildDraft(): QuestionDraft | null {
-  if (!stripHtmlToText(prompt.value)) {
-    return fail('Tulis pertanyaannya dulu.', 'prompt')
-  }
-
-  const level = cognitiveLevel.value
-  if (!level) {
-    return fail('Pilih level kognitif soal ini (L1, L2, atau L3).', 'level')
-  }
-
-  const trimmedStimulus = stripHtmlToText(stimulus.value) ? stimulus.value.trim() : ''
-  const base = {
+  const result = buildQuestionDraft({
     kind: kind.value,
-    prompt: prompt.value.trim(),
-    explanation: explanation.value.trim(),
-    cognitiveLevel: level,
-    ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
-  }
+    prompt: prompt.value,
+    explanation: explanation.value,
+    stimulus: stimulus.value,
+    cognitiveLevel: cognitiveLevel.value,
+    choiceRows: choiceRows.value,
+    correctIndex: correctIndex.value,
+    correctIndexes: correctIndexes.value,
+    statements: statements.value,
+    answers: answers.value,
+    matchingLeftRows: matchingLeftRows.value,
+    matchingItems: matchingItems.value,
+    matchingPairs: matchingPairs.value,
+    ordering: ordering.value,
+  } satisfies QuestionDraftState)
 
-  if (choiceKind(kind.value)) {
-    // stripHtmlToText, bukan row.text.trim(): text sekarang HTML, dan
-    // ".trim()" pada string HTML tidak lagi berarti "kosong" — sebuah
-    // paragraf berisi cuma spasi tetap dianggap non-kosong oleh Tiptap
-    // (isEmpty hanya collapse ke '' untuk dok yang benar-benar kosong),
-    // jadi ".trim()" pada HTML-nya tidak menangkap kasus itu.
-    const filled = choiceRows.value
-      .map((row, index) => ({ ...row, index }))
-      .filter(row => stripHtmlToText(row.text))
-
-    if (filled.length < 2) {
-      return fail('Isi minimal dua opsi.', 'choices')
-    }
-
-    if (correctChoiceKind(kind.value) && kind.value !== 'multiple_choice') {
-      if (!filled.some(row => row.index === correctIndex.value)) {
-        return fail('Pilih kunci jawaban dari opsi yang terisi.', 'choices')
-      }
-      return {
-        ...base,
-        // Relabel berurutan supaya opsi kosong di tengah tidak menyisakan celah.
-        options: filled.map((row, at) => ({
-          label: OPTION_LETTERS[at]!,
-          text: row.text.trim(),
-          isCorrect: row.index === correctIndex.value,
-          ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}),
-        })),
-      }
-    }
-
-    if (kind.value === 'multiple_choice') {
-      if (correctIndexes.value.length < 2) {
-        return fail('Pilih minimal dua kunci jawaban.', 'choices')
-      }
-      return {
-        ...base,
-        options: filled.map((row, at) => ({
-          label: OPTION_LETTERS[at]!,
-          text: row.text.trim(),
-          isCorrect: correctIndexes.value.includes(row.index),
-          ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}),
-        })),
-      }
-    }
-
-    if (kind.value === 'ordering') {
-      const ordered = orderingAsLabels()
-      if (new Set(ordered).size !== ordered.length) {
-        return fail('Tiap item cuma boleh dipakai sekali dalam urutan.', 'choices')
-      }
-      if (ordered.length !== filled.length) {
-        return fail('Tentukan urutan semua item.', 'choices')
-      }
-      return {
-        ...base,
-        options: filled.map((row, at) => ({ label: OPTION_LETTERS[at]!, text: row.text.trim(), ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}) })),
-        ordering: ordered,
-      }
-    }
-
-    const missingWeight = filled.some(
-      row => row.weight === null || !Number.isInteger(row.weight) || row.weight < 0,
-    )
-    if (missingWeight) {
-      return fail('Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.', 'choices')
-    }
-    return {
-      ...base,
-      options: filled.map((row, at) => ({
-        label: OPTION_LETTERS[at]!,
-        text: row.text.trim(),
-        weight: row.weight!,
-        ...(row.imageUrl.trim() ? { imageUrl: row.imageUrl.trim() } : {}),
-      })),
-    }
-  }
-
-  if (kind.value === 'true_false') {
-    const filled = statements.value.filter(statement => stripHtmlToText(statement.text))
-    if (filled.length === 0) {
-      return fail('Tulis minimal satu pernyataan.', 'statements')
-    }
-    return {
-      ...base,
-      options: filled.map((statement, at) => ({
-        label: String(at + 1),
-        text: statement.text.trim(),
-        isCorrect: statement.isCorrect,
-        ...(statement.imageUrl.trim() ? { imageUrl: statement.imageUrl.trim() } : {}),
-      })),
-    }
-  }
-
-  if (kind.value === 'matching') {
-    const left = matchingLeftRows.value.filter(row => stripHtmlToText(row.text))
-    const right = matchingItems.value.filter(item => stripHtmlToText(item.text))
-    if (left.length < 2 || right.length !== left.length) {
-      return fail('Isi jumlah item kiri dan kanan yang sama, minimal dua.', 'matching')
-    }
-    if (left.some(row => !matchingPairs.value[row.label] || !right.some(item => item.id === matchingPairs.value[row.label]))) {
-      return fail('Tentukan pasangan untuk setiap item kiri.', 'matching')
-    }
-    return {
-      ...base,
-      options: left.map(row => ({ label: row.label, text: row.text.trim() })),
-      matching: { items: right.map(item => ({ id: item.id, text: item.text.trim() })), pairs: Object.fromEntries(left.map(row => [row.label, matchingPairs.value[row.label]!])) },
-    }
-  }
-
-  const accepted = answers.value.map(answer => answer.trim()).filter(Boolean)
-  if (accepted.length === 0) {
-    return fail('Isi minimal satu jawaban yang diterima.', 'answers')
-  }
-  return { ...base, answers: accepted }
+  if ('error' in result) return fail(result.error.message, result.error.anchor)
+  return result.draft
 }
 
 /* -------------------------------------------------------------------------
@@ -726,7 +606,6 @@ function jumpBetweenOptions(event: KeyboardEvent) {
 
 <template>
   <form
-    ref="formRef"
     class="grid gap-4 rounded-md border border-hairline-strong bg-surface p-4 md:p-5"
     novalidate
     @submit.prevent="submit('save')"
@@ -982,7 +861,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     <fieldset v-else ref="answersBlockRef" class="grid scroll-mt-24 gap-2.5">
       <legend :class="FIELD_LABEL_CLASS">Jawaban yang diterima</legend>
 
-      <div v-for="(answer, index) in answers" :key="index" class="flex items-center gap-2.5">
+      <div v-for="(_, index) in answers" :key="index" class="flex items-center gap-2.5">
         <input
           v-model="answers[index]"
           type="text"

@@ -10,13 +10,13 @@ export function useProductReviews(slug: string) {
   async function refresh() {
     pending.value = true
     error.value = ''
-    try { data.value = await $fetch<ProductReview[]>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase }) }
+    try { data.value = await useApiFetch<ProductReview[]>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase }) }
     catch (cause) { error.value = tutorApiMessage(cause, 'Gagal memuat ulasan.') }
     finally { pending.value = false }
   }
 
   async function refreshMine() {
-    try { mine.value = await $fetch<ProductReview | null>(`/packages/${encodeURIComponent(slug)}/reviews/my-review`, { baseURL: config.apiBase, credentials: 'include' }) }
+    try { mine.value = await useApiFetch<ProductReview | null>(`/packages/${encodeURIComponent(slug)}/reviews/my-review`, { baseURL: config.apiBase, credentials: 'include' }) }
     catch { mine.value = null }
   }
 
@@ -24,7 +24,7 @@ export function useProductReviews(slug: string) {
   // full list, and on the account page that extra request fetches a list
   // nothing renders. Call sites that display the list refresh it themselves.
   async function save(input: ProductReviewInput) {
-    const saved = await $fetch<ProductReview>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase, method: 'POST', body: input, credentials: 'include' })
+    const saved = await useApiFetch<ProductReview>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase, method: 'POST', body: input, credentials: 'include' })
     mine.value = saved
     return saved
   }

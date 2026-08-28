@@ -26,7 +26,7 @@ export function useAccountPassword() {
 
     state.value = 'submitting'
     try {
-      await $fetch('/auth/password/change', {
+      await useApiFetch('/auth/password/change', {
         baseURL: config.apiBase,
         method: 'POST',
         body: { currentPassword, newPassword },
