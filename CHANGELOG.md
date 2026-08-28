@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/artenanagara/zenko-web/compare/v0.9.0...v0.10.0) (2026-08-28)
+
+
+### Features
+
+* **deploy:** add a production maintenance page ([d500263](https://github.com/artenanagara/zenko-web/commit/d5002631b01a2ebe8b99cd65890402f14bb8ccb1))
+* **deploy:** add a production maintenance page ([f85ad49](https://github.com/artenanagara/zenko-web/commit/f85ad49ec0d485a93d34680c4cf8099ff6096daf))
+
 ## [0.9.0](https://github.com/artenanagara/zenko-web/compare/v0.8.1...v0.9.0) (2026-08-27)
 
 
