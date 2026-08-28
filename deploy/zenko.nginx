@@ -57,6 +57,36 @@ server {
     ssl_session_timeout 1d;
     ssl_session_tickets off;
 
+    # --- Mode perbaikan -------------------------------------------------
+    # Dinyalakan dengan membuat berkas penanda (lihat deploy/maintenance-mode.sh),
+    # bukan dengan menyunting berkas ini — supaya menyalakan dan mematikannya
+    # tidak pernah butuh reload Nginx dan tidak bisa salah ketik saat panik.
+    #
+    # `if` di level server memang cuma dievaluasi sekali per permintaan dan
+    # aman untuk `return` — inilah satu dari sedikit pemakaian `if` yang tidak
+    # termasuk "if is evil" di dokumentasi Nginx.
+    set $maintenance 0;
+    if (-f /var/www/zenko-maintenance/on) {
+        set $maintenance 1;
+    }
+
+    # 503 + Retry-After, bukan 200: mesin pencari harus tahu ini keadaan
+    # sementara. Membalas 200 dengan isi halaman perbaikan mengundang
+    # de-indexing halaman katalog yang sebenarnya baik-baik saja.
+    error_page 503 @maintenance;
+    location @maintenance {
+        root /var/www/zenko-maintenance;
+        add_header Retry-After 600 always;
+        add_header Cache-Control "no-store" always;
+        try_files /index.html =503;
+    }
+
+    # Upstream mati saat deploy juga memunculkan halaman ini, bukan layar 502
+    # telanjang dari Nginx. Deploy sudah punya health check dan rollback, jadi
+    # jendelanya pendek — tapi kalau sampai terlihat pengunjung, yang mereka
+    # lihat halaman Zenko, bukan pesan galat server.
+    error_page 502 504 @maintenance;
+
     location = /health {
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
@@ -66,6 +96,17 @@ server {
     }
 
     location ^~ /api/ {
+        # Klien API mengurai JSON. Mengirimi mereka HTML halaman perbaikan
+        # membuat fetch di sisi web gagal dengan galat parse yang membingungkan,
+        # bukan dengan status yang bisa ditindaklanjuti — jadi jalur ini punya
+        # balasan JSON-nya sendiri. `default_type` harus mendahului `return`:
+        # ia yang menentukan Content-Type balasan yang DIBUAT Nginx. Untuk
+        # respons yang diproksi, header dari upstream tetap yang menang.
+        default_type application/json;
+        if ($maintenance = 1) {
+            return 503 '{"error":"Zenko sedang dalam perbaikan. Coba lagi beberapa saat lagi.","maintenance":true}';
+        }
+
         # A question/thumbnail image upload is capped at 5 MB by the API
         # (handler.maxImageUploadBytes); the extra megabyte covers multipart
         # overhead and stays under the Fiber BodyLimit of 8 MB. Without this the
@@ -97,6 +138,10 @@ server {
     }
 
     location / {
+        if ($maintenance = 1) {
+            return 503;
+        }
+
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
