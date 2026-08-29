@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/artenanagara/zenko-web/compare/v0.13.0...v0.14.0) (2026-08-29)
+
+
+### Features
+
+* **payment:** "Cek status pembayaran" on the waiting screen ([382e361](https://github.com/artenanagara/zenko-web/commit/382e3610267ee40966ff814f3a56212c8994cc7c))
+* **payment:** manual QRIS payment page and admin verification desk ([4f89e02](https://github.com/artenanagara/zenko-web/commit/4f89e02d0e3eb32797043578f352fd73ff6b3613))
+* **tutor:** resubmit edited live products ([08a92eb](https://github.com/artenanagara/zenko-web/commit/08a92eb291964e6472defcf6a424b03383fc8e30))
+
+
+### Bug Fixes
+
+* **tutor:** keep submit action clickable for validation ([8acaece](https://github.com/artenanagara/zenko-web/commit/8acaece716d784f5f4f3571ed46216df85b6a7c1))
+
 ## [0.13.0](https://github.com/artenanagara/zenko-web/compare/v0.12.0...v0.13.0) (2026-08-29)
 
 
