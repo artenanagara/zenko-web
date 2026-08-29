@@ -13,7 +13,7 @@ useHead({
 })
 
 const route = useRoute()
-const { user } = useAuth()
+const { user, signInWithGoogle } = useAuth()
 const { verifyEmail, resendVerification } = useAccountRecovery()
 const { remaining, isCoolingDown, start: startCooldown } = useCooldown()
 
@@ -33,6 +33,7 @@ type Status = 'form' | 'confirming' | 'success' | 'no-email'
  * in. With neither, there's no address to check a code against.
  */
 const address = computed(() => readQuery(route.query.email) || user.value?.email || '')
+const isGoogleFlow = computed(() => route.query.google === '1')
 
 const status = ref<Status>(address.value ? 'form' : 'no-email')
 
@@ -143,12 +144,21 @@ function readQuery(raw: unknown): string {
 <template>
   <AuthPanel v-if="status === 'success'" title="Email kamu terverifikasi" tone="success">
     <template #description>
-      Terima kasih. Akunmu sudah aktif sepenuhnya dan siap dipakai membeli serta
-      mengerjakan paket try out.
+      Terima kasih. Akunmu sudah aktif sepenuhnya.
+      <template v-if="isGoogleFlow">Lanjutkan masuk dengan Google untuk membuka dashboard Zenko.</template>
+      <template v-else>Siap dipakai membeli serta mengerjakan paket try out.</template>
     </template>
 
     <div class="grid gap-5">
-      <AppButton to="/masuk" size="lg" class="w-full">Lanjut masuk</AppButton>
+      <AppButton
+        v-if="isGoogleFlow"
+        size="lg"
+        class="w-full"
+        @click="signInWithGoogle"
+      >
+        Lanjut masuk dengan Google
+      </AppButton>
+      <AppButton v-else to="/masuk" size="lg" class="w-full">Lanjut masuk</AppButton>
       <NuxtLink
         to="/paket"
         class="inline-flex min-h-12 w-full items-center justify-center rounded-xs border border-line font-semibold transition-colors duration-200 ease-smooth hover:bg-surface-alt"

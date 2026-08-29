@@ -23,6 +23,8 @@ const CALLBACK_ERRORS: Record<string, string> = {
   state_tidak_cocok: 'Sesi login kedaluwarsa. Silakan ulangi dari awal.',
   kode_kosong: 'Google tidak mengirim kode otorisasi. Coba lagi.',
   gagal_masuk: 'Gagal menyelesaikan login dengan Google. Coba lagi sebentar lagi.',
+  gagal_verifikasi: 'Kode verifikasi Google belum dapat dikirim. Coba lagi sebentar lagi.',
+  verifikasi_tidak_tersedia: 'Verifikasi email belum tersedia. Hubungi admin atau coba lagi nanti.',
 }
 
 const form = reactive({
