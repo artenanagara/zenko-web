@@ -1473,7 +1473,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <!-- Tombol "Ajukan untuk tayang" sendiri ada di step footer fixed
                di bawah, di sebelah Kembali — bukan lagi di sini. -->
           <p v-if="!allComplete && !isLiveReadOnly" class="text-[0.82rem] text-muted">
-            Lengkapi poin di atas terlebih dahulu. Tombol ajukan akan aktif otomatis setelah seluruh syarat terpenuhi.
+            Masih ada syarat yang belum lengkap. Kamu tetap bisa klik tombol ajukan untuk melihat validasi terbaru dari server.
           </p>
         </div>
       </DashboardPanel>
@@ -1516,7 +1516,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <AppButton
             v-else-if="step === 4"
             type="button"
-            :disabled="isLiveProduct || submitting || !allComplete"
+            :disabled="isLiveProduct || submitting"
             @click="submitForReview"
           >
             {{ submitting ? 'Mengajukan...' : 'Ajukan untuk tayang' }}
