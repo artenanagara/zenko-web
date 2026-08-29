@@ -69,6 +69,7 @@ onMounted(refreshPricingRule)
  */
 const { public: runtimeConfig } = useRuntimeConfig()
 const PRICE_INPUT_DISABLED = runtimeConfig.paymentEnabled !== true
+const TUTOR_LIVE_CONTENT_EDIT_ENABLED = runtimeConfig.tutorLiveContentEditEnabled === true
 
 /* ------------------------------------------------------------------ form */
 
@@ -321,8 +322,9 @@ watch(detail, (loaded) => {
   }
 })
 
-/** Produk tayang dapat menelusuri wizard, tetapi seluruh isinya read-only. */
-const isLiveReadOnly = computed(() => isEdit.value && detail.value?.status === 'live')
+/** Produk tayang tetap bisa menelusuri wizard; staging dapat membuka isi soalnya. */
+const isLiveProduct = computed(() => isEdit.value && detail.value?.status === 'live')
+const isLiveReadOnly = computed(() => isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED)
 
 const canEditProduct = computed(() => {
   if (!isEdit.value) return true
@@ -331,10 +333,10 @@ const canEditProduct = computed(() => {
 })
 
 /**
- * Yang boleh berubah setelah tayang hanya harga — judul ikut terkunci karena
- * itulah produk yang sudah dibeli dan sudah diindeks katalog. Aturan yang
- * sama ditegakkan server di ensurePatchEditable (zenko-api); kalau salah satu
- * berubah, ubah keduanya.
+ * Yang boleh berubah pada metadata setelah tayang hanya harga — judul ikut
+ * terkunci karena itulah produk yang sudah dibeli dan sudah diindeks katalog.
+ * Isi soal punya rollout terpisah untuk staging dan ditegakkan server pada
+ * endpoint question-content; kalau salah satu berubah, ubah keduanya.
  */
 function isFieldEditable(field: 'title' | 'price' | 'priceOriginal' | 'section' | 'details') {
   if (!isEdit.value || !detail.value) return true
@@ -344,7 +346,7 @@ function isFieldEditable(field: 'title' | 'price' | 'priceOriginal' | 'section' 
 
 const LOCKED_EXPLANATION: Partial<Record<TutorProductDetail['status'], string>> = {
   review: 'Produk sedang ditinjau tim Zenko. Kamu bisa mengeditnya lagi jika hasil tinjauan keluar.',
-  live: 'Produk sudah tayang. Hanya harga yang masih bisa diubah; field lain terkunci karena produk sudah dibeli dan tampil di katalog.',
+  live: 'Produk sudah tayang. Metadata produk tetap terkunci karena produk sudah dibeli dan tampil di katalog. Isi soal dapat diedit pada environment yang mengaktifkan fitur ini.',
   archived: 'Produk sudah diarsipkan dan tidak tampil di katalog.',
 }
 
@@ -366,6 +368,9 @@ const statusLockNotice = computed(() => {
   if (detail.value.status === 'live' && PRICE_INPUT_DISABLED) {
     return 'Produk sudah tayang, jadi field-nya terkunci karena produk sudah dibeli dan tampil di katalog. '
       + 'Harga pun belum bisa diubah selama pembayaran belum tersedia.'
+  }
+  if (detail.value.status === 'live' && TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
+    return 'Produk sudah tayang. Metadata produk tetap terkunci, tetapi isi soal dapat diedit. Perubahan soal berlaku untuk paket yang dibuka setelah perubahan disimpan.'
   }
   return LOCKED_EXPLANATION[detail.value.status] ?? ''
 })
@@ -527,7 +532,7 @@ function syncQuery() {
 
 /** Validasi minimum sebelum melangkah maju; server tetap memvalidasi penuh. */
 function validateThrough(target: number): boolean {
-  if (isEdit.value && detail.value?.status === 'live' && target !== 2) {
+  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED && target !== 2) {
     return failStep('Produk tayang hanya bisa mengubah judul dan harga di langkah Info produk.', 'product-title')
   }
   if (target > 1 && isSingle.value && !form.examTypeSlug) {
@@ -809,7 +814,7 @@ const submitError = ref('')
 
 async function submitForReview() {
   if (!props.productId) return
-  if (isLiveReadOnly.value) {
+  if (isLiveProduct.value) {
     toast.info('Produk sudah tayang.', 'Tidak perlu diajukan ulang.')
     return
   }
@@ -1233,7 +1238,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
       <template v-else-if="step === 3">
         <DashboardPanel v-if="isLiveReadOnly" title="Isi produk" description="Isi produk tayang ditampilkan dalam mode baca saja.">
           <AppSectionMessage appearance="information">
-            Produk yang sudah tayang tidak dapat mengubah soal atau anggota bundel. Kamu tetap bisa melihat seluruh isi wizard ini.
+            Produk yang sudah tayang tidak dapat mengubah isi wizard ini. Kamu tetap bisa melihat seluruh isinya.
           </AppSectionMessage>
 
           <template v-if="isSingle">
@@ -1486,7 +1491,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <AppButton
             v-else-if="step === 4"
             type="button"
-            :disabled="isLiveReadOnly || submitting || !allComplete"
+            :disabled="isLiveProduct || submitting || !allComplete"
             @click="submitForReview"
           >
             {{ submitting ? 'Mengajukan...' : 'Ajukan untuk tayang' }}
