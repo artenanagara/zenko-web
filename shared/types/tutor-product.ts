@@ -23,8 +23,6 @@ export type QuestionKind =
   | 'matching'
   | 'ordering'
 
-export type CognitiveLevel = 'L1' | 'L2' | 'L3'
-
 export type ScoringMode = 'flat' | 'weighted'
 
 /** One subtes template inside an exam type (and the editable shape for custom). */
@@ -79,7 +77,6 @@ export interface TutorQuestion {
   /** Shared reading passage for literacy/case-study question groups. */
   stimulus?: string
   prompt: string
-  cognitiveLevel?: CognitiveLevel
   /** Pembahasan — must be non-empty before submit. */
   explanation: string
   position: number
@@ -96,7 +93,6 @@ export interface QuestionDraft {
   stimulus?: string
   prompt: string
   explanation: string
-  cognitiveLevel?: CognitiveLevel
   options?: QuestionOption[]
   answers?: string[]
   matching?: MatchingData

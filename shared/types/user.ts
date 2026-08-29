@@ -21,6 +21,12 @@ export interface User {
    * flips without signing out and back in.
    */
   verified: boolean
+  /**
+   * When the account first appeared, Unix seconds. Only populated on the
+   * admin directory endpoints (e.g. GET /admin/students) — zero elsewhere,
+   * since nothing else reads it.
+   */
+  createdAt: number
 }
 
 /**

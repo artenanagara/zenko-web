@@ -5,7 +5,6 @@ import type {
   QuestionKind,
   QuestionOption,
   TutorQuestion,
-  CognitiveLevel,
   MatchingData,
 } from '#shared/types/tutor-product'
 import { buildQuestionDraft, type QuestionDraftState } from '~/utils/questionDraft'
@@ -89,24 +88,6 @@ const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
 const explanation = ref(props.initial?.explanation ?? '')
-/**
- * Starts unset for a new question so the tutor has to say which level it is.
- * It used to default to L1, and the server still falls back to L1 for anything
- * it is not told — which meant an untouched dropdown quietly filed every soal
- * under L1 and made the student's cognitive report read "100% L1".
- * See docs/plan-produk-tka-lengkap.md §6.
- */
-const cognitiveLevel = ref<CognitiveLevel | ''>(props.initial?.cognitiveLevel ?? '')
-
-const COGNITIVE_LEVEL_OPTIONS: { value: CognitiveLevel, label: string }[] = [
-  { value: 'L1', label: 'L1 — Pengetahuan dan pemahaman' },
-  { value: 'L2', label: 'L2 — Aplikasi konsep' },
-  { value: 'L3', label: 'L3 — Penalaran dan analisis' },
-]
-
-function isCognitiveLevel(value: string | number): value is CognitiveLevel {
-  return COGNITIVE_LEVEL_OPTIONS.some(option => option.value === value)
-}
 
 /* Per-kind state, hydrated from `initial` where the kind matches. */
 
@@ -262,10 +243,9 @@ const matchingItemOptions = computed(() => matchingItems.value.map(item => ({
  * editor — and "Isi minimal dua opsi." shown at the very bottom told them
  * nothing about where to scroll.
  */
-type ValidationAnchor = 'prompt' | 'level' | 'choices' | 'statements' | 'matching' | 'answers'
+type ValidationAnchor = 'prompt' | 'choices' | 'statements' | 'matching' | 'answers'
 
 const promptBlockRef = ref<HTMLElement | null>(null)
-const levelBlockRef = ref<HTMLElement | null>(null)
 const choicesBlockRef = ref<HTMLElement | null>(null)
 const statementsBlockRef = ref<HTMLElement | null>(null)
 const matchingBlockRef = ref<HTMLElement | null>(null)
@@ -273,7 +253,6 @@ const answersBlockRef = ref<HTMLElement | null>(null)
 
 const ANCHOR_REFS: Record<ValidationAnchor, Ref<HTMLElement | null>> = {
   prompt: promptBlockRef,
-  level: levelBlockRef,
   choices: choicesBlockRef,
   statements: statementsBlockRef,
   matching: matchingBlockRef,
@@ -351,7 +330,6 @@ function buildDraft(): QuestionDraft | null {
     prompt: prompt.value,
     explanation: explanation.value,
     stimulus: stimulus.value,
-    cognitiveLevel: cognitiveLevel.value,
     choiceRows: choiceRows.value,
     correctIndex: correctIndex.value,
     correctIndexes: correctIndexes.value,
@@ -378,10 +356,6 @@ const previewDraft = computed<QuestionDraft>(() => {
     kind: kind.value,
     prompt: prompt.value,
     explanation: explanation.value,
-    // The preview is best-effort and runs before the form is valid, so it
-    // shows a level even when none is picked yet. buildDraft() is the one that
-    // insists on a real choice.
-    cognitiveLevel: cognitiveLevel.value || 'L1',
     ...(trimmedStimulus ? { stimulus: trimmedStimulus } : {}),
   }
 
@@ -457,7 +431,6 @@ function scheduleAutosave() {
       stimulus: stimulus.value,
       prompt: prompt.value,
       explanation: explanation.value,
-      cognitiveLevel: cognitiveLevel.value,
       choiceRows: choiceRows.value,
       correctIndex: correctIndex.value,
       correctIndexes: correctIndexes.value,
@@ -473,7 +446,7 @@ function scheduleAutosave() {
 }
 
 watch(
-  [kind, stimulus, prompt, explanation, cognitiveLevel, choiceRows, correctIndex, correctIndexes, statements, answers, matchingLeftRows, matchingItems, matchingPairs, ordering],
+  [kind, stimulus, prompt, explanation, choiceRows, correctIndex, correctIndexes, statements, answers, matchingLeftRows, matchingItems, matchingPairs, ordering],
   scheduleAutosave,
   { deep: true },
 )
@@ -501,7 +474,6 @@ function restoreDraft() {
       correctIndexes?: number[]
       statements?: typeof statements.value
       answers?: string[]
-      cognitiveLevel?: CognitiveLevel | ''
       matchingLeftRows?: typeof matchingLeftRows.value
       matchingItems?: typeof matchingItems.value
       matchingPairs?: Record<string, string>
@@ -512,7 +484,6 @@ function restoreDraft() {
     if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
     explanation.value = snapshot.explanation ?? ''
-    cognitiveLevel.value = snapshot.cognitiveLevel ?? ''
     if (snapshot.choiceRows) choiceRows.value = snapshot.choiceRows
     if (typeof snapshot.correctIndex === 'number') correctIndex.value = snapshot.correctIndex
     if (snapshot.correctIndexes) correctIndexes.value = snapshot.correctIndexes
@@ -682,23 +653,6 @@ function jumpBetweenOptions(event: KeyboardEvent) {
         aria-label="Pertanyaan"
         placeholder="Tulis pertanyaan atau instruksi soal. Gunakan tabel untuk data, atau format teks untuk penekanan."
       />
-    </div>
-
-    <div ref="levelBlockRef" class="max-w-xs scroll-mt-24">
-      <!-- `invalid` sampai levelnya dipilih: kosong memang bukan nilai yang
-           sah di sini (lihat komentar di `cognitiveLevel`), dan pesannya sudah
-           dibawa toast validasi, jadi field cukup menandai dirinya. -->
-      <AppSelect
-        :options="COGNITIVE_LEVEL_OPTIONS"
-        :model-value="cognitiveLevel"
-        label="Level kognitif"
-        placeholder="Pilih level kognitif"
-        :invalid="cognitiveLevel === ''"
-        @update:model-value="(value) => { if (isCognitiveLevel(value)) cognitiveLevel = value }"
-      />
-      <p class="mt-2 text-[0.82rem] text-muted">
-        Menentukan rapor penguasaan L1/L2/L3 yang dilihat siswa setelah mengerjakan.
-      </p>
     </div>
 
     <!-- Choice-based kinds share the same option editor. -->

@@ -1,18 +1,15 @@
-import type { CognitiveLevel, QuestionDraft, QuestionImportDraft, QuestionKind, QuestionOption, TutorSection } from '#shared/types/tutor-product'
+import type { QuestionDraft, QuestionImportDraft, QuestionKind, QuestionOption, TutorSection } from '#shared/types/tutor-product'
 
 /**
  * Parser CSV impor soal — per subtes (satu section per file) dan gabungan
  * (banyak subtes dalam satu file, lewat kolom `subtes` tambahan). Parse di
  * client, kirim batch/impor ke endpoint terkait.
  *
- * Header per subtes (kontrak, docs/tutor-flow-contract.md §6): tipe,level,
+ * Header per subtes (kontrak, docs/tutor-flow-contract.md §6): tipe,
  * wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,
  * bobotA..bobotE,jawabanIsian. Header gabungan (§7.4): sama, ditambah kolom
  * pertama `subtes` (wajib, dicocokkan ke section.title di server). Kolom tak
- * terpakai boleh kosong. `level` opsional (L1/L2/L3) supaya file lama tetap
- * terimpor, tapi mengosongkannya berarti soal itu masuk L1 di server dan
- * rapor level kognitif siswa jadi tidak berarti — lihat
- * docs/plan-produk-tka-lengkap.md §6. `tipe` menerima nilai Indonesia (pilihan_ganda,
+ * terpakai boleh kosong. `tipe` menerima nilai Indonesia (pilihan_ganda,
  * berbobot, benar_salah, isian_singkat) maupun alias Inggris (single_choice,
  * weighted, true_false, short_answer) — tapi harus sama dengan `defaultKind`
  * subtes tujuannya; server mengunci kind ke defaultKind section, jadi baris
@@ -91,18 +88,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
   if (!prompt) return { ok: false, error: 'kolom pertanyaan kosong.' }
   if (!explanation) return { ok: false, error: 'pembahasan wajib diisi.' }
 
-  // Optional column: files written before `level` existed still import, and
-  // the server falls back to L1 for anything it is not told. Left blank on
-  // purpose here rather than defaulting to 'L1' in the parser — a silent L1 is
-  // what makes a cognitive report read "100% L1" for a paket nobody ever
-  // levelled. See docs/plan-produk-tka-lengkap.md §6.
-  const rawLevel = cell('level').toUpperCase()
-  if (rawLevel && !['L1', 'L2', 'L3'].includes(rawLevel)) {
-    return { ok: false, error: `level "${cell('level')}" tidak dikenal — isi L1, L2, atau L3.` }
-  }
-  const level = rawLevel ? { cognitiveLevel: rawLevel as CognitiveLevel } : {}
-
-  const base = { ...level, ...(stimulus ? { stimulus } : {}) }
+  const base = { ...(stimulus ? { stimulus } : {}) }
   // Sel opsi CSV masih teks polos + `$..$` (tutor tidak bisa mengetik HTML
   // mentah di Excel) — tapi QuestionOption.text sekarang HTML kaya, kontrak
   // sama seperti Question.Prompt (lihat TutorOptionField.vue), jadi tiap sel
@@ -313,7 +299,7 @@ function parseTrueFalse(raw: string): boolean | null {
 }
 
 const CSV_TEMPLATE_HEADER = [
-  'tipe', 'level', 'wacana', 'pertanyaan', 'pembahasan',
+  'tipe', 'wacana', 'pertanyaan', 'pembahasan',
   'opsiA', 'opsiB', 'opsiC', 'opsiD', 'opsiE',
   'gambarOpsiA', 'gambarOpsiB', 'gambarOpsiC', 'gambarOpsiD', 'gambarOpsiE',
   'kunci', 'bobotA', 'bobotB', 'bobotC', 'bobotD', 'bobotE', 'jawabanIsian',
@@ -339,9 +325,6 @@ export const TEMPLATE_KIND_CELL: Record<QuestionKind, string> = {
 export function buildQuestionCsvTemplate(section: Pick<TutorSection, 'defaultKind'>): string {
   const exampleRow = CSV_TEMPLATE_HEADER.map((column) => {
     if (column === 'tipe') return TEMPLATE_KIND_CELL[section.defaultKind]
-    // A filled-in example, not a blank: a level left empty imports as L1, and
-    // a whole file of those makes the cognitive report meaningless.
-    if (column === 'level') return 'L1'
     return ''
   })
   return [CSV_TEMPLATE_HEADER, exampleRow].map(row => row.map(csvCell).join(',')).join('\r\n')
@@ -361,7 +344,6 @@ export function buildCombinedQuestionCsvTemplate(
     CSV_TEMPLATE_HEADER_COMBINED.map((column) => {
       if (column === 'subtes') return section.title
       if (column === 'tipe') return TEMPLATE_KIND_CELL[section.defaultKind]
-      if (column === 'level') return 'L1'
       return ''
     }),
   )

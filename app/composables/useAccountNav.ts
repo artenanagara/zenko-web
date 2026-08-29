@@ -25,11 +25,12 @@ export const ACCOUNT_NAV: AccountNavItem[] = [
 
 /**
  * The profile dropdown is a global door into the account area from anywhere on
- * the site, not a second copy of the sidebar. It carries only the two surfaces
- * people actually jump to; the rest is one step away in the sidebar once you
- * are inside.
+ * the site — the surfaces people jump to most, plus the account settings
+ * themselves, so the menu never needs a second click through the sidebar to
+ * reach them.
  */
 export const ACCOUNT_MENU: AccountNavItem[] = [
   { label: 'Ringkasan', to: '/akun', icon: IconHome },
   { label: 'Paket saya', to: '/akun/paket', icon: IconGrid },
+  { label: 'Akun saya', to: '/akun/profil', icon: IconUser },
 ]

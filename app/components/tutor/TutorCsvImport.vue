@@ -160,7 +160,7 @@ function reset() {
     <div class="flex flex-wrap items-start justify-between gap-3">
       <p v-if="mode === 'section'" class="max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
         Header yang dikenali:
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe,level,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
         Kolom yang tidak terpakai boleh kosong. Kolom
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> harus
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">{{ TEMPLATE_KIND_CELL[section.defaultKind] }}</code>
@@ -170,11 +170,6 @@ function reset() {
         soal Benar/Salah. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">jawabanIsian</code>
         dipisah ";" untuk isian singkat. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
         dan <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">gambarOpsi*</code> opsional.
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">level</code> diisi
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">L1</code>, <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">L2</code>, atau
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">L3</code> — boleh dikosongkan, tapi baris tanpa level
-        dihitung sebagai L1, dan rapor level kognitif siswa jadi tidak berarti kalau
-        semua soal menumpuk di sana.
       </p>
       <p v-else class="max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
         Header sama seperti template per subtes, ditambah kolom pertama

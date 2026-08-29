@@ -1,5 +1,4 @@
 import type {
-  CognitiveLevel,
   MatchingData,
   QuestionDraft,
   QuestionKind,
@@ -7,7 +6,7 @@ import type {
 } from '#shared/types/tutor-product'
 import { stripHtmlToText } from '~/utils/richText'
 
-export type DraftValidationAnchor = 'prompt' | 'level' | 'choices' | 'statements' | 'matching' | 'answers'
+export type DraftValidationAnchor = 'prompt' | 'choices' | 'statements' | 'matching' | 'answers'
 
 export interface ChoiceDraftRow {
   letter: string
@@ -32,7 +31,6 @@ export interface QuestionDraftState {
   prompt: string
   explanation: string
   stimulus: string
-  cognitiveLevel: CognitiveLevel | ''
   choiceRows: ChoiceDraftRow[]
   correctIndex: number
   correctIndexes: number[]
@@ -73,7 +71,6 @@ function baseDraft(state: QuestionDraftState): QuestionDraft | null {
     kind: state.kind,
     prompt: state.prompt.trim(),
     explanation: state.explanation.trim(),
-    cognitiveLevel: state.cognitiveLevel || undefined,
     ...(stimulus ? { stimulus } : {}),
   }
 }
@@ -240,7 +237,6 @@ function buildShortAnswerDraft(base: QuestionDraft, state: QuestionDraftState): 
 
 export function buildQuestionDraft(state: QuestionDraftState): QuestionDraftResult {
   if (!stripHtmlToText(state.prompt)) return error('Tulis pertanyaannya dulu.', 'prompt')
-  if (!state.cognitiveLevel) return error('Pilih level kognitif soal ini (L1, L2, atau L3).', 'level')
 
   const base = baseDraft(state)!
   switch (state.kind) {

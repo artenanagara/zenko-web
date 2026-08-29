@@ -274,6 +274,9 @@ function retry() {
               Masih ada {{ session.unansweredInSection.value }} soal yang belum dijawab.
             </span>
             <span v-else>Semua soal sudah terjawab.</span>
+            <span v-if="session.doubtfulCount.value > 0">
+              {{ session.doubtfulCount.value }} soal masih ditandai ragu-ragu.
+            </span>
             {{ session.isLastSection.value ? 'Setelah ini kamu tidak bisa mengubah jawaban lagi.' : 'Kamu tidak bisa kembali ke subtes ini setelah lanjut.' }}
           </p>
           <div class="mt-5 flex justify-end gap-2.5">

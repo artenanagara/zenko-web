@@ -168,6 +168,9 @@ function requestEndSection() {
               Masih ada {{ session.unansweredInSection.value }} soal yang belum dijawab.
             </span>
             <span v-else>Semua soal sudah terjawab.</span>
+            <span v-if="session.doubtfulCount.value > 0">
+              {{ session.doubtfulCount.value }} soal masih ditandai ragu-ragu.
+            </span>
             Jawabanmu langsung dinilai setelah ini.
           </p>
           <div class="mt-5 flex justify-end gap-2.5">
@@ -219,6 +222,12 @@ function requestEndSection() {
 
     <!-- Selesai: hasil singkat, lalu jalan yang jelas menuju paket lengkapnya. -->
     <div v-else-if="session.phase.value === 'finished' && session.result.value" class="container-page grid max-w-2xl gap-6 py-10 md:py-14">
+      <nav class="text-[0.85rem] text-muted">
+        <NuxtLink :to="`/paket/${slug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
+          <IconArrowLeft class="h-3.5 w-3.5" /> Kembali ke halaman paket
+        </NuxtLink>
+      </nav>
+
       <div class="overflow-hidden rounded-lg bg-linear-to-br from-primary-dark to-primary text-white shadow-lift">
         <div class="p-6 md:p-8">
           <p class="text-[0.78rem] font-bold tracking-[0.12em] text-white/70 uppercase">
@@ -280,12 +289,6 @@ function requestEndSection() {
           </AppButton>
         </div>
       </div>
-
-      <p>
-        <NuxtLink :to="`/paket/${slug}`" class="text-[0.88rem] font-semibold text-primary transition-colors hover:text-primary-light">
-          <IconArrowLeft class="inline-block h-3.5 w-3.5 -mt-0.5" /> Kembali ke halaman paket
-        </NuxtLink>
-      </p>
     </div>
   </div>
 </template>
