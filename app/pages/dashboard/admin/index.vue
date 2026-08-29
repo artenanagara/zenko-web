@@ -54,6 +54,12 @@ const cards = computed<QueueCard[]>(() => {
       count: s ? s.pendingProducts : null,
     },
     {
+      to: '/dashboard/admin/payments',
+      label: 'Verifikasi pembayaran',
+      icon: 'receipt',
+      count: s ? (s.pendingPaymentProofs ?? 0) : null,
+    },
+    {
       to: '/dashboard/admin/payouts',
       label: 'Pencairan',
       icon: 'wallet',

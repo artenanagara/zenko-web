@@ -54,6 +54,9 @@ const sidebarBadges = computed<Record<string, number>>(() => {
     if (summary) {
       badges['/dashboard/admin/applications'] = summary.pendingTutorApplications
       badges['/dashboard/admin/products'] = summary.pendingProducts
+      // Absent on the Duitku channel, where nobody ever files a receipt —
+      // and on an API that predates the manual one.
+      badges['/dashboard/admin/payments'] = summary.pendingPaymentProofs ?? 0
       badges['/dashboard/admin/payouts'] = summary.pendingPayouts
       badges['/dashboard/admin/bank-accounts'] = summary.pendingBankVerifications
       badges['/dashboard/admin/bank-accounts/changes'] = summary.pendingBankChangeRequests
