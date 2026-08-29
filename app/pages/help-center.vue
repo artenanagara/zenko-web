@@ -299,17 +299,17 @@ const quickLinks = [
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="mailto:artenanagara22@gmail.com"
+              href="mailto:support@zenkoedu.id"
               class="inline-flex min-h-13 items-center gap-2 rounded-xs bg-surface px-8 font-bold text-primary shadow-[0_8px_20px_rgba(12,40,100,0.18)] transition-[transform] duration-200 ease-smooth hover:-translate-y-px"
             >
               <IconMail class="h-4.5 w-4.5" aria-hidden="true" />
-              artenanagara22@gmail.com
+              support@zenkoedu.id
             </a>
             <a
-              href="tel:+628220840196"
+              href="tel:+6288227663468"
               class="inline-flex min-h-13 items-center justify-center rounded-xs border border-white/40 px-8 font-semibold text-white transition-[transform,background] duration-200 ease-smooth hover:-translate-y-px hover:bg-white/10 focus-visible:-translate-y-px"
             >
-              0822-0840-196
+              0882-2766-3468
             </a>
           </div>
 

@@ -163,8 +163,8 @@ async function onSubmit() {
 
     <template #footer>
       Butuh bantuan?
-      <a href="mailto:artenanagara22@gmail.com" class="font-semibold text-primary hover:underline">
-        artenanagara22@gmail.com
+      <a href="mailto:support@zenkoedu.id" class="font-semibold text-primary hover:underline">
+        support@zenkoedu.id
       </a>
     </template>
   </AuthPanel>

@@ -65,7 +65,7 @@ useHead({
     <h2 id="cara-mengajukan">2. Cara Mengajukan Refund</h2>
     <p>
       Kirim permohonan refund ke
-      <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a>
+      <a href="mailto:support@zenkoedu.id">support@zenkoedu.id</a>
       paling lambat <strong>7 hari kalender</strong> setelah pembayaran
       berhasil. Sertakan informasi berikut agar permohonan dapat ditinjau
       lebih cepat:
@@ -124,11 +124,11 @@ useHead({
     <ul>
       <li>
         <strong>Email</strong>:
-        <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a>
+        <a href="mailto:support@zenkoedu.id">support@zenkoedu.id</a>
       </li>
       <li>
         <strong>Telepon/WhatsApp</strong>:
-        <a href="tel:+628220840196">0822-0840-196</a>
+        <a href="tel:+6288227663468">0882-2766-3468</a>
       </li>
     </ul>
     <p>

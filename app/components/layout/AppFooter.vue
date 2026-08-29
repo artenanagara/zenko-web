@@ -40,7 +40,7 @@ const columns: FooterColumn[] = [
     links: [
       { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
       { label: 'Panduan TKA', to: '/tka' },
-      { label: 'Hubungi Kami', to: 'mailto:artenanagara22@gmail.com' },
+      { label: 'Hubungi Kami', to: 'mailto:halo@zenkoedu.id' },
       { label: 'FAQ', to: '/faq' },
       { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
     ],

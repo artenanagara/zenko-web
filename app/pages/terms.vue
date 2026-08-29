@@ -211,7 +211,7 @@ const revenueShare = [
     </p>
     <p>
       Permohonan refund harus dikirim ke
-      <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a> paling
+      <a href="mailto:support@zenkoedu.id">support@zenkoedu.id</a> paling
       lambat <strong>7 hari kalender</strong> setelah pembayaran, disertai nomor pesanan,
       alasan, dan bukti pendukung. Refund dapat disetujui apabila:
     </p>
@@ -344,11 +344,11 @@ const revenueShare = [
       <li><strong>Pengelola</strong>: PT Zenko Edukasi Digital</li>
       <li>
         <strong>Email</strong>:
-        <a href="mailto:artenanagara22@gmail.com">artenanagara22@gmail.com</a>
+        <a href="mailto:halo@zenkoedu.id">halo@zenkoedu.id</a>
       </li>
       <li>
         <strong>Telepon/WhatsApp</strong>:
-        <a href="tel:+628220840196">0822-0840-196</a>
+        <a href="tel:+6288227663468">0882-2766-3468</a>
       </li>
       <li><strong>Alamat</strong>: Klaten, Jawa Tengah, Indonesia</li>
     </ul>

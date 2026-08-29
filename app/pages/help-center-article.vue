@@ -266,14 +266,14 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
                 Tim Zenko siap membantu, Senin&ndash;Jumat 09.00&ndash;17.00 WIB.
               </p>
               <a
-                href="mailto:artenanagara22@gmail.com"
+                href="mailto:support@zenkoedu.id"
                 class="mt-3.5 flex items-center gap-2 text-[0.86rem] font-semibold text-white hover:underline"
               >
                 <IconMail class="h-4 w-4 shrink-0" />
-                artenanagara22@gmail.com
+                support@zenkoedu.id
               </a>
-              <a href="tel:+628220840196" class="mt-2 block text-[0.86rem] font-semibold text-white hover:underline">
-                0822-0840-196
+              <a href="tel:+6288227663468" class="mt-2 block text-[0.86rem] font-semibold text-white hover:underline">
+                0882-2766-3468
               </a>
             </div>
           </div>

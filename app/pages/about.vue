@@ -337,16 +337,16 @@ const audiences = [
             <div>
               <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Email</dt>
               <dd class="mt-1">
-                <a href="mailto:artenanagara22@gmail.com" class="font-semibold text-primary hover:underline">
-                  artenanagara22@gmail.com
+                <a href="mailto:halo@zenkoedu.id" class="font-semibold text-primary hover:underline">
+                  halo@zenkoedu.id
                 </a>
               </dd>
             </div>
             <div>
               <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Telepon / WhatsApp</dt>
               <dd class="mt-1">
-                <a href="tel:+628220840196" class="font-semibold text-primary hover:underline">
-                  0822-0840-196
+                <a href="tel:+6288227663468" class="font-semibold text-primary hover:underline">
+                  0882-2766-3468
                 </a>
               </dd>
             </div>

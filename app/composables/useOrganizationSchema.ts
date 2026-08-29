@@ -11,8 +11,8 @@ export function useOrganizationSchema() {
     legalName: 'PT Zenko Edukasi Digital',
     url: 'https://zenkoedu.id',
     logo: 'https://zenkoedu.id/logo.png',
-    email: 'artenanagara22@gmail.com',
-    telephone: '+628220840196',
+    email: 'halo@zenkoedu.id',
+    telephone: '+6288227663468',
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Klaten',
