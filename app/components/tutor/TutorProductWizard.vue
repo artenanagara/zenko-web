@@ -16,8 +16,8 @@ import type {
  * Edit mode autosaves a PATCH of whatever changed on every step change
  * ("Tersimpan" indicator), and questions/subtes/bundle items are saved through
  * their own endpoints inside step 3. Produk yang sudah tayang tetap bisa
- * menelusuri semua langkah, tetapi tampil read-only karena endpoint edit
- * kontennya memang hanya menerima draft/ditolak.
+ * menelusuri semua langkah; isi soalnya dibuka lewat tombol Edit soal jika
+ * rollout edit konten live diaktifkan.
  */
 const props = defineProps<{ productId?: string }>()
 
@@ -322,9 +322,23 @@ watch(detail, (loaded) => {
   }
 })
 
-/** Produk tayang tetap bisa menelusuri wizard; staging dapat membuka isi soalnya. */
+/** Produk tayang tetap bisa menelusuri wizard dan punya tombol edit isi soal. */
 const isLiveProduct = computed(() => isEdit.value && detail.value?.status === 'live')
-const isLiveReadOnly = computed(() => isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED)
+/**
+ * Produk live masuk ke langkah Isi dalam mode baca agar tutor tidak langsung
+ * mengubah paket yang sudah tayang. Tombol "Edit soal" menjadi titik masuk
+ * eksplisit; server tetap menjadi penjaga terakhir lewat feature flag yang
+ * sama pada endpoint question-content.
+ */
+const liveContentEditing = ref(false)
+const isLiveReadOnly = computed(() =>
+  isLiveProduct.value && (!TUTOR_LIVE_CONTENT_EDIT_ENABLED || !liveContentEditing.value),
+)
+
+function startLiveContentEditing() {
+  if (!TUTOR_LIVE_CONTENT_EDIT_ENABLED) return
+  liveContentEditing.value = true
+}
 
 const canEditProduct = computed(() => {
   if (!isEdit.value) return true
@@ -1238,7 +1252,18 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
       <template v-else-if="step === 3">
         <DashboardPanel v-if="isLiveReadOnly" title="Isi produk" description="Isi produk tayang ditampilkan dalam mode baca saja.">
           <AppSectionMessage appearance="information">
-            Produk yang sudah tayang tidak dapat mengubah isi wizard ini. Kamu tetap bisa melihat seluruh isinya.
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <span>Produk yang sudah tayang tidak langsung berubah. Klik Edit soal jika ingin memperbarui isi paket ini.</span>
+              <AppButton
+                v-if="TUTOR_LIVE_CONTENT_EDIT_ENABLED"
+                type="button"
+                size="sm"
+                @click="startLiveContentEditing"
+              >
+                <AppIcon name="pencil-simple" :size="14" />
+                Edit soal
+              </AppButton>
+            </div>
           </AppSectionMessage>
 
           <template v-if="isSingle">
