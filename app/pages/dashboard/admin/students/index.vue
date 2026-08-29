@@ -70,6 +70,7 @@ const {
 const columns = [
   { key: 'student', label: 'Siswa' },
   { key: 'status', label: 'Verifikasi' },
+  { key: 'joined', label: 'Tanggal bergabung' },
 ]
 
 function initial(name: string): string {
@@ -156,6 +157,10 @@ function initial(name: string): string {
             <DashboardBadge :tone="item.verified ? 'success' : 'warning'">
               {{ item.verified ? 'Terverifikasi' : 'Belum verifikasi' }}
             </DashboardBadge>
+          </template>
+
+          <template #cell(joined)="{ item }">
+            <span class="text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
           </template>
         </DashboardTable>
       </div>

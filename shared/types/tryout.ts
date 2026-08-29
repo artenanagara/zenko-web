@@ -42,7 +42,6 @@ export type TryoutQuestion =
     options: TryoutOption[]
     correct?: OptionLabel
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
     explanation?: string
   }
@@ -53,7 +52,6 @@ export type TryoutQuestion =
     text: string
     options: TryoutOption[]
     scores?: Record<OptionLabel, number>
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     /** Pembahasan, sanitized HTML. Omitted by the API when the tutor left it empty. */
     explanation?: string
   }
@@ -65,7 +63,6 @@ export type TryoutQuestion =
     options: TryoutOption[]
     correctOptions?: OptionLabel[]
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
   | {
@@ -76,7 +73,6 @@ export type TryoutQuestion =
     options: TryoutOption[]
     correctStatements?: Record<string, boolean>
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
   | {
@@ -87,7 +83,6 @@ export type TryoutQuestion =
     options: TryoutOption[]
     answers?: string[]
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
   | {
@@ -98,7 +93,6 @@ export type TryoutQuestion =
     options: TryoutOption[]
     correct?: OptionLabel
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
   | {
@@ -110,7 +104,6 @@ export type TryoutQuestion =
     matching?: TryoutMatchingItem[]
     matchingPairs?: Record<string, string>
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
   | {
@@ -121,7 +114,6 @@ export type TryoutQuestion =
     options: TryoutOption[]
     ordering?: string[]
     points?: number
-    cognitiveLevel?: 'L1' | 'L2' | 'L3'
     explanation?: string
   }
 
@@ -176,15 +168,6 @@ export interface TryoutSectionResult {
   maxScore: number
 }
 
-export interface CognitiveBreakdown {
-  correct: number
-  total: number
-  score: number
-  maxScore: number
-}
-
-export type CognitiveBreakdowns = Record<'L1' | 'L2' | 'L3', CognitiveBreakdown>
-
 /**
  * What POST /packages/:slug/sample/score returns: the same tally as
  * TryoutResult, minus finishedAt, which the browser stamps. The sample's
@@ -202,7 +185,6 @@ export interface TryoutResult {
   score: number
   maxScore: number
   sections: TryoutSectionResult[]
-  cognitive?: CognitiveBreakdowns
 }
 
 /**

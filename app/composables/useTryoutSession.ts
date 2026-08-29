@@ -1,7 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue'
 import type {
   OptionLabel,
-  CognitiveBreakdowns,
   TryoutAnswerState,
   TryoutAnswerValue,
   TryoutBlueprint,
@@ -464,11 +463,9 @@ export function useTryoutSession(
     gradeFailed.value = false
     try {
       const scored = await grade(answers.value)
-      const currentBlueprint = blueprint.value
       result.value = {
         finishedAt: Math.floor(Date.now() / 1000),
         ...scored,
-        ...(currentBlueprint ? { cognitive: cognitiveBreakdown(currentBlueprint) } : {}),
       }
     }
     catch {
@@ -505,29 +502,7 @@ export function useTryoutSession(
       score: sections.reduce((sum, s) => sum + s.score, 0),
       maxScore: sections.reduce((sum, s) => sum + s.maxScore, 0),
       sections,
-      cognitive: cognitiveBreakdown(currentBlueprint),
     }
-  }
-
-  function cognitiveBreakdown(currentBlueprint: TryoutBlueprint): CognitiveBreakdowns | undefined {
-    const levels: CognitiveBreakdowns = {
-      L1: { correct: 0, total: 0, score: 0, maxScore: 0 },
-      L2: { correct: 0, total: 0, score: 0, maxScore: 0 },
-      L3: { correct: 0, total: 0, score: 0, maxScore: 0 },
-    }
-    let hasExplicitLevel = false
-    for (const section of currentBlueprint.sections) {
-      for (const question of section.questions) {
-        if (question.cognitiveLevel) hasExplicitLevel = true
-        const bucket = levels[question.cognitiveLevel ?? 'L1']
-        const outcome = scoreQuestion(question, answers.value[question.id])
-        bucket.total += 1
-        bucket.score += outcome.points
-        bucket.maxScore += outcome.max
-        if (outcome.correct) bucket.correct += 1
-      }
-    }
-    return hasExplicitLevel ? levels : undefined
   }
 
   function warnBeforeUnload(event: BeforeUnloadEvent) {

@@ -389,7 +389,7 @@ async function onSignOutAllDevices() {
                di kanannya (nama, peran, email, status verifikasi) — tanpa kartu
                berbingkai, yang dulu membuat blok ini terbaca sebagai widget
                tersendiri alih-alih bagian isi panel. -->
-          <div class="flex items-center gap-4">
+          <div class="flex items-start gap-4">
             <span class="relative inline-flex shrink-0 rounded-full bg-linear-to-br from-primary-light to-primary p-0.5 shadow-lift">
               <img
                 v-if="user.avatarUrl"

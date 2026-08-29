@@ -73,6 +73,30 @@ const hasDiscount = computed(() =>
 )
 
 /* --------------------------------------------------------------------------
+ * "Ringkasan produk" — sama detailnya dengan langkah Review & ajukan di
+ * wizard tutor (mode, durasi, ambang lulus, thumbnail), supaya admin
+ * memutuskan dari data yang sama persis dengan yang tutor lihat sebelum
+ * mengajukan, bukan cuma harga dan deskripsi.
+ * ------------------------------------------------------------------------ */
+
+const modeSummary = computed(() => {
+  const product = detail.value
+  if (!product || product.type !== 'single') return ''
+  if (product.mode === 'mini_tryout') {
+    return `${PRODUCT_MODE_LABEL.mini_tryout}: ${product.sections?.[0]?.title ?? 'Belum ditentukan'}`
+  }
+  return PRODUCT_MODE_LABEL.simulasi
+})
+
+const totalDurationMinutes = computed(() =>
+  (detail.value?.sections ?? []).reduce((sum, section) => sum + section.durationMinutes, 0),
+)
+
+const passingGradeSections = computed(() =>
+  (detail.value?.sections ?? []).filter(section => section.passingGrade != null),
+)
+
+/* --------------------------------------------------------------------------
  * Isi panel kedua — single: subtes + kelengkapan soal; bundle: isi bundling
  * dengan status per item (item non-live adalah red flag).
  * ------------------------------------------------------------------------ */
@@ -248,10 +272,45 @@ async function decide(approve: boolean, reason?: string) {
             </DashboardBadge>
           </div>
 
-          <p v-if="detail.description" class="max-w-prose text-sm leading-[1.7] whitespace-pre-line text-muted">
-            {{ detail.description }}
-          </p>
-          <p v-else class="text-sm text-muted">Tidak ada deskripsi.</p>
+          <dl class="grid gap-4 sm:grid-cols-2">
+            <div v-if="detail.type === 'single'">
+              <dt class="text-[0.8rem] text-muted">Mode</dt>
+              <dd class="mt-0.5 font-semibold">{{ modeSummary }}</dd>
+            </div>
+            <div v-if="detail.type === 'single'">
+              <dt class="text-[0.8rem] text-muted">Durasi</dt>
+              <dd class="mt-0.5 font-semibold">
+                {{ totalDurationMinutes > 0 ? formatDuration(totalDurationMinutes) : 'Belum diatur' }}
+              </dd>
+            </div>
+            <div v-if="passingGradeSections.length" class="sm:col-span-2">
+              <dt class="text-[0.8rem] text-muted">Ambang Lulus</dt>
+              <dd class="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
+                <span v-for="section in passingGradeSections" :key="section.id">
+                  {{ section.title }}: {{ section.passingGrade }}
+                </span>
+              </dd>
+            </div>
+            <div class="sm:col-span-2">
+              <dt class="text-[0.8rem] text-muted">Thumbnail</dt>
+              <dd class="mt-1.5">
+                <img
+                  v-if="detail.thumbnailUrl"
+                  :src="detail.thumbnailUrl"
+                  alt=""
+                  class="aspect-16/10 h-24 w-auto rounded-sm border border-hairline object-cover"
+                >
+                <span v-else class="text-[0.88rem] text-muted">Belum ada thumbnail</span>
+              </dd>
+            </div>
+          </dl>
+
+          <div>
+            <p v-if="detail.description" class="max-w-prose text-sm leading-[1.7] whitespace-pre-line text-muted">
+              {{ detail.description }}
+            </p>
+            <p v-else class="text-sm text-muted">Tidak ada deskripsi.</p>
+          </div>
 
           <AppAlert
             v-if="detail.status === 'rejected' && detail.rejectReason"

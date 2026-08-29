@@ -48,7 +48,6 @@ const stats = computed(() => [
   { label: 'Skor akhir', value: `${props.result.score}` },
   { label: 'Ketepatan', value: `${percent.value}%` },
   { label: 'Subtes diselesaikan', value: `${props.result.sections.length}` },
-  { label: 'Selesai pada', value: formatDate(props.result.finishedAt) },
 ])
 
 /* --------------------------------------------------------------------------
@@ -108,6 +107,12 @@ function openReview() {
 
 <template>
   <div class="container-page grid max-w-4xl gap-6 py-10 md:py-14">
+    <nav v-if="!simulate" class="text-[0.85rem] text-muted">
+      <NuxtLink :to="`/akun/paket/${packageSlug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
+        <IconArrowLeft class="h-3.5 w-3.5" /> Kembali ke paket
+      </NuxtLink>
+    </nav>
+
     <div class="overflow-hidden rounded-lg bg-linear-to-br from-primary-dark to-primary text-white shadow-lift">
       <div class="p-6 md:p-8">
         <p class="text-[0.78rem] font-bold tracking-[0.12em] text-white/70 uppercase">
@@ -142,18 +147,6 @@ function openReview() {
           </span>
         </li>
       </ul>
-    </DashboardPanel>
-
-    <DashboardPanel v-if="result.cognitive" title="Analisis level kognitif" description="Performa berdasarkan tingkat berpikir pada soal yang dikerjakan.">
-      <div class="grid gap-3 sm:grid-cols-3">
-        <div v-for="level in ['L1', 'L2', 'L3'] as const" :key="level" class="rounded-sm border border-hairline bg-surface-alt p-3.5">
-          <p class="text-[0.78rem] font-bold tracking-wide text-faint uppercase">{{ level }}</p>
-          <p class="mt-1 text-lg font-extrabold tabular-nums">
-            {{ result.cognitive[level].maxScore === 0 ? 0 : Math.round((result.cognitive[level].score / result.cognitive[level].maxScore) * 100) }}%
-          </p>
-          <p class="text-[0.78rem] text-muted">{{ result.cognitive[level].correct }} dari {{ result.cognitive[level].total }} tepat</p>
-        </div>
-      </div>
     </DashboardPanel>
 
     <DashboardPanel
