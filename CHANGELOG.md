@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/artenanagara/zenko-web/compare/v0.11.0...v0.11.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **upload:** refresh expired csrf token ([5244cfb](https://github.com/artenanagara/zenko-web/commit/5244cfbfde4e9b09ad487f6e43049ab84618cb75))
+
 ## [0.11.0](https://github.com/artenanagara/zenko-web/compare/v0.10.0...v0.11.0) (2026-08-29)
 
 
