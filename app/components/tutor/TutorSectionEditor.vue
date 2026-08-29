@@ -54,6 +54,8 @@ const activeSection = computed(() =>
 const editorFor = ref('')
 const saving = ref(false)
 const errorMessage = ref('')
+type QuestionFormHandle = { getDraft: () => QuestionDraft | null }
+const questionFormRef = ref<QuestionFormHandle | null>(null)
 
 /**
  * Bumped every time a *fresh* blank form should open. `editorFor` alone can't
@@ -147,6 +149,20 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext
     saving.value = false
   }
 }
+
+/** Flush an open question editor before the wizard changes steps. */
+async function saveActiveQuestion(): Promise<boolean> {
+  if (!editorFor.value || !activeSection.value) return true
+
+  const draft = questionFormRef.value?.getDraft()
+  if (!draft) return false
+
+  const editorBeforeSave = editorFor.value
+  await saveQuestion(activeSection.value, draft, false)
+  return editorFor.value !== editorBeforeSave
+}
+
+defineExpose({ saveActiveQuestion })
 
 async function removeQuestion(section: TutorSection, questionId: string) {
   const question = section.questions.find(item => item.id === questionId)
@@ -291,6 +307,7 @@ const activeSectionDotClass = computed(() =>
                ajukan — tidak perlu dobel di sini saat masih menulis. -->
           <TutorQuestionForm
             v-if="editorFor !== ''"
+            ref="questionFormRef"
             :key="formKey"
             :initial="questionBeingEdited(activeSection!)"
             :default-kind="activeSection!.defaultKind"

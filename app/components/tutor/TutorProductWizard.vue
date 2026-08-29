@@ -331,6 +331,8 @@ const isLiveProduct = computed(() => isEdit.value && detail.value?.status === 'l
  * sama pada endpoint question-content.
  */
 const liveContentEditing = ref(false)
+type SectionEditorHandle = { saveActiveQuestion: () => Promise<boolean> }
+const sectionEditorRef = ref<SectionEditorHandle | null>(null)
 const isLiveReadOnly = computed(() =>
   isLiveProduct.value && (!TUTOR_LIVE_CONTENT_EDIT_ENABLED || !liveContentEditing.value),
 )
@@ -583,6 +585,11 @@ async function goTo(target: number) {
   if (!props.productId && target >= 3) {
     await createAndContinue()
     return
+  }
+
+  if (step.value === 3 && target !== 3 && !isLiveReadOnly.value) {
+    const savedQuestion = await sectionEditorRef.value?.saveActiveQuestion()
+    if (savedQuestion === false) return
   }
 
   if (!(await persist())) return
@@ -1294,6 +1301,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           />
           <TutorSectionEditor
             v-if="productId && detail"
+            ref="sectionEditorRef"
             :product-id="productId"
             :sections="detail.sections ?? []"
             :is-custom="isCustom"

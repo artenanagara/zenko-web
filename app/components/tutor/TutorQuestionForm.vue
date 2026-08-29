@@ -561,6 +561,29 @@ function submit(mode: 'save' | 'save-and-next') {
   else emit('saveAndNext', draft)
 }
 
+/**
+ * Used by the wizard before it unmounts this form while moving to another
+ * step. Without this bridge, a tutor could edit a question and click the
+ * step-4 action while the draft was still only in this component's local
+ * state; the editor would disappear and the change would never reach the API.
+ */
+function getDraftForParent(): QuestionDraft | null {
+  validationFailure = null
+  const draft = buildDraft()
+  if (!draft) {
+    const failure = takeValidationFailure()
+    if (failure) {
+      focusField(ANCHOR_REFS[failure.anchor].value)
+      toast.error('Soal belum bisa disimpan.', failure.message)
+    }
+    return null
+  }
+  clearDraft()
+  return draft
+}
+
+defineExpose({ getDraft: getDraftForParent })
+
 /** Ctrl/Cmd+Enter = simpan & lanjut; Tab di opsi A–E loncat antar-opsi. */
 function onFormKeydown(event: KeyboardEvent) {
   if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
