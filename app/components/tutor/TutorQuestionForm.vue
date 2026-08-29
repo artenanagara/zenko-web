@@ -436,7 +436,7 @@ const previewDraft = computed<QuestionDraft>(() => {
   return { ...base, answers: answers.value.filter(Boolean) }
 })
 
-defineExpose({ previewDraft })
+defineExpose({ previewDraft, getDraft: getDraftForParent })
 
 /* -------------------------------------------------------------------------
  * Draft lokal (localStorage) — penyelamat kalau koneksi putus atau laptop
@@ -581,8 +581,6 @@ function getDraftForParent(): QuestionDraft | null {
   clearDraft()
   return draft
 }
-
-defineExpose({ getDraft: getDraftForParent })
 
 /** Ctrl/Cmd+Enter = simpan & lanjut; Tab di opsi A–E loncat antar-opsi. */
 function onFormKeydown(event: KeyboardEvent) {
