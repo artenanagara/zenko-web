@@ -10,6 +10,11 @@ export interface InvoiceTotals {
   subtotal: number
   discount: number
   serviceFee: number
+  /**
+   * Kode unik QRIS manual, dibawa sebagai barisnya sendiri supaya rincian
+   * invoice tetap berjumlah persis. 0 di jalur Duitku dan pada pesanan gratis.
+   */
+  uniqueCode: number
   total: number
 }
 
@@ -22,7 +27,8 @@ export function invoiceTotals(purchase: Purchase): InvoiceTotals {
     subtotal,
     discount: subtotal - paidForItems,
     serviceFee: purchase.serviceFee,
-    total: paidForItems + purchase.serviceFee,
+    uniqueCode: purchase.uniqueCode,
+    total: paidForItems + purchase.serviceFee + purchase.uniqueCode,
   }
 }
 
@@ -57,6 +63,9 @@ export function usePurchase(invoice: string): AsyncResource<Purchase | null> {
  */
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: 'Menunggu pembayaran',
+  // Deliberately not "Menunggu pembayaran": the buyer has already paid as far
+  // as they are concerned, and the wait is now on Zenko's side.
+  verifying: 'Menunggu verifikasi',
   paid: 'Lunas',
   expired: 'Kedaluwarsa',
 }
@@ -69,9 +78,26 @@ export function purchaseStatusLabel(status: OrderStatus): string {
 const STATUS_TONES: Record<OrderStatus, 'success' | 'warning' | 'neutral'> = {
   paid: 'success',
   pending: 'warning',
+  verifying: 'warning',
   expired: 'neutral',
 }
 
 export function purchaseStatusTone(status: OrderStatus): 'success' | 'warning' | 'neutral' {
   return STATUS_TONES[status]
+}
+
+/**
+ * Nominal yang harus ditransfer, dipisah dari harga paketnya.
+ *
+ * Angka bulat dan kode unik ditampilkan terpisah lalu dijumlahkan, karena satu
+ * digit yang salah ketik membuat admin tidak bisa mencocokkan transfernya —
+ * jadi pembeli harus melihat dari mana angka ganjil itu datang.
+ */
+export function manualTransferBreakdown(purchase: Purchase) {
+  const totals = invoiceTotals(purchase)
+  return {
+    base: totals.total - totals.uniqueCode,
+    uniqueCode: totals.uniqueCode,
+    total: totals.total,
+  }
 }

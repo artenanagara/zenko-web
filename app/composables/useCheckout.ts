@@ -35,9 +35,23 @@ import type { CreateOrderRequest } from '#shared/types/order'
  * already exists, instead of duplicating `startPolling`/`scheduleExpiry`.
  */
 
-export type CheckoutState = 'idle' | 'submitting' | 'not-connected' | 'awaiting-payment' | 'expired' | 'error'
+export type CheckoutState =
+  | 'idle'
+  | 'submitting'
+  | 'not-connected'
+  | 'awaiting-payment'
+  | 'awaiting-verification'
+  | 'expired'
+  | 'error'
 
 const POLL_INTERVAL_MS = 3000
+
+/**
+ * A verifying order waits on a person, not a webhook, so it is polled far less
+ * often — three seconds would be asking a human "sudah?" twenty times a minute.
+ * The page says the buyer will be emailed instead.
+ */
+const VERIFY_POLL_INTERVAL_MS = 15_000
 
 export function useCheckout() {
   const { public: config } = useRuntimeConfig()
@@ -80,7 +94,7 @@ export function useCheckout() {
    * (checkout/[slug]'s no-QR dev fallback, which has no such screen) the
    * default is the original behaviour: go straight to the owned package.
    */
-  function startPolling(invoice: string, onPaid?: (paid: Purchase) => void) {
+  function startPolling(invoice: string, onPaid?: (paid: Purchase) => void, intervalMs = POLL_INTERVAL_MS) {
     pollHandle = setInterval(async () => {
       let latest: Purchase
       try {
@@ -105,18 +119,37 @@ export function useCheckout() {
         stopWaiting()
         state.value = 'expired'
       }
-    }, POLL_INTERVAL_MS)
+      else {
+        // Still open. The row is kept anyway, because on the manual channel
+        // this is how an admin's rejection — and its reason — reaches the page:
+        // the order drops back to pending carrying `paymentProof.rejectReason`.
+        purchase.value = latest
+        if (latest.status === 'pending' && state.value === 'awaiting-verification') {
+          stopWaiting()
+          resumeWaiting(latest, onPaid)
+        }
+      }
+    }, intervalMs)
   }
 
   /**
    * Pick up polling around a purchase that already exists, rather than one
    * just created by `pay()` — either the tail end of that same call, or a
-   * dedicated page loading a still-pending invoice fresh (a bookmark, or the
-   * buyer coming back later). A terminal status needs no timer at all.
+   * dedicated page loading a still-open invoice fresh (a bookmark, or the buyer
+   * coming back later). A terminal status needs no timer at all.
    */
   function resumeWaiting(existing: Purchase, onPaid?: (paid: Purchase) => void) {
     stopWaiting()
     purchase.value = existing
+
+    // Waiting on an admin rather than on the buyer: no countdown to run — the
+    // deadline stopped applying the moment the receipt was uploaded — and a
+    // much slower poll.
+    if (existing.status === 'verifying') {
+      state.value = 'awaiting-verification'
+      startPolling(existing.invoice, onPaid, VERIFY_POLL_INTERVAL_MS)
+      return
+    }
 
     if (existing.status !== 'pending') {
       state.value = existing.status === 'expired' ? 'expired' : 'idle'
@@ -126,6 +159,43 @@ export function useCheckout() {
     state.value = 'awaiting-payment'
     if (existing.expiresAt) scheduleExpiry(existing.expiresAt)
     startPolling(existing.invoice, onPaid)
+  }
+
+  /**
+   * Unggah bukti transfer untuk pesanan QRIS manual.
+   *
+   * Nominal dan nama pengirim yang diketik pembeli dikirim apa adanya sebagai
+   * klaim — server tidak pernah melunasi pesanan darinya, keduanya hanya bahan
+   * pencocokan untuk admin. Yang mengubah status adalah unggahannya sendiri.
+   */
+  async function uploadProof(
+    invoice: string,
+    payload: { file: File, senderName: string, paidAmount: number, note?: string },
+  ): Promise<Purchase | null> {
+    error.value = ''
+
+    const body = new FormData()
+    body.append('proof', payload.file)
+    body.append('senderName', payload.senderName)
+    body.append('paidAmount', String(payload.paidAmount))
+    body.append('transferredAt', String(Math.floor(Date.now() / 1000)))
+    if (payload.note) body.append('note', payload.note)
+
+    try {
+      // Deliberately does not start waiting here. The caller owns the wait —
+      // otherwise a form nested inside a page that already polls would leave
+      // two timers running against the same invoice.
+      return await useApiFetch<Purchase>(`/me/purchases/${invoice}/payment-proof`, {
+        baseURL: config.apiBase,
+        method: 'POST',
+        body,
+        credentials: 'include',
+      })
+    }
+    catch (cause) {
+      error.value = messageFor(cause)
+      return null
+    }
   }
 
   /**
@@ -172,9 +242,10 @@ export function useCheckout() {
         return
       }
 
-      if (created.qrUrl) {
-        // A real QR to scan — the dedicated payment page owns showing it and
-        // polling for settlement from here.
+      if (created.qrUrl || created.paymentChannel === 'manual_qris') {
+        // Something to pay: either a Duitku QR to scan, or the static QRIS
+        // poster and its receipt upload. Either way the dedicated payment page
+        // owns showing it and waiting from here.
         await navigateTo(`/pembayaran/${created.invoice}`)
         return
       }
@@ -211,7 +282,7 @@ export function useCheckout() {
   // an unmounted page.
   onUnmounted(stopWaiting)
 
-  return { state, error, purchase, pay, reset, resumeWaiting }
+  return { state, error, purchase, pay, reset, resumeWaiting, uploadProof }
 }
 
 /** zenko-api renders every error as { error, requestId }; fall back for the rest. */

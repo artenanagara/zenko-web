@@ -3,6 +3,7 @@
  * /admin/* section of docs/tutor-flow-contract.md.
  */
 
+import type { OrderStatus, PaymentProofStatus, PurchaseItem } from './account'
 import type { TutorProductDetail, TutorProductSummary } from './tutor-product'
 import type { BankAccount, PayoutStatus } from './tutor-earnings'
 
@@ -51,6 +52,58 @@ export type PayoutAction = 'process' | 'transfer' | 'reject'
 export interface PayoutDecisionRequest {
   action: PayoutAction
   reason?: string
+}
+
+/**
+ * Row shape of GET /admin/payment-proofs?status= — satu bukti transfer yang
+ * diunggah pembeli pada jalur QRIS manual, lengkap dengan konteks pesanannya.
+ *
+ * Flat, bukan `{ proof: {...} }`: Go's model.AdminPaymentProof MENYERAP
+ * PaymentProof, jadi field buktinya ikut serialisasi di level atas bersama
+ * invoice dan konteks pesanan.
+ *
+ * `senderName` dan `paidAmount` adalah klaim pembeli, bukan kebenaran. Tugas
+ * admin justru membandingkan keduanya dengan `amountDue` dan dengan gambar
+ * buktinya — tidak ada jalur server yang melunasi pesanan dari angka yang
+ * diketik pembeli.
+ */
+export interface AdminPaymentProof {
+  id: string
+  status: PaymentProofStatus
+  senderName: string
+  paidAmount: number
+  /** Unix seconds menurut pembeli; absen kalau dikosongkan. */
+  transferredAt?: number
+  note: string
+  /** Unix seconds; ada setelah admin memutuskan. */
+  reviewedAt?: number
+  rejectReason: string
+  /** Unix seconds bukti diunggah. */
+  createdAt: number
+
+  invoice: string
+  buyerName: string
+  buyerEmail: string
+  /** Nominal yang seharusnya ditransfer — harga + biaya layanan + kode unik. */
+  amountDue: number
+  uniqueCode: number
+  orderStatus: OrderStatus
+  /** Unix seconds pesanan dibuat. */
+  orderDate: number
+  items: PurchaseItem[]
+}
+
+export type PaymentProofAction = 'approve' | 'reject'
+
+/**
+ * POST /admin/payment-proofs/:id/decision — `reason` wajib saat reject (itulah
+ * yang sampai ke pembeli lewat email dan banner), `reference` opsional saat
+ * approve untuk mencatat nomor mutasi banknya.
+ */
+export interface PaymentProofDecisionRequest {
+  action: PaymentProofAction
+  reason?: string
+  reference?: string
 }
 
 /**
@@ -104,6 +157,12 @@ export interface AdminSummary {
   pendingPayouts: number
   pendingBankVerifications: number
   pendingBankChangeRequests: number
+  /**
+   * Bukti transfer QRIS manual yang menunggu diperiksa. Optional karena API
+   * lama belum mengirimkannya, dan karena pada jalur Duitku antrean ini
+   * memang tidak pernah terisi.
+   */
+  pendingPaymentProofs?: number
   /**
    * Current headcount per role, not a queue — backs the Ringkasan page's
    * stat cards. Optional so older API responses (before the backend shipped

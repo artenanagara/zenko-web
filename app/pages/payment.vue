@@ -16,7 +16,7 @@ const invoice = route.params.invoice as string
 // belongs to zenko-api's origin, not Nuxt's), 404 hands off to the error page.
 const { data: purchase, pending, error, refresh } = usePurchase(invoice)
 
-const { state: pollState, resumeWaiting } = useCheckout()
+const { state: pollState, purchase: livePurchase, resumeWaiting } = useCheckout()
 
 useHead({
   title: `Pembayaran ${invoice} | Zenko`,
@@ -49,13 +49,32 @@ watch(purchase, async (value) => {
   //
   // Yang masih diarahkan hanya status yang QR-nya sudah tidak bisa dipakai dan
   // tidak berujung kepemilikan — expired, batal, gagal.
-  if (value.status !== 'pending' && value.status !== 'paid') {
+  // `verifying` ikut tinggal di sini: bukti transfernya sedang diperiksa, dan
+  // halaman inilah yang menampilkan hasilnya — termasuk alasan kalau ditolak.
+  if (value.status !== 'pending' && value.status !== 'paid' && value.status !== 'verifying') {
     await navigateTo(`/akun/pembelian/${value.invoice}`, { replace: true })
     return
   }
 
   resumeWaiting(value, () => { livePaid.value = true })
 }, { immediate: true })
+
+/**
+ * Jalur QRIS manual: tidak ada gateway, tidak ada kode per pesanan, dan yang
+ * ditunggu adalah orang. `pollState` yang jadi sumber kebenaran status di layar
+ * setelah pembeli mengunggah, karena `purchase` di sini hanya dimuat sekali.
+ */
+const isManual = computed(() => purchase.value?.paymentChannel === 'manual_qris')
+const isVerifying = computed(() =>
+  pollState.value === 'awaiting-verification' || purchase.value?.status === 'verifying',
+)
+
+/**
+ * Setelah unggah berhasil, useCheckout sudah memegang salinan pesanan yang
+ * paling baru — termasuk hasil verifikasi begitu admin memutuskan. Salinan itu
+ * yang dipakai kartu manual supaya alasan penolakan muncul tanpa memuat ulang.
+ */
+const manualPurchase = computed(() => livePurchase.value ?? purchase.value)
 
 // `pollState` only turns 'expired' via the client-side timer; the invoice can
 // just as well already be expired straight from the initial fetch.
@@ -64,8 +83,16 @@ const isExpired = computed(() => pollState.value === 'expired' || purchase.value
 // opened fresh on an invoice that was already paid (e.g. a bookmarked link
 // revisited later) — either way the same success screen applies.
 const isPaid = computed(() => livePaid.value || purchase.value?.status === 'paid')
-const displayStatus = computed(() => isPaid.value ? 'paid' : (purchase.value?.status ?? 'pending'))
+const displayStatus = computed(() => {
+  if (isPaid.value) return 'paid'
+  if (isVerifying.value) return 'verifying'
+  return purchase.value?.status ?? 'pending'
+})
 const showQR = computed(() => !isExpired.value && !isPaid.value && Boolean(purchase.value?.qrUrl))
+/** Kartu QRIS manual muncul selama pesanannya masih giliran pembeli. */
+const showManual = computed(() =>
+  isManual.value && !isExpired.value && !isPaid.value && !isVerifying.value,
+)
 
 // `qrUrl` now carries Duitku's raw QRIS payload string, not a hosted image —
 // rendered into an image locally (no third-party image API ever sees a
@@ -174,8 +201,11 @@ watch(isRedirecting, (active, wasActive) => {
       <h1 class="text-[clamp(1.7rem,2.6vw,2.2rem)] leading-[1.14] tracking-[-0.04em]">
         Pembayaran {{ purchase.invoice }}
       </h1>
-      <p v-if="showQR" class="mt-2.5 text-muted">
+      <p v-if="showQR || showManual" class="mt-2.5 text-muted">
         Selesaikan pembayaran QRIS untuk mengaktifkan paketnya.
+      </p>
+      <p v-else-if="isVerifying" class="mt-2.5 text-muted">
+        Bukti transfermu sudah masuk dan sedang diperiksa tim Zenko.
       </p>
 
       <div class="mt-8 grid grid-cols-1 items-start gap-6 min-[901px]:grid-cols-[minmax(0,1fr)_360px] min-[901px]:gap-8">
@@ -228,6 +258,44 @@ watch(isRedirecting, (active, wasActive) => {
               Buat kode QRIS baru
             </AppButton>
           </div>
+
+          <!-- Menunggu admin. Tidak ada hitung mundur di sini: tenggat berhenti
+               berlaku begitu bukti diunggah, dan yang ditunggu adalah orang. -->
+          <div
+            v-else-if="isVerifying"
+            role="status"
+            class="grid justify-items-center gap-4 rounded-lg border border-hairline bg-surface px-6 py-12 text-center shadow-xs"
+          >
+            <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+              <AppIcon name="hourglass-medium" :size="34" aria-hidden="true" />
+            </span>
+            <div>
+              <p class="text-[1.3rem] font-bold tracking-[-0.03em]">Menunggu verifikasi</p>
+              <p class="mt-2 max-w-md text-[0.92rem] leading-[1.6] text-muted">
+                Bukti transfermu untuk <span class="font-semibold text-ink">{{ packageTitle }}</span>
+                sudah kami terima. Tim Zenko memeriksanya manual, maksimal 1×24 jam.
+                Kamu akan dapat email begitu selesai — halaman ini juga otomatis
+                lanjut kalau kamu membiarkannya terbuka.
+              </p>
+            </div>
+            <DashboardBadge tone="warning">{{ purchaseStatusLabel(displayStatus) }}</DashboardBadge>
+
+            <div class="mt-2 grid w-full max-w-70 gap-3">
+              <!-- outline, bukan secondary: tidak ada tindakan utama di layar
+                   ini — pembeli sedang menunggu — jadi tombolnya tidak boleh
+                   berat seperti ajakan. -->
+              <AppButton variant="outline" size="lg" class="w-full" to="/akun/pembelian">
+                Lihat riwayat pembelian
+              </AppButton>
+            </div>
+          </div>
+
+          <!-- QRIS statis Zenko: bayar sendiri, lalu unggah buktinya. -->
+          <ManualQrisCard
+            v-else-if="showManual && manualPurchase"
+            :purchase="manualPurchase"
+            @uploaded="refresh()"
+          />
 
           <!-- Kode QRIS masih berlaku — halaman ini polling di latar dan lanjut
                sendiri begitu pembayaran diterima (lihat useCheckout). -->
@@ -370,6 +438,12 @@ watch(isRedirecting, (active, wasActive) => {
               <div class="flex justify-between gap-4">
                 <dt class="text-muted">Biaya layanan</dt>
                 <dd class="tabular-nums">{{ formatRupiah(invoiceTotals(purchase).serviceFee) }}</dd>
+              </div>
+              <!-- Tanpa baris ini rinciannya tidak menjumlah ke Total, dan
+                   angka ganjil di bawah terbaca seperti salah hitung. -->
+              <div v-if="invoiceTotals(purchase).uniqueCode > 0" class="flex justify-between gap-4">
+                <dt class="text-muted">Kode unik</dt>
+                <dd class="tabular-nums">{{ formatRupiah(invoiceTotals(purchase).uniqueCode) }}</dd>
               </div>
             </dl>
 

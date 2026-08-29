@@ -245,6 +245,13 @@ function print() {
               <dt class="text-muted">Biaya layanan</dt>
               <dd class="tabular-nums">{{ formatRupiah(invoiceTotals(purchase).serviceFee) }}</dd>
             </div>
+            <!-- Kode unik punya barisnya sendiri supaya rinciannya tetap
+                 berjumlah persis dan angka ganjil di Total tidak terlihat
+                 seperti salah hitung. -->
+            <div v-if="invoiceTotals(purchase).uniqueCode > 0" class="flex justify-between gap-4">
+              <dt class="text-muted">Kode unik</dt>
+              <dd class="tabular-nums">{{ formatRupiah(invoiceTotals(purchase).uniqueCode) }}</dd>
+            </div>
             <div class="mt-1 flex items-baseline justify-between gap-4 border-t border-line pt-3">
               <dt class="font-semibold">Total</dt>
               <dd v-if="invoiceTotals(purchase).total > 0" class="text-[1.5rem] font-extrabold tracking-[-0.04em] tabular-nums">

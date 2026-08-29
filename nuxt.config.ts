@@ -141,12 +141,17 @@ export default defineNuxtConfig({
       appVersion: packageMetadata.version,
       // Base URL of zenko-api. Override with NUXT_PUBLIC_API_BASE.
       apiBase: 'http://localhost:8080/api/v1',
-      // Whether checkout may call POST /orders, which now charges a real
-      // Duitku QRIS payment (see zenko-api's DUITKU_API_KEY). Off until that
-      // backend is reachable; while off, the checkout page says the payment
-      // is not connected instead of placing an order.
-      // Turn on with NUXT_PUBLIC_PAYMENT_ENABLED=true.
-      paymentEnabled: false,
+      // Whether checkout may call POST /orders. How the resulting order is
+      // actually paid is the server's decision — a Duitku QRIS charge, or the
+      // manual QRIS channel where the buyer transfers to Zenko's static QR,
+      // uploads a receipt, and an admin verifies it (zenko-api's
+      // PAYMENT_CHANNEL). This flag only says whether to attempt an order at
+      // all; while off, the checkout page says payment is not connected
+      // instead of placing one.
+      //
+      // On, because the manual channel needs no gateway credentials to work.
+      // Turn off with NUXT_PUBLIC_PAYMENT_ENABLED=false.
+      paymentEnabled: true,
 		// Recovery flows are live in zenko-api. Operators can still turn one off
 		// explicitly during a partial rollback without hiding the others.
       //

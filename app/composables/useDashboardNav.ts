@@ -70,6 +70,10 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       },
       { label: 'Daftar Siswa', to: '/dashboard/admin/students', icon: IconUsers },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
+      // Uang masuk sebelum uang keluar: verifikasi pembayaran adalah antrean
+      // yang menahan akses pembeli yang sudah membayar, jadi ia duduk di atas
+      // Pencairan.
+      { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt },
       { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet },
       {
         label: 'Rekening bank',

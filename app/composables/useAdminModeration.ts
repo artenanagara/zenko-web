@@ -4,8 +4,10 @@ import type {
   AdminPayout,
   AdminProductDetail,
   AdminProductSummary,
+  AdminPaymentProof,
   AdminSummary,
   BankAccountChangeDecisionRequest,
+  PaymentProofDecisionRequest,
   PayoutDecisionRequest,
   ProductDecisionRequest,
 } from '#shared/types/admin-moderation'
@@ -112,6 +114,63 @@ export async function decideAdminPayout(id: string, decision: PayoutDecisionRequ
     body: decision,
     credentials: 'include',
   })
+}
+
+/**
+ * GET /admin/payment-proofs — antrean bukti transfer QRIS manual.
+ *
+ * Satu fetch tanpa parameter status: halamannya sendiri yang memisahkan
+ * antrean dari riwayat, sama seperti cara antrean pencairan dipanggil.
+ */
+export function useAdminPaymentProofs() {
+  const { public: config } = useRuntimeConfig()
+
+  const data = ref<AdminPaymentProof[]>([])
+  const pending = ref(false)
+  const error = ref('')
+
+  async function refresh() {
+    pending.value = true
+    error.value = ''
+    try {
+      data.value = await useApiFetch<AdminPaymentProof[]>('/admin/payment-proofs', {
+        baseURL: config.apiBase,
+        credentials: 'include',
+      })
+    }
+    catch (cause) {
+      error.value = tutorApiMessage(cause, 'Gagal memuat antrean verifikasi pembayaran.')
+    }
+    finally {
+      pending.value = false
+    }
+  }
+
+  return { data, pending, error, refresh }
+}
+
+/** POST /admin/payment-proofs/:id/decision — approve (+reference) atau reject (+reason). */
+export async function decideAdminPaymentProof(
+  id: string,
+  decision: PaymentProofDecisionRequest,
+): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  await useApiFetch(`/admin/payment-proofs/${id}/decision`, {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body: decision,
+    credentials: 'include',
+  })
+}
+
+/**
+ * URL gambar bukti transfer. Bukan berkas statis: rute ini memeriksa sesi dan
+ * peran admin, karena bukti transfer memuat nama dan nominal.
+ */
+export function adminPaymentProofImageUrl(id: string): string {
+  const { public: config } = useRuntimeConfig()
+  return `${config.apiBase}/admin/payment-proofs/${id}/image`
 }
 
 /** GET /admin/bank-accounts — rekening bank tersimpan tiap tutor, untuk verifikasi manual. */

@@ -98,8 +98,34 @@ export interface PurchaseItem {
  *
  * `pending` covers "waiting for the buyer to pay": with virtual accounts and
  * QRIS that window is hours, a normal resting state rather than a hiccup.
+ *
+ * `verifying` exists only on the manual QRIS channel: the buyer has uploaded a
+ * transfer receipt and no admin has looked at it yet. It is emphatically not
+ * paid — ownership still comes from `paid` alone — but it is no longer the
+ * buyer's move either, which is why it reads differently on screen.
  */
-export type OrderStatus = 'pending' | 'paid' | 'expired'
+export type OrderStatus = 'pending' | 'verifying' | 'paid' | 'expired'
+
+/** How an order is meant to be paid. Chosen by the server, never the browser. */
+export type PaymentChannel = 'duitku_qris' | 'manual_qris'
+
+/** Where the buyer's newest transfer receipt stands. */
+export type PaymentProofStatus = 'submitted' | 'approved' | 'rejected'
+
+/**
+ * What a buyer may see about their own receipt.
+ *
+ * It rides along on the purchase rather than living behind its own endpoint, so
+ * the payment page's existing poll picks up the verification outcome — and a
+ * rejection's reason — without a second request.
+ */
+export interface PaymentProofBrief {
+  status: PaymentProofStatus
+  /** Unix seconds the receipt was uploaded. */
+  submittedAt: number
+  /** Empty unless status is 'rejected'; this is what the buyer has to fix. */
+  rejectReason: string
+}
 
 export interface Purchase {
   /** Nomor invoice, sekaligus kunci baris tabel dan URL detailnya. */
@@ -113,12 +139,27 @@ export interface Purchase {
   /** Nomor rujukan dari penyedia pembayaran; null sebelum ada. */
   reference: string | null
   /** Duitku's raw QRIS payload string, rendered into a scannable code
-   * client-side (see payment.vue); null once the charge was never created. */
+   * client-side (see payment.vue); null once the charge was never created.
+   * Always null on the manual channel — one static poster serves every buyer,
+   * so there is no per-order code. */
   qrUrl: string | null
-  /** Unix seconds the QRIS code stops being payable; null alongside qrUrl. */
+  /** Unix seconds the payment window closes; null when there is no deadline. */
   expiresAt: number | null
   status: OrderStatus
   items: PurchaseItem[]
   /** Biaya layanan penyedia pembayaran, ditagihkan apa adanya. */
   serviceFee: number
+  /** Which payment path this order took — see PaymentChannel. */
+  paymentChannel: PaymentChannel
+  /**
+   * Tiga digit yang ditambahkan ke nominal transfer pada jalur QRIS manual,
+   * supaya dua pesanan untuk paket yang sama tidak pernah meminta angka yang
+   * persis sama dan admin bisa mencocokkannya dengan mutasi bank.
+   *
+   * Bukan bagian dari harga: bagi hasil tutor tetap dihitung dari harga item.
+   * 0 pada jalur Duitku.
+   */
+  uniqueCode: number
+  /** Bukti transfer terbaru pada pesanan ini; null kalau belum pernah unggah. */
+  paymentProof: PaymentProofBrief | null
 }
