@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { OptionLabel, TryoutAnswerValue, TryoutQuestion } from '#shared/types/tryout'
+import { renderInlineMathHtml } from '~/utils/richText'
 
 const props = defineProps<{
   question: TryoutQuestion
@@ -30,6 +31,11 @@ const matchingValues = computed(() => {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, string> : {}
 })
 const orderingValues = computed(() => Array.isArray(currentValue.value) ? currentValue.value as string[] : [])
+
+/** Student-facing fields may contain editor math spans or `$..$` CSV math. */
+function renderedHtml(value: string): string {
+  return renderInlineMathHtml(value)
+}
 
 function toggleMultiple(label: OptionLabel) {
   const next = selectedMultiple.value.includes(label)
@@ -79,21 +85,21 @@ function setOrderingFromEvent(position: number, event: Event) {
         <span class="text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">Bacaan</span>
         <span class="flex shrink-0 items-center gap-1.5 text-[0.8rem] font-semibold text-muted">{{ stimulusOpen ? 'Sembunyikan' : 'Tampilkan' }}<IconChevron class="h-4 w-4 transition-transform duration-200 ease-smooth" :class="stimulusOpen ? 'rotate-180' : ''" /></span>
       </button>
-      <div v-show="stimulusOpen" :id="stimulusId" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-ink md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80" v-html="question.stimulus" />
+      <div v-show="stimulusOpen" :id="stimulusId" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-ink md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80" v-html="renderedHtml(question.stimulus)" />
     </div>
 
-    <div class="prose-question mt-4 text-[1.02rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink md:text-[1.05rem] [&_img]:max-h-96" v-html="question.text" />
+    <div class="prose-question mt-4 text-[1.02rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink md:text-[1.05rem] [&_img]:max-h-96" v-html="renderedHtml(question.text)" />
 
     <div v-if="question.kind === 'multiple_choice'" class="mt-5 grid gap-2.5 md:mt-6" role="group" aria-label="Pilihan jawaban">
       <button v-for="option in question.options" :key="option.label" type="button" class="flex min-h-11 touch-manipulation items-start gap-3 rounded-sm border px-3.5 py-3 text-left transition-colors duration-150 ease-smooth sm:gap-3.5 sm:px-4 sm:py-3.5" :class="selectedMultiple.includes(option.label) ? 'border-transparent bg-primary-soft ring-1 ring-primary' : 'border-hairline-strong bg-surface hover:bg-surface-alt'" :aria-pressed="selectedMultiple.includes(option.label)" @click="toggleMultiple(option.label)">
         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border text-[0.82rem] font-bold" :class="selectedMultiple.includes(option.label) ? 'border-transparent bg-primary text-white' : 'border-hairline-strong text-muted'">{{ option.label }}</span>
-        <span class="min-w-0 flex-1 pt-0.5 text-[0.94rem] leading-[1.55]"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-h-52 max-w-full rounded-xs object-contain"><span class="prose-question [&_img]:max-h-52" v-html="option.text" /></span>
+        <span class="min-w-0 flex-1 pt-0.5 text-[0.94rem] leading-[1.55]"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-h-52 max-w-full rounded-xs object-contain"><span class="prose-question [&_img]:max-h-52" v-html="renderedHtml(option.text)" /></span>
       </button>
     </div>
 
     <div v-else-if="question.kind === 'true_false'" class="mt-5 grid gap-3" role="group" aria-label="Pernyataan benar atau salah">
       <div v-for="option in question.options" :key="option.label" class="rounded-sm border border-hairline-strong p-3.5">
-        <div class="prose-question text-[0.94rem] leading-[1.55]" v-html="option.text" />
+        <div class="prose-question text-[0.94rem] leading-[1.55]" v-html="renderedHtml(option.text)" />
         <div class="mt-3 flex gap-2">
           <button type="button" class="rounded-xs border px-3 py-2 text-[0.82rem] font-bold" :class="trueFalseValues[option.label] === true ? 'border-success bg-success-soft text-success-ink' : 'border-hairline-strong text-muted'" @click="setTrueFalse(option.label, true)">Benar</button>
           <button type="button" class="rounded-xs border px-3 py-2 text-[0.82rem] font-bold" :class="trueFalseValues[option.label] === false ? 'border-danger bg-danger-soft text-danger-ink' : 'border-hairline-strong text-muted'" @click="setTrueFalse(option.label, false)">Salah</button>
@@ -108,7 +114,7 @@ function setOrderingFromEvent(position: number, event: Event) {
 
     <div v-else-if="question.kind === 'matching'" class="mt-5 grid gap-3">
       <div v-for="option in question.options" :key="option.label" class="grid gap-2 rounded-sm border border-hairline-strong p-3 md:grid-cols-[minmax(0,1fr)_minmax(12rem,0.8fr)] md:items-center">
-        <div class="prose-question text-[0.94rem] leading-[1.55]"><span class="mr-2 font-bold text-primary">{{ option.label }}</span><span v-html="option.text" /></div>
+        <div class="prose-question text-[0.94rem] leading-[1.55]"><span class="mr-2 font-bold text-primary">{{ option.label }}</span><span v-html="renderedHtml(option.text)" /></div>
         <select :value="matchingValues[option.label] ?? ''" class="min-h-11 rounded-xs border border-hairline-strong bg-surface px-3 text-[0.88rem]" :aria-label="`Pasangan untuk ${option.label}`" @change="setMatchingFromEvent(option.label, $event)">
           <option value="">Pilih pasangan</option>
           <option v-for="item in question.matching ?? []" :key="item.id" :value="item.id">{{ item.text }}</option>
@@ -129,7 +135,7 @@ function setOrderingFromEvent(position: number, event: Event) {
     <div v-else class="mt-5 grid gap-2.5" role="radiogroup" aria-label="Pilihan jawaban">
       <button v-for="option in question.options" :key="option.label" type="button" role="radio" :aria-checked="selected === option.label" class="flex min-h-11 touch-manipulation items-start gap-3 rounded-sm border px-3.5 py-3 text-left transition-colors duration-150 ease-smooth sm:gap-3.5 sm:px-4 sm:py-3.5" :class="selected === option.label ? 'border-transparent bg-primary-soft ring-1 ring-primary' : 'border-hairline-strong bg-surface hover:bg-surface-alt'" @click="emit('select', option.label)">
         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[0.82rem] font-bold" :class="selected === option.label ? 'border-transparent bg-primary text-white' : 'border-hairline-strong text-muted'">{{ option.label }}</span>
-        <span class="min-w-0 flex-1 pt-0.5 text-[0.94rem] leading-[1.55]"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-h-52 max-w-full rounded-xs object-contain"><span class="prose-question [&_img]:max-h-52" v-html="option.text" /></span>
+        <span class="min-w-0 flex-1 pt-0.5 text-[0.94rem] leading-[1.55]"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-h-52 max-w-full rounded-xs object-contain"><span class="prose-question [&_img]:max-h-52" v-html="renderedHtml(option.text)" /></span>
       </button>
     </div>
   </div>
