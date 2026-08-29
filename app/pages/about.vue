@@ -18,10 +18,10 @@ definePageMeta({ path: '/tentang' })
 useSeoMeta({
   title: 'Tentang Kami | Zenko',
   description:
-    'Zenko adalah platform marketplace try out untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
+    'Zenko adalah platform marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
   ogTitle: 'Tentang Kami | Zenko',
   ogDescription:
-    'Zenko adalah platform marketplace try out untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
+    'Zenko adalah platform marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan simulasi ujian terbaik dari tutor terpercaya, dan tempat tutor membagikan karyanya secara profesional.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/tentang',
   twitterCard: 'summary_large_image',
@@ -41,7 +41,7 @@ const problems = [
     label: 'Sisi siswa',
     title: 'Bahan latihan tersebar tanpa arah',
     description:
-      'Jutaan pejuang SKD CPNS, Sekolah Kedinasan, dan TKA bersaing tiap tahun, tapi materi latihan menumpuk di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.',
+      'Jutaan pejuang SKD CPNS, BUMN, SNBT, dan Tes Kedinasan bersaing tiap tahun, tapi materi latihan menumpuk di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.',
   },
   {
     label: 'Sisi tutor',
@@ -117,7 +117,7 @@ const audiences = [
     tag: 'Siswa',
     title: 'Siswa dan pejuang seleksi',
     description:
-      'Sedang bersiap menghadapi SKD CPNS, SKD Sekolah Kedinasan, atau TKA, dan ingin latihan terarah dengan soal berkualitas tanpa bingung mencari materi ke sana ke mari.',
+      'Sedang bersiap menghadapi SKD CPNS, Rekrutmen BUMN, SNBT UTBK, atau Tes Kedinasan, dan ingin latihan terarah dengan soal berkualitas tanpa bingung mencari materi ke sana ke mari.',
   },
   {
     icon: IconTrophy,
@@ -149,7 +149,7 @@ const audiences = [
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Zenko adalah marketplace try out untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Tempat siswa menemukan paket latihan terbaik dari berbagai tutor terpercaya, dan wadah bagi tutor untuk membagikan keahliannya.
+            Zenko adalah marketplace try out untuk SKD CPNS, BUMN, SNBT, dan Tes Kedinasan. Tempat siswa menemukan paket latihan terbaik dari berbagai tutor terpercaya, dan wadah bagi tutor untuk membagikan keahliannya.
           </p>
         </div>
       </div>
