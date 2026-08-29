@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/artenanagara/zenko-web/compare/v0.12.0...v0.13.0) (2026-08-29)
+
+
+### Features
+
+* **tutor:** add explicit live question edit action ([8a35068](https://github.com/artenanagara/zenko-web/commit/8a35068ce01851dc053f6eb2784521be2c5079ce))
+
 ## [0.12.0](https://github.com/artenanagara/zenko-web/compare/v0.11.1...v0.12.0) (2026-08-29)
 
 
