@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/artenanagara/zenko-web/compare/v0.10.0...v0.11.0) (2026-08-29)
+
+
+### Features
+
+* **auth:** continue Google sign-in after email verification ([f41dfdf](https://github.com/artenanagara/zenko-web/commit/f41dfdf0a23e721aaa010e1ab29906e471744ba0))
+
 ## [0.10.0](https://github.com/artenanagara/zenko-web/compare/v0.9.0...v0.10.0) (2026-08-28)
 
 
