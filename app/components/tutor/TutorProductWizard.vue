@@ -828,8 +828,8 @@ const submitError = ref('')
 
 async function submitForReview() {
   if (!props.productId) return
-  if (isLiveProduct.value) {
-    toast.info('Produk sudah tayang.', 'Tidak perlu diajukan ulang.')
+  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
+    toast.info('Produk sudah tayang.', 'Pengajuan ulang belum tersedia di environment ini.')
     return
   }
   submitError.value = ''
@@ -1467,7 +1467,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <AppSectionMessage v-if="submitError" appearance="warning">{{ submitError }}</AppSectionMessage>
 
           <AppSectionMessage v-if="isLiveReadOnly" appearance="information" title="Produk sudah tayang">
-            Langkah ini hanya untuk melihat ringkasan. Produk tayang tidak perlu diajukan ulang.
+            Untuk mengubah isi, buka langkah Isi dan klik Edit soal. Setelah perubahan disimpan, ajukan ulang di langkah ini agar masuk review admin.
           </AppSectionMessage>
 
           <!-- Tombol "Ajukan untuk tayang" sendiri ada di step footer fixed
@@ -1516,10 +1516,14 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <AppButton
             v-else-if="step === 4"
             type="button"
-            :disabled="isLiveProduct || submitting"
+            :disabled="submitting"
             @click="submitForReview"
           >
-            {{ submitting ? 'Mengajukan...' : 'Ajukan untuk tayang' }}
+            {{ submitting
+              ? 'Mengajukan...'
+              : isLiveProduct
+                ? 'Ajukan ulang untuk ditinjau'
+                : 'Ajukan untuk tayang' }}
           </AppButton>
         </div>
       </div>
