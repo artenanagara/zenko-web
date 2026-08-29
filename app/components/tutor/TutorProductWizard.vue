@@ -62,13 +62,13 @@ const { data: pricingRule, refresh: refreshPricingRule } = useTutorPricingEligib
 onMounted(refreshPricingRule)
 
 /**
- * Payment gateway belum jalan, jadi harga tidak berarti apa-apa — setiap
- * paket harus Rp0. Mengunci input ini alih-alih membiarkannya dan menolak di
- * server: tutor tidak sempat mengetik angka yang toh akan ditolak nanti.
- * Cabut baris ini (dan biarkan input Harga aktif lagi) begitu pembayaran
- * sungguhan tersedia — lihat paymentGatewayLive di zenko-api.
+ * Harga hanya dikunci ketika checkout belum diaktifkan pada environment ini.
+ * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk Duitku Sandbox, jadi
+ * tutor bisa mengisi harga berbayar; nilai Rp0 tetap dikirim sebagai paket
+ * gratis dan checkout tidak perlu memanggil gateway.
  */
-const PRICE_INPUT_DISABLED = true
+const { public: runtimeConfig } = useRuntimeConfig()
+const PRICE_INPUT_DISABLED = runtimeConfig.paymentEnabled !== true
 
 /* ------------------------------------------------------------------ form */
 
