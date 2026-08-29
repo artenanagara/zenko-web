@@ -48,6 +48,13 @@ const rejection = computed(() => {
   return proof?.status === 'rejected' && proof.rejectReason ? proof.rejectReason : null
 })
 
+const formOpen = ref(false)
+
+function onConfirmed(updated: Purchase) {
+  formOpen.value = false
+  emit('confirmed', updated)
+}
+
 const copied = ref(false)
 let copyResetHandle: ReturnType<typeof setTimeout> | null = null
 
@@ -107,16 +114,32 @@ const paySteps = computed(() => [
     <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
       <!-- Quiet zone diberikan lewat padding putih di sekeliling gambar, bukan
            di dalam file-nya, supaya kodenya tetap terbaca pemindai. -->
-      <div class="shrink-0 rounded-sm bg-white p-4 shadow-xs">
-        <img
-          src="/pembayaran/qris-zenko.webp"
-          alt="Kode QRIS Zenko Edukasi"
-          width="458"
-          height="458"
-          class="h-52 w-52 object-contain sm:h-60 sm:w-60"
+      <div class="grid shrink-0 justify-items-center gap-3">
+        <div class="rounded-sm bg-white p-4 shadow-xs">
+          <img
+            src="/pembayaran/qris-zenko.webp"
+            alt="Kode QRIS Zenko Edukasi"
+            width="458"
+            height="458"
+            class="h-48 w-48 object-contain sm:h-56 sm:w-56"
+          >
+        </div>
+        <!-- Di bawah kodenya, karena inilah yang dilakukan orang saat membuka
+             halaman ini dari HP: simpan gambarnya, lalu unggah di aplikasi
+             banknya — kamera tidak bisa memindai layarnya sendiri. -->
+        <a
+          href="/pembayaran/qris-zenko-poster.jpg"
+          download="QRIS-Zenko-Edukasi.jpg"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-hairline-strong bg-surface px-3.5 py-2 text-[0.84rem] font-semibold hover:bg-surface-sunken"
         >
+          <AppIcon name="download-simple" :size="16" aria-hidden="true" />
+          Simpan gambar QRIS
+        </a>
       </div>
 
+      <!-- Kolom kanan: siapa yang dibayar, berapa, lalu satu tindakan.
+           Nominalnya sengaja tidak sebesar angka Total di ringkasan pesanan —
+           di sini ia berdampingan dengan QR, bukan penutup halaman. -->
       <div class="grid w-full gap-4 text-center sm:text-left">
         <div>
           <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">QRIS · Satu QRIS untuk semua</p>
@@ -131,46 +154,43 @@ const paySteps = computed(() => [
           </p>
         </div>
 
-        <a
-          href="/pembayaran/qris-zenko-poster.jpg"
-          download="QRIS-Zenko-Edukasi.jpg"
-          class="inline-flex items-center justify-center gap-2 self-center rounded-sm border border-hairline-strong bg-surface px-3.5 py-2 text-[0.84rem] font-semibold hover:bg-surface-sunken sm:self-start"
-        >
-          <AppIcon name="download-simple" :size="16" aria-hidden="true" />
-          Simpan gambar QRIS
-        </a>
-      </div>
-    </div>
+        <!-- Nominal: angka bulat dan kode unik dipisah, lalu dijumlahkan. -->
+        <div class="rounded-sm border border-primary/25 bg-primary-soft/40 px-4 py-3.5 text-left">
+          <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">Nominal transfer</p>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-primary hover:underline"
+              @click="copyAmount"
+            >
+              <AppIcon :name="copied ? 'check' : 'copy'" :size="14" aria-hidden="true" />
+              {{ copied ? 'Tersalin' : 'Salin' }}
+            </button>
+          </div>
+          <p class="mt-1 text-[1.35rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums">
+            {{ formatRupiah(amounts.total) }}
+          </p>
 
-    <!-- Nominal: angka bulat dan kode unik dipisah, lalu dijumlahkan. -->
-    <div class="mt-7 rounded-sm border border-primary/25 bg-primary-soft/40 p-5">
-      <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">Nominal transfer</p>
-      <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
-        <p class="text-[1.75rem] leading-none font-extrabold tracking-[-0.04em] tabular-nums">
-          {{ formatRupiah(amounts.total) }}
-        </p>
-        <AppButton variant="ghost" size="sm" @click="copyAmount">
-          <AppIcon :name="copied ? 'check' : 'copy'" :size="15" aria-hidden="true" />
-          {{ copied ? 'Tersalin' : 'Salin nominal' }}
+          <dl v-if="amounts.uniqueCode > 0" class="mt-3 grid gap-1 border-t border-primary/20 pt-2.5 text-[0.82rem]">
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">Harga paket</dt>
+              <dd class="tabular-nums">{{ formatRupiah(amounts.base) }}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-muted">Kode unik</dt>
+              <dd class="font-semibold tabular-nums">{{ amounts.uniqueCode }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Satu tindakan di kartu ini. Isian rinciannya diminta di dalam
+             dialog, bukan di halaman, supaya kolom ini tetap terbaca sekali
+             pandang: bayar ke siapa, berapa, lalu apa. -->
+        <AppButton size="lg" class="w-full" @click="formOpen = true">
+          Saya sudah transfer
         </AppButton>
+
       </div>
-
-      <dl v-if="amounts.uniqueCode > 0" class="mt-4 grid gap-1.5 border-t border-primary/20 pt-3.5 text-[0.85rem]">
-        <div class="flex justify-between gap-4">
-          <dt class="text-muted">Harga paket</dt>
-          <dd class="tabular-nums">{{ formatRupiah(amounts.base) }}</dd>
-        </div>
-        <div class="flex justify-between gap-4">
-          <dt class="text-muted">Kode unik</dt>
-          <dd class="font-semibold tabular-nums">{{ amounts.uniqueCode }}</dd>
-        </div>
-      </dl>
-
-      <p v-if="amounts.uniqueCode > 0" class="mt-3.5 text-[0.83rem] leading-[1.6] text-muted">
-        Tiga digit terakhir adalah kode unik pesanan ini. Transfer dengan nominal
-        persis supaya pembayaranmu bisa langsung dicocokkan — kurang atau lebih
-        satu rupiah pun akan memperlambat verifikasi.
-      </p>
     </div>
 
     <ol class="mt-7 grid gap-4 border-t border-hairline pt-6">
@@ -183,18 +203,21 @@ const paySteps = computed(() => [
       </li>
     </ol>
 
-    <PaymentProofForm
-      class="mt-7 border-t border-hairline pt-6"
-      :purchase="purchase"
-      @confirmed="emit('confirmed', $event)"
-    />
-
-    <p class="mt-6 text-center text-[0.8rem] leading-[1.6] text-muted">
+    <p class="mt-6 text-[0.8rem] leading-[1.6] text-muted">
       Pembayaran diverifikasi manual oleh tim Zenko, maksimal {{ verificationWindow }}.
       Zenko tidak pernah meminta PIN, OTP, atau kata sandimu.
       <NuxtLink to="/kebijakan-refund" class="font-semibold text-primary hover:underline">
         Kebijakan Refund
       </NuxtLink>
     </p>
+
+    <AppModal
+      :model-value="formOpen"
+      title="Konfirmasi pembayaran"
+      description="Beri tahu kami supaya pembayaranmu masuk antrean pemeriksaan dan pesananmu tidak hangus sambil menunggu."
+      @update:model-value="formOpen = $event"
+    >
+      <PaymentProofForm :purchase="purchase" @confirmed="onConfirmed" />
+    </AppModal>
   </div>
 </template>

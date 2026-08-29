@@ -2,7 +2,9 @@
 import type { Purchase } from '#shared/types/account'
 
 /**
- * Konfirmasi pembayaran untuk pesanan QRIS manual.
+ * Isian konfirmasi pembayaran untuk pesanan QRIS manual. Dirender di dalam
+ * dialog yang dibuka tombol "Saya sudah transfer", jadi judul dan kalimat
+ * pembukanya milik dialog itu — komponen ini langsung ke isiannya.
  *
  * Yang membuktikan uangnya masuk adalah mutasi di dashboard merchant — kode
  * unik di nominalnya yang menunjuk pesanan mana — jadi tangkapan layar di sini
@@ -69,11 +71,12 @@ function onFileChange(event: Event) {
   previewUrl.value = URL.createObjectURL(picked)
 }
 
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+
 function clearFile() {
   releasePreview()
   file.value = null
-  const input = document.getElementById('proof-file') as HTMLInputElement | null
-  if (input) input.value = ''
+  if (fileInput.value) fileInput.value.value = ''
 }
 
 onUnmounted(releasePreview)
@@ -110,13 +113,7 @@ async function submit() {
 
 <template>
   <form novalidate @submit.prevent="submit">
-    <h3 class="font-bold tracking-[-0.02em]">Sudah transfer?</h3>
-    <p class="mt-1.5 text-[0.88rem] leading-[1.6] text-muted">
-      Beri tahu kami, supaya pembayaranmu masuk antrean pemeriksaan dan
-      pesananmu tidak hangus sambil menunggu.
-    </p>
-
-    <div class="mt-5 grid gap-4">
+    <div class="grid gap-4">
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label for="proof-sender" class="text-[0.86rem] font-semibold">Nama pengirim</label>
@@ -151,6 +148,7 @@ async function submit() {
         </label>
         <input
           id="proof-file"
+          ref="fileInput"
           type="file"
           :accept="ACCEPTED"
           class="mt-1.5 block w-full cursor-pointer rounded-sm border border-hairline-strong bg-surface px-3.5 py-2.5 text-[0.88rem] file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-[0.84rem] file:font-semibold"
@@ -200,7 +198,7 @@ async function submit() {
 
     <AppButton type="submit" size="lg" class="mt-5 w-full" :disabled="submitting">
       <IconSpinner v-if="submitting" class="h-4 w-4 animate-spin" aria-hidden="true" />
-      {{ submitting ? 'Mengirim…' : 'Saya sudah transfer' }}
+      {{ submitting ? 'Mengirim…' : 'Kirim konfirmasi' }}
     </AppButton>
   </form>
 </template>
