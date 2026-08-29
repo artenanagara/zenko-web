@@ -6,10 +6,11 @@
 export interface Author {
   name: string
   avatarUrl: string
+  /** Stable tutor account ID; used when the tutor has no username yet. */
+  id?: string
   /**
-   * Handle for `/tutor/:username`. Empty string for seeded packages that have
-   * no tutor account behind them — those render the name as plain text, since
-   * a link to `/tutor/` would 404.
+   * Handle for `/tutor/:username`. Empty when the tutor has not claimed a
+   * handle; callers fall back to `id` for a reachable legacy profile.
    */
   username: string
 }
