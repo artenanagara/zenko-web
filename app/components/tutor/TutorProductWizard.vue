@@ -15,7 +15,9 @@ import type {
  *
  * Edit mode autosaves a PATCH of whatever changed on every step change
  * ("Tersimpan" indicator), and questions/subtes/bundle items are saved through
- * their own endpoints inside step 3.
+ * their own endpoints inside step 3. Produk yang sudah tayang tetap bisa
+ * menelusuri semua langkah, tetapi tampil read-only karena endpoint edit
+ * kontennya memang hanya menerima draft/ditolak.
  */
 const props = defineProps<{ productId?: string }>()
 
@@ -319,7 +321,9 @@ watch(detail, (loaded) => {
   }
 })
 
-/** Live products keep everything locked except their price. */
+/** Produk tayang dapat menelusuri wizard, tetapi seluruh isinya read-only. */
+const isLiveReadOnly = computed(() => isEdit.value && detail.value?.status === 'live')
+
 const canEditProduct = computed(() => {
   if (!isEdit.value) return true
   if (!detail.value) return false
@@ -481,7 +485,6 @@ function initialStep(): number {
   const raw = Array.isArray(route.query.langkah) ? route.query.langkah[0] : route.query.langkah
   const parsed = Number.parseInt(raw ?? '', 10)
   const max = isEdit.value ? 4 : 2
-  if (isEdit.value && detail.value?.status === 'live' && Number.isNaN(parsed)) return 2
   return Number.isNaN(parsed) ? 1 : Math.min(Math.max(parsed, 1), max)
 }
 
@@ -518,13 +521,6 @@ function reportStepFailure() {
   toast.error('Belum bisa lanjut.', failure.message)
 }
 
-watch(() => detail.value?.status, (status) => {
-  if (status === 'live' && step.value !== 2) {
-    step.value = 2
-    syncQuery()
-  }
-})
-
 function syncQuery() {
   router.replace({ query: { ...route.query, langkah: String(step.value) } })
 }
@@ -559,11 +555,10 @@ function validateThrough(target: number): boolean {
 async function goTo(target: number) {
   if (target === step.value) return
 
-  if (target > step.value && !validateThrough(target)) {
+  if (target > step.value && !isLiveReadOnly.value && !validateThrough(target)) {
     reportStepFailure()
     return
   }
-  if (isEdit.value && detail.value?.status === 'live' && target !== 2) return
 
   // Create mode: past step 2 the draft must exist first.
   if (!props.productId && target >= 3) {
@@ -628,7 +623,7 @@ async function createAndContinue() {
 }
 
 const stepReachable = (target: number) =>
-  detail.value?.status === 'live' ? target === 2 : isEdit.value || target <= 2
+  isEdit.value || target <= 2
 
 /* ------------------------------------------------------------ leave guard */
 
@@ -814,6 +809,10 @@ const submitError = ref('')
 
 async function submitForReview() {
   if (!props.productId) return
+  if (isLiveReadOnly.value) {
+    toast.info('Produk sudah tayang.', 'Tidak perlu diajukan ulang.')
+    return
+  }
   submitError.value = ''
   submitProblems.value = []
 
@@ -1232,7 +1231,31 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
 
       <!-- ======================================================= Langkah 3: Isi -->
       <template v-else-if="step === 3">
-        <template v-if="isSingle">
+        <DashboardPanel v-if="isLiveReadOnly" title="Isi produk" description="Isi produk tayang ditampilkan dalam mode baca saja.">
+          <AppSectionMessage appearance="information">
+            Produk yang sudah tayang tidak dapat mengubah soal atau anggota bundel. Kamu tetap bisa melihat seluruh isi wizard ini.
+          </AppSectionMessage>
+
+          <template v-if="isSingle">
+            <TutorQuestionSummaryTable class="mt-4" :sections="detail?.sections ?? []" />
+          </template>
+          <div v-else class="mt-4 rounded-md border border-hairline bg-surface-alt p-5">
+            <h3 class="text-[0.9rem] font-semibold">Anggota bundel</h3>
+            <ul v-if="detail?.items?.length" class="mt-3 grid gap-2">
+              <li
+                v-for="item in detail.items"
+                :key="item.productId"
+                class="flex items-center justify-between gap-3 rounded-sm border border-hairline bg-surface px-3.5 py-3 text-[0.88rem]"
+              >
+                <span class="min-w-0 truncate font-semibold">{{ item.title }}</span>
+                <span class="shrink-0 text-muted">{{ PRODUCT_STATUS_LABEL[item.status] }}</span>
+              </li>
+            </ul>
+            <p v-else class="mt-3 text-[0.88rem] text-muted">Belum ada anggota bundel.</p>
+          </div>
+        </DashboardPanel>
+
+        <template v-else-if="isSingle">
           <TutorCustomSections
             v-if="isCustom && productId && detail"
             :product-id="productId"
@@ -1413,9 +1436,13 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
 
           <AppSectionMessage v-if="submitError" appearance="warning">{{ submitError }}</AppSectionMessage>
 
+          <AppSectionMessage v-if="isLiveReadOnly" appearance="information" title="Produk sudah tayang">
+            Langkah ini hanya untuk melihat ringkasan. Produk tayang tidak perlu diajukan ulang.
+          </AppSectionMessage>
+
           <!-- Tombol "Ajukan untuk tayang" sendiri ada di step footer fixed
                di bawah, di sebelah Kembali — bukan lagi di sini. -->
-          <p v-if="!allComplete" class="text-[0.82rem] text-muted">
+          <p v-if="!allComplete && !isLiveReadOnly" class="text-[0.82rem] text-muted">
             Lengkapi poin di atas terlebih dahulu. Tombol ajukan akan aktif otomatis setelah seluruh syarat terpenuhi.
           </p>
         </div>
@@ -1459,7 +1486,7 @@ function summarizeSections(exam: { sections: { questionTarget: number, durationM
           <AppButton
             v-else-if="step === 4"
             type="button"
-            :disabled="submitting || !allComplete"
+            :disabled="isLiveReadOnly || submitting || !allComplete"
             @click="submitForReview"
           >
             {{ submitting ? 'Mengajukan...' : 'Ajukan untuk tayang' }}
