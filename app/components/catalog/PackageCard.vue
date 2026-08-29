@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Package } from '#shared/types/catalog'
+import type { Author, Package } from '#shared/types/catalog'
 
 /**
  * The card used to be a single <NuxtLink> wrapping everything. That had to go
@@ -19,6 +19,11 @@ import type { Package } from '#shared/types/catalog'
 import { NuxtLink } from '#components'
 
 defineProps<{ item: Package }>()
+
+function authorProfilePath(author: Author) {
+  const identifier = author.username || author.id
+  return identifier ? `/tutor/${encodeURIComponent(identifier)}` : undefined
+}
 </script>
 
 <template>
@@ -51,12 +56,13 @@ defineProps<{ item: Package }>()
 
         <!-- Avatar and name are one target so the tutor link clears a usable
              tap size; the negative margin keeps that padding from moving the
-             price row down. -->
+             price row down. `authorProfilePath` also handles legacy tutors
+             whose account exists but whose public username is still empty. -->
         <component
-          :is="item.author.username ? NuxtLink : 'div'"
-          :to="item.author.username ? `/tutor/${item.author.username}` : undefined"
+          :is="authorProfilePath(item.author) ? NuxtLink : 'div'"
+          :to="authorProfilePath(item.author)"
           class="relative z-1 mt-3 -mb-2 flex w-fit items-center gap-2 py-2 text-[0.88rem] text-muted"
-          :class="item.author.username ? 'transition-colors duration-200 ease-smooth hover:text-primary hover:underline' : ''"
+          :class="authorProfilePath(item.author) ? 'transition-colors duration-200 ease-smooth hover:text-primary hover:underline' : ''"
         >
           <img :src="item.author.avatarUrl" alt="" loading="lazy" class="h-6 w-6 shrink-0 rounded-full object-cover">
           <span>{{ item.author.name }}</span>

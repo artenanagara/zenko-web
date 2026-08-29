@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TryoutAnswerState, TryoutOption, TryoutQuestion } from '#shared/types/tryout'
+import { renderInlineMathHtml } from '~/utils/richText'
 
 /**
  * Satu soal pada lembar Pembahasan, sesudah sesi selesai: baca saja, kunci
@@ -24,6 +25,11 @@ const props = defineProps<{
 }>()
 
 const selected = computed(() => props.answer?.selected ?? null)
+
+/** Keep review rendering identical to the active tryout question view. */
+function renderedHtml(value: string): string {
+  return renderInlineMathHtml(value)
+}
 
 /** Soal weighted (TKP/AKHLAK) tidak punya jawaban salah, cuma yang paling tinggi. */
 const bestLabels = computed<string[]>(() => {
@@ -85,12 +91,12 @@ function isBestLabel(label: string): boolean {
     <div
       v-if="question.stimulus"
       class="prose-question mt-3 rounded-sm border border-hairline bg-surface-alt p-3.5 text-[0.9rem] leading-[1.65] text-muted [&_img]:max-h-72"
-      v-html="question.stimulus"
+      v-html="renderedHtml(question.stimulus)"
     />
 
     <div
       class="prose-question mt-3 text-[0.98rem] leading-[1.6] font-medium tracking-[-0.01em] text-ink [&_img]:max-h-96"
-      v-html="question.text"
+      v-html="renderedHtml(question.text)"
     />
 
     <ul class="mt-4 grid gap-2">
@@ -111,7 +117,7 @@ function isBestLabel(label: string): boolean {
             alt=""
             class="mb-2 max-h-52 max-w-full rounded-xs object-contain"
           >
-          <span class="prose-question [&_img]:max-h-52" v-html="option.text" />
+          <span class="prose-question [&_img]:max-h-52" v-html="renderedHtml(option.text)" />
           <span v-if="selected === option.label" class="mt-1 block text-[0.76rem] font-bold text-muted uppercase">
             Jawabanmu
           </span>
@@ -148,7 +154,7 @@ function isBestLabel(label: string): boolean {
       <div
         v-if="question.explanation"
         class="prose-question text-[0.9rem] leading-[1.65] text-muted [&_img]:max-h-72"
-        v-html="question.explanation"
+        v-html="renderedHtml(question.explanation)"
       />
       <p v-else class="text-[0.86rem] text-muted">Tutor belum menulis pembahasan untuk soal ini.</p>
     </div>

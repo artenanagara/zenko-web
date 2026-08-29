@@ -147,6 +147,11 @@ export default defineNuxtConfig({
       // is not connected instead of placing an order.
       // Turn on with NUXT_PUBLIC_PAYMENT_ENABLED=true.
       paymentEnabled: false,
+		// Allows the staging tutor editor to write question content on products
+		// that are already live. The API has the matching server-side switch;
+		// keep both off by default so production remains read-only for live
+		// content. Turn on with NUXT_PUBLIC_TUTOR_LIVE_CONTENT_EDIT_ENABLED=true.
+		tutorLiveContentEditEnabled: false,
 		// Recovery flows are live in zenko-api. Operators can still turn one off
 		// explicitly during a partial rollback without hiding the others.
       //
