@@ -77,6 +77,37 @@ const isVerifying = computed(() =>
  */
 const manualPurchase = computed(() => livePurchase.value ?? purchase.value)
 
+/**
+ * "Cek status pembayaran" di layar menunggu.
+ *
+ * Polling di latar sudah berjalan tiap 15 detik, jadi tombol ini tidak
+ * menghadirkan informasi yang tidak akan datang sendiri. Gunanya lain:
+ * memberi pembeli sesuatu untuk dilakukan selain memuat ulang halaman, dan
+ * membuat penantian terasa terkendali. Namanya sengaja "cek status", bukan
+ * "percepat" — yang diperiksa memang status, bukan orang yang memverifikasi.
+ */
+const checkingStatus = ref(false)
+const lastCheckedAt = ref<Date | null>(null)
+
+/** Kosong sampai tombolnya ditekan, jadi tidak ada beda render server-klien. */
+const lastCheckedLabel = computed(() =>
+  lastCheckedAt.value?.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) ?? '',
+)
+
+async function checkStatus() {
+  checkingStatus.value = true
+  try {
+    await refresh()
+    // Hanya dicatat kalau memang masih menunggu. Kalau statusnya sudah
+    // berubah, layar ini digantikan layar lain dan catatan waktunya tidak
+    // relevan lagi.
+    if (purchase.value?.status === 'verifying') lastCheckedAt.value = new Date()
+  }
+  finally {
+    checkingStatus.value = false
+  }
+}
+
 // `pollState` only turns 'expired' via the client-side timer; the invoice can
 // just as well already be expired straight from the initial fetch.
 const isExpired = computed(() => pollState.value === 'expired' || purchase.value?.status === 'expired')
@@ -282,12 +313,31 @@ watch(isRedirecting, (active, wasActive) => {
             <DashboardBadge tone="warning">{{ purchaseStatusLabel(displayStatus) }}</DashboardBadge>
 
             <div class="mt-2 grid w-full max-w-70 gap-3">
-              <!-- outline, bukan secondary: tidak ada tindakan utama di layar
-                   ini — pembeli sedang menunggu — jadi tombolnya tidak boleh
-                   berat seperti ajakan. -->
-              <AppButton variant="outline" size="lg" class="w-full" to="/akun/pembelian">
-                Lihat riwayat pembelian
+              <!-- Menunggu tanpa bisa berbuat apa-apa itu yang membuat orang
+                   memuat ulang halaman berkali-kali. Tombol ini membaca ulang
+                   statusnya sekarang, bukan menunggu polling 15 detik
+                   berikutnya — jujur soal apa yang dikerjakannya: memeriksa
+                   status, bukan mempercepat orang yang memverifikasi. -->
+              <AppButton
+                variant="outline"
+                size="lg"
+                class="w-full"
+                :disabled="checkingStatus"
+                @click="checkStatus"
+              >
+                <IconSpinner v-if="checkingStatus" class="h-4 w-4 animate-spin" aria-hidden="true" />
+                {{ checkingStatus ? 'Memeriksa…' : 'Cek status pembayaran' }}
               </AppButton>
+              <p v-if="lastCheckedLabel" class="text-[0.8rem] text-muted tabular-nums" role="status">
+                Terakhir diperiksa {{ lastCheckedLabel }} — belum ada perubahan.
+              </p>
+
+              <NuxtLink
+                to="/akun/pembelian"
+                class="text-[0.86rem] font-semibold text-primary hover:underline"
+              >
+                Lihat riwayat pembelian
+              </NuxtLink>
             </div>
           </div>
 
