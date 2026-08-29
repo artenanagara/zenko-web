@@ -7,6 +7,9 @@ import {
   IconCheckCircle,
   IconRocket,
   IconPlant,
+  IconAlert,
+  IconUser,
+  IconTrophy,
 } from '#components'
 
 // English file name, Indonesian URL.
@@ -33,6 +36,21 @@ useHead({
  * Copy menghindari klaim angka yang belum benar ("ribuan siswa", tahun
  * berdiri, nama tim) — social proof menyusul kalau datanya sudah nyata.
  */
+const problems = [
+  {
+    label: 'Sisi siswa',
+    title: 'Bahan latihan tersebar tanpa arah',
+    description:
+      'Jutaan pejuang SKD CPNS, BUMN, SNBT, dan Tes Kedinasan bersaing tiap tahun, tapi materi latihan menumpuk di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.',
+  },
+  {
+    label: 'Sisi tutor',
+    title: 'Keahlian terkendala infrastruktur',
+    description:
+      'Banyak pendidik dan lulusan berprestasi punya bank soal bermutu, namun terkendala hal teknis seperti sistem CBT dan payment gateway otomatis untuk mendistribusikan ilmunya.',
+  },
+]
+
 const differentiators = [
   {
     icon: IconTarget,
@@ -65,13 +83,14 @@ const tutorSteps = [
   'Dapatkan penghasilan bersih dari setiap paket yang terjual',
 ]
 
-const values = [
-  {
-    icon: IconHandshake,
-    title: 'Adil untuk semua pihak',
-    description:
-      'Bagi hasil yang adil dan transparan. Siswa mendapatkan materi berkualitas dengan harga wajar, dan tutor memperoleh apresiasi yang layak.',
-  },
+const featuredValue = {
+  icon: IconHandshake,
+  title: 'Adil untuk semua pihak',
+  description:
+    'Bagi hasil yang adil dan transparan. Siswa mendapatkan materi berkualitas dengan harga wajar, dan tutor memperoleh apresiasi yang layak atas karyanya.',
+}
+
+const supportingValues = [
   {
     icon: IconCheckCircle,
     title: 'Kualitas di atas kuantitas',
@@ -94,11 +113,15 @@ const values = [
 
 const audiences = [
   {
+    icon: IconUser,
+    tag: 'Siswa',
     title: 'Siswa dan pejuang seleksi',
     description:
       'Sedang bersiap menghadapi SKD CPNS, Rekrutmen BUMN, SNBT UTBK, atau Tes Kedinasan, dan ingin latihan terarah dengan soal berkualitas tanpa bingung mencari materi ke sana ke mari.',
   },
   {
+    icon: IconTrophy,
+    tag: 'Tutor & kreator',
     title: 'Tutor dan kreator edukasi',
     description:
       'Punya materi dan keahlian mengajar (tutor bimbel, alumni berprestasi, atau konten kreator edukasi) yang ingin mendistribusikan soal secara profesional dan mendapatkan penghasilan mandiri.',
@@ -133,69 +156,75 @@ const audiences = [
     </section>
 
     <!-- ==================================================================
-         2. Masalah yang kami lihat
+         2. Kenapa Zenko hadir — heading + lead di kiri, dua panel masalah
+         (siswa & tutor) bertumpuk di kanan. Memutus pola "blok teks
+         tengah" yang dipakai hero.
          ================================================================== -->
     <section class="pt-18 md:pt-22" aria-labelledby="masalah-heading">
       <div class="container-page">
-        <div class="mx-auto mb-9 max-w-160 text-center">
-          <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-widest text-primary uppercase">
-            Latar Belakang
-          </p>
-          <h2 id="masalah-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Kenapa Zenko <span class="text-accent">hadir</span>
-          </h2>
-        </div>
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,420px)] md:gap-12">
+          <div>
+            <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-widest text-primary uppercase">
+              Latar Belakang
+            </p>
+            <h2 id="masalah-heading" class="max-w-[13ch] text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
+              Kenapa Zenko <span class="text-accent">hadir</span>
+            </h2>
+            <p class="mt-5 max-w-[46ch] text-[1.15rem] leading-[1.6] font-semibold tracking-[-0.01em] text-ink">
+              Kami percaya ada cara yang lebih adil dan terstruktur untuk menjembatani semangat belajar siswa dengan keahlian para pendidik.
+            </p>
+          </div>
 
-        <div class="mx-auto grid max-w-160 gap-5 text-[1.02rem] leading-[1.7] text-muted">
-          <p>
-            Setiap tahun, jutaan pejuang ujian di Indonesia bersaing memperebutkan posisi di instansi pemerintahan, BUMN, atau perguruan tinggi negeri impian. Sayangnya, proses persiapan sering terasa membingungkan karena bahan latihan tersebar di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.
-          </p>
-          <p>
-            Di sisi lain, banyak pendidik dan lulusan berprestasi yang memiliki bank soal bermutu, namun terkendala infrastruktur teknis seperti sistem CBT dan payment gateway otomatis untuk mendistribusikan ilmunya.
-          </p>
-          <p class="font-semibold text-ink">
-            Kami percaya ada cara yang lebih adil dan terstruktur untuk menjembatani semangat belajar siswa dengan keahlian para pendidik.
-          </p>
+          <div class="grid gap-4">
+            <article
+              v-for="problem in problems"
+              :key="problem.title"
+              class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs"
+            >
+              <AppBadge variant="warning" size="sm">{{ problem.label }}</AppBadge>
+              <h3 class="mt-3.5 mb-2 flex items-start gap-2.5 text-[1.05rem] font-bold tracking-[-0.02em]">
+                <IconAlert class="mt-0.5 h-4.5 w-4.5 shrink-0 text-warning" aria-hidden="true" />
+                {{ problem.title }}
+              </h3>
+              <p class="leading-[1.62] text-muted">{{ problem.description }}</p>
+            </article>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ==================================================================
-         3. Apa itu Zenko — solusi & diferensiasi
+         3. Apa itu Zenko — solusi & diferensiasi. Baris fitur tanpa kartu
+         berbingkai besar, dipisah garis vertikal — kontras dengan panel
+         abu-abu di bagian lain halaman.
          ================================================================== -->
     <section class="pt-18 md:pt-22" aria-labelledby="solusi-heading">
       <div class="container-page">
-        <div class="mx-auto mb-9 max-w-160 text-center">
+        <div class="max-w-160">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-widest text-primary uppercase">
             Solusi Zenko
           </p>
           <h2 id="solusi-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
             Satu tempat, banyak pilihan <span class="text-accent">tutor terbaik</span>
           </h2>
-        </div>
-
-        <div class="mx-auto grid max-w-160 gap-5 text-[1.02rem] leading-[1.7] text-muted">
-          <p>
-            Zenko adalah marketplace try out terbuka, bukan sekadar platform satu arah. Setiap paket soal disusun oleh tutor yang memiliki spesialisasi masing-masing. Siswa dapat membandingkan paket, melihat ulasan jujur, dan memilih materi yang paling pas dengan gaya belajarnya.
-          </p>
-          <p>
-            Kami tidak membatasi siswa pada satu metode pembelajaran saja. Semakin banyak pendidik berdedikasi yang bergabung, semakin kaya pilihan latihan yang kamu miliki untuk meraih impianmu.
+          <p class="mt-3.5 text-[1.02rem] leading-[1.7] text-muted">
+            Zenko adalah marketplace try out terbuka, bukan sekadar platform satu arah. Setiap paket soal disusun oleh tutor yang memiliki spesialisasi masing-masing — semakin banyak pendidik berdedikasi yang bergabung, semakin kaya pilihan latihan yang kamu miliki.
           </p>
         </div>
 
-        <div class="mx-auto mt-11 grid max-w-300 gap-5 rounded-[32px] bg-surface-alt p-4 md:grid-cols-3 md:p-6">
+        <div class="mt-11 grid grid-cols-1 divide-y divide-hairline border-t border-hairline md:grid-cols-3 md:divide-x md:divide-y-0 md:border-t-0">
           <article
             v-for="point in differentiators"
             :key="point.title"
-            class="rounded-3xl border border-hairline bg-surface p-6 text-center shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
+            class="flex flex-col gap-3 py-6 md:px-7 md:py-2 md:first:pl-0"
           >
             <span
-              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-primary"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-[13px] bg-primary-soft text-primary"
               aria-hidden="true"
             >
-              <component :is="point.icon" class="h-6 w-6" />
+              <component :is="point.icon" class="h-5.5 w-5.5" />
             </span>
-            <h3 class="mt-4 mb-2 text-[1.15rem] font-bold tracking-[-0.03em]">{{ point.title }}</h3>
+            <h3 class="text-[1.1rem] font-bold tracking-[-0.03em]">{{ point.title }}</h3>
             <p class="leading-[1.62] text-muted">{{ point.description }}</p>
           </article>
         </div>
@@ -203,11 +232,13 @@ const audiences = [
     </section>
 
     <!-- ==================================================================
-         4. Cara kerja singkat
+         4. Cara kerja singkat — pita penuh dengan daftar bernomor besar,
+         bukan dua kartu kotak. Satu-satunya pita bg-surface-alt di halaman
+         ini, jadi terasa sebagai jeda ritme, bukan pengulangan.
          ================================================================== -->
-    <section class="pt-18 md:pt-22" aria-labelledby="cara-kerja-heading">
-      <div class="container-page">
-        <div class="mx-auto mb-9 max-w-160 text-center">
+    <section class="dot-grid mt-18 border-y border-hairline bg-surface-alt py-18 md:mt-22 md:py-22" aria-labelledby="cara-kerja-heading">
+      <div class="container-page relative z-1">
+        <div class="mx-auto mb-11 max-w-160 text-center">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-widest text-primary uppercase">
             Cara kerja singkat
           </p>
@@ -216,38 +247,48 @@ const audiences = [
           </h2>
         </div>
 
-        <div class="mx-auto grid max-w-300 gap-5 rounded-[32px] bg-surface-alt p-4 md:grid-cols-2 md:p-6">
-          <article class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs md:p-8">
-            <h3 class="mb-5 text-[1.2rem] font-bold tracking-[-0.03em]">Untuk siswa</h3>
-            <ol class="grid gap-4">
-              <li v-for="(step, index) in studentSteps" :key="step" class="flex items-start gap-3.5">
+        <div class="mx-auto grid max-w-300 gap-x-12 gap-y-10 md:grid-cols-2">
+          <div>
+            <h3 class="mb-6 text-[1.2rem] font-bold tracking-[-0.03em]">Untuk siswa</h3>
+            <ol class="grid">
+              <li
+                v-for="(step, index) in studentSteps"
+                :key="step"
+                class="relative flex gap-5 border-l border-hairline-strong py-4 pl-7 last:border-transparent last:pb-0"
+              >
                 <span
-                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[0.8rem] font-bold text-primary"
+                  class="absolute top-3 -left-4.5 flex h-9 w-9 items-center justify-center rounded-full border border-hairline-strong bg-surface text-[0.85rem] font-extrabold text-primary"
                   aria-hidden="true"
                 >{{ index + 1 }}</span>
-                <span class="pt-0.5 leading-[1.55] text-muted">{{ step }}</span>
+                <span class="pt-1.5 leading-[1.55] text-muted">{{ step }}</span>
               </li>
             </ol>
-          </article>
+          </div>
 
-          <article class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs md:p-8">
-            <h3 class="mb-5 text-[1.2rem] font-bold tracking-[-0.03em]">Untuk tutor</h3>
-            <ol class="grid gap-4">
-              <li v-for="(step, index) in tutorSteps" :key="step" class="flex items-start gap-3.5">
+          <div>
+            <h3 class="mb-6 text-[1.2rem] font-bold tracking-[-0.03em]">Untuk tutor</h3>
+            <ol class="grid">
+              <li
+                v-for="(step, index) in tutorSteps"
+                :key="step"
+                class="relative flex gap-5 border-l border-hairline-strong py-4 pl-7 last:border-transparent last:pb-0"
+              >
                 <span
-                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[0.8rem] font-bold text-primary"
+                  class="absolute top-3 -left-4.5 flex h-9 w-9 items-center justify-center rounded-full border border-hairline-strong bg-surface text-[0.85rem] font-extrabold text-primary"
                   aria-hidden="true"
                 >{{ index + 1 }}</span>
-                <span class="pt-0.5 leading-[1.55] text-muted">{{ step }}</span>
+                <span class="pt-1.5 leading-[1.55] text-muted">{{ step }}</span>
               </li>
             </ol>
-          </article>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ==================================================================
-         5. Nilai yang kami pegang
+         5. Nilai yang kami pegang — satu nilai utama tampil penuh sebagai
+         panel unggulan, tiga nilai pendukung berbaris di bawahnya (bento),
+         bukan grid 2x2 yang seragam.
          ================================================================== -->
     <section class="pt-18 md:pt-22" aria-labelledby="nilai-heading">
       <div class="container-page">
@@ -260,27 +301,45 @@ const audiences = [
           </h2>
         </div>
 
-        <div class="mx-auto grid max-w-300 gap-5 rounded-[32px] bg-surface-alt p-4 md:grid-cols-2 md:p-6">
+        <div class="mx-auto grid max-w-300 gap-5">
           <article
-            v-for="value in values"
-            :key="value.title"
-            class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
+            class="flex flex-col items-start gap-5 rounded-[26px] border border-hairline bg-primary-soft/60 p-7 sm:flex-row sm:items-center md:p-9"
           >
             <span
-              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-primary-soft text-primary"
+              class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_10px_24px_rgba(47,111,235,0.25)]"
               aria-hidden="true"
             >
-              <component :is="value.icon" class="h-6 w-6" />
+              <component :is="featuredValue.icon" class="h-7 w-7" />
             </span>
-            <h3 class="mt-4 mb-2.5 text-[1.2rem] font-bold tracking-[-0.03em]">{{ value.title }}</h3>
-            <p class="leading-[1.62] text-muted">{{ value.description }}</p>
+            <div>
+              <h3 class="mb-1.5 text-[1.3rem] font-bold tracking-[-0.03em]">{{ featuredValue.title }}</h3>
+              <p class="max-w-[62ch] leading-[1.62] text-muted">{{ featuredValue.description }}</p>
+            </div>
           </article>
+
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+            <article
+              v-for="value in supportingValues"
+              :key="value.title"
+              class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7"
+            >
+              <span
+                class="inline-flex h-11 w-11 items-center justify-center rounded-[13px] bg-primary-soft text-primary"
+                aria-hidden="true"
+              >
+                <component :is="value.icon" class="h-5.5 w-5.5" />
+              </span>
+              <h3 class="mt-4 mb-2 text-[1.05rem] font-bold tracking-[-0.03em]">{{ value.title }}</h3>
+              <p class="leading-[1.62] text-muted">{{ value.description }}</p>
+            </article>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- ==================================================================
-         6. Untuk siapa Zenko
+         6. Untuk siapa Zenko — kartu dengan avatar ikon + label peran,
+         bukan sekadar garis aksen di atas judul.
          ================================================================== -->
     <section class="py-18 md:py-22" aria-labelledby="untuk-siapa-heading">
       <div class="container-page">
@@ -300,10 +359,13 @@ const audiences = [
             class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs md:p-8"
           >
             <span
-              class="block h-0.5 w-8 rounded-pill bg-linear-to-r from-primary-light to-primary"
+              class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-linear-160 from-primary-light to-primary-dark text-white"
               aria-hidden="true"
-            />
-            <h3 class="mt-4 mb-2.5 text-[1.2rem] font-bold tracking-[-0.03em]">{{ audience.title }}</h3>
+            >
+              <component :is="audience.icon" class="h-5.5 w-5.5" />
+            </span>
+            <AppBadge class="mt-4" variant="neutral" size="sm">{{ audience.tag }}</AppBadge>
+            <h3 class="mt-3 mb-2.5 text-[1.2rem] font-bold tracking-[-0.03em]">{{ audience.title }}</h3>
             <p class="leading-[1.62] text-muted">{{ audience.description }}</p>
           </article>
         </div>
@@ -311,76 +373,7 @@ const audiences = [
     </section>
 
     <!-- ==================================================================
-         7. Identitas penyelenggara
-         ==================================================================
-         Badan hukum, alamat, dan kanal kontak dikumpulkan di satu tempat yang
-         mudah ditemukan. Halaman legal tetap memuat detail yang sama; blok ini
-         ada supaya identitas usaha terbaca tanpa harus membuka Ketentuan
-         Layanan — hal pertama yang dicari saat review merchant payment gateway.
-         ================================================================== -->
-    <section class="pb-18 md:pb-22" aria-labelledby="identitas-heading">
-      <div class="container-page">
-        <div class="mx-auto max-w-300 rounded-[32px] bg-surface-alt p-6 md:p-8">
-          <h2 id="identitas-heading" class="mb-5 text-[1.2rem] font-bold tracking-[-0.03em]">
-            Identitas penyelenggara
-          </h2>
-
-          <dl class="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Badan hukum</dt>
-              <dd class="mt-1 font-semibold">PT Zenko Edukasi Digital</dd>
-            </div>
-            <div>
-              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Alamat</dt>
-              <dd class="mt-1">Klaten, Jawa Tengah, Indonesia</dd>
-            </div>
-            <div>
-              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Email</dt>
-              <dd class="mt-1">
-                <a href="mailto:halo@zenkoedu.id" class="font-semibold text-primary hover:underline">
-                  halo@zenkoedu.id
-                </a>
-              </dd>
-            </div>
-            <div>
-              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Telepon / WhatsApp</dt>
-              <dd class="mt-1">
-                <a href="tel:+6288227663468" class="font-semibold text-primary hover:underline">
-                  0882-2766-3468
-                </a>
-              </dd>
-            </div>
-            <div class="sm:col-span-2">
-              <dt class="text-[0.82rem] font-bold tracking-widest text-muted uppercase">Pembayaran</dt>
-              <dd class="mt-1 leading-[1.7] text-muted">
-                Transaksi di Zenko diproses melalui QRIS oleh
-                <strong class="text-ink">Duitku</strong>, penyedia payment gateway
-                berizin Bank Indonesia. Zenko tidak pernah menyimpan nomor kartu,
-                PIN, maupun kredensial rekeningmu.
-              </dd>
-            </div>
-          </dl>
-
-          <ul class="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-hairline pt-5 text-[0.9rem] font-semibold">
-            <li>
-              <NuxtLink to="/ketentuan-layanan" class="text-primary hover:underline">Ketentuan Layanan</NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/kebijakan-privasi" class="text-primary hover:underline">Kebijakan Privasi</NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/kebijakan-refund" class="text-primary hover:underline">Kebijakan Refund</NuxtLink>
-            </li>
-            <li>
-              <NuxtLink to="/pusat-bantuan" class="text-primary hover:underline">Pusat Bantuan</NuxtLink>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================================================================
-         8. CTA penutup
+         7. CTA penutup
          ================================================================== -->
     <section class="pb-18 md:pb-22" aria-labelledby="cta-heading">
       <div class="container-page">
