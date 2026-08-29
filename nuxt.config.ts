@@ -143,15 +143,24 @@ export default defineNuxtConfig({
       apiBase: 'http://localhost:8080/api/v1',
       // Whether checkout may call POST /orders. How the resulting order is
       // actually paid is the server's decision — a Duitku QRIS charge, or the
-      // manual QRIS channel where the buyer transfers to Zenko's static QR,
-      // uploads a receipt, and an admin verifies it (zenko-api's
-      // PAYMENT_CHANNEL). This flag only says whether to attempt an order at
-      // all; while off, the checkout page says payment is not connected
-      // instead of placing one.
+      // manual QRIS channel where the buyer transfers to Zenko's static QR and
+      // an admin verifies it (zenko-api's PAYMENT_CHANNEL). This flag only
+      // says whether to attempt an order at all; while off, the checkout page
+      // says payment is not connected instead of placing one.
       //
-      // On, because the manual channel needs no gateway credentials to work.
-      // Turn off with NUXT_PUBLIC_PAYMENT_ENABLED=false.
-      paymentEnabled: true,
+      // Still off by default, on purpose. It now gates two things, not one:
+      // the tutor price input follows it too (see TutorProductWizard's
+      // PRICE_INPUT_DISABLED), and turning it on without also pointing
+      // zenko-api at a working channel would create orders with nothing to pay
+      // them with. Turn it on per environment, together with
+      // PAYMENT_CHANNEL=manual_qris on the API.
+      // Turn on with NUXT_PUBLIC_PAYMENT_ENABLED=true.
+      paymentEnabled: false,
+		// Allows the staging tutor editor to write question content on products
+		// that are already live. The API has the matching server-side switch;
+		// keep both off by default so production remains read-only for live
+		// content. Turn on with NUXT_PUBLIC_TUTOR_LIVE_CONTENT_EDIT_ENABLED=true.
+		tutorLiveContentEditEnabled: false,
 		// Recovery flows are live in zenko-api. Operators can still turn one off
 		// explicitly during a partial rollback without hiding the others.
       //

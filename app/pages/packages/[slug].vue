@@ -7,6 +7,10 @@ const slug = route.params.slug as string
 
 const detail = await usePackageDetail(slug)
 const related = useRelatedPackages(detail.value.category, slug)
+const authorProfilePath = computed(() => {
+  const identifier = detail.value.author.username || detail.value.author.id
+  return identifier ? `/tutor/${encodeURIComponent(identifier)}` : undefined
+})
 
 // Same pre-checkout guard as /checkout/:slug, applied to the "Beli sekarang"
 // CTA: an already-owned package points at the account instead of a checkout
@@ -129,11 +133,11 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <!-- Linked only when the tutor actually has a public profile;
-                 seeded paket carry an empty username and stay plain text. -->
+            <!-- Linked when the tutor has a public profile identifier;
+                 platform-owned seed paket carry neither username nor ID. -->
             <NuxtLink
-              v-if="detail.author.username"
-              :to="`/tutor/${detail.author.username}`"
+              v-if="authorProfilePath"
+              :to="authorProfilePath"
               class="-my-2 flex items-center gap-2 py-2 font-semibold text-ink transition-colors duration-200 ease-smooth hover:text-primary hover:underline"
             >
               <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">

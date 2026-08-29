@@ -186,11 +186,8 @@ server {
     }
 
     location / {
-        # Keep staging private over HTTP too; the ACME location above remains
-        # public so certificate renewal can continue to work.
-        allow 127.0.0.1;
-        allow ::1;
-        deny all;
+        # Staging is intentionally public so remote testers and Duitku
+        # sandbox callbacks can reach the application.
         return 308 https://staging.zenkoedu.id$request_uri;
     }
 }
@@ -201,12 +198,6 @@ server {
 
     server_name staging.zenkoedu.id;
     client_max_body_size 2m;
-
-    # Staging is private by default. Add an explicit private CIDR here when
-    # remote testers need access; never open it to the public internet.
-    allow 127.0.0.1;
-    allow ::1;
-    deny all;
 
     ssl_certificate /etc/letsencrypt/live/staging.zenkoedu.id/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/staging.zenkoedu.id/privkey.pem;
