@@ -14,7 +14,7 @@ import type { Purchase } from '#shared/types/account'
  */
 
 const props = defineProps<{ purchase: Purchase }>()
-const emit = defineEmits<{ uploaded: [Purchase] }>()
+const emit = defineEmits<{ confirmed: [Purchase] }>()
 
 const { public: config } = useRuntimeConfig()
 
@@ -81,7 +81,7 @@ const paySteps = computed(() => [
   'Buka aplikasi bank atau e-wallet yang mendukung QRIS.',
   'Pilih "Scan QR", lalu arahkan kamera ke kode di atas. Kalau kamu membuka halaman ini dari HP, simpan dulu gambarnya lalu unggah di aplikasi bank.',
   `Ketik nominalnya persis ${formatRupiah(amounts.value.total)} — termasuk tiga digit terakhir.`,
-  'Selesaikan pembayaran, lalu unggah bukti transfernya di bawah.',
+  'Selesaikan pembayaran, lalu beri tahu kami lewat tombol di bawah.',
 ])
 </script>
 
@@ -100,7 +100,7 @@ const paySteps = computed(() => [
       </p>
       <p class="mt-1.5 text-[0.88rem] leading-[1.6] text-amber-800">{{ rejection }}</p>
       <p class="mt-1.5 text-[0.84rem] text-amber-800">
-        Pesananmu belum hangus — perbaiki lalu unggah ulang di bawah.
+        Pesananmu belum hangus — perbaiki lalu konfirmasi lagi di bawah.
       </p>
     </div>
 
@@ -186,7 +186,7 @@ const paySteps = computed(() => [
     <PaymentProofForm
       class="mt-7 border-t border-hairline pt-6"
       :purchase="purchase"
-      @uploaded="emit('uploaded', $event)"
+      @confirmed="emit('confirmed', $event)"
     />
 
     <p class="mt-6 text-center text-[0.8rem] leading-[1.6] text-muted">

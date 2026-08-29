@@ -62,14 +62,22 @@ export interface PayoutDecisionRequest {
  * PaymentProof, jadi field buktinya ikut serialisasi di level atas bersama
  * invoice dan konteks pesanan.
  *
- * `senderName` dan `paidAmount` adalah klaim pembeli, bukan kebenaran. Tugas
- * admin justru membandingkan keduanya dengan `amountDue` dan dengan gambar
- * buktinya — tidak ada jalur server yang melunasi pesanan dari angka yang
- * diketik pembeli.
+ * `senderName` dan `paidAmount` adalah klaim pembeli, bukan kebenaran. Yang
+ * dicocokkan admin adalah `amountDue` dengan mutasi bank — kode uniknya yang
+ * menunjuk pesanan mana. Keduanya berguna justru saat nominalnya salah ketik:
+ * mutasinya tidak cocok pesanan mana pun, dan nama pengirim satu-satunya
+ * benang untuk melacak. Tidak ada jalur server yang melunasi pesanan dari
+ * angka yang diketik pembeli.
  */
 export interface AdminPaymentProof {
   id: string
   status: PaymentProofStatus
+  /**
+   * Apakah ada lampiran gambar. Lampiran bersifat opsional — yang membuktikan
+   * uangnya masuk adalah mutasi bank, bukan tangkapan layar — jadi meja admin
+   * perlu membedakan "tidak melampirkan" dari "gambarnya gagal dimuat".
+   */
+  hasImage: boolean
   senderName: string
   paidAmount: number
   /** Unix seconds menurut pembeli; absen kalau dikosongkan. */

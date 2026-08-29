@@ -49,8 +49,9 @@ watch(purchase, async (value) => {
   //
   // Yang masih diarahkan hanya status yang QR-nya sudah tidak bisa dipakai dan
   // tidak berujung kepemilikan — expired, batal, gagal.
-  // `verifying` ikut tinggal di sini: bukti transfernya sedang diperiksa, dan
-  // halaman inilah yang menampilkan hasilnya — termasuk alasan kalau ditolak.
+  // `verifying` ikut tinggal di sini: konfirmasi pembayarannya sedang
+  // diperiksa, dan halaman inilah yang menampilkan hasilnya — termasuk
+  // alasan kalau ditolak.
   if (value.status !== 'pending' && value.status !== 'paid' && value.status !== 'verifying') {
     await navigateTo(`/akun/pembelian/${value.invoice}`, { replace: true })
     return
@@ -62,7 +63,7 @@ watch(purchase, async (value) => {
 /**
  * Jalur QRIS manual: tidak ada gateway, tidak ada kode per pesanan, dan yang
  * ditunggu adalah orang. `pollState` yang jadi sumber kebenaran status di layar
- * setelah pembeli mengunggah, karena `purchase` di sini hanya dimuat sekali.
+ * setelah pembeli konfirmasi, karena `purchase` di sini hanya dimuat sekali.
  */
 const isManual = computed(() => purchase.value?.paymentChannel === 'manual_qris')
 const isVerifying = computed(() =>
@@ -70,7 +71,7 @@ const isVerifying = computed(() =>
 )
 
 /**
- * Setelah unggah berhasil, useCheckout sudah memegang salinan pesanan yang
+ * Setelah konfirmasi berhasil, useCheckout sudah memegang salinan pesanan yang
  * paling baru — termasuk hasil verifikasi begitu admin memutuskan. Salinan itu
  * yang dipakai kartu manual supaya alasan penolakan muncul tanpa memuat ulang.
  */
@@ -205,7 +206,7 @@ watch(isRedirecting, (active, wasActive) => {
         Selesaikan pembayaran QRIS untuk mengaktifkan paketnya.
       </p>
       <p v-else-if="isVerifying" class="mt-2.5 text-muted">
-        Bukti transfermu sudah masuk dan sedang diperiksa tim Zenko.
+        Konfirmasimu sudah masuk dan sedang diperiksa tim Zenko.
       </p>
 
       <div class="mt-8 grid grid-cols-1 items-start gap-6 min-[901px]:grid-cols-[minmax(0,1fr)_360px] min-[901px]:gap-8">
@@ -260,7 +261,7 @@ watch(isRedirecting, (active, wasActive) => {
           </div>
 
           <!-- Menunggu admin. Tidak ada hitung mundur di sini: tenggat berhenti
-               berlaku begitu bukti diunggah, dan yang ditunggu adalah orang. -->
+               berlaku begitu pembeli konfirmasi, dan yang ditunggu adalah orang. -->
           <div
             v-else-if="isVerifying"
             role="status"
@@ -272,8 +273,8 @@ watch(isRedirecting, (active, wasActive) => {
             <div>
               <p class="text-[1.3rem] font-bold tracking-[-0.03em]">Menunggu verifikasi</p>
               <p class="mt-2 max-w-md text-[0.92rem] leading-[1.6] text-muted">
-                Bukti transfermu untuk <span class="font-semibold text-ink">{{ packageTitle }}</span>
-                sudah kami terima. Tim Zenko memeriksanya manual, maksimal 1×24 jam.
+                Konfirmasi pembayaranmu untuk <span class="font-semibold text-ink">{{ packageTitle }}</span>
+                sudah kami terima. Tim Zenko mencocokkannya dengan mutasi bank, maksimal 1×24 jam.
                 Kamu akan dapat email begitu selesai — halaman ini juga otomatis
                 lanjut kalau kamu membiarkannya terbuka.
               </p>
@@ -290,11 +291,11 @@ watch(isRedirecting, (active, wasActive) => {
             </div>
           </div>
 
-          <!-- QRIS statis Zenko: bayar sendiri, lalu unggah buktinya. -->
+          <!-- QRIS statis Zenko: bayar sendiri, lalu konfirmasi. -->
           <ManualQrisCard
             v-else-if="showManual && manualPurchase"
             :purchase="manualPurchase"
-            @uploaded="refresh()"
+            @confirmed="refresh()"
           />
 
           <!-- Kode QRIS masih berlaku — halaman ini polling di latar dan lanjut

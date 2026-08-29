@@ -143,8 +143,8 @@ export function useCheckout() {
     purchase.value = existing
 
     // Waiting on an admin rather than on the buyer: no countdown to run — the
-    // deadline stopped applying the moment the receipt was uploaded — and a
-    // much slower poll.
+    // deadline stopped applying the moment the buyer confirmed — and a much
+    // slower poll.
     if (existing.status === 'verifying') {
       state.value = 'awaiting-verification'
       startPolling(existing.invoice, onPaid, VERIFY_POLL_INTERVAL_MS)
@@ -162,20 +162,27 @@ export function useCheckout() {
   }
 
   /**
-   * Unggah bukti transfer untuk pesanan QRIS manual.
+   * Konfirmasi "saya sudah transfer" untuk pesanan QRIS manual.
    *
-   * Nominal dan nama pengirim yang diketik pembeli dikirim apa adanya sebagai
-   * klaim — server tidak pernah melunasi pesanan darinya, keduanya hanya bahan
-   * pencocokan untuk admin. Yang mengubah status adalah unggahannya sendiri.
+   * Lampirannya opsional. Yang membuktikan uangnya masuk adalah mutasi di
+   * dashboard merchant — kode unik di nominalnya yang menunjuk pesanan mana —
+   * dan tangkapan layar justru bukti yang lebih lemah karena bisa dipalsukan.
+   * Permintaan ini ada untuk dua hal yang tidak bisa dikerjakan kode unik:
+   * memberi tahu bahwa ada yang harus diperiksa, dan menghentikan hitungan
+   * kedaluwarsa supaya pesanan yang sudah dibayar tidak hangus saat menunggu.
+   *
+   * Nama pengirim dan nominal adalah keterangan pembeli, bukan bukti. Keduanya
+   * berguna justru saat nominalnya salah ketik: mutasinya jadi tidak cocok
+   * pesanan mana pun, dan namanya satu-satunya benang untuk melacak.
    */
-  async function uploadProof(
+  async function confirmPayment(
     invoice: string,
-    payload: { file: File, senderName: string, paidAmount: number, note?: string },
+    payload: { file?: File | null, senderName: string, paidAmount: number, note?: string },
   ): Promise<Purchase | null> {
     error.value = ''
 
     const body = new FormData()
-    body.append('proof', payload.file)
+    if (payload.file) body.append('proof', payload.file)
     body.append('senderName', payload.senderName)
     body.append('paidAmount', String(payload.paidAmount))
     body.append('transferredAt', String(Math.floor(Date.now() / 1000)))
@@ -282,7 +289,7 @@ export function useCheckout() {
   // an unmounted page.
   onUnmounted(stopWaiting)
 
-  return { state, error, purchase, pay, reset, resumeWaiting, uploadProof }
+  return { state, error, purchase, pay, reset, resumeWaiting, confirmPayment }
 }
 
 /** zenko-api renders every error as { error, requestId }; fall back for the rest. */

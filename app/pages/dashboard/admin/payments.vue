@@ -3,13 +3,18 @@ import type { AdminPaymentProof } from '#shared/types/admin-moderation'
 import type { TableControlOption } from '~/composables/useTableControls'
 
 /**
- * Verifikasi pembayaran — antrean bukti transfer QRIS manual.
+ * Verifikasi pembayaran — antrean konfirmasi pembayaran QRIS manual.
+ *
+ * Yang membuktikan uangnya masuk adalah mutasi di dashboard merchant: kode
+ * unik di nominalnya menunjuk persis satu pesanan. Baris di sini adalah
+ * pembeli yang bilang "saya sudah transfer" — sinyal untuk memeriksa, bukan
+ * buktinya sendiri — dengan lampiran opsional yang hanya menolong kalau
+ * nominalnya ternyata tidak cocok mutasi mana pun.
  *
  * Berbeda dari antrean lain yang berbentuk tabel, satu keputusan di sini
- * dibuat dengan membandingkan gambar dengan angka: nominal yang seharusnya
- * versus yang diklaim, nama akun versus nama pengirim. Jadi tiap bukti tampil
- * sebagai kartu dengan gambarnya di sebelah datanya, bukan baris yang harus
- * diklik dulu.
+ * dibuat dengan membandingkan beberapa angka berdampingan: tagihan versus yang
+ * diklaim, nama akun versus nama pengirim. Jadi tiap baris tampil sebagai
+ * kartu, bukan baris yang harus diklik dulu.
  *
  * Persetujuan di sini adalah satu-satunya hal yang melunasi pesanan pada jalur
  * manual (admin_payment_proofs.go): server memanggil MarkPaidByInvoice lalu
@@ -46,7 +51,7 @@ const FILTER_OPTIONS: TableControlOption[] = [
 
 const SORT_OPTIONS: TableControlOption[] = [
   { value: 'oldest', label: 'Paling lama menunggu' },
-  { value: 'newest', label: 'Terbaru diunggah' },
+  { value: 'newest', label: 'Terbaru dikonfirmasi' },
   { value: 'amount-desc', label: 'Nominal terbesar' },
 ]
 
@@ -93,7 +98,7 @@ function clearNotices() {
   actionError.value = ''
 }
 
-const CONFLICT_NOTICE = 'Bukti ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
+const CONFLICT_NOTICE = 'Konfirmasi ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
 const DECISION_FALLBACK = 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.'
 
 function isConflict(cause: unknown): boolean {
@@ -182,7 +187,7 @@ async function confirmReject(reason: string) {
   try {
     await decideAdminPaymentProof(target.id, { action: 'reject', reason })
     rejectTarget.value = null
-    successMessage.value = `Bukti ${target.invoice} ditolak. ${target.buyerName} diberi tahu dan bisa mengunggah ulang.`
+    successMessage.value = `Konfirmasi ${target.invoice} ditolak. ${target.buyerName} diberi tahu dan bisa mengirim ulang.`
     await refreshAll()
   }
   catch (cause) {
@@ -232,9 +237,10 @@ const zoomed = ref<AdminPaymentProof | null>(null)
           Verifikasi pembayaran
         </h1>
         <p class="mt-2 max-w-2xl text-[0.92rem] leading-[1.6] text-muted">
-          Bukti transfer QRIS manual dari pembeli. Cocokkan nominal dan nama
-          pengirim dengan mutasi bank, lalu setujui — persetujuan inilah yang
-          melunasi pesanan dan mengaktifkan paketnya.
+          Pembeli yang menyatakan sudah transfer lewat QRIS manual. Cocokkan
+          nominalnya dengan mutasi bank — kode uniknya menunjuk persis satu
+          pesanan — lalu setujui. Persetujuan inilah yang melunasi pesanan dan
+          mengaktifkan paketnya.
         </p>
       </div>
       <DashboardBadge v-if="queueCount > 0" tone="warning">
@@ -270,13 +276,13 @@ const zoomed = ref<AdminPaymentProof | null>(null)
       v-model:sort="sortOrder"
       class="mt-6"
       search-id="admin-payment-proofs-search"
-      search-label="Cari bukti pembayaran"
+      search-label="Cari konfirmasi pembayaran"
       search-placeholder="Cari invoice, pembeli, atau nama pengirim…"
       :filter-options="FILTER_OPTIONS"
       :sort-options="SORT_OPTIONS"
       :result-count="rows.length"
       :total-count="total"
-      item-noun="bukti pembayaran"
+      item-noun="konfirmasi"
       :actionable-count="queueCount"
       actionable-label="perlu diperiksa"
       :active="isActive"
@@ -294,7 +300,7 @@ const zoomed = ref<AdminPaymentProof | null>(null)
     </p>
 
     <p v-else-if="rows.length === 0" class="mt-10 text-center text-[0.92rem] text-muted">
-      {{ isActive ? 'Tidak ada bukti yang cocok dengan filter ini.' : 'Belum ada bukti pembayaran yang menunggu.' }}
+      {{ isActive ? 'Tidak ada konfirmasi yang cocok dengan filter ini.' : 'Belum ada konfirmasi pembayaran yang menunggu.' }}
     </p>
 
     <ul v-else class="mt-6 grid gap-4">
@@ -304,9 +310,12 @@ const zoomed = ref<AdminPaymentProof | null>(null)
         class="rounded-lg border border-hairline bg-surface p-5 shadow-xs"
       >
         <div class="flex flex-col gap-5 min-[820px]:flex-row">
-          <!-- Buktinya sendiri. Diklik untuk diperbesar, karena nominal di
-               tangkapan layar ponsel sering kecil. -->
+          <!-- Lampiran, kalau ada. Diklik untuk diperbesar, karena nominal di
+               tangkapan layar ponsel sering kecil. Tanpa lampiran bukan
+               masalah: yang membuktikan uangnya masuk adalah mutasi bank, dan
+               kode unik di kolom Tagihan yang menunjuk pesanan mana. -->
           <button
+            v-if="proof.hasImage"
             type="button"
             class="shrink-0 self-start rounded-sm border border-hairline bg-white p-1.5 transition-[border-color] hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             @click="zoomed = proof"
@@ -319,6 +328,15 @@ const zoomed = ref<AdminPaymentProof | null>(null)
             >
             <span class="mt-1 block text-[0.75rem] text-muted">Klik untuk perbesar</span>
           </button>
+          <div
+            v-else
+            class="grid h-40 w-40 shrink-0 place-items-center gap-1.5 self-start rounded-sm border border-dashed border-hairline-strong bg-surface-alt px-3 text-center"
+          >
+            <AppIcon name="receipt" :size="22" class="text-faint" aria-hidden="true" />
+            <span class="text-[0.78rem] leading-[1.45] text-muted">
+              Tanpa lampiran — cocokkan lewat mutasi bank
+            </span>
+          </div>
 
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-start justify-between gap-3">
@@ -368,7 +386,7 @@ const zoomed = ref<AdminPaymentProof | null>(null)
                 <dd class="mt-0.5 truncate text-[0.9rem]">{{ proof.senderName }}</dd>
               </div>
               <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Diunggah</dt>
+                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Dikonfirmasi</dt>
                 <dd class="mt-0.5 text-[0.9rem]">{{ formatDateLong(proof.createdAt) }}</dd>
               </div>
               <div>
@@ -432,10 +450,10 @@ const zoomed = ref<AdminPaymentProof | null>(null)
 
     <AdminReasonModal
       :open="Boolean(rejectTarget)"
-      title="Tolak bukti pembayaran"
-      description="Pembeli akan menerima email berisi alasan ini dan bisa mengunggah ulang. Pesanannya tidak hangus."
-      placeholder="Misalnya: nominal transfer kurang Rp347 dari tagihan, atau bukti tidak terbaca."
-      confirm-label="Tolak bukti"
+      title="Tolak konfirmasi pembayaran"
+      description="Pembeli akan menerima email berisi alasan ini dan bisa mengirim konfirmasi ulang. Pesanannya tidak hangus."
+      placeholder="Misalnya: tidak ada mutasi masuk dengan nominal ini, atau nominalnya kurang Rp347 dari tagihan."
+      confirm-label="Tolak konfirmasi"
       :busy="rejectBusy"
       :error="rejectError"
       @update:open="rejectTarget = null"

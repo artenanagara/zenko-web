@@ -2,18 +2,24 @@
 import type { Purchase } from '#shared/types/account'
 
 /**
- * Formulir bukti transfer untuk pesanan QRIS manual.
+ * Konfirmasi pembayaran untuk pesanan QRIS manual.
  *
- * Nama pengirim dan nominal yang diketik di sini adalah keterangan pembeli,
- * bukan bukti: server tidak pernah melunasi pesanan dari angka ini — keduanya
- * hanya bahan pencocokan buat mata admin. Yang dilakukan formulir ini adalah
- * memindahkan pesanan ke antrean verifikasi.
+ * Yang membuktikan uangnya masuk adalah mutasi di dashboard merchant — kode
+ * unik di nominalnya yang menunjuk pesanan mana — jadi tangkapan layar di sini
+ * bersifat opsional, bukan syarat. Formulir ini ada untuk dua hal yang tidak
+ * bisa dikerjakan kode unik: memberi tahu bahwa ada yang harus diperiksa, dan
+ * menghentikan hitungan kedaluwarsa supaya pesanan yang sudah dibayar tidak
+ * hangus sementara menunggu giliran diperiksa.
+ *
+ * Nama pengirim tetap wajib. Justru saat nominalnya salah ketik — mutasinya
+ * tidak cocok pesanan mana pun — nama itulah satu-satunya benang untuk
+ * melacak pembayarannya kembali ke pemiliknya.
  */
 
 const props = defineProps<{ purchase: Purchase }>()
-const emit = defineEmits<{ uploaded: [Purchase] }>()
+const emit = defineEmits<{ confirmed: [Purchase] }>()
 
-const { error: checkoutError, uploadProof } = useCheckout()
+const { error: checkoutError, confirmPayment } = useCheckout()
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024
 const ACCEPTED = 'image/png,image/jpeg,image/webp,image/gif'
@@ -63,15 +69,18 @@ function onFileChange(event: Event) {
   previewUrl.value = URL.createObjectURL(picked)
 }
 
+function clearFile() {
+  releasePreview()
+  file.value = null
+  const input = document.getElementById('proof-file') as HTMLInputElement | null
+  if (input) input.value = ''
+}
+
 onUnmounted(releasePreview)
 
 async function submit() {
   localError.value = ''
 
-  if (!file.value) {
-    localError.value = 'Pilih gambar bukti transfernya dulu.'
-    return
-  }
   if (!senderName.value.trim()) {
     localError.value = 'Isi nama pengirim seperti yang tertera di rekeningmu.'
     return
@@ -82,7 +91,7 @@ async function submit() {
   }
 
   submitting.value = true
-  const updated = await uploadProof(props.purchase.invoice, {
+  const updated = await confirmPayment(props.purchase.invoice, {
     file: file.value,
     senderName: senderName.value.trim(),
     paidAmount: amount.value,
@@ -92,43 +101,22 @@ async function submit() {
 
   if (updated) {
     releasePreview()
-    // Pesanan yang dikembalikan server sudah berstatus verifying dan membawa
-    // buktinya. Halaman induk yang memutuskan apa yang tampil sesudahnya.
-    emit('uploaded', updated)
+    // Pesanan yang dikembalikan server sudah berstatus verifying. Halaman
+    // induk yang memutuskan apa yang tampil sesudahnya.
+    emit('confirmed', updated)
   }
 }
 </script>
 
 <template>
   <form novalidate @submit.prevent="submit">
-    <h3 class="font-bold tracking-[-0.02em]">Unggah bukti transfer</h3>
+    <h3 class="font-bold tracking-[-0.02em]">Sudah transfer?</h3>
     <p class="mt-1.5 text-[0.88rem] leading-[1.6] text-muted">
-      Tangkapan layar dari aplikasi bank atau e-wallet sudah cukup, asal nominal
-      dan waktunya terbaca jelas.
+      Beri tahu kami, supaya pembayaranmu masuk antrean pemeriksaan dan
+      pesananmu tidak hangus sambil menunggu.
     </p>
 
     <div class="mt-5 grid gap-4">
-      <div>
-        <label for="proof-file" class="text-[0.86rem] font-semibold">Gambar bukti transfer</label>
-        <input
-          id="proof-file"
-          type="file"
-          :accept="ACCEPTED"
-          class="mt-1.5 block w-full cursor-pointer rounded-sm border border-hairline-strong bg-surface px-3.5 py-2.5 text-[0.88rem] file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-[0.84rem] file:font-semibold"
-          @change="onFileChange"
-        >
-        <div v-if="previewUrl" class="mt-3 flex items-start gap-3">
-          <img
-            :src="previewUrl"
-            alt="Pratinjau bukti transfer yang dipilih"
-            class="h-24 w-24 rounded-sm border border-hairline bg-white object-contain"
-          >
-          <p class="pt-1 text-[0.82rem] text-muted">
-            {{ file?.name }}
-          </p>
-        </div>
-      </div>
-
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label for="proof-sender" class="text-[0.86rem] font-semibold">Nama pengirim</label>
@@ -152,6 +140,38 @@ async function submit() {
             min="1"
             class="mt-1.5 block w-full rounded-sm border border-hairline-strong bg-surface px-3.5 py-2.5 text-[0.9rem] tabular-nums"
           >
+        </div>
+      </div>
+
+      <!-- Opsional, dan dikatakan begitu di labelnya. Lampiran hanya membantu
+           kalau nominalnya ternyata tidak cocok dengan mutasi mana pun. -->
+      <div>
+        <label for="proof-file" class="text-[0.86rem] font-semibold">
+          Bukti transfer <span class="font-normal text-muted">(opsional)</span>
+        </label>
+        <input
+          id="proof-file"
+          type="file"
+          :accept="ACCEPTED"
+          class="mt-1.5 block w-full cursor-pointer rounded-sm border border-hairline-strong bg-surface px-3.5 py-2.5 text-[0.88rem] file:mr-3 file:cursor-pointer file:rounded-sm file:border-0 file:bg-surface-sunken file:px-3 file:py-1.5 file:text-[0.84rem] file:font-semibold"
+          @change="onFileChange"
+        >
+        <div v-if="previewUrl" class="mt-3 flex items-start gap-3">
+          <img
+            :src="previewUrl"
+            alt="Pratinjau bukti transfer yang dipilih"
+            class="h-20 w-20 rounded-sm border border-hairline bg-white object-contain"
+          >
+          <div class="pt-1">
+            <p class="text-[0.82rem] text-muted">{{ file?.name }}</p>
+            <button
+              type="button"
+              class="mt-1 text-[0.82rem] font-semibold text-primary hover:underline"
+              @click="clearFile"
+            >
+              Hapus lampiran
+            </button>
+          </div>
         </div>
       </div>
 
@@ -180,7 +200,7 @@ async function submit() {
 
     <AppButton type="submit" size="lg" class="mt-5 w-full" :disabled="submitting">
       <IconSpinner v-if="submitting" class="h-4 w-4 animate-spin" aria-hidden="true" />
-      {{ submitting ? 'Mengirim…' : 'Kirim bukti transfer' }}
+      {{ submitting ? 'Mengirim…' : 'Saya sudah transfer' }}
     </AppButton>
   </form>
 </template>
