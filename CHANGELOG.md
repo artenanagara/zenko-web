@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/artenanagara/zenko-web/compare/v0.14.0...v0.14.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **tutor:** expose question draft flush once ([dea29ba](https://github.com/artenanagara/zenko-web/commit/dea29ba877328dbec9ecf807a28934755244f92b))
+* **tutor:** save question edits before resubmission ([33cf43c](https://github.com/artenanagara/zenko-web/commit/33cf43c0ede910faa84c04af1def86e155d4ce12))
+
 ## [0.14.0](https://github.com/artenanagara/zenko-web/compare/v0.13.0...v0.14.0) (2026-08-29)
 
 
