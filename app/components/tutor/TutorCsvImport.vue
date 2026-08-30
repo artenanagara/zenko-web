@@ -118,15 +118,54 @@ async function onFileChange(event: Event) {
   }
 }
 
+/** Satu wacana yang dibuat pada run impor ini — kunci rollback saat gagal. */
+interface CreatedPassage {
+  sectionId: string
+  passageId: string
+}
+
 /**
- * Buat wacana-wacana hasil pengelompokan lewat POST .../passages, lalu isi
- * `passageId` tiap soal anggotanya. Respons endpoint-nya aggregate produk
- * terbaru — wacana baru adalah entri terakhir daftar passages subtes itu.
- * Dipanggil tepat sebelum soalnya dikirim, jadi id yang dirujuk selalu ada.
+ * Wacana yang boleh dipakai ulang alih-alih membuat baru: konten persis sama
+ * DAN belum ditautkan ke soal mana pun (yatim — biasanya sisa run impor
+ * sebelumnya yang gagal setelah wacananya terlanjur dibuat). Wacana berisi
+ * anggota tidak pernah dipakai ulang: menambahkan grup baru ke sana bisa
+ * menembus batas 5 soal per wacana.
+ *
+ * Kuncinya `${sectionId}\n${content}`; tiap kandidat hanya bisa diklaim satu
+ * grup (pop), supaya dua grup berbeda dengan teks sama tidak menumpuk di satu
+ * wacana.
+ */
+function orphanPassagePool(): Map<string, string[]> {
+  const pool = new Map<string, string[]>()
+  for (const section of props.sections) {
+    const linked = new Set(section.questions.map(question => question.passageId).filter(Boolean))
+    for (const passage of section.passages ?? []) {
+      if (linked.has(passage.id)) continue
+      const key = `${section.id}\n${passage.content}`
+      pool.set(key, [...(pool.get(key) ?? []), passage.id])
+    }
+  }
+  return pool
+}
+
+/**
+ * Buat (atau pakai ulang) wacana-wacana hasil pengelompokan lewat POST
+ * .../passages, lalu isi `passageId` tiap soal anggotanya. Respons
+ * endpoint-nya aggregate produk terbaru — wacana baru adalah entri terakhir
+ * daftar passages subtes itu. Dipanggil tepat sebelum soalnya dikirim, jadi
+ * id yang dirujuk selalu ada.
+ *
+ * Mengembalikan daftar wacana yang benar-benar DIBUAT run ini (yang dipakai
+ * ulang tidak termasuk), untuk rollback kalau pengiriman soalnya gagal —
+ * batch per subtes bersifat all-or-nothing di server, dan wacana yang
+ * persist duluan tanpa soal akan jadi yatim (lalu terduplikasi tiap retry).
  */
 async function createGroupedPassages(
   questions: { passageId?: string, subtes?: string }[],
-): Promise<void> {
+): Promise<CreatedPassage[]> {
+  const created: CreatedPassage[] = []
+  const reusable = orphanPassagePool()
+
   for (const group of passageGroups.value) {
     const targetSection = group.subtes
       ? props.sections.find(candidate => candidate.title.trim().toLowerCase() === group.subtes.toLowerCase())
@@ -135,14 +174,39 @@ async function createGroupedPassages(
     // wacananya tidak dibuat, dan baris anggotanya ikut gagal di `problems`.
     if (!targetSection) continue
 
-    const product = await createTutorPassage(props.productId, targetSection.id, { content: group.content })
-    const updated = product.sections?.find(candidate => candidate.id === targetSection.id)
-    const created = updated?.passages?.[updated.passages.length - 1]
-    if (!created) continue
+    const key = `${targetSection.id}\n${group.content}`
+    let passageId = reusable.get(key)?.shift()
+
+    if (!passageId) {
+      const product = await createTutorPassage(props.productId, targetSection.id, { content: group.content })
+      const updated = product.sections?.find(candidate => candidate.id === targetSection.id)
+      const newest = updated?.passages?.[updated.passages.length - 1]
+      if (!newest) continue
+      passageId = newest.id
+      created.push({ sectionId: targetSection.id, passageId })
+    }
 
     for (const index of group.questionIndexes) {
       const question = questions[index]
-      if (question) question.passageId = created.id
+      if (question) question.passageId = passageId
+    }
+  }
+  return created
+}
+
+/**
+ * Rollback best-effort: hapus wacana yang baru dibuat run ini karena
+ * pengiriman soalnya gagal. Kegagalan hapus ditelan — sisa yatim akan
+ * dipakai ulang oleh retry berikutnya (orphanPassagePool) dan tetap
+ * ketahuan di validasi submit ("wacana belum ditautkan").
+ */
+async function rollbackCreatedPassages(created: CreatedPassage[]): Promise<void> {
+  for (const passage of created) {
+    try {
+      await deleteTutorPassage(props.productId, passage.sectionId, passage.passageId)
+    }
+    catch {
+      // Best-effort saja.
     }
   }
 }
@@ -156,19 +220,23 @@ const overTarget = computed(() => {
 })
 
 async function importQuestions() {
-  if (rowCount.value === 0) return
+  // overTarget diblokir di sini juga (tombolnya sudah disabled): batch per
+  // subtes bersifat all-or-nothing di server — mengirimkannya pasti 400,
+  // dan wacana yang terlanjur dibuat sebelum 400 itu akan jadi yatim.
+  if (rowCount.value === 0 || overTarget.value) return
 
   importing.value = true
+  let createdPassages: CreatedPassage[] = []
   try {
     let imported: number
     if (mode.value === 'combined') {
-      if (passageGroups.value.length) await createGroupedPassages(combinedParsed.value)
+      if (passageGroups.value.length) createdPassages = await createGroupedPassages(combinedParsed.value)
       const result = await importTutorQuestions(props.productId, combinedParsed.value)
       imported = result.imported
       importProblems.value = result.problems
     }
     else {
-      if (passageGroups.value.length) await createGroupedPassages(parsed.value)
+      if (passageGroups.value.length) createdPassages = await createGroupedPassages(parsed.value)
       await createTutorQuestionBatch(props.productId, props.section.id, parsed.value)
       imported = parsed.value.length
     }
@@ -182,6 +250,13 @@ async function importQuestions() {
     )
   }
   catch (cause) {
+    // Pengiriman soal gagal setelah wacananya persist: hapus lagi wacana
+    // yang baru dibuat run ini supaya retry tidak menemui duplikat, lalu
+    // refresh supaya daftar wacana di editor kembali sinkron dengan server.
+    if (createdPassages.length) {
+      await rollbackCreatedPassages(createdPassages)
+      emit('refresh')
+    }
     toast.error('Gagal mengimpor soal.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
@@ -271,7 +346,9 @@ function reset() {
     </AppInlineMessage>
 
     <div v-if="rowCount > 0" class="flex flex-wrap items-center gap-3">
-      <AppButton type="button" size="sm" :disabled="importing" @click="importQuestions">
+      <!-- Diblokir saat melebihi target: server menolak seluruh batch (400),
+           jadi mengizinkan klik hanya menjanjikan impor yang pasti gagal. -->
+      <AppButton type="button" size="sm" :disabled="importing || overTarget" @click="importQuestions">
         {{ importing ? 'Mengimpor...' : `Impor ${rowCount} soal` }}
       </AppButton>
       <span class="text-[0.84rem] text-muted">dari {{ fileName }}</span>
@@ -285,8 +362,10 @@ function reset() {
     </div>
 
     <AppInlineMessage v-if="overTarget" type="warning">
-      Perhatikan: jumlah soal akan melebihi target {{ section.questionTarget }}
-      subtes ini — hapus kelebihannya sebelum mengajukan produk.
+      Impor diblokir: file ini berisi {{ parsed.length }} soal, melebihi sisa target subtes
+      ({{ Math.max(section.questionTarget - section.questions.length, 0) }} dari
+      {{ section.questionTarget }}). Server menolak seluruh batch yang melebihi target —
+      kurangi barisnya dulu, atau hapus soal yang sudah ada.
     </AppInlineMessage>
   </div>
 </template>

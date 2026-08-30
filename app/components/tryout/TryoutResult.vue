@@ -81,16 +81,22 @@ const verdict = computed<boolean | undefined>(() =>
   serverScored.value ? props.attempt!.passed : undefined,
 )
 
-/** Ada subtes dengan ambang batas → varian tampilan SKD (skor vs ambang). */
+/** Ada subtes dengan ambang batas → baris skor vs ambang + badge Memenuhi. */
 const hasPassingGrades = computed(() => rows.value.some(row => row.passingGrade != null))
 
 /**
- * Varian TKA: satu mapel dinormalisasi 0–100 tanpa ambang dan tanpa verdict —
+ * Varian TKA: skor mapel dinormalisasi 0–100 tanpa ambang dan tanpa verdict —
  * skornya ditampilkan besar, rinciannya benar/salah.
+ *
+ * Diskriminatornya EKSPLISIT dari identitas ujian, bukan tebakan angka:
+ * `theme.seal` di blueprint/snapshot review diturunkan server dari field
+ * `theme` exam type-nya ("tka" → seal "TKA", "catbkn" → seal "BKN" — lihat
+ * tryoutPresentation di zenko-api). Heuristik numerik yang lama
+ * (`maxScore === 100 && satu subtes`) salah mengenali SKD mini custom 20
+ * soal (20×5 = 100) sebagai TKA. Tetap digerbangi serverScored: tanpa angka
+ * server, hasil lokal TKA adalah poin mentah, bukan skala 0–100.
  */
-const isTkaScale = computed(() =>
-  serverScored.value && !hasPassingGrades.value && displayMaxScore.value === 100 && rows.value.length === 1,
-)
+const isTkaScale = computed(() => serverScored.value && props.theme.seal === 'TKA')
 
 const percent = computed(() =>
   displayMaxScore.value === 0 ? 0 : Math.round((displayScore.value / displayMaxScore.value) * 100),

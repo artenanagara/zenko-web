@@ -118,9 +118,17 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
 
   // Menghapus centang sebuah kategori ikut melepas sub-kategori miliknya —
   // sub-kategori tanpa induk terpilih akan memfilter diam-diam tanpa ada
-  // chip kategori yang menjelaskannya.
-  watch(categories, (selected) => {
-    if (selected.length === 0) return
+  // chip kategori yang menjelaskannya. Berlaku juga saat kategori TERAKHIR
+  // di-uncheck: semua sub-kategori terpilih ikut dibersihkan, bukan dibiarkan
+  // yatim (watcher lama early-return pada daftar kosong).
+  watch(categories, (selected, previous) => {
+    if (subcategories.value.length === 0) return
+    if (selected.length === 0) {
+      // Hanya saat benar-benar transisi "ada kategori → tidak ada" — memilih
+      // sub-kategori langsung tanpa kategori tetap sah dan tidak lewat sini.
+      if (previous.length > 0) subcategories.value = []
+      return
+    }
     const allowed = new Set(
       source.value
         .filter((pkg) => pkg.subcategory && selected.includes(slugifyCategory(pkg.category)))
@@ -128,6 +136,24 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
     )
     const kept = subcategories.value.filter((value) => allowed.has(value))
     if (kept.length !== subcategories.value.length) subcategories.value = kept
+  })
+
+  /**
+   * Peta kategori induk → sub-kategori miliknya (slug), diturunkan dari
+   * katalog itu sendiri. Ini yang membuat filter sub-kategori berlaku
+   * per-kategori-induk: centang CPNS hanya menyaring paket SKD — paket TKA
+   * tidak punya sub-kategori CPNS untuk dicocokkan, jadi tidak ikut tersaring.
+   */
+  const subcategoriesByCategory = computed(() => {
+    const map = new Map<string, Set<string>>()
+    for (const pkg of source.value) {
+      if (!pkg.subcategory) continue
+      const category = slugifyCategory(pkg.category)
+      const set = map.get(category) ?? new Set<string>()
+      set.add(slugifyCategory(pkg.subcategory))
+      map.set(category, set)
+    }
+    return map
   })
 
   function matchesSearch(pkg: Package): boolean {
@@ -146,9 +172,18 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
     return categories.value.includes(slugifyCategory(pkg.category))
   }
 
+  /**
+   * Filter sub-kategori berlaku PER KATEGORI INDUK: sebuah paket hanya diadu
+   * dengan sub-kategori terpilih yang memang milik kategorinya sendiri. Tidak
+   * ada yang relevan untuk kategori itu → paketnya lolos, bukan tersaring
+   * oleh sub-kategori kategori lain (CPNS terpilih tidak menyembunyikan TKA).
+   */
   function matchesSubcategory(pkg: Package): boolean {
     if (subcategories.value.length === 0) return true
-    return !!pkg.subcategory && subcategories.value.includes(slugifyCategory(pkg.subcategory))
+    const own = subcategoriesByCategory.value.get(slugifyCategory(pkg.category))
+    const relevant = own ? subcategories.value.filter((value) => own.has(value)) : []
+    if (relevant.length === 0) return true
+    return !!pkg.subcategory && relevant.includes(slugifyCategory(pkg.subcategory))
   }
 
   function matchesPrice(pkg: Package): boolean {
@@ -169,10 +204,15 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
    * rather than "what you have already".
    */
   function passes(pkg: Package, skip?: 'category' | 'subcategory' | 'price' | 'rating'): boolean {
+    // Sub-kategori TIDAK ikut di-skip saat menghitung count kategori: dengan
+    // semantik per-kategori-induk di matchesSubcategory, count sebuah
+    // kategori sudah jujur — sub-kategori terpilih milik kategori lain tidak
+    // menyaringnya, sedangkan sub-kategori miliknya sendiri memang akan tetap
+    // berlaku saat baris kategori itu dicentang.
     return (
       matchesSearch(pkg) &&
       (skip === 'category' || matchesCategory(pkg)) &&
-      (skip === 'subcategory' || skip === 'category' || matchesSubcategory(pkg)) &&
+      (skip === 'subcategory' || matchesSubcategory(pkg)) &&
       (skip === 'price' || matchesPrice(pkg)) &&
       (skip === 'rating' || matchesRating(pkg))
     )
