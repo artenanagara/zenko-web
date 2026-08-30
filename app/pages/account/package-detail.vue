@@ -316,7 +316,12 @@ function barTone(percent: number) {
                     </DashboardBadge>
                   </td>
                   <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ formatDate(attempt.finishedAt) }}</td>
-                  <td class="py-3.5 pr-4 font-bold tabular-nums">{{ attempt.score }}</td>
+                  <td class="py-3.5 pr-4 font-bold tabular-nums">
+                    {{ attempt.score }}<span v-if="attempt.maxScore > 0" class="font-medium text-muted">/{{ attempt.maxScore }}</span>
+                    <DashboardBadge v-if="attempt.passed !== undefined" :tone="attempt.passed ? 'success' : 'danger'" class="ml-2">
+                      {{ attempt.passed ? 'Lulus' : 'Tidak Lulus' }}
+                    </DashboardBadge>
+                  </td>
                   <td class="py-3.5 pr-4">
                     <span
                       v-if="scoreDelta(attempt) !== null"
@@ -363,8 +368,11 @@ function barTone(percent: number) {
               </div>
               <div class="mt-2.5 flex flex-wrap items-baseline gap-2">
                 <span class="text-[1.35rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums">
-                  {{ attempt.score }}
+                  {{ attempt.score }}<span v-if="attempt.maxScore > 0" class="text-[0.9rem] font-semibold text-muted">/{{ attempt.maxScore }}</span>
                 </span>
+                <DashboardBadge v-if="attempt.passed !== undefined" :tone="attempt.passed ? 'success' : 'danger'">
+                  {{ attempt.passed ? 'Lulus' : 'Tidak Lulus' }}
+                </DashboardBadge>
                 <span
                   v-if="scoreDelta(attempt) !== null"
                   class="rounded-pill px-2 py-0.5 text-[0.74rem] font-bold tabular-nums"

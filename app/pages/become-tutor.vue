@@ -14,10 +14,10 @@ definePageMeta({ path: '/jadi-tutor' })
 useSeoMeta({
   title: 'Jadi Tutor Zenko | Jual Paket Try Out Online',
   description:
-    'Daftar menjadi tutor Zenko dan jual paket try out SKD CPNS, BUMN, SNBT, atau TKA. Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+    'Daftar menjadi tutor Zenko dan jual paket try out SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
   ogTitle: 'Jadi Tutor Zenko | Jual Paket Try Out Online',
   ogDescription:
-    'Daftar menjadi tutor Zenko dan jual paket try out SKD CPNS, BUMN, SNBT, atau TKA. Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+    'Daftar menjadi tutor Zenko dan jual paket try out SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/jadi-tutor',
   twitterCard: 'summary_large_image',
@@ -67,7 +67,7 @@ const faqs = [
   {
     question: 'Kategori paket apa saja yang bisa saya buat?',
     answer:
-      'Saat ini kamu bisa menjual paket try out untuk SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Jika ingin membuat kategori baru, kamu bisa mendiskusikannya dengan tim kami.',
+      'Saat ini kamu bisa menjual paket try out untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Jika ingin membuat kategori baru, kamu bisa mendiskusikannya dengan tim kami.',
   },
   {
     question: 'Berapa lama proses peninjauan pengajuan tutor?',
@@ -91,21 +91,21 @@ const faqs = [
  * are aria-hidden, so this text is purely visual.
  */
 const mockSales = [
-  { title: 'Prediksi BUMN 2026', amount: '+Rp298rb' },
-  { title: 'SNBT Master Class', amount: '+Rp219rb' },
+  { title: 'Simulasi SKD Kedinasan', amount: '+Rp298rb' },
+  { title: 'TKA Matematika SMA', amount: '+Rp219rb' },
   { title: 'Latihan CPNS Intensif', amount: '+Rp189rb' },
 ]
 
 const mockResults = [
   { title: 'Latihan CPNS 2026 Intensif', meta: 'SKD/CPNS · Rp189.000' },
-  { title: 'Prediksi BUMN 2026', meta: 'BUMN · Rp149.000' },
-  { title: 'SNBT Master Class', meta: 'SNBT · Rp219.000' },
+  { title: 'Simulasi SKD Kedinasan', meta: 'SKD · Kedinasan · Rp149.000' },
+  { title: 'TKA Matematika SMA', meta: 'TKA · SMA · Rp219.000' },
   { title: 'Simulasi TKA Lengkap', meta: 'TKA · Rp129.000' },
 ]
 
 const mockPerformance = [
-  { title: 'Prediksi BUMN 2026', width: 82 },
-  { title: 'SNBT Master Class', width: 58 },
+  { title: 'Simulasi SKD Kedinasan', width: 82 },
+  { title: 'TKA Matematika SMA', width: 58 },
   { title: 'Latihan CPNS Intensif', width: 39 },
   { title: 'Simulasi TKA Lengkap', width: 68 },
 ]
@@ -143,7 +143,7 @@ void benefitRef
 void advantageRef
 void flowRef
 
-const EXPERTISE_OPTIONS = ['SKD / CPNS', 'BUMN', 'SNBT', 'TKA', 'Lainnya']
+const EXPERTISE_OPTIONS = ['SKD / CPNS', 'SKD / Kedinasan', 'TKA', 'Lainnya']
 
 // No name/email fields: the server reads identity from the session. The form
 // only asks what the applicant alone knows.
@@ -275,7 +275,7 @@ const formState = computed<FormState>(() => {
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Jadi tutor Zenko dan jual paket try out SKD CPNS, BUMN, SNBT, atau TKA
+            Jadi tutor Zenko dan jual paket try out SKD (CPNS & Kedinasan) atau TKA
             buatanmu. Kamu menyiapkan soal dan pembahasan, Zenko membantu urusan
             platform, pembayaran, serta penilaian otomatis.
           </p>
@@ -407,7 +407,7 @@ const formState = computed<FormState>(() => {
                       style="--delay: 60ms"
                     >
                       <IconSearch class="h-4 w-4 shrink-0 text-placeholder" />
-                      <span class="text-[0.82rem] font-medium text-muted">SNBT 2026</span>
+                      <span class="text-[0.82rem] font-medium text-muted">SKD 2026</span>
                     </div>
                   </div>
 
@@ -807,7 +807,7 @@ const formState = computed<FormState>(() => {
                         Rina Kartika
                       </span>
                       <span class="anim-item truncate text-[0.7rem] text-muted" style="--delay: 280ms">
-                        Pengajuan tutor · SNBT
+                        Pengajuan tutor · SKD
                       </span>
                     </span>
                   </span>
@@ -833,7 +833,7 @@ const formState = computed<FormState>(() => {
                     <span
                       class="anim-item min-w-0 flex-1 truncate text-[0.74rem] font-bold tracking-[-0.02em]"
                       style="--delay: 560ms"
-                    >SNBT Master Class</span>
+                    >TKA Matematika SMA</span>
                     <span
                       class="anim-item shrink-0 rounded-pill bg-primary-soft px-2.5 py-1 text-[0.7rem] font-bold text-primary"
                       style="--delay: 760ms"

@@ -5,10 +5,10 @@ definePageMeta({ path: '/paket' })
 useSeoMeta({
   title: 'Katalog Paket Try Out | Zenko',
   description:
-    'Jelajahi beragam pilihan paket latihan try out SKD CPNS, BUMN, SNBT, dan Tes Kedinasan di Zenko. Beli per paket, akses langsung, tanpa langganan.',
+    'Jelajahi paket latihan try out SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK) di Zenko. Beli per paket, akses langsung, tanpa langganan.',
   ogTitle: 'Katalog Paket Try Out | Zenko',
   ogDescription:
-    'Jelajahi beragam pilihan paket latihan try out SKD CPNS, BUMN, SNBT, dan Tes Kedinasan di Zenko. Beli per paket, akses langsung, tanpa langganan.',
+    'Jelajahi paket latihan try out SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK) di Zenko. Beli per paket, akses langsung, tanpa langganan.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/paket',
   twitterCard: 'summary_large_image',
@@ -26,10 +26,12 @@ const { data: packages, pending, error } = usePackages(sort)
 const {
   search,
   categories,
+  subcategories,
   prices,
   rating,
   filtered,
   categoryOptions,
+  subcategoryOptions,
   priceOptions,
   ratingOptions,
   activeFilters,
@@ -79,9 +81,11 @@ const showFilters = ref(false)
             <FilterSidebar
               class="min-[901px]:max-h-[calc(100vh-7rem)] min-[901px]:overflow-y-auto"
               v-model:categories="categories"
+              v-model:subcategories="subcategories"
               v-model:prices="prices"
               v-model:rating="rating"
               :category-options="categoryOptions"
+              :subcategory-options="subcategoryOptions"
               :price-options="priceOptions"
               :rating-options="ratingOptions"
               :active-count="activeCount"

@@ -290,6 +290,74 @@ export function parseCombinedQuestionCsv(
   return { questions, errors }
 }
 
+/* --------------------------------------------------------------------------
+ * Grup wacana dari CSV (kategori TKA).
+ * ------------------------------------------------------------------------ */
+
+/** Satu grup wacana hasil pengelompokan kolom `wacana` pada CSV. */
+export interface CsvPassageGroup {
+  /** Judul subtes tujuan grup ini — '' pada impor per subtes. */
+  subtes: string
+  /** Konten HTML wacana, siap dikirim ke POST .../passages. */
+  content: string
+  /** Index soal anggota grup pada daftar hasil parse (urutan file). */
+  questionIndexes: number[]
+}
+
+/** Batas soal per wacana — cermin model.MaxQuestionsPerPassage di zenko-api. */
+const MAX_PASSAGE_QUESTIONS = 5
+
+/** Bungkus teks wacana polos CSV jadi paragraf HTML, satu <p> per baris. */
+function wrapPassageHtml(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => `<p>${escapeHtml(line)}</p>`)
+    .join('')
+}
+
+/**
+ * Kelompokkan kolom `wacana` hasil parse jadi grup wacana (fitur TKA):
+ * baris-baris BERURUTAN dengan teks wacana identik (dan subtes sama, pada
+ * impor gabungan) menjadi satu grup, maksimal 5 soal per grup — baris ke-6
+ * dengan teks sama membuka grup baru, mengikuti batas resmi 1 stimulus → 5
+ * soal. Soal yang masuk grup dilepas `stimulus`-nya (teksnya pindah ke
+ * wacana); pemanggil membuat wacananya lewat POST .../passages lalu mengisi
+ * `passageId` tiap anggota sebelum mengirim batch soal.
+ *
+ * Mengembalikan salinan — daftar soal aslinya tidak diubah.
+ */
+export function groupCsvPassages<T extends QuestionDraft>(
+  source: T[],
+): { questions: T[], groups: CsvPassageGroup[] } {
+  const questions = source.map(question => ({ ...question }))
+  const groups: CsvPassageGroup[] = []
+  let current: { key: string, group: CsvPassageGroup } | null = null
+
+  questions.forEach((question, index) => {
+    const wacana = (question.stimulus ?? '').trim()
+    const subtes = ((question as { subtes?: string }).subtes ?? '').trim()
+    if (!wacana) {
+      current = null
+      return
+    }
+
+    const key = `${subtes} ${wacana}`
+    if (!current || current.key !== key || current.group.questionIndexes.length >= MAX_PASSAGE_QUESTIONS) {
+      current = {
+        key,
+        group: { subtes, content: wrapPassageHtml(wacana), questionIndexes: [] },
+      }
+      groups.push(current.group)
+    }
+    current.group.questionIndexes.push(index)
+    delete question.stimulus
+  })
+
+  return { questions, groups }
+}
+
 /** Terima B/S, benar/salah, dan true/false — CSV buatan tangan tidak seragam. */
 function parseTrueFalse(raw: string): boolean | null {
   const value = raw.trim().toLowerCase()

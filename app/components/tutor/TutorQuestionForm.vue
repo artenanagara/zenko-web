@@ -4,9 +4,11 @@ import type {
   QuestionDraft,
   QuestionKind,
   QuestionOption,
+  TutorPassage,
   TutorQuestion,
   MatchingData,
 } from '#shared/types/tutor-product'
+import { MAX_QUESTIONS_PER_PASSAGE } from '#shared/types/tutor-product'
 import { buildQuestionDraft, type QuestionDraftState } from '~/utils/questionDraft'
 
 /**
@@ -33,8 +35,26 @@ const props = defineProps<{
   saving: boolean
   productId: string
   sectionId: string
-  /** Exam type of the paket, used to flag answer types the real TKA never uses. */
+  /** Exam type of the paket, used to label the official TKA formats. */
   examTypeSlug?: string
+  /**
+   * Jenis soal yang diizinkan subtes ini (dari template jenis ujian). Absen/
+   * kosong = semua jenis boleh. Tepat satu jenis (SKD) = pemilih jenis soal
+   * disembunyikan — jenisnya mengikuti subtes.
+   */
+  allowedKinds?: QuestionKind[] | null
+  /**
+   * Bentuk ketat CAT BKN (produk SKD): pilihan ganda/TKP wajib tepat 5 opsi,
+   * bobot TKP 1–5 — lihat questionDraft.ts.
+   */
+  skdStrict?: boolean
+  /** Wacana subtes ini yang bisa ditautkan (fitur TKA); absen = tanpa pemilih wacana. */
+  passages?: TutorPassage[] | null
+  /**
+   * Jumlah soal LAIN yang sudah menautkan tiap wacana (soal yang sedang
+   * diedit tidak dihitung) — untuk menegakkan batas 5 soal/wacana di client.
+   */
+  passageUsage?: Record<string, number>
 }>()
 
 const emit = defineEmits<{
@@ -68,7 +88,32 @@ const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
   { value: 'ordering', label: 'Mengurutkan langkah' },
 ]
 
-const kind = ref<QuestionKind>(props.initial?.kind ?? props.defaultKind)
+/**
+ * Kunci jenis per subtes (rework SKD/TKA): allowedKinds berisi tepat satu
+ * jenis pada subtes SKD — pemilih disembunyikan, jenisnya milik subtes, bukan
+ * pilihan tutor. Daftar lebih panjang memfilter opsi pemilih; absen/kosong
+ * membuka semuanya (TKA & produk legacy).
+ */
+const lockedKind = computed<QuestionKind | null>(() =>
+  props.allowedKinds?.length === 1 ? props.allowedKinds[0]! : null,
+)
+
+const kind = ref<QuestionKind>(lockedKind.value ?? props.initial?.kind ?? props.defaultKind)
+
+/**
+ * Opsi pemilih jenis: difilter allowedKinds, dan pada paket TKA tiap opsi
+ * diberi badge "Format Resmi TKA" (PG/PGK MCMA/PGK Kategori) atau
+ * "Fitur custom Zenko" (6 jenis internal lainnya) — spec §6.2.
+ */
+const kindOptions = computed(() => {
+  const allowed = props.allowedKinds?.length ? props.allowedKinds : null
+  return KIND_OPTIONS
+    .filter(option => !allowed || allowed.includes(option.value))
+    .map((option) => {
+      const badge = tkaKindBadge(props.examTypeSlug, option.value)
+      return badge ? { ...option, badge } : option
+    })
+})
 
 /**
  * AppSelect works in plain string|number; narrow its `update:modelValue` back
@@ -76,18 +121,63 @@ const kind = ref<QuestionKind>(props.initial?.kind ?? props.defaultKind)
  * uses for the section-level "Tipe soal bawaan" select).
  */
 function isQuestionKind(value: string | number): value is QuestionKind {
-  return KIND_OPTIONS.some(option => option.value === value)
+  return kindOptions.value.some(option => option.value === value)
 }
 
+/** Label statis jenis terkunci (SKD) — pengganti pemilih yang disembunyikan. */
+const lockedKindLabel = computed(() => {
+  if (!lockedKind.value) return ''
+  return KIND_OPTIONS.find(option => option.value === lockedKind.value)?.label ?? lockedKind.value
+})
+
+/** Badge jenis aktif untuk paket TKA — tampil di bawah pemilih. */
+const activeKindBadge = computed(() => tkaKindBadge(props.examTypeSlug, kind.value))
+
 /**
- * Advice, not a block: a paket that claims to simulate TKA should not quietly
- * drill a format the real exam has never asked. See docs/plan-produk-tka-lengkap.md §5B.
+ * Advice, not a block: jenis custom sah dipakai di paket TKA, tapi UI tidak
+ * boleh menyebutnya bentuk resmi — spec §6.2.
  */
 const kindWarning = computed(() => nonTkaKindWarning(props.examTypeSlug, kind.value))
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
 const explanation = ref(props.initial?.explanation ?? '')
+
+/* -------------------------------------------------------------------------
+ * Wacana bersama (grup stimulus, fitur TKA) — soal ini boleh menautkan satu
+ * wacana subtes; teksnya tampil di panel bacaan tetap saat siswa mengerjakan.
+ * '' berarti soal berdiri sendiri (dan melepas tautan saat PATCH).
+ * ---------------------------------------------------------------------- */
+
+const passageId = ref(props.initial?.passageId ?? '')
+
+const hasPassagePicker = computed(() => (props.passages?.length ?? 0) > 0)
+
+const passageOptions = computed(() => [
+  { value: '', label: 'Tanpa wacana (soal berdiri sendiri)' },
+  ...(props.passages ?? []).map((passage, index) => {
+    const used = props.passageUsage?.[passage.id] ?? 0
+    const name = passage.title.trim() || `Wacana ${index + 1}`
+    const full = used >= MAX_QUESTIONS_PER_PASSAGE && passage.id !== passageId.value
+    return {
+      value: passage.id,
+      label: `${name} (${used}/${MAX_QUESTIONS_PER_PASSAGE} soal)${full ? ' — penuh' : ''}`,
+    }
+  }),
+])
+
+/** Batas 5 soal/wacana ditegakkan di client juga — server tetap penjaga akhir. */
+function selectPassage(value: string | number) {
+  const id = String(value)
+  if (id && id !== props.initial?.passageId) {
+    const used = props.passageUsage?.[id] ?? 0
+    if (used >= MAX_QUESTIONS_PER_PASSAGE) {
+      toast.error('Wacana penuh.', `Satu wacana maksimal ${MAX_QUESTIONS_PER_PASSAGE} soal.`)
+      return
+    }
+  }
+  passageId.value = id
+}
 
 /* Per-kind state, hydrated from `initial` where the kind matches. */
 
@@ -330,6 +420,8 @@ function buildDraft(): QuestionDraft | null {
     prompt: prompt.value,
     explanation: explanation.value,
     stimulus: stimulus.value,
+    passageId: passageId.value,
+    skdStrict: props.skdStrict,
     choiceRows: choiceRows.value,
     correctIndex: correctIndex.value,
     correctIndexes: correctIndexes.value,
@@ -429,6 +521,7 @@ function scheduleAutosave() {
     const snapshot = {
       kind: kind.value,
       stimulus: stimulus.value,
+      passageId: passageId.value,
       prompt: prompt.value,
       explanation: explanation.value,
       choiceRows: choiceRows.value,
@@ -467,6 +560,7 @@ function restoreDraft() {
     const snapshot = JSON.parse(raw) as {
       kind?: QuestionKind
       stimulus?: string
+      passageId?: string
       prompt?: string
       explanation?: string
       choiceRows?: typeof choiceRows.value
@@ -479,7 +573,15 @@ function restoreDraft() {
       matchingPairs?: Record<string, string>
       ordering?: string[]
     }
-    if (snapshot.kind && KIND_OPTIONS.some(option => option.value === snapshot.kind)) kind.value = snapshot.kind
+    if (!lockedKind.value && snapshot.kind && kindOptions.value.some(option => option.value === snapshot.kind)) {
+      kind.value = snapshot.kind
+    }
+    // Wacana yang sudah tidak ada (dihapus sejak draft ditulis) tidak dipulihkan.
+    if (snapshot.passageId !== undefined) {
+      passageId.value = (props.passages ?? []).some(passage => passage.id === snapshot.passageId)
+        ? snapshot.passageId
+        : ''
+    }
     stimulus.value = snapshot.stimulus ?? ''
     if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
@@ -623,20 +725,58 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </span>
     </AppSectionMessage>
 
-    <div class="max-w-xl">
+    <!-- SKD: jenis soal mengikuti subtes (TWK/TIU pilihan ganda, TKP
+         berbobot) — tanpa pemilih, cukup keterangan jenisnya. -->
+    <div v-if="lockedKind" class="max-w-xl">
+      <span :class="FIELD_LABEL_CLASS">Tipe soal</span>
+      <p class="rounded-sm border border-hairline bg-surface-alt px-3.5 py-2.5 text-[0.9rem] font-semibold">
+        {{ lockedKindLabel }}
+      </p>
+      <p class="mt-2 text-[0.78rem] text-faint">
+        Jenis soal subtes ini terkunci mengikuti format resmi CAT BKN.
+      </p>
+    </div>
+
+    <div v-else class="max-w-xl">
       <!-- Same control and wording as the section-level "Tipe soal bawaan"
            (TutorCustomSections.vue), so the tutor reads the two as one
            setting: the subtes sets the default, the soal may override it. -->
       <AppSelect
-        :options="KIND_OPTIONS"
+        :options="kindOptions"
         :model-value="kind"
         label="Tipe soal"
         @update:model-value="(value) => { if (isQuestionKind(value)) kind = value }"
       />
+      <p v-if="activeKindBadge" class="mt-2">
+        <span
+          class="inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.74rem] font-bold"
+          :class="activeKindBadge === 'Format Resmi TKA'
+            ? 'bg-success-soft text-success-ink'
+            : 'bg-surface-sunken text-muted'"
+        >
+          <AppIcon :name="activeKindBadge === 'Format Resmi TKA' ? 'seal-check' : 'puzzle-piece'" :size="13" />
+          {{ activeKindBadge }}
+        </span>
+      </p>
       <AppInlineMessage v-if="kindWarning" type="warning" class="mt-2">
-        {{ kindWarning }} Soal ini tetap bisa disimpan, tapi simulasinya jadi berbeda dari ujian aslinya.
+        {{ kindWarning }}
       </AppInlineMessage>
       <p class="mt-2 text-[0.78rem] text-faint">Terisi otomatis dari tipe bawaan subtes, dan tiap soal boleh memakai tipe yang berbeda.</p>
+    </div>
+
+    <!-- Tautan wacana (grup stimulus, TKA): teks bacaannya dikelola di panel
+         "Wacana subtes" — di sini soal cuma memilih ikut grup yang mana. -->
+    <div v-if="hasPassagePicker" class="max-w-xl">
+      <AppSelect
+        :options="passageOptions"
+        :model-value="passageId"
+        label="Wacana subtes (opsional)"
+        @update:model-value="selectPassage"
+      />
+      <p class="mt-2 text-[0.78rem] text-faint">
+        Soal-soal dalam satu wacana membaca teks yang sama — maksimal
+        {{ MAX_QUESTIONS_PER_PASSAGE }} soal per wacana.
+      </p>
     </div>
 
     <div>
@@ -679,8 +819,15 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     <!-- Choice-based kinds share the same option editor. -->
     <fieldset v-if="choiceKind(kind)" ref="choicesBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">
-        {{ kind === 'weighted' ? 'Opsi jawaban + bobot (umumnya 1–5)' : kind === 'multiple_choice' ? 'Opsi jawaban — tandai semua kunci yang benar' : kind === 'ordering' ? 'Item yang akan diurutkan' : 'Opsi jawaban — tandai kunci yang benar' }}
+        {{ kind === 'weighted'
+          ? (skdStrict ? 'Opsi jawaban TKP — bobot 1–5 per opsi, tanpa jawaban benar' : 'Opsi jawaban + bobot (umumnya 1–5)')
+          : kind === 'multiple_choice' ? 'Opsi jawaban — tandai semua kunci yang benar' : kind === 'ordering' ? 'Item yang akan diurutkan' : 'Opsi jawaban — tandai kunci yang benar' }}
       </legend>
+      <p v-if="skdStrict && (kind === 'single_choice' || kind === 'weighted')" class="-mt-1 text-[0.78rem] text-faint">
+        {{ kind === 'weighted'
+          ? 'Semua 5 opsi wajib terisi dan berbobot 1–5 (boleh sama) — setiap jawaban bernilai, tidak ada yang salah.'
+          : 'Format CAT BKN: kelima opsi A–E wajib terisi dengan tepat satu kunci jawaban.' }}
+      </p>
 
       <div v-for="(row, index) in choiceRows" :key="row.letter" class="flex items-start gap-2.5">
         <template v-if="kind === 'multiple_choice'">
@@ -719,7 +866,8 @@ function jumpBetweenOptions(event: KeyboardEvent) {
           :letter="row.letter"
           :row-index="index"
           :show-weight="kind === 'weighted'"
-          :placeholder="`Opsi ${row.letter}${index > 1 ? ' (opsional)' : ''}`"
+          :weight-as-select="kind === 'weighted' && skdStrict"
+          :placeholder="`Opsi ${row.letter}${index > 1 && !(skdStrict && (kind === 'single_choice' || kind === 'weighted')) ? ' (opsional)' : ''}`"
           class="flex-1"
         />
       </div>

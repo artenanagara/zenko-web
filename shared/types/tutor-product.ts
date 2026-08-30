@@ -25,6 +25,12 @@ export type QuestionKind =
 
 export type ScoringMode = 'flat' | 'weighted'
 
+/** Bagaimana timer produk dari jenis ujian ini berjalan di ruang ujian. */
+export type TimerPolicy = 'flat' | 'sequential'
+
+/** Chrome CBT resmi yang dipakai ruang ujian — lihat model.Theme* di zenko-api. */
+export type ExamTheme = 'catbkn' | 'tka' | 'zenko'
+
 /** One subtes template inside an exam type (and the editable shape for custom). */
 export interface SectionTemplate {
   title: string
@@ -34,6 +40,11 @@ export interface SectionTemplate {
   pointsCorrect: number
   passingGrade?: number
   defaultKind: QuestionKind
+  /**
+   * Jenis soal yang diizinkan subtes ini. Absen/kosong berarti semua 9 jenis
+   * boleh (TKA); SKD mengunci TWK/TIU ke single_choice dan TKP ke weighted.
+   */
+  allowedKinds?: QuestionKind[]
 }
 
 /** GET /exam-types — jenis ujian + template subtesnya, seeded server-side. */
@@ -44,9 +55,20 @@ export interface ExamType {
   /**
    * Kategori katalog yang dipakai produk dengan kategori ujian ini. Satu-satunya
    * sumbernya: wizard tidak lagi punya field kategori, jadi server yang
-   * mengisinya dari sini ("Lainnya" untuk custom).
+   * mengisinya dari sini.
    */
   category: string
+  /** Level facet kedua: CPNS/Kedinasan untuk SKD, jenjang untuk TKA. */
+  subcategory: string
+  timerPolicy: TimerPolicy
+  theme: ExamTheme
+  /** False untuk SKD — editor menyembunyikan field level kognitif. */
+  cognitiveLevelEnabled: boolean
+  /**
+   * Durasi total produk simulasi saat berbeda dari jumlah durasi subtes —
+   * SKD: 100 menit untuk 110 soal dalam satu timer. Absen berarti dijumlah.
+   */
+  simulasiTotalMinutes?: number
   sections: SectionTemplate[]
 }
 
@@ -74,8 +96,10 @@ export interface MatchingData {
 export interface TutorQuestion {
   id: string
   kind: QuestionKind
-  /** Shared reading passage for literacy/case-study question groups. */
+  /** Legacy per-question reading text; passageId (grup wacana) is the newer mechanism. */
   stimulus?: string
+  /** Id wacana milik section ini yang dipakai bersama; absen = soal berdiri sendiri. */
+  passageId?: string
   prompt: string
   /** Pembahasan — must be non-empty before submit. */
   explanation: string
@@ -91,12 +115,38 @@ export interface TutorQuestion {
 export interface QuestionDraft {
   kind: QuestionKind
   stimulus?: string
+  /**
+   * Id wacana (grup stimulus) subtes yang dituju. String kosong pada PATCH
+   * melepas tautan — patch soal adalah full replace di server.
+   */
+  passageId?: string
   prompt: string
   explanation: string
   options?: QuestionOption[]
   answers?: string[]
   matching?: MatchingData
   ordering?: string[]
+}
+
+/**
+ * Satu wacana (grup stimulus) di dalam subtes: tutor menulis teksnya sekali,
+ * lalu menautkan maksimal 5 soal (MAX_QUESTIONS_PER_PASSAGE). Konten HTML
+ * ter-sanitasi, kontrak sama dengan Question.prompt.
+ */
+export interface TutorPassage {
+  id: string
+  position: number
+  title: string
+  content: string
+}
+
+/** Batas soal per wacana — cermin model.MaxQuestionsPerPassage di zenko-api. */
+export const MAX_QUESTIONS_PER_PASSAGE = 5
+
+/** Wire shape POST/PATCH .../passages — title opsional, content wajib. */
+export interface PassageDraft {
+  title?: string
+  content: string
 }
 
 /**
@@ -119,6 +169,8 @@ export interface QuestionImportResult {
 export interface TutorSection extends SectionTemplate {
   id: string
   position: number
+  /** Wacana milik subtes ini; absen/kosong saat semua soal berdiri sendiri. */
+  passages?: TutorPassage[]
   questions: TutorQuestion[]
 }
 
@@ -129,6 +181,8 @@ export interface TutorProductSummary {
   title: string
   slug: string
   category: string
+  /** Level facet kedua (SKD → CPNS/Kedinasan, TKA → jenjang); kosong untuk bundel/legacy. */
+  subcategory: string
   thumbnailUrl: string
   price: number
   priceOriginal: number
@@ -212,9 +266,16 @@ export interface CreateProductRequest {
   examTypeSlug?: string
   /** single only: defaults to `simulasi` server-side when omitted. */
   mode?: ProductMode
-  /** Wajib saat mode `mini_tryout` — judul template subtes yang dipilih. */
+  /**
+   * Judul template subtes/mapel yang dipilih. Wajib saat mode `mini_tryout`,
+   * dan wajib untuk SEMUA produk TKA (simulasi maupun mini) — produk TKA
+   * selalu tepat satu mapel.
+   */
   sectionTitle?: string
-  /** Optional mini try-out override; omitted means the template default. */
+  /**
+   * Override mini try-out; absen berarti default template. Server menjawab
+   * 400 jika dikirim pada mode simulasi SKD/TKA — konfigurasinya terkunci.
+   */
   questionTarget?: number
   durationMinutes?: number
 }

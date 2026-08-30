@@ -90,6 +90,7 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
 
   const search = ref(readText(route.query.q))
   const categories = ref(readList(route.query.kategori))
+  const subcategories = ref(readList(route.query.subkategori))
   const prices = ref(readList(route.query.harga))
   const rating = ref(readText(route.query.rating) || RATING_ANY)
 
@@ -100,6 +101,7 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
 
     if (term) query.q = term
     if (categories.value.length > 0) query.kategori = categories.value.join(',')
+    if (subcategories.value.length > 0) query.subkategori = subcategories.value.join(',')
     if (prices.value.length > 0) query.harga = prices.value.join(',')
     if (rating.value !== RATING_ANY) query.rating = rating.value
     if (sort.value !== 'featured') query.urutkan = sort.value
@@ -110,8 +112,22 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
   // State is mirrored into the URL so a filtered view survives a reload and can
   // be shared. replace(), not push(): Back should leave the page, not walk
   // backwards through every keystroke.
-  watch([search, categories, prices, rating, sort], () => {
+  watch([search, categories, subcategories, prices, rating, sort], () => {
     router.replace({ query: buildQuery() })
+  })
+
+  // Menghapus centang sebuah kategori ikut melepas sub-kategori miliknya —
+  // sub-kategori tanpa induk terpilih akan memfilter diam-diam tanpa ada
+  // chip kategori yang menjelaskannya.
+  watch(categories, (selected) => {
+    if (selected.length === 0) return
+    const allowed = new Set(
+      source.value
+        .filter((pkg) => pkg.subcategory && selected.includes(slugifyCategory(pkg.category)))
+        .map((pkg) => slugifyCategory(pkg.subcategory)),
+    )
+    const kept = subcategories.value.filter((value) => allowed.has(value))
+    if (kept.length !== subcategories.value.length) subcategories.value = kept
   })
 
   function matchesSearch(pkg: Package): boolean {
@@ -128,6 +144,11 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
   function matchesCategory(pkg: Package): boolean {
     if (categories.value.length === 0) return true
     return categories.value.includes(slugifyCategory(pkg.category))
+  }
+
+  function matchesSubcategory(pkg: Package): boolean {
+    if (subcategories.value.length === 0) return true
+    return !!pkg.subcategory && subcategories.value.includes(slugifyCategory(pkg.subcategory))
   }
 
   function matchesPrice(pkg: Package): boolean {
@@ -147,10 +168,11 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
    * counts is what makes a number read as "what you get if you tick this row"
    * rather than "what you have already".
    */
-  function passes(pkg: Package, skip?: 'category' | 'price' | 'rating'): boolean {
+  function passes(pkg: Package, skip?: 'category' | 'subcategory' | 'price' | 'rating'): boolean {
     return (
       matchesSearch(pkg) &&
       (skip === 'category' || matchesCategory(pkg)) &&
+      (skip === 'subcategory' || skip === 'category' || matchesSubcategory(pkg)) &&
       (skip === 'price' || matchesPrice(pkg)) &&
       (skip === 'rating' || matchesRating(pkg))
     )
@@ -168,6 +190,30 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
       value: slugifyCategory(label),
       label,
       count: pool.filter((pkg) => pkg.category === label).length,
+    }))
+  })
+
+  /**
+   * Facet level kedua (kategori -> sub-kategori). Pilihannya mengikuti
+   * kategori yang sedang dicentang (semua kategori saat belum ada yang
+   * dicentang), dan seperti facet lain, count-nya menghitung "apa yang kamu
+   * dapat kalau baris ini dicentang".
+   */
+  const subcategoryOptions = computed<FacetOption[]>(() => {
+    const inScope = (pkg: Package) =>
+      !!pkg.subcategory &&
+      (categories.value.length === 0 || categories.value.includes(slugifyCategory(pkg.category)))
+
+    const labels: string[] = []
+    for (const pkg of source.value) {
+      if (inScope(pkg) && !labels.includes(pkg.subcategory)) labels.push(pkg.subcategory)
+    }
+    const pool = source.value.filter((pkg) => passes(pkg, 'subcategory'))
+
+    return labels.map((label) => ({
+      value: slugifyCategory(label),
+      label,
+      count: pool.filter((pkg) => pkg.subcategory === label).length,
     }))
   })
 
@@ -215,6 +261,16 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
       })
     }
 
+    for (const value of subcategories.value) {
+      chips.push({
+        key: `subkategori:${value}`,
+        label: labelFor(subcategoryOptions.value, value),
+        remove: () => {
+          subcategories.value = subcategories.value.filter((item) => item !== value)
+        },
+      })
+    }
+
     for (const value of prices.value) {
       chips.push({
         key: `harga:${value}`,
@@ -241,6 +297,7 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
   function reset() {
     search.value = ''
     categories.value = []
+    subcategories.value = []
     prices.value = []
     rating.value = RATING_ANY
   }
@@ -248,10 +305,12 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
   return {
     search,
     categories,
+    subcategories,
     prices,
     rating,
     filtered,
     categoryOptions,
+    subcategoryOptions,
     priceOptions,
     ratingOptions,
     activeFilters,

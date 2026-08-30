@@ -21,8 +21,8 @@ const columns: FooterColumn[] = [
     links: [
       { label: 'CPNS / SKD', to: '/paket?q=SKD' },
       { label: 'Kedinasan', to: '/paket?q=Kedinasan' },
-      { label: 'BUMN', to: '/paket?q=BUMN' },
-      { label: 'SNBT', to: '/paket?q=SNBT' },
+      { label: 'TKA SMA', to: '/paket?q=TKA+SMA' },
+      { label: 'TKA SMP', to: '/paket?q=TKA+SMP' },
       { label: 'TKA', to: '/paket?q=TKA' },
     ],
   },
@@ -76,7 +76,7 @@ const year = new Date().getFullYear()
             aria-label="Zenko"
           />
           <p class="mt-5 text-[0.9rem] leading-[1.7] text-white/60">
-            Platform try out interaktif terkurasi untuk persiapan SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Beli per paket, akses langsung, tanpa langganan.
+            Platform try out interaktif terkurasi untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Beli per paket, akses langsung, tanpa langganan.
           </p>
         </div>
 
@@ -108,7 +108,7 @@ const year = new Date().getFullYear()
           aria-label="Zenko"
         />
         <p class="mt-4 max-w-95 text-[0.88rem] leading-[1.7] text-white/60">
-          Platform try out interaktif terkurasi untuk persiapan SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Beli per paket, akses langsung, tanpa langganan.
+          Platform try out interaktif terkurasi untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Beli per paket, akses langsung, tanpa langganan.
         </p>
 
         <div class="mt-7 border-t border-white/10">

@@ -62,7 +62,7 @@ const headerDescription = computed(() => {
   if (!product) return ''
   return [
     PRODUCT_TYPE_LABEL[product.type],
-    product.category,
+    product.subcategory ? `${product.category} · ${product.subcategory}` : product.category,
     product.author ? `${product.author.name} (${product.author.email})` : '',
   ].filter(Boolean).join(' · ')
 })

@@ -113,6 +113,7 @@ function requestEndSection() {
           :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
           :value="session.answers.value[session.currentQuestion.value.id]?.value"
           :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
+          :passage="session.currentPassage.value"
           @select="session.selectAnswer"
           @answer="session.setAnswerValue"
         />

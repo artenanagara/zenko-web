@@ -61,7 +61,7 @@ const {
 } = useTableControls<TutorProductSummary>(() => products.value, {
   // The type is searched by its rendered label ("Tunggal"/"Bundling"), not by
   // the wire value — the tutor searches for what the table shows them.
-  searchFields: product => [product.title, product.category, PRODUCT_TYPE_LABEL[product.type]],
+  searchFields: product => [product.title, product.category, product.subcategory, PRODUCT_TYPE_LABEL[product.type]],
   filters: {
     all: () => true,
     draft: product => product.status === 'draft',
@@ -310,7 +310,9 @@ async function deleteProduct(product: TutorProductSummary) {
             </span>
           </template>
           <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
-          <template #cell(category)="{ value }">{{ value || 'Umum' }}</template>
+          <template #cell(category)="{ value, item }">
+            {{ item.subcategory ? `${value} · ${item.subcategory}` : (value || 'Umum') }}
+          </template>
           <template #cell(price)="{ value }">
             <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
             <span v-else class="font-semibold text-success-ink">Gratis</span>

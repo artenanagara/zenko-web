@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { QuestionDraft, QuestionImportDraft, TutorSection } from '#shared/types/tutor-product'
+import type { CsvPassageGroup } from '~/utils/questionCsv'
 
 /**
  * Impor CSV soal — dua mode:
@@ -25,6 +26,13 @@ const props = defineProps<{
   section: TutorSection
   /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota, dan untuk mendeteksi produk mini_tryout (1 subtes). */
   sections: TutorSection[]
+  /**
+   * Fitur grup wacana (produk TKA): kolom `wacana` yang identik pada baris
+   * BERURUTAN otomatis menjadi satu wacana bersama (maksimal 5 soal per
+   * wacana), dibuat lewat endpoint passages sebelum soalnya dikirim. Tanpa
+   * flag ini kolom `wacana` tetap jadi stimulus per soal seperti sebelumnya.
+   */
+  groupPassages?: boolean
 }>()
 
 /** mini_tryout: selalu tepat 1 subtes (§7.2 kontrak) — picker mode disembunyikan dan `mode` tidak pernah berpindah dari 'section'. */
@@ -72,11 +80,15 @@ function switchMode(next: ImportMode) {
   importProblems.value = []
 }
 
+/** Grup wacana hasil parse (fitur TKA) — dibuat lewat API saat impor. */
+const passageGroups = ref<CsvPassageGroup[]>([])
+
 async function onFileChange(event: Event) {
   importProblems.value = []
   parsed.value = []
   combinedParsed.value = []
   parseErrors.value = []
+  passageGroups.value = []
 
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -88,11 +100,50 @@ async function onFileChange(event: Event) {
     const result = parseCombinedQuestionCsv(text, props.sections)
     combinedParsed.value = result.questions
     parseErrors.value = result.errors
+    if (props.groupPassages) {
+      const grouped = groupCsvPassages(combinedParsed.value)
+      combinedParsed.value = grouped.questions
+      passageGroups.value = grouped.groups
+    }
   }
   else {
     const result = parseQuestionCsv(text, props.section)
     parsed.value = result.questions
     parseErrors.value = result.errors
+    if (props.groupPassages) {
+      const grouped = groupCsvPassages(parsed.value)
+      parsed.value = grouped.questions
+      passageGroups.value = grouped.groups
+    }
+  }
+}
+
+/**
+ * Buat wacana-wacana hasil pengelompokan lewat POST .../passages, lalu isi
+ * `passageId` tiap soal anggotanya. Respons endpoint-nya aggregate produk
+ * terbaru — wacana baru adalah entri terakhir daftar passages subtes itu.
+ * Dipanggil tepat sebelum soalnya dikirim, jadi id yang dirujuk selalu ada.
+ */
+async function createGroupedPassages(
+  questions: { passageId?: string, subtes?: string }[],
+): Promise<void> {
+  for (const group of passageGroups.value) {
+    const targetSection = group.subtes
+      ? props.sections.find(candidate => candidate.title.trim().toLowerCase() === group.subtes.toLowerCase())
+      : props.section
+    // Nama subtes yang tidak cocok akan dilaporkan server per baris soal —
+    // wacananya tidak dibuat, dan baris anggotanya ikut gagal di `problems`.
+    if (!targetSection) continue
+
+    const product = await createTutorPassage(props.productId, targetSection.id, { content: group.content })
+    const updated = product.sections?.find(candidate => candidate.id === targetSection.id)
+    const created = updated?.passages?.[updated.passages.length - 1]
+    if (!created) continue
+
+    for (const index of group.questionIndexes) {
+      const question = questions[index]
+      if (question) question.passageId = created.id
+    }
   }
 }
 
@@ -111,11 +162,13 @@ async function importQuestions() {
   try {
     let imported: number
     if (mode.value === 'combined') {
+      if (passageGroups.value.length) await createGroupedPassages(combinedParsed.value)
       const result = await importTutorQuestions(props.productId, combinedParsed.value)
       imported = result.imported
       importProblems.value = result.problems
     }
     else {
+      if (passageGroups.value.length) await createGroupedPassages(parsed.value)
       await createTutorQuestionBatch(props.productId, props.section.id, parsed.value)
       imported = parsed.value.length
     }
@@ -140,6 +193,7 @@ function reset() {
   parsed.value = []
   combinedParsed.value = []
   parseErrors.value = []
+  passageGroups.value = []
   fileName.value = ''
   if (fileInput.value) fileInput.value.value = ''
 }
@@ -209,6 +263,12 @@ function reset() {
         <li v-for="problem in importProblems" :key="problem">{{ problem }}</li>
       </ul>
     </AppSectionMessage>
+
+    <AppInlineMessage v-if="passageGroups.length" type="info">
+      {{ passageGroups.length }} wacana akan dibuat otomatis dari kolom
+      <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
+      — baris berurutan dengan teks wacana sama menjadi satu grup (maksimal 5 soal per wacana).
+    </AppInlineMessage>
 
     <div v-if="rowCount > 0" class="flex flex-wrap items-center gap-3">
       <AppButton type="button" size="sm" :disabled="importing" @click="importQuestions">

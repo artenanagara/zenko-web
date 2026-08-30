@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const popularSearches = ['SKD 2026', 'BUMN', 'SNBT Literasi', 'Kedinasan']
+const popularSearches = ['SKD CPNS', 'Kedinasan', 'TKA SMA', 'TKA SMP']
 
 const query = ref('')
 
@@ -34,7 +34,7 @@ function onSubmit() {
         </h1>
 
         <p class="mx-auto mt-3.5 max-w-150 text-[1.02rem] text-muted">
-          Pilih paket soal SKD CPNS, BUMN, SNBT, dan Tes Kedinasan dari tutor terpercaya. Akses langsung latihan, rasakan simulasi ujian sebenarnya, dan kuasai materi pembahasannya langkah demi langkah.
+          Pilih paket soal SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK) dari tutor terpercaya. Akses langsung latihan, rasakan simulasi ujian sebenarnya, dan kuasai materi pembahasannya langkah demi langkah.
         </p>
 
         <form

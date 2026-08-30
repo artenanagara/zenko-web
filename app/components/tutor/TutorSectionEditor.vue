@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QuestionDraft, TutorQuestion, TutorSection } from '#shared/types/tutor-product'
+import type { ExamType, QuestionDraft, TutorQuestion, TutorSection } from '#shared/types/tutor-product'
 import type { CompletionState } from '~/utils/questionCompletion'
 import type { MenuItem } from '~/components/core/AppDropdownMenu.vue'
 
@@ -28,6 +28,13 @@ const props = defineProps<{
   isCustom?: boolean
   /** Passed straight through to the question editor's TKA format check. */
   examTypeSlug?: string
+  /**
+   * Jenis ujian produk ini (dari GET /exam-types), sumber aturan per kategori:
+   * allowedKinds per subtes, bentuk ketat SKD, dan fitur wacana TKA. Null
+   * untuk produk legacy yang jenis ujiannya sudah tidak ada di seed — mereka
+   * memakai aturan longgar seperti sebelumnya, sama dengan servernya.
+   */
+  examType?: ExamType | null
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -127,6 +134,43 @@ function questionBeingEdited(section: TutorSection): TutorQuestion | null {
   if (!editorFor.value || editorFor.value === 'new') return null
   return section.questions.find(question => question.id === editorFor.value) ?? null
 }
+
+/* -------------------------------------------------------------------------
+ * Aturan per kategori (rework SKD/TKA) — diturunkan dari template jenis
+ * ujian yang judulnya sama dengan subtes aktif, cermin sectionRulesFromExamType
+ * di zenko-api.
+ * ---------------------------------------------------------------------- */
+
+const activeTemplate = computed(() =>
+  props.examType?.sections.find(template => template.title === activeSection.value?.title) ?? null,
+)
+
+/** Jenis soal yang diizinkan subtes aktif; null = semua jenis boleh. */
+const activeAllowedKinds = computed(() => activeTemplate.value?.allowedKinds ?? null)
+
+/** Bentuk ketat CAT BKN — berlaku untuk semua subtes produk SKD. */
+const skdStrict = computed(() => props.examType?.category === 'SKD')
+
+/** Fitur grup wacana — tersedia untuk semua mapel TKA (spec Q6). */
+const passagesEnabled = computed(() => props.examType?.category === 'TKA')
+
+const activePassages = computed(() =>
+  passagesEnabled.value ? (activeSection.value?.passages ?? []) : [],
+)
+
+/**
+ * Berapa soal LAIN yang sudah menautkan tiap wacana subtes aktif — soal yang
+ * sedang diedit tidak dihitung, supaya menyimpan ulang soal tidak terhitung
+ * sebagai anggota baru (aturan yang sama dengan assignQuestionPassage server).
+ */
+const activePassageUsage = computed<Record<string, number>>(() => {
+  const usage: Record<string, number> = {}
+  for (const question of activeSection.value?.questions ?? []) {
+    if (!question.passageId || question.id === editorFor.value) continue
+    usage[question.passageId] = (usage[question.passageId] ?? 0) + 1
+  }
+  return usage
+})
 
 async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext: boolean) {
   saving.value = true
@@ -313,6 +357,10 @@ const activeSectionDotClass = computed(() =>
             :default-kind="activeSection!.defaultKind"
             :is-custom="isCustom"
             :exam-type-slug="examTypeSlug"
+            :allowed-kinds="activeAllowedKinds"
+            :skd-strict="skdStrict"
+            :passages="activePassages"
+            :passage-usage="activePassageUsage"
             :saving="saving"
             :product-id="productId"
             :section-id="activeSection!.id"
@@ -322,6 +370,16 @@ const activeSectionDotClass = computed(() =>
           />
 
           <template v-else>
+            <!-- Grup wacana (TKA): dikelola per subtes, di atas daftar soal,
+                 supaya teksnya sudah ada sebelum soal-soalnya ditautkan. -->
+            <TutorPassageManager
+              v-if="passagesEnabled && activeSection"
+              class="mb-4"
+              :product-id="productId"
+              :section="activeSection"
+              @refresh="emit('refresh')"
+            />
+
             <AppTabs :tabs="ENTRY_TABS" :model-value="activeTab" aria-label="Mode isi soal" @update:model-value="selectEntryTab" />
 
             <div v-if="activeTab === 'manual'" class="mt-4">
@@ -347,6 +405,7 @@ const activeSectionDotClass = computed(() =>
               :product-id="productId"
               :section="activeSection!"
               :sections="orderedSections"
+              :group-passages="passagesEnabled"
               @refresh="emit('refresh')"
             />
           </template>

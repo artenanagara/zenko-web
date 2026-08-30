@@ -27,6 +27,12 @@ defineProps<{
   rowIndex: number
   placeholder?: string
   showWeight?: boolean
+  /**
+   * Editor TKP SKD: bobot dipilih dari dropdown 1–5 alih-alih diketik —
+   * bobot resmi TKP memang cuma lima nilai itu, dan dropdown membuatnya
+   * mustahil salah ketik.
+   */
+  weightAsSelect?: boolean
 }>()
 
 const text = defineModel<string>('text', { default: '' })
@@ -71,7 +77,18 @@ function onWeightInput(event: Event) {
 
       <template v-if="showWeight">
         <label :for="`${uid}-weight`" class="sr-only">Bobot opsi {{ letter }}</label>
+        <select
+          v-if="weightAsSelect"
+          :id="`${uid}-weight`"
+          :value="weight ?? ''"
+          class="mt-0.5 w-24 shrink-0 rounded-sm border border-line bg-surface px-2 py-2 text-center text-[0.9rem] tabular-nums"
+          @change="weight = Number(($event.target as HTMLSelectElement).value) || null"
+        >
+          <option value="" disabled>Bobot</option>
+          <option v-for="n in 5" :key="n" :value="n">{{ n }}</option>
+        </select>
         <input
+          v-else
           :id="`${uid}-weight`"
           type="text"
           inputmode="numeric"

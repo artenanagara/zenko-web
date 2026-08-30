@@ -3,8 +3,8 @@
 const chartBars = [34, 52, 44, 70, 58, 86, 100]
 
 const recentSales = [
-  { title: 'Prediksi BUMN 2026', detail: '2 paket terjual', amount: '+Rp298rb' },
-  { title: 'SNBT Master Class', detail: '1 paket terjual', amount: '+Rp219rb' },
+  { title: 'Simulasi SKD Kedinasan', detail: '2 paket terjual', amount: '+Rp298rb' },
+  { title: 'TKA Matematika SMA', detail: '1 paket terjual', amount: '+Rp219rb' },
 ]
 </script>
 

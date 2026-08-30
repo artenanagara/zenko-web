@@ -125,7 +125,7 @@ useHead({
 
         <div class="max-w-190">
           <span class="inline-block rounded-pill bg-primary-soft px-3.5 py-1.5 text-[0.78rem] font-bold tracking-[0.06em] text-primary uppercase">
-            {{ detail.category }}
+            {{ detail.subcategory ? `${detail.category} · ${detail.subcategory}` : detail.category }}
           </span>
 
           <h1 class="mt-4 text-[clamp(1.8rem,3.2vw,2.75rem)] leading-[1.14] tracking-[-0.04em]">

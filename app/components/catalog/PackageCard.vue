@@ -89,8 +89,10 @@ function authorProfilePath(author: Author) {
       </div>
     </div>
 
+    <!-- Facet dua tingkat: badge sub-kategori menempel di kategorinya
+         ("SKD · CPNS", "TKA · SMP"); kategori tanpa level kedua tampil polos. -->
     <p class="px-1.5 pt-2.5 pb-2 text-center text-[0.7rem] font-bold tracking-[0.14em] text-muted uppercase">
-      {{ item.category }}
+      {{ item.subcategory ? `${item.category} · ${item.subcategory}` : item.category }}
     </p>
   </article>
 </template>

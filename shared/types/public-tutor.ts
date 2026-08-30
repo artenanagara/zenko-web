@@ -25,6 +25,8 @@ export interface PublicTutorProduct {
   title: string
   slug: string
   category: string
+  /** Level facet kedua (SKD → CPNS/Kedinasan, TKA → jenjang); kosong untuk bundel/legacy. */
+  subcategory: string
   thumbnailUrl: string
   price: number
   priceOriginal: number
