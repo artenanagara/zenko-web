@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/artenanagara/zenko-web/compare/v0.14.1...v0.15.0) (2026-08-30)
+
+
+### Features
+
+* rework kategori SKD/TKA — wizard berkelompok, wacana, skor server, filter dua tingkat ([2489fe3](https://github.com/artenanagara/zenko-web/commit/2489fe34b57649686277d148ee5989f641407d86))
+
+
+### Bug Fixes
+
+* impor wacana CSV atomik, varian hasil eksplisit dari tema, filter sub-kategori per induk ([55c95fc](https://github.com/artenanagara/zenko-web/commit/55c95fc1f14763b18a3b4f3fd2677d6fb054f83b))
+* **tryout:** finish-page nav, doubtful count, drop level kognitif ([b4dad2d](https://github.com/artenanagara/zenko-web/commit/b4dad2d38bdf6e0aea560f1779d0f3512bce5b49))
+
 ## [0.14.1](https://github.com/artenanagara/zenko-web/compare/v0.14.0...v0.14.1) (2026-08-29)
 
 
