@@ -68,6 +68,18 @@ const currentIndex = ref(0)
 
 const currentEntry = computed(() => allQuestions.value[currentIndex.value] ?? null)
 const currentQuestion = computed(() => currentEntry.value?.question ?? null)
+
+/**
+ * Wacana soal aktif — dirender sekali di atas soal, sehingga soal-soal
+ * segrup tampil "di bawah wacananya" saat ditelusuri berurutan (pengelompokan
+ * per teks bacaan, spec §6.3).
+ */
+const currentPassage = computed(() => {
+  const entry = currentEntry.value
+  const passageId = (entry?.question as { passageId?: string } | null)?.passageId
+  if (!entry || !passageId) return null
+  return review.value?.sections[entry.sectionIndex]?.passages?.find(passage => passage.id === passageId) ?? null
+})
 const totalQuestions = computed(() => allQuestions.value.length)
 const isFirstQuestion = computed(() => currentIndex.value === 0)
 const isLastQuestion = computed(() => currentIndex.value === totalQuestions.value - 1)
@@ -172,14 +184,31 @@ const unansweredCount = computed(() => allQuestions.value.filter(entry => !entry
               <IconArrowLeft class="h-3.5 w-3.5 shrink-0" /> Kembali ke paket
             </NuxtLink>
           </nav>
-          <p class="text-[0.84rem] font-semibold text-muted">
-            Pembahasan · Percobaan #{{ review.number }} · Skor {{ review.score }} · {{ formatDate(review.finishedAt) }}
+          <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.84rem] font-semibold text-muted">
+            <span>
+              Pembahasan · Percobaan #{{ review.number }} ·
+              Skor {{ review.score }}<template v-if="review.maxScore > 0">/{{ review.maxScore }}</template> ·
+              {{ formatDate(review.finishedAt) }}
+            </span>
+            <span
+              v-if="review.passed !== undefined"
+              class="inline-flex items-center rounded-pill px-2 py-0.5 text-[0.72rem] font-bold"
+              :class="review.passed ? 'bg-success-soft text-success-ink' : 'bg-danger-soft text-danger-ink'"
+            >
+              {{ review.passed ? 'LULUS' : 'TIDAK LULUS' }}
+            </span>
           </p>
         </div>
       </header>
 
       <main class="container-page grid gap-5 py-6 md:h-[calc(100vh-3.375rem)] md:grid-cols-[minmax(0,1fr)_280px]">
         <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <!-- Wacana grup soal aktif, dicetak sekali di atas soalnya. -->
+          <div v-if="currentPassage" class="mb-4 rounded-sm border border-hairline bg-surface-alt px-4 py-3.5">
+            <p class="text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">{{ currentPassage.title || 'Wacana' }}</p>
+            <div class="prose-question mt-2 max-h-[40svh] overflow-y-auto text-[0.94rem] leading-[1.65] md:max-h-none" v-html="currentPassage.content" />
+          </div>
+
           <TryoutReviewQuestion
             :question="currentQuestion"
             :number="displayNumber"

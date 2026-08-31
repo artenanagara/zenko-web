@@ -87,7 +87,7 @@ const {
   isActive,
   reset,
 } = useTableControls<AdminProductSummary>(() => source.value, {
-  searchFields: product => [product.title, product.category, product.author.name, product.author.email],
+  searchFields: product => [product.title, product.category, product.subcategory, product.author.name, product.author.email],
   filters: {
     // `review` is served by the pinned queue fetch, so every row already
     // qualifies; the predicate still holds for the full list behind Semua.

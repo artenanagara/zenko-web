@@ -386,9 +386,9 @@ async function submitChangeRequest() {
           </div>
         </div>
 
-        <FormField id="tutor-display-name" v-model="profileForm.displayName" label="Nama tampilan publik" :placeholder="user?.name || 'Nama yang tampil di katalog'" hint="Boleh berbeda dari nama akun, misalnya Kak Budi SNBT." />
+        <FormField id="tutor-display-name" v-model="profileForm.displayName" label="Nama tampilan publik" :placeholder="user?.name || 'Nama yang tampil di katalog'" hint="Boleh berbeda dari nama akun, misalnya Kak Budi SKD." />
         <div>
-          <FormField id="tutor-username" v-model="profileForm.username" label="Username profil publik" placeholder="kaksnbt" hint="3–30 karakter, huruf kecil, angka, atau tanda hubung. Perubahan maksimal 1x per 30 hari." />
+          <FormField id="tutor-username" v-model="profileForm.username" label="Username profil publik" placeholder="kakbudiskd" hint="3–30 karakter, huruf kecil, angka, atau tanda hubung. Perubahan maksimal 1x per 30 hari." />
           <p v-if="profileForm.username" class="mt-2 text-[0.82rem] text-muted">Link publik: <span class="font-semibold text-ink">zenkoedu.id/tutor/{{ profileForm.username.toLowerCase() }}</span></p>
         </div>
 
@@ -411,7 +411,7 @@ async function submitChangeRequest() {
             v-model="profileForm.experience"
             rows="3"
             maxlength="4000"
-            placeholder="Contoh: 3 tahun mengajar SKD di bimbel, lulus SNBT 2022"
+            placeholder="Contoh: 3 tahun mengajar SKD di bimbel, lolos CPNS 2022"
             class="w-full resize-y rounded-sm border border-line bg-surface px-4 py-3 text-[0.9rem] transition-[border-color,box-shadow] duration-200 ease-smooth placeholder:text-placeholder focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)] focus:outline-none"
           />
         </div>
@@ -438,7 +438,7 @@ async function submitChangeRequest() {
               id="tutor-specializations"
               v-model="specializationInput"
               type="text"
-              :placeholder="profileForm.specializations.length === 0 ? 'Contoh: SKD, SNBT (tekan Enter)' : 'Tambah keahlian lagi'"
+              :placeholder="profileForm.specializations.length === 0 ? 'Contoh: SKD, TKA (tekan Enter)' : 'Tambah keahlian lagi'"
               class="min-w-32 flex-1 border-0 bg-transparent p-1.5 text-[0.9rem] placeholder:text-placeholder focus:outline-none"
               @keydown="onSpecializationKeydown"
               @blur="addSpecialization"

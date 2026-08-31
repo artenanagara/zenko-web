@@ -38,6 +38,7 @@ export type TryoutQuestion =
     id: string
     kind: 'objective'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     correct?: OptionLabel
@@ -49,6 +50,7 @@ export type TryoutQuestion =
     id: string
     kind: 'situational'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     scores?: Record<OptionLabel, number>
@@ -59,6 +61,7 @@ export type TryoutQuestion =
     id: string
     kind: 'multiple_choice'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     correctOptions?: OptionLabel[]
@@ -69,6 +72,7 @@ export type TryoutQuestion =
     id: string
     kind: 'true_false'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     correctStatements?: Record<string, boolean>
@@ -79,6 +83,7 @@ export type TryoutQuestion =
     id: string
     kind: 'short_answer'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     answers?: string[]
@@ -89,6 +94,7 @@ export type TryoutQuestion =
     id: string
     kind: 'assertion_reason' | 'associative_choice'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     correct?: OptionLabel
@@ -99,6 +105,7 @@ export type TryoutQuestion =
     id: string
     kind: 'matching'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     matching?: TryoutMatchingItem[]
@@ -110,6 +117,7 @@ export type TryoutQuestion =
     id: string
     kind: 'ordering'
     stimulus?: string
+    passageId?: string
     text: string
     options: TryoutOption[]
     ordering?: string[]
@@ -117,12 +125,31 @@ export type TryoutQuestion =
     explanation?: string
   }
 
+/**
+ * Satu wacana (teks bacaan bersama) di dalam subtes. Soal-soal yang menunjuk
+ * `passageId` ini menampilkan teksnya di panel bacaan tetap selama dikerjakan.
+ */
+export interface TryoutPassage {
+  id: string
+  title?: string
+  content: string
+}
+
 export interface TryoutSection {
   id: string
   /** Short official code, e.g. "TWK", "TKD", "PU". Shown in the header pill. */
   code: string
   title: string
   durationMinutes: number
+  /**
+   * "flat" (poin per jawaban benar) atau "weighted" (jumlah bobot opsi — gaya
+   * TKP, tanpa jawaban salah). Absen pada payload lama.
+   */
+  scoringMode?: 'flat' | 'weighted'
+  /** Ambang batas subtes (SKD). Absen saat subtes tidak punya. */
+  passingGrade?: number
+  /** Wacana milik subtes ini; absen saat semua soal berdiri sendiri. */
+  passages?: TryoutPassage[]
   questions: TryoutQuestion[]
 }
 
@@ -150,6 +177,13 @@ export interface TryoutBlueprint {
   title: string
   theme: TryoutTheme
   mode: TryoutMode
+  /**
+   * Yang dihitung mundur klien mode flat: total resmi simulasi jenis ujiannya
+   * saat ada (SKD: 100 menit), selain itu jumlah durasi subtes. Mode
+   * sequential tetap memakai durationMinutes per subtes. Optional karena
+   * payload lama (dan blueprint sample) belum membawanya — fallback: dijumlah.
+   */
+  totalDurationMinutes?: number
   sections: TryoutSection[]
 }
 
@@ -207,6 +241,8 @@ export interface TryoutReviewSection {
   id: string
   code: string
   title: string
+  /** Wacana milik subtes ini, untuk mengelompokkan soal per teks bacaan. */
+  passages?: TryoutPassage[]
   questions: TryoutReviewQuestion[]
 }
 
@@ -221,6 +257,14 @@ export interface TryoutAttemptReview {
   packageSlug: string
   number: number
   score: number
+  /**
+   * Batas atas `score` saat server yang menghitung ulang hasilnya (550 untuk
+   * simulasi SKD penuh, 100 untuk satu mapel TKA); 0 untuk attempt yang tidak
+   * dinilai server (produk legacy).
+   */
+  maxScore: number
+  /** Verdict LULUS/TIDAK LULUS simulasi SKD; absen saat tidak berlaku. */
+  passed?: boolean
   finishedAt: number
   title: string
   theme: TryoutTheme

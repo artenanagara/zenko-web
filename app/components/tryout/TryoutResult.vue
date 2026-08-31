@@ -5,6 +5,7 @@ import type {
   TryoutResult,
   TryoutTheme,
 } from '#shared/types/tryout'
+import type { Attempt } from '#shared/types/account'
 
 const props = withDefaults(
   defineProps<{
@@ -12,6 +13,16 @@ const props = withDefaults(
     theme: TryoutTheme
     packageTitle: string
     packageSlug: string
+    /**
+     * Attempt yang baru disimpan zenko-api untuk sesi ini. Sejak rework
+     * SKD/TKA server menghitung ulang skor dari snapshot review-nya sendiri —
+     * saat `maxScore` attempt-nya > 0, ANGKA SERVER-lah yang ditampilkan
+     * (skor per subtes, ambang batas, verdict LULUS/TIDAK LULUS), bukan
+     * hitungan lokal browser. Null saat penyimpanan gagal/belum selesai atau
+     * dalam mode simulasi — layar hasil lalu memakai hitungan lokal seperti
+     * sebelumnya.
+     */
+    attempt?: Attempt | null
     /**
      * Blueprint + jawaban sesi yang barusan selesai, untuk "Lihat pembahasan".
      * `result` sendiri cuma agregat per subtes, tidak menyimpan satu pun soal
@@ -35,19 +46,73 @@ const props = withDefaults(
     /** Simulasi tutor/admin: sembunyikan tautan progres paket milik siswa. */
     simulate?: boolean
   }>(),
-  { blueprint: null, answers: () => ({}), attemptId: null, simulate: false },
+  { blueprint: null, answers: () => ({}), attempt: null, attemptId: null, simulate: false },
 )
 
 const emit = defineEmits<{ retry: [] }>()
 
-const percent = computed(() =>
-  props.result.maxScore === 0 ? 0 : Math.round((props.result.score / props.result.maxScore) * 100),
+/** True saat server menghitung ulang hasil (SKD/TKA) — angkanya yang dipakai. */
+const serverScored = computed(() => (props.attempt?.maxScore ?? 0) > 0)
+
+/** Satu baris hasil per subtes — bentuk gabungan hitungan lokal & server. */
+interface ResultRow {
+  title: string
+  correct: number
+  total: number
+  score: number
+  maxScore: number
+  passingGrade?: number
+  passed?: boolean
+}
+
+const rows = computed<ResultRow[]>(() =>
+  serverScored.value ? props.attempt!.sections : props.result.sections,
 )
 
+const displayScore = computed(() => serverScored.value ? props.attempt!.score : props.result.score)
+const displayMaxScore = computed(() => serverScored.value ? props.attempt!.maxScore : props.result.maxScore)
+
+/**
+ * Verdict LULUS/TIDAK LULUS — hanya dari server, dan hanya saat berlaku
+ * (simulasi SKD penuh). undefined berarti tidak ada verdict untuk ditampilkan
+ * (TKA, mini tryout, hasil lokal).
+ */
+const verdict = computed<boolean | undefined>(() =>
+  serverScored.value ? props.attempt!.passed : undefined,
+)
+
+/** Ada subtes dengan ambang batas → baris skor vs ambang + badge Memenuhi. */
+const hasPassingGrades = computed(() => rows.value.some(row => row.passingGrade != null))
+
+/**
+ * Varian TKA: skor mapel dinormalisasi 0–100 tanpa ambang dan tanpa verdict —
+ * skornya ditampilkan besar, rinciannya benar/salah.
+ *
+ * Diskriminatornya EKSPLISIT dari identitas ujian, bukan tebakan angka:
+ * `theme.seal` di blueprint/snapshot review diturunkan server dari field
+ * `theme` exam type-nya ("tka" → seal "TKA", "catbkn" → seal "BKN" — lihat
+ * tryoutPresentation di zenko-api). Heuristik numerik yang lama
+ * (`maxScore === 100 && satu subtes`) salah mengenali SKD mini custom 20
+ * soal (20×5 = 100) sebagai TKA. Tetap digerbangi serverScored: tanpa angka
+ * server, hasil lokal TKA adalah poin mentah, bukan skala 0–100.
+ */
+const isTkaScale = computed(() => serverScored.value && props.theme.seal === 'TKA')
+
+const percent = computed(() =>
+  displayMaxScore.value === 0 ? 0 : Math.round((displayScore.value / displayMaxScore.value) * 100),
+)
+
+const correctTotals = computed(() => ({
+  correct: rows.value.reduce((sum, row) => sum + row.correct, 0),
+  total: rows.value.reduce((sum, row) => sum + row.total, 0),
+}))
+
 const stats = computed(() => [
-  { label: 'Skor akhir', value: `${props.result.score}` },
-  { label: 'Ketepatan', value: `${percent.value}%` },
-  { label: 'Subtes diselesaikan', value: `${props.result.sections.length}` },
+  { label: 'Skor akhir', value: `${displayScore.value}` },
+  isTkaScale.value
+    ? { label: 'Jawaban benar', value: `${correctTotals.value.correct}/${correctTotals.value.total}` }
+    : { label: 'Ketepatan', value: `${percent.value}%` },
+  { label: 'Subtes diselesaikan', value: `${rows.value.length}` },
 ])
 
 /* --------------------------------------------------------------------------
@@ -61,6 +126,9 @@ interface ReviewRow {
   /** Hanya baris pertama tiap subtes yang mencetak judulnya, bukan tiap soal. */
   startsSection: boolean
   question: TryoutBlueprint['sections'][number]['questions'][number]
+  /** Wacana soal ini, dirender SEKALI di baris pertama grupnya saja. */
+  passage: { id: string, title?: string, content: string } | null
+  startsPassage: boolean
 }
 
 /**
@@ -71,14 +139,21 @@ const reviewRows = computed<ReviewRow[]>(() => {
   const rows: ReviewRow[] = []
   let number = 0
   for (const section of props.blueprint?.sections ?? []) {
+    let lastPassageId = ''
     section.questions.forEach((question, indexInSection) => {
       number += 1
+      const passage = question.passageId
+        ? section.passages?.find(candidate => candidate.id === question.passageId) ?? null
+        : null
       rows.push({
         number,
         sectionTitle: section.title,
         startsSection: indexInSection === 0,
         question,
+        passage,
+        startsPassage: !!passage && passage.id !== lastPassageId,
       })
+      lastPassageId = passage?.id ?? ''
     })
   }
   return rows
@@ -121,27 +196,62 @@ function openReview() {
         <h1 class="mt-2 text-[1.5rem] leading-tight font-extrabold tracking-[-0.03em] md:text-[1.8rem]">
           {{ packageTitle }}
         </h1>
+        <!-- TKA: skor 0–100 tampil besar, tanpa verdict; selain itu skor/poin. -->
         <p class="mt-4 flex items-baseline gap-2">
-          <span class="text-[2.6rem] leading-none font-extrabold tabular-nums">{{ result.score }}</span>
-          <span class="text-[1.05rem] text-white/70">/ {{ result.maxScore }} poin · {{ percent }}%</span>
+          <span class="leading-none font-extrabold tabular-nums" :class="isTkaScale ? 'text-[3.4rem]' : 'text-[2.6rem]'">{{ displayScore }}</span>
+          <span class="text-[1.05rem] text-white/70">
+            {{ isTkaScale ? '/ 100' : `/ ${displayMaxScore} poin · ${percent}%` }}
+          </span>
+        </p>
+        <p v-if="isTkaScale" class="mt-1.5 text-[0.9rem] text-white/80">
+          {{ correctTotals.correct }} benar · {{ correctTotals.total - correctTotals.correct }} salah/kosong
+          dari {{ correctTotals.total }} soal
+        </p>
+
+        <!-- Verdict simulasi SKD — dihitung server dari ambang resmi tiap subtes. -->
+        <p
+          v-if="verdict !== undefined"
+          class="mt-4 inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-[1.05rem] font-extrabold tracking-[-0.01em]"
+          :class="verdict ? 'bg-white/15 text-white' : 'bg-black/25 text-white'"
+        >
+          <AppIcon :name="verdict ? 'seal-check' : 'x-circle'" :size="20" />
+          {{ verdict ? 'LULUS' : 'TIDAK LULUS' }}
+          <span class="text-[0.82rem] font-semibold text-white/75">
+            {{ verdict ? 'Semua subtes memenuhi ambang batas' : 'Ada subtes di bawah ambang batas' }}
+          </span>
         </p>
       </div>
     </div>
 
     <DashboardStats :items="stats" />
 
-    <DashboardPanel title="Hasil per subtes" description="Rincian skor dan ketepatan jawaban di setiap subtes.">
+    <DashboardPanel
+      title="Hasil per subtes"
+      :description="hasPassingGrades
+        ? 'Skor tiap subtes dibandingkan ambang batas resminya.'
+        : 'Rincian skor dan ketepatan jawaban di setiap subtes.'"
+    >
       <ul class="grid gap-4">
-        <li v-for="section in result.sections" :key="section.title">
+        <li v-for="section in rows" :key="section.title">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <span class="font-semibold tracking-[-0.02em]">{{ section.title }}</span>
+            <span class="flex flex-wrap items-center gap-2 font-semibold tracking-[-0.02em]">
+              {{ section.title }}
+              <span
+                v-if="section.passed !== undefined"
+                class="inline-flex items-center rounded-pill px-2 py-0.5 text-[0.72rem] font-bold"
+                :class="section.passed ? 'bg-success-soft text-success-ink' : 'bg-danger-soft text-danger-ink'"
+              >
+                {{ section.passed ? 'Memenuhi' : 'Tidak Memenuhi' }}
+              </span>
+            </span>
             <span class="text-[0.84rem] text-muted tabular-nums">
-              {{ section.correct }} dari {{ section.total }} tepat · skor {{ section.score }}/{{ section.maxScore }}
+              {{ section.correct }} dari {{ section.total }} tepat · skor {{ section.score }}/{{ section.maxScore }}<template v-if="section.passingGrade != null"> · ambang {{ section.passingGrade }}</template>
             </span>
           </div>
           <span class="mt-2 block h-2 overflow-hidden rounded-pill bg-skeleton/60">
             <span
-              class="block h-full rounded-pill bg-linear-to-r from-primary-light to-primary"
+              class="block h-full rounded-pill"
+              :class="section.passed === false ? 'bg-linear-to-r from-danger/70 to-danger' : 'bg-linear-to-r from-primary-light to-primary'"
               :style="{ width: `${section.maxScore === 0 ? 0 : Math.round((section.score / section.maxScore) * 100)}%` }"
             />
           </span>
@@ -163,6 +273,11 @@ function openReview() {
           >
             {{ row.sectionTitle }}
           </p>
+          <!-- Wacana dicetak sekali per grup, lalu soal-soal anggotanya di bawahnya. -->
+          <div v-if="row.startsPassage && row.passage" class="mb-3 rounded-sm border border-hairline bg-surface-alt px-4 py-3.5">
+            <p class="text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">{{ row.passage.title || 'Wacana' }}</p>
+            <div class="prose-question mt-2 text-[0.94rem] leading-[1.65]" v-html="row.passage.content" />
+          </div>
           <TryoutReviewQuestion
             :question="row.question"
             :number="row.number"

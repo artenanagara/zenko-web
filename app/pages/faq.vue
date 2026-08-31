@@ -38,7 +38,7 @@ const categories: FaqCategory[] = [
       {
         question: 'Apa itu Zenko?',
         answer:
-          'Zenko adalah marketplace try out untuk persiapan SKD CPNS, Rekrutmen BUMN, SNBT UTBK, dan Tes Kedinasan. Siswa membeli paket try out dari berbagai tutor, lalu mengerjakannya langsung di sistem CBT (Computer Based Test) Zenko.',
+          'Zenko adalah marketplace try out untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Siswa membeli paket try out dari berbagai tutor, lalu mengerjakannya langsung di sistem CBT (Computer Based Test) Zenko.',
       },
       {
         question: 'Bagaimana cara kerja try out CBT-nya?',

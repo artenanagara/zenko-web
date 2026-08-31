@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OptionLabel, TryoutAnswerValue, TryoutQuestion } from '#shared/types/tryout'
+import type { OptionLabel, TryoutAnswerValue, TryoutPassage, TryoutQuestion } from '#shared/types/tryout'
 import { renderInlineMathHtml } from '~/utils/richText'
 
 const props = defineProps<{
@@ -9,6 +9,13 @@ const props = defineProps<{
   selected: OptionLabel | null
   value?: TryoutAnswerValue
   doubtful: boolean
+  /**
+   * Wacana bersama soal ini (grup stimulus TKA) — dirender sebagai panel
+   * bacaan di atas soal yang tetap terbuka selama siswa berpindah antar
+   * nomor dalam grup yang sama. Terpisah dari `question.stimulus` (teks per
+   * soal, mekanisme lama) yang tetap dirender seperti sebelumnya.
+   */
+  passage?: TryoutPassage | null
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +26,13 @@ const emit = defineEmits<{
 const stimulusOpen = ref(true)
 watch(() => props.question.id, () => { stimulusOpen.value = true })
 const stimulusId = useId()
+
+// Panel wacana dibuka ulang saat WACANA-nya berganti, bukan saat nomor soal
+// berganti — berpindah antar soal segrup tidak boleh menutup/mereset bacaan
+// yang sedang dibaca.
+const passageOpen = ref(true)
+watch(() => props.passage?.id, () => { passageOpen.value = true })
+const passageId = useId()
 
 const currentValue = computed(() => props.value ?? props.selected ?? null)
 const selectedMultiple = computed(() => Array.isArray(currentValue.value) ? currentValue.value as string[] : [])
@@ -78,6 +92,17 @@ function setOrderingFromEvent(position: number, event: Event) {
         Soal {{ index }} <span class="text-faint">dari {{ total }}</span>
       </p>
       <span v-if="doubtful" class="inline-flex items-center gap-1.5 rounded-pill bg-amber-50 px-2.5 py-1 text-[0.74rem] font-bold text-amber-800">Ditandai ragu-ragu</span>
+    </div>
+
+    <!-- Panel wacana bersama (grup stimulus): tetap tampil selama soal-soal
+         segrup dikerjakan. Bisa dilipat — penting di layar sempit — dan isi
+         panjangnya scroll di dalam panelnya sendiri. -->
+    <div v-if="passage" class="mt-4 overflow-hidden rounded-sm border border-hairline bg-surface-alt">
+      <button type="button" class="flex min-h-11 w-full touch-manipulation items-center justify-between gap-3 px-4 text-left transition-colors hover:bg-surface-sunken" :aria-expanded="passageOpen" :aria-controls="passageId" @click="passageOpen = !passageOpen">
+        <span class="min-w-0 truncate text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">{{ passage.title || 'Wacana' }}</span>
+        <span class="flex shrink-0 items-center gap-1.5 text-[0.8rem] font-semibold text-muted">{{ passageOpen ? 'Sembunyikan' : 'Tampilkan' }}<IconChevron class="h-4 w-4 transition-transform duration-200 ease-smooth" :class="passageOpen ? 'rotate-180' : ''" /></span>
+      </button>
+      <div v-show="passageOpen" :id="passageId" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-ink md:max-h-[38rem] [&_img]:my-3 [&_img]:max-h-80" v-html="renderedHtml(passage.content)" />
     </div>
 
     <div v-if="question.stimulus" class="mt-4 overflow-hidden rounded-sm border border-hairline bg-surface-alt">

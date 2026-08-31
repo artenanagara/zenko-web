@@ -27,11 +27,12 @@ test.describe('home page', () => {
   test('a popular-search chip navigates into /paket', async ({ page }) => {
     await gotoHydrated(page, '/')
 
-    // Scoped to <main>: the footer links the same query, so an unscoped
-    // locator matches two elements and fails on strict mode.
-    await page.getByRole('main').getByRole('link', { name: 'BUMN', exact: true }).click()
+    // Scoped to <main>: the footer links similar queries, so an unscoped
+    // locator can match two elements and fail on strict mode. The chips are
+    // the post-rework catalogue: SKD & TKA only (HeroSection.popularSearches).
+    await page.getByRole('main').getByRole('link', { name: 'SKD CPNS', exact: true }).click()
 
-    await expect(page).toHaveURL(/\/paket\?q=BUMN/)
+    await expect(page).toHaveURL(/\/paket\?q=SKD(\+|%20)CPNS/)
     await expect(page.getByRole('heading', { name: 'Semua paket' })).toBeVisible()
   })
 })

@@ -4,6 +4,7 @@ import type {
   TryoutAnswerState,
   TryoutAnswerValue,
   TryoutBlueprint,
+  TryoutPassage,
   TryoutQuestion,
   TryoutResult,
   TryoutSampleScore,
@@ -277,6 +278,18 @@ export function useTryoutSession(
   const currentSectionIndex = computed(() => currentEntry.value?.sectionIndex ?? 0)
   const currentSection = computed(() => blueprint.value?.sections[currentSectionIndex.value] ?? null)
 
+  /**
+   * Wacana (teks bacaan bersama) milik soal aktif — null saat soal berdiri
+   * sendiri. Diambil dari daftar passages subtes soal itu; runtime menampilkan
+   * teksnya di panel bacaan yang bertahan selama siswa berpindah antar nomor
+   * dalam grup yang sama.
+   */
+  const currentPassage = computed<TryoutPassage | null>(() => {
+    const question = currentQuestion.value
+    if (!question?.passageId) return null
+    return currentSection.value?.passages?.find(passage => passage.id === question.passageId) ?? null
+  })
+
   // The range of absolute indices navigation is allowed to touch right now:
   // the whole exam in flat mode, only the current subtest in sequential mode.
   const bounds = computed<[number, number]>(() => {
@@ -347,8 +360,13 @@ export function useTryoutSession(
     if (!currentBlueprint) return
     currentIndex.value = 0
     answers.value = {}
+    // Flat mode counts down the blueprint's official total when it carries
+    // one (SKD simulasi: 100 minutes for all 110 questions under one timer —
+    // NOT the 105 the per-section mini-tryout defaults sum to); older
+    // payloads and the sample blueprint fall back to summing the sections.
     const totalMinutes = currentBlueprint.mode === 'flat'
-      ? currentBlueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0)
+      ? (currentBlueprint.totalDurationMinutes
+        || currentBlueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0))
       : currentBlueprint.sections[0]!.durationMinutes
     sectionEndsAt.value = Date.now() + totalMinutes * 60_000
     result.value = null
@@ -556,6 +574,7 @@ export function useTryoutSession(
     currentSection,
     sectionIndex: currentSectionIndex,
     currentQuestion,
+    currentPassage,
     currentIndex,
     displayIndex,
     displayTotal,

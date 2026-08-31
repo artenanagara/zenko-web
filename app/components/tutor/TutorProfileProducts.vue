@@ -31,6 +31,7 @@ function toPackage(item: PublicTutorProduct): Package {
     slug: item.slug,
     title: item.title,
     category: item.category,
+    subcategory: item.subcategory,
     thumbnailUrl: item.thumbnailUrl,
     author: props.author,
     rating: item.rating,

@@ -20,6 +20,11 @@ export interface Package {
   slug: string
   title: string
   category: string
+  /**
+   * Level facet kedua di bawah kategori (SKD → CPNS/Kedinasan, TKA → jenjang
+   * SD/SMP/SMA/SMK). Kosong untuk kategori tanpa level kedua.
+   */
+  subcategory: string
   thumbnailUrl: string
   author: Author
   rating: number
@@ -64,6 +69,24 @@ export interface Testimonial {
   avatarUrl: string
   quote: string
   rating: number
+}
+
+/**
+ * Satu facet level kedua di dalam Category — GET /categories. Count sesuai
+ * dengan hasil listing yang difilter category+subcategory.
+ */
+export interface CategorySubfacet {
+  slug: string
+  label: string
+  count: number
+}
+
+/** One facet row of GET /categories; subcategories absen saat tidak punya. */
+export interface Category {
+  slug: string
+  label: string
+  count: number
+  subcategories?: CategorySubfacet[]
 }
 
 export type SortKey = 'featured' | 'bestseller' | 'newest'

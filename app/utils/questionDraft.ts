@@ -31,6 +31,12 @@ export interface QuestionDraftState {
   prompt: string
   explanation: string
   stimulus: string
+  /**
+   * Tautan wacana subtes. Selalu dikirim saat terdefinisi — string kosong
+   * berarti soal berdiri sendiri (dan melepas tautan pada PATCH, yang memang
+   * full-replace di server).
+   */
+  passageId?: string
   choiceRows: ChoiceDraftRow[]
   correctIndex: number
   correctIndexes: number[]
@@ -40,6 +46,13 @@ export interface QuestionDraftState {
   matchingItems: MatchingData['items']
   matchingPairs: Record<string, string>
   ordering: string[]
+  /**
+   * Bentuk ketat CAT BKN (produk SKD) — cermin sectionKindIssue di zenko-api:
+   * single_choice wajib tepat 5 opsi; weighted (TKP) wajib tepat 5 opsi
+   * berbobot 1–5 (bobot boleh tidak unik). Divalidasi di sini juga supaya
+   * tutor tahu sebelum request-nya ditolak server.
+   */
+  skdStrict?: boolean
 }
 
 export interface DraftValidationError {
@@ -72,6 +85,7 @@ function baseDraft(state: QuestionDraftState): QuestionDraft | null {
     prompt: state.prompt.trim(),
     explanation: state.explanation.trim(),
     ...(stimulus ? { stimulus } : {}),
+    ...(state.passageId !== undefined ? { passageId: state.passageId } : {}),
   }
 }
 
@@ -153,10 +167,14 @@ function buildOrderingDraft(
 
 function buildWeightedDraft(
   base: QuestionDraft,
+  state: QuestionDraftState,
   rows: ReturnType<typeof filledChoices>,
 ): QuestionDraftResult {
   if (rows.some(row => row.weight === null || !Number.isInteger(row.weight) || row.weight < 0)) {
     return error('Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.', 'choices')
+  }
+  if (state.skdStrict && rows.some(row => row.weight! < 1 || row.weight! > 5)) {
+    return error('Bobot tiap opsi TKP harus antara 1 dan 5.', 'choices')
   }
 
   return {
@@ -171,6 +189,13 @@ function buildChoiceDraft(base: QuestionDraft, state: QuestionDraftState): Quest
   const rows = filledChoices(state.choiceRows)
   if (rows.length < 2) return error('Isi minimal dua opsi.', 'choices')
 
+  // Bentuk resmi CAT BKN: pilihan ganda dan TKP selalu tepat 5 opsi (A–E) —
+  // cermin sectionKindIssue di zenko-api, supaya kekurangannya ketahuan di
+  // form dan bukan sebagai 400 dari server.
+  if (state.skdStrict && (state.kind === 'single_choice' || state.kind === 'weighted') && rows.length !== 5) {
+    return error('Soal SKD wajib memiliki tepat 5 pilihan jawaban (A–E).', 'choices')
+  }
+
   switch (state.kind) {
     case 'single_choice':
     case 'assertion_reason':
@@ -181,7 +206,7 @@ function buildChoiceDraft(base: QuestionDraft, state: QuestionDraftState): Quest
     case 'ordering':
       return buildOrderingDraft(base, state, rows)
     case 'weighted':
-      return buildWeightedDraft(base, rows)
+      return buildWeightedDraft(base, state, rows)
     default:
       return error('Jenis soal tidak didukung.', 'choices')
   }

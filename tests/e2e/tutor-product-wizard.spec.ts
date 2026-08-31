@@ -3,49 +3,52 @@ import { expect, test } from './support/fixtures'
 import { buildUser, mockSignedIn } from './support/auth'
 
 /**
- * Langkah 1 wizard produk tutor: angka "Jumlah soal" / "Durasi" yang diketik
- * tutor harus bertahan sampai ke POST /tutor/products.
+ * Wizard berkelompok (rework SKD/TKA, spec §4): kelompok 1 memilih kategori →
+ * sub-kategori → jenis ujian → mapel; kelompok 2 memegang jumlah soal &
+ * durasi (terkunci untuk simulasi, bisa diatur untuk mini tryout).
  *
- * Regresi yang dijaga di sini: memilih subtes dulu mengisikan angka template
- * sebagai titik awal (itu memang disengaja), tapi versi lama menimpa kedua
- * field TANPA SYARAT setiap kali `sectionTitle` berubah. Tutor yang mengetik
- * "35" lebih dulu lalu memilih subtes diam-diam kembali ke 30 — dan 30 itulah
- * yang terkirim ke server, jadi langkah "Isi" meminta jumlah soal template
- * alih-alih jumlah yang diminta tutor. Laporan aslinya: "jumlah soal custom,
- * tapi di isi soal masih sesuai template".
+ * Yang dijaga di sini:
+ * - Prefill mini tryout dari template mapel, dan angka yang diketik tutor
+ *   menang atas prefill (regresi lama: template menimpa tanpa syarat).
+ * - Angka custom mini tryout sampai ke POST /tutor/products.
+ * - Simulasi SKD TIDAK mengirim questionTarget/durationMinutes — server
+ *   menjawab 400 untuk konfigurasi terkunci yang coba di-override.
  *
  * Semuanya di-stub lewat page.route(): `/dashboard/**` adalah `ssr: false`
  * (nuxt.config.ts routeRules), jadi bahkan useFetch-nya useExamTypes() berjalan
- * di browser dan terlihat oleh page.route — spec ini tidak menyentuh stub API
- * bersama di support/stub-api.mjs sama sekali.
+ * di browser dan terlihat oleh page.route.
  */
 
-/** Satu jenis ujian dengan dua subtes yang angkanya sengaja dibedakan. */
+/** Cermin seed pasca-rework: satu template SKD + satu template TKA. */
 const EXAM_TYPES = [
+  {
+    slug: 'skd-cpns',
+    label: 'SKD CPNS',
+    description: 'Fixture SKD',
+    category: 'SKD',
+    subcategory: 'CPNS',
+    timerPolicy: 'flat',
+    theme: 'catbkn',
+    cognitiveLevelEnabled: false,
+    simulasiTotalMinutes: 100,
+    sections: [
+      { title: 'Tes Wawasan Kebangsaan', questionTarget: 30, durationMinutes: 30, scoringMode: 'flat', pointsCorrect: 5, passingGrade: 65, defaultKind: 'single_choice', allowedKinds: ['single_choice'] },
+      { title: 'Tes Intelegensi Umum', questionTarget: 35, durationMinutes: 35, scoringMode: 'flat', pointsCorrect: 5, passingGrade: 80, defaultKind: 'single_choice', allowedKinds: ['single_choice'] },
+      { title: 'Tes Karakteristik Pribadi', questionTarget: 45, durationMinutes: 40, scoringMode: 'weighted', pointsCorrect: 0, passingGrade: 166, defaultKind: 'weighted', allowedKinds: ['weighted'] },
+    ],
+  },
   {
     slug: 'tka-smp',
     label: 'TKA SMP',
-    description: 'Fixture',
-    category: 'TKA SMP',
+    description: 'Fixture TKA',
+    category: 'TKA',
+    subcategory: 'SMP',
+    timerPolicy: 'flat',
+    theme: 'tka',
+    cognitiveLevelEnabled: true,
     sections: [
-      {
-        title: 'Bahasa Indonesia (Literasi Membaca)',
-        questionTarget: 30,
-        durationMinutes: 75,
-        scoringMode: 'flat',
-        pointsCorrect: 1,
-        passingGrade: null,
-        defaultKind: 'single_choice',
-      },
-      {
-        title: 'Matematika (Numerasi)',
-        questionTarget: 20,
-        durationMinutes: 50,
-        scoringMode: 'flat',
-        pointsCorrect: 1,
-        passingGrade: null,
-        defaultKind: 'single_choice',
-      },
+      { title: 'Bahasa Indonesia & Literasi', questionTarget: 30, durationMinutes: 75, scoringMode: 'flat', pointsCorrect: 1, defaultKind: 'single_choice' },
+      { title: 'Matematika', questionTarget: 20, durationMinutes: 50, scoringMode: 'flat', pointsCorrect: 1, defaultKind: 'single_choice' },
     ],
   },
 ]
@@ -85,97 +88,108 @@ async function chooseOption(page: Page, comboboxName: string, optionName: string
   await page.getByRole('option', { name: optionName, exact: false }).first().click()
 }
 
-async function openMiniTryoutStep(page: Page): Promise<void> {
+async function openWizard(page: Page): Promise<void> {
   // Banner cookie-nya `fixed` di atas footer langkah dan menelan klik pertama
-  // ke kontrol mana pun. Menjawabnya lewat cookie yang sama seperti pengunjung
-  // yang sudah pernah memilih (useCookieConsent: `zenko_cookie_consent`) lebih
-  // stabil daripada mengklik tombolnya di setiap test.
+  // ke kontrol mana pun — jawab lewat cookie yang sama seperti pengunjung yang
+  // sudah pernah memilih (useCookieConsent: `zenko_cookie_consent`).
   await page.context().addCookies([
     { name: 'zenko_cookie_consent', value: 'rejected', domain: 'localhost', path: '/' },
   ])
 
   await page.goto('/dashboard/tutor/products/new', { waitUntil: 'networkidle' })
-  await chooseOption(page, 'Kategori ujian', 'TKA SMP')
-  await chooseOption(page, 'Jenis ujian', 'Mini Try Out')
 }
 
-test.describe('wizard produk tutor — jumlah soal & durasi custom (langkah 1)', () => {
-  test('angka yang diketik sebelum subtes dipilih tidak ditimpa angka template', async ({ page }) => {
+/** Kelompok 1 untuk mini tryout TKA SMP, lalu Lanjut ke kelompok 2. */
+async function pickTkaMiniAndGoToConfig(page: Page, mapel: string): Promise<void> {
+  await page.getByRole('radio', { name: /TKA/ }).click()
+  await page.getByRole('radio', { name: 'SMP', exact: true }).click()
+  await chooseOption(page, 'Jenis ujian', 'Mini Try Out')
+  await chooseOption(page, 'Mata pelajaran', mapel)
+  await page.getByRole('button', { name: 'Lanjut' }).click()
+}
+
+/** Kelompok 3 (Detail Produk) diisi minimum lalu draft disimpan. */
+async function fillDetailAndSaveDraft(page: Page, title: string): Promise<void> {
+  await page.locator('#product-title').fill(title)
+  await page.locator('#product-description').fill('Deskripsi uji.')
+  await page.locator('input[type="checkbox"]').first().check()
+  await page.getByRole('button', { name: /Simpan draft/ }).click()
+}
+
+test.describe('wizard berkelompok — konfigurasi mini tryout (kelompok 2)', () => {
+  test('jumlah soal & durasi terisi dari template mapel yang dipilih', async ({ page }) => {
     await mockWizardApi(page)
-    await openMiniTryoutStep(page)
+    await openWizard(page)
+    await pickTkaMiniAndGoToConfig(page, 'Bahasa Indonesia & Literasi')
+
+    await expect(page.locator('#product-question-target')).toHaveValue('30')
+    await expect(page.locator('#product-duration-minutes')).toHaveValue('75')
+  })
+
+  test('angka yang diketik tutor bertahan saat bolak-balik antar kelompok', async ({ page }) => {
+    await mockWizardApi(page)
+    await openWizard(page)
+    await pickTkaMiniAndGoToConfig(page, 'Bahasa Indonesia & Literasi')
 
     const questionTarget = page.locator('#product-question-target')
     const durationMinutes = page.locator('#product-duration-minutes')
-
-    // Tutor mengetik angkanya lebih dulu, lalu baru memilih subtes.
     await questionTarget.fill('35')
     await durationMinutes.fill('90')
-    await chooseOption(page, 'Subtes', 'Bahasa Indonesia (Literasi Membaca)')
 
-    // Template subtes ini 30 soal / 75 menit — angka tutor yang harus menang.
+    // Kembali ke kelompok 1 lalu maju lagi — angka custom tidak boleh
+    // ditimpa ulang oleh prefill template.
+    await page.getByRole('button', { name: 'Kembali' }).click()
+    await page.getByRole('button', { name: 'Lanjut' }).click()
+
     await expect(questionTarget).toHaveValue('35')
     await expect(durationMinutes).toHaveValue('90')
   })
 
-  test('mengganti subtes tidak menimpa angka yang sudah diketik tutor', async ({ page }) => {
-    await mockWizardApi(page)
-    await openMiniTryoutStep(page)
-
-    const questionTarget = page.locator('#product-question-target')
-    const durationMinutes = page.locator('#product-duration-minutes')
-
-    await chooseOption(page, 'Subtes', 'Bahasa Indonesia (Literasi Membaca)')
-    await questionTarget.fill('35')
-    await durationMinutes.fill('90')
-
-    // Subtes kedua templatenya 20 soal / 50 menit.
-    await chooseOption(page, 'Subtes', 'Matematika (Numerasi)')
-
-    await expect(questionTarget).toHaveValue('35')
-    await expect(durationMinutes).toHaveValue('90')
-  })
-
-  test('field yang belum disentuh tetap mengikuti template subtes yang dipilih', async ({ page }) => {
-    await mockWizardApi(page)
-    await openMiniTryoutStep(page)
-
-    const questionTarget = page.locator('#product-question-target')
-    const durationMinutes = page.locator('#product-duration-minutes')
-
-    await chooseOption(page, 'Subtes', 'Bahasa Indonesia (Literasi Membaca)')
-    await expect(questionTarget).toHaveValue('30')
-    await expect(durationMinutes).toHaveValue('75')
-
-    // Masih belum disentuh, jadi mengganti subtes harus ikut template baru.
-    await chooseOption(page, 'Subtes', 'Matematika (Numerasi)')
-    await expect(questionTarget).toHaveValue('20')
-    await expect(durationMinutes).toHaveValue('50')
-  })
-
-  test('angka custom ikut terkirim di POST /tutor/products', async ({ page }) => {
+  test('angka custom mini tryout ikut terkirim di POST /tutor/products', async ({ page }) => {
     const { createdBodies } = await mockWizardApi(page)
-    await openMiniTryoutStep(page)
+    await openWizard(page)
+    await pickTkaMiniAndGoToConfig(page, 'Bahasa Indonesia & Literasi')
 
     await page.locator('#product-question-target').fill('35')
     await page.locator('#product-duration-minutes').fill('90')
-    await chooseOption(page, 'Subtes', 'Bahasa Indonesia (Literasi Membaca)')
-
     await page.getByRole('button', { name: 'Lanjut' }).click()
 
-    // Langkah 2 — judul dan minimal satu "yang kamu dapatkan" wajib diisi
-    // sebelum wizard mau menyimpan draft.
-    await page.locator('#product-title').fill('Try Out TKA SMP Literasi')
-    await page.locator('#product-description').fill('Deskripsi uji.')
-    await page.locator('input[type="checkbox"]').first().check()
-
-    await page.getByRole('button', { name: /Simpan draft/ }).click()
+    await fillDetailAndSaveDraft(page, 'Try Out TKA SMP Literasi')
 
     await expect.poll(() => createdBodies.length).toBe(1)
     expect(createdBodies[0]).toMatchObject({
+      examTypeSlug: 'tka-smp',
       mode: 'mini_tryout',
-      sectionTitle: 'Bahasa Indonesia (Literasi Membaca)',
+      sectionTitle: 'Bahasa Indonesia & Literasi',
       questionTarget: 35,
       durationMinutes: 90,
     })
+  })
+})
+
+test.describe('wizard berkelompok — simulasi SKD terkunci', () => {
+  test('simulasi SKD tidak mengirim questionTarget/durationMinutes', async ({ page }) => {
+    const { createdBodies } = await mockWizardApi(page)
+    await openWizard(page)
+
+    await page.getByRole('radio', { name: /SKD/ }).click()
+    await page.getByRole('radio', { name: 'CPNS', exact: true }).click()
+    // Jenis ujian default: Simulasi — langkah subtes dilewati (info 3 subtes).
+    await expect(page.getByText('Subtes terpasang otomatis')).toBeVisible()
+    await page.getByRole('button', { name: 'Lanjut' }).click()
+
+    // Kelompok 2: konfigurasi tampil read-only, tanpa input jumlah soal.
+    await expect(page.getByText('Terkunci mengikuti standar resmi')).toBeVisible()
+    await expect(page.locator('#product-question-target')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Lanjut' }).click()
+
+    await fillDetailAndSaveDraft(page, 'Simulasi SKD CPNS Lengkap')
+
+    await expect.poll(() => createdBodies.length).toBe(1)
+    const body = createdBodies[0] as Record<string, unknown>
+    expect(body).toMatchObject({ examTypeSlug: 'skd-cpns', mode: 'simulasi' })
+    expect(body.questionTarget).toBeUndefined()
+    expect(body.durationMinutes).toBeUndefined()
+    expect(body.sectionTitle).toBeUndefined()
   })
 })

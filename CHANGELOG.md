@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.15.0](https://github.com/artenanagara/zenko-web/compare/v0.14.1...v0.15.0) (2026-08-30)
+
+
+### Features
+
+* rework kategori SKD/TKA — wizard berkelompok, wacana, skor server, filter dua tingkat ([2489fe3](https://github.com/artenanagara/zenko-web/commit/2489fe34b57649686277d148ee5989f641407d86))
+
+
+### Bug Fixes
+
+* impor wacana CSV atomik, varian hasil eksplisit dari tema, filter sub-kategori per induk ([55c95fc](https://github.com/artenanagara/zenko-web/commit/55c95fc1f14763b18a3b4f3fd2677d6fb054f83b))
+* **tryout:** finish-page nav, doubtful count, drop level kognitif ([b4dad2d](https://github.com/artenanagara/zenko-web/commit/b4dad2d38bdf6e0aea560f1779d0f3512bce5b49))
+
+## [0.14.1](https://github.com/artenanagara/zenko-web/compare/v0.14.0...v0.14.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **tutor:** expose question draft flush once ([dea29ba](https://github.com/artenanagara/zenko-web/commit/dea29ba877328dbec9ecf807a28934755244f92b))
+* **tutor:** save question edits before resubmission ([33cf43c](https://github.com/artenanagara/zenko-web/commit/33cf43c0ede910faa84c04af1def86e155d4ce12))
+
+## [0.14.0](https://github.com/artenanagara/zenko-web/compare/v0.13.0...v0.14.0) (2026-08-29)
+
+
+### Features
+
+* **payment:** "Cek status pembayaran" on the waiting screen ([382e361](https://github.com/artenanagara/zenko-web/commit/382e3610267ee40966ff814f3a56212c8994cc7c))
+* **payment:** manual QRIS payment page and admin verification desk ([4f89e02](https://github.com/artenanagara/zenko-web/commit/4f89e02d0e3eb32797043578f352fd73ff6b3613))
+* **tutor:** resubmit edited live products ([08a92eb](https://github.com/artenanagara/zenko-web/commit/08a92eb291964e6472defcf6a424b03383fc8e30))
+
+
+### Bug Fixes
+
+* **tutor:** keep submit action clickable for validation ([8acaece](https://github.com/artenanagara/zenko-web/commit/8acaece716d784f5f4f3571ed46216df85b6a7c1))
+
+## [0.13.0](https://github.com/artenanagara/zenko-web/compare/v0.12.0...v0.13.0) (2026-08-29)
+
+
+### Features
+
+* **tutor:** add explicit live question edit action ([8a35068](https://github.com/artenanagara/zenko-web/commit/8a35068ce01851dc053f6eb2784521be2c5079ce))
+
+## [0.12.0](https://github.com/artenanagara/zenko-web/compare/v0.11.1...v0.12.0) (2026-08-29)
+
+
+### Features
+
+* **tutor:** enable pricing on payment-enabled environments ([fc14c66](https://github.com/artenanagara/zenko-web/commit/fc14c6646065ad369f7dee8f7aca8b9ca07c3fef))
+* **tutor:** open live question editor in staging ([9988d0a](https://github.com/artenanagara/zenko-web/commit/9988d0ae8c28b94e80c2336432ecc33066672883))
+
+
+### Bug Fixes
+
+* **catalog:** link tutor authors without usernames ([e799a66](https://github.com/artenanagara/zenko-web/commit/e799a66f25cd49b5744daf3325f4970a5fb2a5dc))
+* **tryout:** render KaTeX in question content ([c85bee2](https://github.com/artenanagara/zenko-web/commit/c85bee2a73f35150566971b9c7b6a52898b7ab54))
+* **tutor:** allow browsing all edit wizard steps ([67d264b](https://github.com/artenanagara/zenko-web/commit/67d264b6c84aebd6329528f3a2fd572a27418749))
+
+## [0.11.1](https://github.com/artenanagara/zenko-web/compare/v0.11.0...v0.11.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **upload:** refresh expired csrf token ([5244cfb](https://github.com/artenanagara/zenko-web/commit/5244cfbfde4e9b09ad487f6e43049ab84618cb75))
+
 ## [0.11.0](https://github.com/artenanagara/zenko-web/compare/v0.10.0...v0.11.0) (2026-08-29)
 
 

@@ -632,7 +632,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Tahap 1 — Tipe & Kategori',
-        body: 'Tentukan apakah paket berupa Single atau Bundle, pilih jenis ujian (misalnya SKD CPNS, SNBT UTBK, BUMN, atau Kedinasan), dan mode ujian (Simulasi Penuh atau Mini Try Out).',
+        body: 'Tentukan apakah paket berupa Single atau Bundle, pilih kategori dan sub-kategori ujian (SKD CPNS/Kedinasan, atau TKA per jenjang), lalu jenis ujian (Simulasi atau Mini Tryout).',
         screenshot: 'Antarmuka Tahap 1 wizard berisi pilihan jenis ujian dan mode.',
       },
       {

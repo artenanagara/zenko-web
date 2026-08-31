@@ -128,7 +128,9 @@ const total = computed(() =>
               <span class="min-w-0 flex-1 truncate text-[0.9rem] font-semibold tracking-[-0.02em]">
                 {{ product.title }}
               </span>
-              <span class="shrink-0 text-[0.86rem] text-muted">{{ product.category }}</span>
+              <span class="shrink-0 text-[0.86rem] text-muted">
+                {{ product.subcategory ? `${product.category} · ${product.subcategory}` : product.category }}
+              </span>
               <span class="shrink-0 text-[0.86rem] text-muted tabular-nums">{{ formatRupiah(product.price) }}</span>
             </label>
           </li>

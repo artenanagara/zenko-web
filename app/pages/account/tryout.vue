@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Attempt } from '#shared/types/account'
+
 definePageMeta({
   path: '/akun/paket/:slug()/kerjakan',
   layout: 'tryout',
@@ -27,7 +29,12 @@ useHead({
 })
 
 const totalQuestions = computed(() => blueprint.value?.sections.reduce((sum, s) => sum + s.questions.length, 0) ?? 0)
-const totalMinutes = computed(() => blueprint.value?.sections.reduce((sum, s) => sum + s.durationMinutes, 0) ?? 0)
+// Total resmi dari blueprint saat ada (SKD: 100 menit satu timer — bukan
+// jumlah durasi per subtes); payload lama jatuh ke penjumlahan seperti dulu.
+const totalMinutes = computed(() =>
+  blueprint.value?.totalDurationMinutes
+  || (blueprint.value?.sections.reduce((sum, s) => sum + s.durationMinutes, 0) ?? 0),
+)
 
 const nextSection = computed(() => blueprint.value?.sections[session.sectionIndex.value + 1] ?? null)
 
@@ -68,12 +75,21 @@ function confirmEndSection() {
 // finished session, which recording best-effort is here to avoid.
 let recorded = false
 const recordedAttemptId = ref<string | null>(null)
+/**
+ * Attempt lengkap dari server. Sejak rework SKD/TKA server menghitung ulang
+ * skor dari snapshot review-nya sendiri dan mengembalikan nilai otoritatif
+ * (skor per subtes, ambang batas, verdict) — TryoutResult menampilkan ANGKA
+ * SERVER ini saat ada, dan hanya jatuh ke hitungan lokal browser kalau
+ * penyimpanannya gagal (atau untuk produk legacy yang tidak dinilai server).
+ */
+const recordedAttempt = ref<Attempt | null>(null)
 watch(session.phase, async (phase) => {
   if (phase === 'finished' && session.result.value && !recorded) {
     recorded = true
     try {
       const attempt = await recordAttempt(slug, session.result.value, session.answers.value)
       recordedAttemptId.value = attempt?.id ?? null
+      recordedAttempt.value = attempt
     }
     catch {
       // Best-effort: the score is still shown from the finished session.
@@ -84,6 +100,7 @@ watch(session.phase, async (phase) => {
 function retry() {
   recorded = false
   recordedAttemptId.value = null
+  recordedAttempt.value = null
   session.start()
 }
 </script>
@@ -196,6 +213,7 @@ function retry() {
             :selected="session.answers.value[session.currentQuestion.value.id]?.selected ?? null"
             :value="session.answers.value[session.currentQuestion.value.id]?.value"
             :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
+            :passage="session.currentPassage.value"
             @select="session.selectAnswer"
             @answer="session.setAnswerValue"
           />
@@ -330,6 +348,7 @@ function retry() {
       :package-slug="slug"
       :blueprint="blueprint"
       :answers="session.answers.value"
+      :attempt="recordedAttempt"
       :attempt-id="recordedAttemptId"
       @retry="retry"
     />

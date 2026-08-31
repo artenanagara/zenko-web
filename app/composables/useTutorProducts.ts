@@ -1,6 +1,7 @@
 import type {
   CreateProductRequest,
   ExamType,
+  PassageDraft,
   ProductMode,
   ProductStatus,
   ProductType,
@@ -255,6 +256,57 @@ export async function deleteTutorQuestion(
 }
 
 /**
+ * POST /tutor/products/:id/sections/:sectionId/passages — wacana baru di
+ * ujung daftar. Respons 201 berisi aggregate produk terbaru; wacana barunya
+ * adalah entri terakhir `passages` pada section tersebut (id dari server).
+ */
+export async function createTutorPassage(
+  productId: string,
+  sectionId: string,
+  passage: PassageDraft,
+): Promise<TutorProductDetail> {
+  const { public: config } = useRuntimeConfig()
+
+  return await useApiFetch<TutorProductDetail>(
+    `/tutor/products/${productId}/sections/${sectionId}/passages`,
+    { baseURL: config.apiBase, method: 'POST', body: passage, credentials: 'include' },
+  )
+}
+
+/** PATCH .../passages/:passageId — full replace judul + isi wacana. */
+export async function updateTutorPassage(
+  productId: string,
+  sectionId: string,
+  passageId: string,
+  passage: PassageDraft,
+): Promise<TutorProductDetail> {
+  const { public: config } = useRuntimeConfig()
+
+  return await useApiFetch<TutorProductDetail>(
+    `/tutor/products/${productId}/sections/${sectionId}/passages/${passageId}`,
+    { baseURL: config.apiBase, method: 'PATCH', body: passage, credentials: 'include' },
+  )
+}
+
+/**
+ * DELETE .../passages/:passageId — 204. Soal yang menunjuk wacana ini dilepas
+ * tautannya oleh server (passageId dikosongkan), tidak ikut terhapus.
+ */
+export async function deleteTutorPassage(
+  productId: string,
+  sectionId: string,
+  passageId: string,
+): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/passages/${passageId}`, {
+    baseURL: config.apiBase,
+    method: 'DELETE',
+    credentials: 'include',
+  })
+}
+
+/**
  * PUT .../questions/reorder — grid navigator kirim seluruh urutan baru soal
  * dalam satu subtes (id lengkap, bukan delta). Server menolak kalau daftar id
  * tidak persis sama dengan isi subtes saat ini.
@@ -357,7 +409,12 @@ export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
   bundle: 'Bundling',
 }
 
+/**
+ * Label mode netral lintas kategori: simulasi SKD memang semua subtes, tapi
+ * simulasi TKA tetap satu mapel — yang membedakan mode adalah terkunci atau
+ * tidaknya jumlah soal & durasi, bukan cakupan subtesnya.
+ */
 export const PRODUCT_MODE_LABEL: Record<ProductMode, string> = {
-  simulasi: 'Simulasi (semua subtes)',
-  mini_tryout: 'Mini Try Out (satu subtes)',
+  simulasi: 'Simulasi (standar resmi, terkunci)',
+  mini_tryout: 'Mini Try Out (jumlah soal & durasi bebas diatur)',
 }

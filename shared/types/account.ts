@@ -12,6 +12,17 @@ export interface AttemptSection {
   title: string
   correct: number
   total: number
+  /**
+   * Hasil hitungan server (rework SKD/TKA): skor poin CAT untuk SKD
+   * (benar ×5 untuk TWK/TIU, jumlah bobot untuk TKP), normalisasi 0–100 untuk
+   * TKA. 0 pada attempt lama/kategori yang tidak dinilai server.
+   */
+  score: number
+  maxScore: number
+  /** Ambang batas subtes; absen saat perbandingannya tidak berlaku. */
+  passingGrade?: number
+  /** Memenuhi/Tidak Memenuhi terhadap passingGrade; absen bersama passingGrade. */
+  passed?: boolean
 }
 
 /** One sitting. A package may be redone, so a package has many attempts. */
@@ -23,6 +34,13 @@ export interface Attempt {
   finishedAt: number
   /** Final mark on the package's own scale, e.g. 412. */
   score: number
+  /**
+   * Batas atas `score` saat server menghitung ulang hasil (550 simulasi SKD,
+   * 100 per mapel TKA); 0 untuk attempt yang tidak dinilai server.
+   */
+  maxScore: number
+  /** Verdict keseluruhan simulasi SKD (semua subtes memenuhi ambang); absen saat tidak berlaku. */
+  passed?: boolean
   rank: string
   sections: AttemptSection[]
 }
@@ -67,17 +85,32 @@ export interface RecordAttemptAnswer {
 }
 
 /**
+ * One section tally as POSTED with a finished sitting — only what the client
+ * counts (correct/total). The scored fields on AttemptSection (score,
+ * maxScore, passingGrade, passed) are computed by the server and never sent
+ * up: since the SKD/TKA rework the server recomputes everything it displays
+ * from its own review snapshot anyway.
+ */
+export interface RecordAttemptSection {
+  title: string
+  correct: number
+  total: number
+}
+
+/**
  * Body of POST /me/packages/:slug/attempts. `finishedAt` is optional — the
  * server stamps its own clock when it is omitted. `answers` is what feeds
  * "Lihat pembahasan" later: zenko-api judges each one against its own copy
  * of the product (never trusting a client-claimed correctness) and stores
  * the result as the attempt's review snapshot — see TryoutAttemptReview in
  * shared/types/tryout. Optional so a sitting that could not build a full
- * answer map still gets its aggregate score saved.
+ * answer map still gets its aggregate score saved. For SKD/TKA products the
+ * aggregate numbers here are accepted for wire compatibility but overwritten
+ * by the server's own recomputation.
  */
 export interface RecordAttemptRequest {
   score: number
-  sections: AttemptSection[]
+  sections: RecordAttemptSection[]
   finishedAt?: number
   answers?: Record<string, RecordAttemptAnswer>
 }

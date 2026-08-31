@@ -36,7 +36,7 @@ const sectionId = computed(() => String(route.query.section ?? ''))
     scope="tutor"
     :product-id="productId"
     :section-id="sectionId"
-    :back-to="`/dashboard/tutor/products/${productId}/edit?langkah=4`"
+    :back-to="`/dashboard/tutor/products/${productId}/edit?langkah=5`"
     back-label="Kembali ke produk"
   />
 </template>
