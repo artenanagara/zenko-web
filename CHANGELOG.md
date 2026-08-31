@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.2](https://github.com/artenanagara/zenko-web/compare/v0.15.1...v0.15.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **tutor:** lock saved username field ([6d6dc25](https://github.com/artenanagara/zenko-web/commit/6d6dc25641957ebc3ca106209048b4f9a43b62df))
+* **tutor:** refine question action controls ([82979c3](https://github.com/artenanagara/zenko-web/commit/82979c36ef48b1e4078fa1e924a02890b56e72d0))
+
 ## [0.15.1](https://github.com/artenanagara/zenko-web/compare/v0.15.0...v0.15.1) (2026-08-31)
 
 
