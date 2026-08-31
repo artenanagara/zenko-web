@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QuestionDraft, QuestionOption } from '#shared/types/tutor-product'
+import type { QuestionDraft, QuestionOption, TutorPassage } from '#shared/types/tutor-product'
 
 /**
  * Panel "Pratinjau & Simulasi" (langkah Review & ajukan): render soal kira-
@@ -21,12 +21,14 @@ import type { QuestionDraft, QuestionOption } from '#shared/types/tutor-product'
  */
 const props = defineProps<{
   question: QuestionDraft
+  passage?: TutorPassage | null
 }>()
 
 const viewport = ref<'desktop' | 'mobile'>('desktop')
 const mobileTab = ref<'wacana' | 'soal'>('soal')
 
 const hasStimulus = computed(() => !!stripHtmlToText(props.question.stimulus ?? ''))
+const hasReading = computed(() => hasStimulus.value || !!props.passage)
 const stimulusHtml = computed(() => renderInlineMathHtml(props.question.stimulus ?? ''))
 const promptHtml = computed(() => renderInlineMathHtml(props.question.prompt))
 const explanationHtml = computed(() => renderInlineMathHtml(props.question.explanation))
@@ -171,15 +173,32 @@ const showResult = computed(() => {
           </button>
         </div>
 
-        <div :class="viewport === 'desktop' && hasStimulus ? 'grid grid-cols-2 items-start gap-6' : 'grid gap-6'">
-          <div
-            v-if="hasStimulus"
-            v-show="viewport === 'desktop' || mobileTab === 'wacana'"
-            class="prose-question max-h-[60vh] overflow-y-auto rounded-md border border-hairline bg-surface-alt p-4"
-            v-html="stimulusHtml"
-          />
+        <div :class="viewport === 'desktop' && hasReading ? 'grid grid-cols-2 items-start gap-6' : 'grid gap-6'">
+          <div v-if="hasReading" v-show="viewport === 'desktop' || mobileTab === 'wacana'" class="grid gap-4">
+            <section
+              v-if="passage"
+              class="overflow-hidden rounded-md border border-hairline bg-surface-alt"
+              aria-labelledby="preview-passage-title"
+            >
+              <h3 id="preview-passage-title" class="border-b border-hairline px-4 py-3 text-[0.82rem] font-bold text-ink">
+                {{ passage.title.trim() || 'Wacana' }}
+              </h3>
+              <div class="prose-question max-h-[60vh] overflow-y-auto px-4 py-3.5 text-[0.94rem] leading-[1.65]" v-html="renderInlineMathHtml(passage.content)" />
+            </section>
 
-          <div v-show="viewport === 'desktop' || !hasStimulus || mobileTab === 'soal'" class="grid gap-4">
+            <section
+              v-if="hasStimulus"
+              class="overflow-hidden rounded-md border border-hairline bg-surface-alt"
+              aria-labelledby="preview-stimulus-title"
+            >
+              <h3 id="preview-stimulus-title" class="border-b border-hairline px-4 py-3 text-[0.82rem] font-bold text-ink">
+                Bacaan soal
+              </h3>
+              <div class="prose-question max-h-[60vh] overflow-y-auto px-4 py-3.5 text-[0.94rem] leading-[1.65]" v-html="stimulusHtml" />
+            </section>
+          </div>
+
+          <div v-show="viewport === 'desktop' || !hasReading || mobileTab === 'soal'" class="grid gap-4">
             <div class="prose-question font-medium" v-html="promptHtml" />
 
             <div v-if="question.kind === 'single_choice' || question.kind === 'weighted'" class="grid gap-2.5">

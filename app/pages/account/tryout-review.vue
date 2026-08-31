@@ -205,7 +205,7 @@ const unansweredCount = computed(() => allQuestions.value.filter(entry => !entry
         <div class="min-h-0 md:overflow-y-auto md:pr-1">
           <!-- Wacana grup soal aktif, dicetak sekali di atas soalnya. -->
           <div v-if="currentPassage" class="mb-4 rounded-sm border border-hairline bg-surface-alt px-4 py-3.5">
-            <p class="text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">{{ currentPassage.title || 'Wacana' }}</p>
+            <h3 class="text-[0.88rem] font-bold text-ink">{{ currentPassage.title || 'Wacana' }}</h3>
             <div class="prose-question mt-2 max-h-[40svh] overflow-y-auto text-[0.94rem] leading-[1.65] md:max-h-none" v-html="currentPassage.content" />
           </div>
 

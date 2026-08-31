@@ -61,6 +61,7 @@ const emit = defineEmits<{
   save: [draft: QuestionDraft]
   saveAndNext: [draft: QuestionDraft]
   cancel: []
+  openPassageManager: []
 }>()
 
 const uid = useId()
@@ -100,21 +101,10 @@ const lockedKind = computed<QuestionKind | null>(() =>
 
 const kind = ref<QuestionKind>(lockedKind.value ?? props.initial?.kind ?? props.defaultKind)
 
-/**
- * Opsi pemilih jenis: difilter allowedKinds, dan pada paket TKA hanya format
- * resmi yang diberi badge. Jenis custom tetap tersedia bila diizinkan, tetapi
- * tidak diberi label tambahan di UI.
- */
+/** Opsi pemilih jenis: hanya jenis yang diizinkan subtes yang ditampilkan. */
 const kindOptions = computed(() => {
   const allowed = props.allowedKinds?.length ? props.allowedKinds : null
-  return KIND_OPTIONS
-    .filter(option => !allowed || allowed.includes(option.value))
-    .map((option) => {
-      const badge = tkaKindBadge(props.examTypeSlug, option.value) === 'Format Resmi TKA'
-        ? 'Format Resmi TKA'
-        : undefined
-      return badge ? { ...option, badge } : option
-    })
+  return KIND_OPTIONS.filter(option => !allowed || allowed.includes(option.value))
 })
 
 /**
@@ -132,10 +122,6 @@ const lockedKindLabel = computed(() => {
   return KIND_OPTIONS.find(option => option.value === lockedKind.value)?.label ?? lockedKind.value
 })
 
-/** Badge aktif hanya untuk format resmi TKA. Jenis custom tidak ditampilkan. */
-const activeKindBadge = computed(() =>
-  tkaKindBadge(props.examTypeSlug, kind.value) === 'Format Resmi TKA' ? 'Format Resmi TKA' : null,
-)
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
@@ -745,26 +731,27 @@ function jumpBetweenOptions(event: KeyboardEvent) {
         label="Tipe soal"
         @update:model-value="(value) => { if (isQuestionKind(value)) kind = value }"
       />
-      <p v-if="activeKindBadge" class="mt-2">
-        <span
-          class="inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-[0.74rem] font-bold"
-          :class="activeKindBadge === 'Format Resmi TKA'
-            ? 'bg-success-soft text-success-ink'
-            : 'bg-surface-sunken text-muted'"
-        >
-          <AppIcon :name="activeKindBadge === 'Format Resmi TKA' ? 'seal-check' : 'puzzle-piece'" :size="13" />
-          {{ activeKindBadge }}
-        </span>
-      </p>
     </div>
 
     <!-- Tautan wacana (grup stimulus, TKA): teks bacaannya dikelola di panel
          "Wacana subtes" — di sini soal cuma memilih ikut grup yang mana. -->
     <div v-if="hasPassagePicker" class="max-w-xl">
+      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span :class="FIELD_LABEL_CLASS">Wacana subtes (opsional)</span>
+        <button
+          type="button"
+          class="inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2 text-[0.8rem] font-semibold text-primary transition-colors hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft"
+          title="Buka pengelola wacana untuk menambah wacana"
+          @click="emit('openPassageManager')"
+        >
+          <AppIcon name="plus" :size="14" aria-hidden="true" />
+          Tambah wacana
+        </button>
+      </div>
       <AppSelect
         :options="passageOptions"
         :model-value="passageId"
-        label="Wacana subtes (opsional)"
+        aria-label="Wacana subtes (opsional)"
         @update:model-value="selectPassage"
       />
       <p class="mt-2 text-[0.78rem] text-faint">
@@ -1016,7 +1003,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
 
 
     <div class="sticky bottom-20 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur-md md:-mx-5 md:px-5">
-      <AppButton type="submit" size="sm" :disabled="saving">
+      <AppButton type="submit" variant="secondary" size="sm" :disabled="saving">
         {{ saving ? 'Menyimpan...' : 'Simpan' }}
       </AppButton>
       <AppButton type="button" variant="outline" size="sm" :disabled="saving" @click="submit('save-and-next')">

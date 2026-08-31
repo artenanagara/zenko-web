@@ -140,18 +140,18 @@ function passageName(passage: TutorPassage, index: number): string {
         :key="passage.id"
         class="rounded-sm border border-hairline bg-surface px-3.5 py-3"
       >
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <p class="min-w-0 flex-1 truncate text-[0.88rem] font-semibold">{{ passageName(passage, index) }}</p>
-          <span class="flex shrink-0 items-center gap-3 text-[0.82rem]">
-            <button type="button" class="font-semibold text-primary hover:underline" @click="openEdit(passage)">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <h4 class="min-w-0 flex-1 text-[0.88rem] font-semibold leading-5">{{ passageName(passage, index) }}</h4>
+          <span class="flex shrink-0 items-center gap-1 text-[0.82rem]">
+            <button type="button" class="min-h-11 rounded-xs px-2 font-semibold text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft" @click="openEdit(passage)">
               Edit
             </button>
-            <button type="button" class="font-semibold text-danger hover:underline" @click="remove(passage)">
+            <button type="button" class="min-h-11 rounded-xs px-2 font-semibold text-danger hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-soft" @click="remove(passage)">
               Hapus
             </button>
           </span>
         </div>
-        <p class="mt-1 line-clamp-2 text-[0.82rem] text-muted">{{ stripHtmlToText(passage.content) }}</p>
+        <p class="mt-1 line-clamp-3 text-[0.82rem] leading-5 text-muted">{{ stripHtmlToText(passage.content) }}</p>
         <p class="mt-1.5 text-[0.78rem] font-semibold" :class="questionNumbersByPassage[passage.id]?.length ? 'text-muted' : 'text-warning-ink'">
           {{ questionNumbersByPassage[passage.id]?.length
             ? `Soal nomor ${questionNumbersByPassage[passage.id]!.join(', ')} (${questionNumbersByPassage[passage.id]!.length}/${MAX_QUESTIONS_PER_PASSAGE})`

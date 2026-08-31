@@ -97,13 +97,13 @@ function setOrderingFromEvent(position: number, event: Event) {
     <!-- Panel wacana bersama (grup stimulus): tetap tampil selama soal-soal
          segrup dikerjakan. Bisa dilipat — penting di layar sempit — dan isi
          panjangnya scroll di dalam panelnya sendiri. -->
-    <div v-if="passage" class="mt-4 overflow-hidden rounded-sm border border-hairline bg-surface-alt">
-      <button type="button" class="flex min-h-11 w-full touch-manipulation items-center justify-between gap-3 px-4 text-left transition-colors hover:bg-surface-sunken" :aria-expanded="passageOpen" :aria-controls="passageId" @click="passageOpen = !passageOpen">
-        <span class="min-w-0 truncate text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">{{ passage.title || 'Wacana' }}</span>
+    <section v-if="passage" class="mt-4 overflow-hidden rounded-sm border border-hairline bg-surface-alt" :aria-labelledby="passageId">
+      <button type="button" class="flex min-h-11 w-full touch-manipulation items-center justify-between gap-3 px-4 text-left transition-colors hover:bg-surface-sunken" :aria-expanded="passageOpen" :aria-controls="`${passageId}-content`" @click="passageOpen = !passageOpen">
+        <span :id="passageId" class="min-w-0 text-left text-[0.88rem] font-bold text-ink">{{ passage.title || 'Wacana' }}</span>
         <span class="flex shrink-0 items-center gap-1.5 text-[0.8rem] font-semibold text-muted">{{ passageOpen ? 'Sembunyikan' : 'Tampilkan' }}<IconChevron class="h-4 w-4 transition-transform duration-200 ease-smooth" :class="passageOpen ? 'rotate-180' : ''" /></span>
       </button>
-      <div v-show="passageOpen" :id="passageId" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-ink md:max-h-[38rem] [&_img]:my-3 [&_img]:max-h-80" v-html="renderedHtml(passage.content)" />
-    </div>
+      <div v-show="passageOpen" :id="`${passageId}-content`" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 text-[0.94rem] leading-[1.65] text-ink md:max-h-[38rem] [&_img]:my-3 [&_img]:max-h-80" v-html="renderedHtml(passage.content)" />
+    </section>
 
     <div v-if="question.stimulus" class="mt-4 overflow-hidden rounded-sm border border-hairline bg-surface-alt">
       <button type="button" class="flex min-h-11 w-full touch-manipulation items-center justify-between gap-3 px-4 text-left transition-colors hover:bg-surface-sunken" :aria-expanded="stimulusOpen" :aria-controls="stimulusId" @click="stimulusOpen = !stimulusOpen">

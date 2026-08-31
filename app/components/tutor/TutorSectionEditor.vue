@@ -109,6 +109,13 @@ function selectQuestion(id: string) {
   else editorFor.value = id
 }
 
+/** Return to the passage manager when a tutor needs to add a shared reading. */
+function openPassageManager() {
+  editorFor.value = ''
+  activeTab.value = 'manual'
+  errorMessage.value = ''
+}
+
 /**
  * Pindah subtes aktif lewat panah prev/next di bar mode-menulis. Sengaja
  * memakai `selectSection` apa adanya (bukan membawa `editorFor` ke subtes
@@ -372,6 +379,7 @@ const activeSectionDotClass = computed(() =>
             :section-id="activeSection!.id"
             @save="draft => saveQuestion(activeSection!, draft, false)"
             @save-and-next="draft => saveQuestion(activeSection!, draft, true)"
+            @open-passage-manager="openPassageManager"
             @cancel="editorFor = ''"
           />
 

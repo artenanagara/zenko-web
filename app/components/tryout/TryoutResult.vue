@@ -275,7 +275,7 @@ function openReview() {
           </p>
           <!-- Wacana dicetak sekali per grup, lalu soal-soal anggotanya di bawahnya. -->
           <div v-if="row.startsPassage && row.passage" class="mb-3 rounded-sm border border-hairline bg-surface-alt px-4 py-3.5">
-            <p class="text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">{{ row.passage.title || 'Wacana' }}</p>
+            <h3 class="text-[0.88rem] font-bold text-ink">{{ row.passage.title || 'Wacana' }}</h3>
             <div class="prose-question mt-2 text-[0.94rem] leading-[1.65]" v-html="row.passage.content" />
           </div>
           <TryoutReviewQuestion

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TutorSection } from '#shared/types/tutor-product'
+import type { TutorPassage, TutorSection } from '#shared/types/tutor-product'
 
 /**
  * Modal pratinjau soal untuk langkah 4 (Review & ajukan) — dibuka dari baris
@@ -26,6 +26,7 @@ interface FlatQuestion {
   no: number
   sectionTitle: string
   question: TutorSection['questions'][number]
+  passage: TutorPassage | null
 }
 
 const flatQuestions = computed<FlatQuestion[]>(() => {
@@ -36,7 +37,14 @@ const flatQuestions = computed<FlatQuestion[]>(() => {
     const questions = section.questions.slice().sort((a, b) => a.position - b.position)
     for (const question of questions) {
       no += 1
-      list.push({ no, sectionTitle: section.title, question })
+      list.push({
+        no,
+        sectionTitle: section.title,
+        question,
+        passage: question.passageId
+          ? section.passages?.find(passage => passage.id === question.passageId) ?? null
+          : null,
+      })
     }
   }
   return list
@@ -192,7 +200,7 @@ function onTouchEnd(event: TouchEvent) {
         </div>
 
         <div class="min-h-0 overflow-hidden p-4">
-          <TutorQuestionPreview :key="current.question.id" :question="current.question" class="h-full max-h-full" />
+          <TutorQuestionPreview :key="current.question.id" :question="current.question" :passage="current.passage" class="h-full max-h-full" />
         </div>
       </div>
     </div>

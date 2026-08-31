@@ -136,34 +136,50 @@ const EMPTY_SLOT_CLASS = 'border border-line bg-surface text-faint'
       </template>
     </div>
 
-    <div v-if="activeIndex !== -1 && questions.length > 1" class="mt-2 flex items-center gap-3 text-[0.82rem]">
-      <span class="font-semibold text-muted">Urutan soal {{ activeIndex + 1 }}:</span>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1 font-semibold text-primary disabled:cursor-not-allowed disabled:text-faint disabled:no-underline"
-        :disabled="activeIndex === 0"
-        @click="moveBy(activeIndex, -1)"
-      >
-        <AppIcon name="arrow-left" :size="14" />
-        Pindah ke depan
-      </button>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1 font-semibold text-primary disabled:cursor-not-allowed disabled:text-faint disabled:no-underline"
-        :disabled="activeIndex === questions.length - 1"
-        @click="moveBy(activeIndex, 1)"
-      >
-        Pindah ke belakang
-        <AppIcon name="arrow-right" :size="14" />
-      </button>
-      <button
-        type="button"
-        class="ml-auto inline-flex items-center gap-1 font-semibold text-danger hover:underline"
-        @click="emit('remove', questions[activeIndex]!.id)"
-      >
-        <AppIcon name="trash" :size="14" />
-        Hapus soal
-      </button>
+    <div
+      v-if="activeIndex !== -1 && questions.length > 1"
+      class="mt-3 grid gap-2 rounded-md border border-line bg-surface-alt p-3 text-[0.82rem]"
+      role="group"
+      :aria-label="`Aksi untuk soal ${activeIndex + 1}`"
+    >
+      <span class="font-semibold leading-5 text-muted">
+        Urutan soal <span class="tabular-nums">{{ activeIndex + 1 }}</span>
+      </span>
+
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          class="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-sm border border-line bg-surface px-2 text-center font-semibold leading-4 text-primary transition-colors hover:border-primary hover:bg-primary-soft disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft"
+          :disabled="activeIndex === 0"
+          title="Pindah soal ke depan"
+          aria-label="Pindah soal ke depan"
+          @click="moveBy(activeIndex, -1)"
+        >
+          <AppIcon name="arrow-left" :size="14" aria-hidden="true" />
+          <span>Ke depan</span>
+        </button>
+        <button
+          type="button"
+          class="inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 rounded-sm border border-line bg-surface px-2 text-center font-semibold leading-4 text-primary transition-colors hover:border-primary hover:bg-primary-soft disabled:cursor-not-allowed disabled:border-line disabled:bg-surface disabled:text-faint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft"
+          :disabled="activeIndex === questions.length - 1"
+          title="Pindah soal ke belakang"
+          aria-label="Pindah soal ke belakang"
+          @click="moveBy(activeIndex, 1)"
+        >
+          <span>Ke belakang</span>
+          <AppIcon name="arrow-right" :size="14" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          class="col-span-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-sm border border-danger/30 bg-surface px-3 font-semibold text-danger transition-colors hover:border-danger hover:bg-danger-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/40"
+          title="Hapus soal ini"
+          aria-label="Hapus soal ini"
+          @click="emit('remove', questions[activeIndex]!.id)"
+        >
+          <AppIcon name="trash" :size="14" aria-hidden="true" />
+          <span>Hapus soal</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
