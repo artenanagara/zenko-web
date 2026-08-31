@@ -122,6 +122,12 @@ const profileForm = reactive({
 const profileSaving = ref(false)
 const specializationInput = ref('')
 
+/** Username hanya bisa ditetapkan sekali dari sisi UI setelah tersimpan. */
+const usernameLocked = computed(() => Boolean(tutorProfile.value?.username.trim()))
+const usernameHint = computed(() => usernameLocked.value
+  ? 'Username sudah ditetapkan dan tidak dapat diubah lagi.'
+  : '3–30 karakter, huruf kecil, angka, atau tanda hubung. Username hanya dapat ditetapkan satu kali.')
+
 // Salin ke form lokal begitu profil tersimpan tiba — bukan binding langsung,
 // supaya draft yang sedang diketik tidak ketimpa kalau refresh datang lagi.
 watch(tutorProfile, (profile) => {
@@ -388,7 +394,14 @@ async function submitChangeRequest() {
 
         <FormField id="tutor-display-name" v-model="profileForm.displayName" label="Nama tampilan publik" :placeholder="user?.name || 'Nama yang tampil di katalog'" hint="Boleh berbeda dari nama akun, misalnya Kak Budi SKD." />
         <div>
-          <FormField id="tutor-username" v-model="profileForm.username" label="Username profil publik" placeholder="kakbudiskd" hint="3–30 karakter, huruf kecil, angka, atau tanda hubung. Perubahan maksimal 1x per 30 hari." />
+          <FormField
+            id="tutor-username"
+            v-model="profileForm.username"
+            label="Username profil publik"
+            placeholder="kakbudiskd"
+            :hint="usernameHint"
+            :disabled="usernameLocked"
+          />
           <p v-if="profileForm.username" class="mt-2 text-[0.82rem] text-muted">Link publik: <span class="font-semibold text-ink">zenkoedu.id/tutor/{{ profileForm.username.toLowerCase() }}</span></p>
         </div>
 
