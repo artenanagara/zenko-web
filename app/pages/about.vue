@@ -41,7 +41,7 @@ const problems = [
     label: 'Sisi siswa',
     title: 'Bahan latihan tersebar tanpa arah',
     description:
-      'Jutaan pejuang SKD CPNS, Sekolah Kedinasan, dan TKA bersaing tiap tahun, tapi materi latihan menumpuk di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.',
+      'Jutaan pejuang SKD CPNS, Sekolah Kedinasan, BUMN, SNBT, dan TKA bersaing tiap tahun, tapi materi latihan menumpuk di berbagai grup percakapan tanpa kurasi mutu dan tanpa simulasi ujian yang realistis.',
   },
   {
     label: 'Sisi tutor',
