@@ -1531,18 +1531,18 @@ const priceHintBlocking = computed(() =>
       <template v-else-if="step === 4">
         <DashboardPanel v-if="isLiveReadOnly" title="Isi produk" description="Isi produk tayang ditampilkan dalam mode baca saja.">
           <AppSectionMessage appearance="information">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-              <span>Produk yang sudah tayang tidak langsung berubah. Klik Edit soal jika ingin memperbarui isi paket ini.</span>
+            Produk yang sudah tayang tidak langsung berubah. Klik Edit soal jika ingin memperbarui isi paket ini.
+            <template #actions>
               <AppButton
                 v-if="TUTOR_LIVE_CONTENT_EDIT_ENABLED"
                 type="button"
                 size="sm"
                 @click="startLiveContentEditing"
               >
-                <AppIcon name="pencil-simple" :size="14" />
+                <AppIcon name="pencil-simple" :size="14" aria-hidden="true" />
                 Edit soal
               </AppButton>
-            </div>
+            </template>
           </AppSectionMessage>
 
           <template v-if="isSingle">

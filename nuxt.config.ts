@@ -91,7 +91,7 @@ export default defineNuxtConfig({
       // "local always wins" rule explicit instead of implicit in ordering.
       ignore: [
         '**/AppButton.vue', '**/AppCalendar.vue', '**/AppDateTimePicker.vue', '**/AppDropdownMenu.vue',
-        '**/AppIcon.vue', '**/AppRange.vue', '**/AppSelect.vue', '**/AppTimePicker.vue',
+        '**/AppIcon.vue', '**/AppRange.vue', '**/AppSectionMessage.vue', '**/AppSelect.vue', '**/AppTimePicker.vue',
         '**/BrandIcon.vue', '**/BrandMark.vue', '**/FormField.vue', '**/PackageCard.vue',
       ],
     },
