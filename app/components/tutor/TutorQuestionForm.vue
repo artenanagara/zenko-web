@@ -101,16 +101,18 @@ const lockedKind = computed<QuestionKind | null>(() =>
 const kind = ref<QuestionKind>(lockedKind.value ?? props.initial?.kind ?? props.defaultKind)
 
 /**
- * Opsi pemilih jenis: difilter allowedKinds, dan pada paket TKA tiap opsi
- * diberi badge "Format Resmi TKA" (PG/PGK MCMA/PGK Kategori) atau
- * "Fitur custom Zenko" (6 jenis internal lainnya) — spec §6.2.
+ * Opsi pemilih jenis: difilter allowedKinds, dan pada paket TKA hanya format
+ * resmi yang diberi badge. Jenis custom tetap tersedia bila diizinkan, tetapi
+ * tidak diberi label tambahan di UI.
  */
 const kindOptions = computed(() => {
   const allowed = props.allowedKinds?.length ? props.allowedKinds : null
   return KIND_OPTIONS
     .filter(option => !allowed || allowed.includes(option.value))
     .map((option) => {
-      const badge = tkaKindBadge(props.examTypeSlug, option.value)
+      const badge = tkaKindBadge(props.examTypeSlug, option.value) === 'Format Resmi TKA'
+        ? 'Format Resmi TKA'
+        : undefined
       return badge ? { ...option, badge } : option
     })
 })
@@ -130,14 +132,10 @@ const lockedKindLabel = computed(() => {
   return KIND_OPTIONS.find(option => option.value === lockedKind.value)?.label ?? lockedKind.value
 })
 
-/** Badge jenis aktif untuk paket TKA — tampil di bawah pemilih. */
-const activeKindBadge = computed(() => tkaKindBadge(props.examTypeSlug, kind.value))
-
-/**
- * Advice, not a block: jenis custom sah dipakai di paket TKA, tapi UI tidak
- * boleh menyebutnya bentuk resmi — spec §6.2.
- */
-const kindWarning = computed(() => nonTkaKindWarning(props.examTypeSlug, kind.value))
+/** Badge aktif hanya untuk format resmi TKA. Jenis custom tidak ditampilkan. */
+const activeKindBadge = computed(() =>
+  tkaKindBadge(props.examTypeSlug, kind.value) === 'Format Resmi TKA' ? 'Format Resmi TKA' : null,
+)
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
@@ -758,10 +756,6 @@ function jumpBetweenOptions(event: KeyboardEvent) {
           {{ activeKindBadge }}
         </span>
       </p>
-      <AppInlineMessage v-if="kindWarning" type="warning" class="mt-2">
-        {{ kindWarning }}
-      </AppInlineMessage>
-      <p class="mt-2 text-[0.78rem] text-faint">Terisi otomatis dari tipe bawaan subtes, dan tiap soal boleh memakai tipe yang berbeda.</p>
     </div>
 
     <!-- Tautan wacana (grup stimulus, TKA): teks bacaannya dikelola di panel
@@ -1021,12 +1015,12 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     </div>
 
 
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="sticky bottom-20 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur-md md:-mx-5 md:px-5">
       <AppButton type="submit" size="sm" :disabled="saving">
         {{ saving ? 'Menyimpan...' : 'Simpan' }}
       </AppButton>
       <AppButton type="button" variant="outline" size="sm" :disabled="saving" @click="submit('save-and-next')">
-        Simpan &amp; Buat Soal Berikutnya
+        Simpan &amp; berikutnya
       </AppButton>
       <button
         type="button"

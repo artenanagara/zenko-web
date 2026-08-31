@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import type { TutorQuestion } from '#shared/types/tutor-product'
+import type { CompletionState } from '~/utils/questionCompletion'
 
 /**
- * Grid navigasi nomor soal `1..N` (kontrak §6): kotak berwarna sesuai
- * kelengkapan, klik untuk membuka soal itu di editor, geser (drag) atau
- * tombol pindah untuk mengubah urutan. Kotak hanya dibuat untuk soal yang
- * sudah ada, ditambah SATU kotak putus-putus "+ tambah" di akhir kalau
- * target belum terpenuhi — bukan satu kotak kosong per slot sisa, supaya
- * grid tidak membengkak untuk target besar (sampai 30+ soal/subtes). Sisa
- * target ditampilkan sebagai teks di header grid.
- *
- * Kotak sengaja tidak lagi mencetak nomor urutnya (Task 5 /
- * tutor-flow-contract.md §7.2) — warna tetap satu-satunya isyarat status,
- * urutan literal cuma perlu tersirat lewat posisi di grid + judul (title
- * attribute) dan label "Urutan soal N" di bawahnya.
+ * Grid navigasi nomor soal `1..N`: semua slot target selalu terlihat dan
+ * menampilkan nomor soal. Slot kosong dibuka dengan klik untuk membuat soal
+ * berikutnya; soal yang ada tetap bisa dipilih, digeser, atau dipindahkan.
+ * Warna memakai tiga status yang mudah dipindai: hijau = lengkap, kuning =
+ * sudah ada tetapi masih kurang, putih = belum diisi.
  */
 const props = defineProps<{
   questions: TutorQuestion[]
@@ -30,9 +24,9 @@ const emit = defineEmits<{
   remove: [id: string]
 }>()
 
-/** Jumlah soal + satu kotak "+ tambah" kalau target belum terpenuhi. */
+/** Tampilkan semua nomor target; jangan sembunyikan soal ekstra dari server. */
 const slotCount = computed(() =>
-  props.questions.length < props.questionTarget ? props.questions.length + 1 : props.questions.length,
+  Math.max(props.questions.length, props.questionTarget),
 )
 
 const legendOpen = ref(false)
@@ -65,12 +59,15 @@ function moveBy(index: number, delta: number) {
   moveQuestion(index, to)
 }
 
-/** Alias lokal — logic aslinya di ~/utils/questionCompletion.ts, dipakai
- * bersama oleh dropdown subtes di TutorSectionEditor.vue supaya warnanya
- * konsisten dan ambangnya tidak pernah didefinisikan dua kali. */
+/** State tetap berasal dari satu sumber; grid hanya memilih warna visualnya. */
 const completionState = questionCompletionState
-const STATE_CLASS = COMPLETION_STATE_CLASS
+const STATE_CLASS: Record<CompletionState, string> = {
+  complete: 'bg-success-soft text-success-ink',
+  'no-explanation': 'border border-warning/40 bg-amber-100 text-amber-800',
+  incomplete: 'border border-warning/40 bg-amber-100 text-amber-800',
+}
 const STATE_TITLE = COMPLETION_STATE_TITLE
+const EMPTY_SLOT_CLASS = 'border border-line bg-surface text-faint'
 </script>
 
 <template>
@@ -80,11 +77,7 @@ const STATE_TITLE = COMPLETION_STATE_TITLE
         {{ questions.length }}/{{ questionTarget }} soal
       </span>
 
-      <!-- Keterangan warna kotak: disclosure sesuai permintaan, bukan teks
-           permanen — tutor sudah tahu artinya setelah soal pertama, jadi ini
-           tidak perlu menetap di layar tiap saat. Tidak tampil sama sekali
-           dalam mode menulis (compact), karena ruang di sana diprioritaskan
-           untuk editor. -->
+      <!-- Keterangan warna tetap bisa dibuka tanpa memenuhi ruang editor. -->
       <RteDropdown v-if="!compact" v-model="legendOpen" title="Keterangan kotak" :width="230">
         <template #trigger>
           <button
@@ -100,9 +93,9 @@ const STATE_TITLE = COMPLETION_STATE_TITLE
         <template #panel>
           <div class="grid gap-1.5 text-[0.82rem] text-muted">
             <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-success-soft" aria-hidden="true" /> Lengkap</span>
-            <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-100" aria-hidden="true" /> Belum ada pembahasan</span>
-            <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-100" aria-hidden="true" /> Belum lengkap</span>
-            <span class="text-faint">Geser kotak untuk mengubah urutan.</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-100" aria-hidden="true" /> Masih ada yang kurang</span>
+            <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full border border-line bg-surface" aria-hidden="true" /> Belum diisi</span>
+            <span class="text-faint">Geser nomor yang sudah diisi untuk mengubah urutan.</span>
           </div>
         </template>
       </RteDropdown>
@@ -117,7 +110,7 @@ const STATE_TITLE = COMPLETION_STATE_TITLE
           v-if="index - 1 < questions.length"
           type="button"
           draggable="true"
-          class="flex aspect-square items-center justify-center rounded-sm transition-[transform,box-shadow] duration-150 ease-smooth hover:-translate-y-0.5"
+          class="flex aspect-square items-center justify-center rounded-sm text-[0.82rem] font-bold tabular-nums transition-[transform,box-shadow] duration-150 ease-smooth hover:-translate-y-0.5"
           :class="[
             STATE_CLASS[completionState(questions[index - 1]!)],
             activeId === questions[index - 1]!.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-surface' : '',
@@ -128,17 +121,18 @@ const STATE_TITLE = COMPLETION_STATE_TITLE
           @dragstart="onDragStart(index - 1)"
           @dragover.prevent
           @drop="onDrop(index - 1)"
-        />
+        >
+          {{ index }}
+        </button>
         <button
           v-else
           type="button"
-          class="flex aspect-square items-center justify-center rounded-sm border-2 border-dashed border-hairline-strong text-faint transition-colors hover:border-primary hover:text-primary"
+          class="flex aspect-square items-center justify-center rounded-sm text-[0.82rem] font-bold tabular-nums transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
+          :class="EMPTY_SLOT_CLASS"
           :title="`Tambah soal ${index}`"
           :aria-label="`Tambah soal ${index}`"
           @click="emit('select', 'new')"
-        >
-          <AppIcon name="plus" :size="compact ? 14 : 16" />
-        </button>
+        >{{ index }}</button>
       </template>
     </div>
 

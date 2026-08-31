@@ -38,6 +38,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
+const { confirm } = useConfirm()
 
 const orderedSections = computed(() =>
   props.sections.slice().sort((a, b) => a.position - b.position),
@@ -211,7 +212,12 @@ defineExpose({ saveActiveQuestion })
 async function removeQuestion(section: TutorSection, questionId: string) {
   const question = section.questions.find(item => item.id === questionId)
   if (!question) return
-  if (!window.confirm('Hapus soal ini? Tindakan tidak bisa dibatalkan.')) return
+  const ok = await confirm({
+    title: 'Hapus soal ini?',
+    description: 'Soal akan dihapus permanen dari subtes ini dan tindakan tersebut tidak dapat dibatalkan.',
+    confirmLabel: 'Hapus soal',
+  })
+  if (!ok) return
 
   errorMessage.value = ''
   try {
@@ -413,16 +419,12 @@ const activeSectionDotClass = computed(() =>
 
         <!--
           Grid navigasi nomor soal — di samping kanan konten (bukan di
-          atasnya), selalu tampil begitu ada minimal satu soal, bahkan saat
-          sebuah soal sedang diedit, supaya "aktif" dan tombol pindah depan/
-          belakang di dalamnya (fallback non-drag untuk reorder) punya soal
-          yang benar-benar terpilih untuk dirujuk. Subtes kosong tidak dapat
-          grid sama sekali — kotak "+" tunggal akan terasa berlebihan
-          berdampingan dengan tombol "Tambah soal" yang sudah ada di kolom
-          kiri.
+          atasnya), selalu tampil untuk seluruh target soal, termasuk saat
+          semua slot masih kosong. Nomor kosong tetap bisa dipilih untuk
+          langsung membuka form soal baru.
         -->
         <TutorQuestionGrid
-          v-if="activeSection!.questions.length > 0"
+          v-if="activeSection"
           :questions="activeSection!.questions"
           :question-target="activeSection!.questionTarget"
           :active-id="editorFor"

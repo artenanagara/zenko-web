@@ -19,6 +19,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
+const { confirm } = useConfirm()
 
 const passages = computed<TutorPassage[]>(() =>
   (props.section.passages ?? []).slice().sort((a, b) => a.position - b.position),
@@ -92,7 +93,12 @@ async function remove(passage: TutorPassage) {
   const detail = linked > 0
     ? ` ${linked} soal yang menautkannya tetap tersimpan, hanya tautan wacananya yang dilepas.`
     : ''
-  if (!window.confirm(`Hapus wacana ini?${detail}`)) return
+  const ok = await confirm({
+    title: 'Hapus wacana ini?',
+    description: `Wacana akan dihapus permanen.${detail}`,
+    confirmLabel: 'Hapus wacana',
+  })
+  if (!ok) return
 
   errorMessage.value = ''
   try {
@@ -122,7 +128,7 @@ function passageName(passage: TutorPassage, index: number): string {
       </div>
       <AppButton v-if="editorFor === ''" type="button" variant="outline" size="xs" @click="openNew">
         <AppIcon name="plus" :size="13" />
-        Tambah wacana
+        {{ passages.length ? 'Tambah wacana berikutnya' : 'Tambah wacana' }}
       </AppButton>
     </div>
 
