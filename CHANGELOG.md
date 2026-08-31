@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/artenanagara/zenko-web/compare/v0.15.0...v0.15.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **tutor:** streamline question editor flow ([36ec405](https://github.com/artenanagara/zenko-web/commit/36ec405f2b9a7527629af6b92aa855130c560554))
+
 ## [0.15.0](https://github.com/artenanagara/zenko-web/compare/v0.14.1...v0.15.0) (2026-08-30)
 
 
