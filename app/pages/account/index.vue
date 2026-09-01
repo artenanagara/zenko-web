@@ -141,12 +141,12 @@ const summary = computed(() => {
             :to="`/akun/paket/${item.slug}`"
             class="group flex items-center gap-4 rounded-md border border-hairline bg-surface p-2.5 transition-[border-color,box-shadow] duration-200 ease-smooth hover:border-primary/30 hover:shadow-xs"
           >
-            <img
+            <AppThumbnail
               :src="item.thumbnailUrl"
               alt=""
               loading="lazy"
               class="h-16 w-24 shrink-0 rounded-sm bg-[#edf3ff] object-cover"
-            >
+            />
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <p class="truncate font-semibold tracking-[-0.02em]">{{ item.title }}</p>

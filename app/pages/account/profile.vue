@@ -376,15 +376,17 @@ async function onSignOutAllDevices() {
 
     <div v-show="activeTab === 'profil'" id="panel-profil" role="tabpanel" aria-labelledby="tab-profil">
       <DashboardPanel title="Profil" description="Foto, nama, email, dan status verifikasi akunmu.">
-        <div v-if="user" class="grid gap-5">
-          <!-- "Edit profil" bukan baris identitas keempat — ini aksi tingkat
-               bagian, jadi tempatnya di atas blok identitas dan rata kanan. -->
-          <div v-if="!editing" class="flex justify-end">
-            <AppButton variant="outline" size="sm" @click="startEditing">
-              Edit profil
-            </AppButton>
-          </div>
+        <!-- "Edit profil" adalah aksi tingkat bagian, jadi tempatnya di
+             header panel bersebelahan dengan judulnya — bukan sebagai baris
+             tersendiri di dalam badan panel, yang menyisakan pita kosong
+             selebar kartu di atas blok identitas. -->
+        <template #action>
+          <AppButton v-if="user && !editing" variant="outline" size="sm" @click="startEditing">
+            Edit profil
+          </AppButton>
+        </template>
 
+        <div v-if="user" class="grid gap-5">
           <!-- Identitas berjalan horizontal: foto di kiri, kolom teks rata kiri
                di kanannya (nama, peran, email, status verifikasi) — tanpa kartu
                berbingkai, yang dulu membuat blok ini terbaca sebagai widget

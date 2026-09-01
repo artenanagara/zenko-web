@@ -1,14 +1,19 @@
 <script setup lang="ts">
 /**
- * Thumbnail produk: URL manual atau unggah file, dengan pratinjau 16:10
- * (mengikuti mockup kartu produk di docs/specs/dashboard-tutor.md). Pola
- * URL-input + hidden-file-input-sebagai-tombol + pratinjau + tombol hapus
- * mengikuti panel gambar di TutorOptionField.vue.
+ * Thumbnail produk: unggah berkas dengan pratinjau 16:10 (mengikuti mockup
+ * kartu produk di docs/specs/dashboard-tutor.md). Pola
+ * hidden-file-input-sebagai-tombol + pratinjau + tombol hapus mengikuti panel
+ * gambar di TutorOptionField.vue.
+ *
+ * Tidak ada lagi input URL manual. Yang tersimpan tetap sebuah URL, tapi URL
+ * itu selalu datang dari unggahan ke penyimpanan Zenko — menempelkan tautan
+ * gambar milik situs lain hanya menghasilkan sampul yang bisa hilang atau
+ * berganti isi kapan saja di luar kendali kami, dan katalog sudah punya
+ * gambar cadangan untuk paket tanpa sampul (AppThumbnail).
  */
 const model = defineModel<string>({ default: '' })
 const props = defineProps<{ disabled?: boolean }>()
 
-const uid = useId()
 const uploading = ref(false)
 const toast = useToast()
 
@@ -33,33 +38,16 @@ async function onFileSelected(event: Event) {
 
 <template>
   <div class="grid gap-3">
-    <!-- Judul sectionnya dipasang pemanggil (kolom kanan langkah Info
-         produk di TutorProductWizard.vue), jadi label ini tinggal
-         menamai input URL-nya untuk pembaca layar — kalau ikut tampil,
-         hasilnya dua judul beruntun yang mengatakan hal yang sama. -->
-    <label :for="`${uid}-url`" class="sr-only">Tautan thumbnail</label>
-
-    <div v-if="model" class="aspect-[16/10] w-full max-w-80 overflow-hidden rounded-md border border-hairline bg-surface-alt">
-      <img :src="model" alt="" class="h-full w-full object-cover">
-    </div>
-    <div v-else class="grid aspect-[16/10] w-full max-w-80 place-items-center rounded-md border border-dashed border-hairline-strong bg-surface-alt text-muted">
-      <span class="flex flex-col items-center gap-1.5 text-[0.82rem]">
-        <IconImage class="h-6 w-6" />
-        Belum ada thumbnail
-      </span>
+    <!-- Pratinjau memakai gambar cadangan yang sama dengan katalog saat
+         belum ada sampul, jadi yang dilihat tutor di sini persis yang dilihat
+         siswa nanti — bukan kotak putus-putus yang tidak pernah tayang. -->
+    <div class="aspect-16/10 w-full max-w-80 overflow-hidden rounded-md border border-hairline bg-surface-alt">
+      <AppThumbnail :src="model" alt="Pratinjau sampul produk" class="h-full w-full object-cover" />
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
-      <input
-        :id="`${uid}-url`"
-        v-model="model"
-        type="url"
-        placeholder="https://..."
-        class="h-10 min-w-0 flex-1 rounded-xs border border-line bg-surface px-3 text-[0.86rem]"
-        :disabled="props.disabled"
-      >
       <label class="inline-flex h-10 shrink-0 cursor-pointer items-center rounded-xs border border-line bg-surface px-3.5 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink" :class="props.disabled && 'pointer-events-none opacity-50'">
-        {{ uploading ? 'Mengunggah…' : 'Unggah Gambar' }}
+        {{ uploading ? 'Mengunggah…' : model ? 'Ganti gambar' : 'Unggah gambar' }}
         <input
           type="file"
           accept="image/png,image/jpeg,image/gif,image/webp"
@@ -79,6 +67,8 @@ async function onFileSelected(event: Event) {
       </button>
     </div>
 
-    <p class="text-[0.82rem] text-muted">Opsional. Gambar sampul produk di katalog, rasio 16:10.</p>
+    <p class="text-[0.82rem] text-muted">
+      Opsional, rasio 16:10. Paket tanpa sampul memakai gambar bawaan Zenko di katalog.
+    </p>
   </div>
 </template>

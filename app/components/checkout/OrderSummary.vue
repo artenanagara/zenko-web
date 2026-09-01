@@ -16,11 +16,11 @@ const discount = computed(() => Math.max(0, props.item.priceOriginal - props.ite
     <h2 class="font-bold tracking-[-0.02em]">Ringkasan pesanan</h2>
 
     <div class="mt-5 flex gap-4">
-      <img
+      <AppThumbnail
         :src="item.thumbnailUrl"
         :alt="`Thumbnail paket ${item.title}`"
         class="aspect-16/10 w-24 shrink-0 rounded-sm bg-[#edf3ff] object-cover"
-      >
+      />
       <div class="min-w-0">
         <p class="clamp-2 leading-[1.35] font-bold tracking-[-0.02em]">{{ item.title }}</p>
         <p class="mt-1.5 text-[0.86rem] text-muted">{{ item.author.name }}</p>
