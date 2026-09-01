@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-label="Paket Zenko tanpa sampul">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf1ff"/>
+      <stop offset="1" stop-color="#d8e6ff"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4c86f0"/>
+      <stop offset="1" stop-color="#2557c9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="400" fill="url(#bg)"/>
+
+  <!-- Lembar jawaban: kartu putih dengan baris soal dan bulatan opsi. -->
+  <g transform="translate(196 78)">
+    <rect x="0" y="0" width="248" height="244" rx="18" fill="#ffffff" opacity="0.94"/>
+    <g fill="#2f6feb" opacity="0.16">
+      <rect x="28" y="40" width="104" height="12" rx="6"/>
+      <rect x="28" y="102" width="128" height="12" rx="6"/>
+      <rect x="28" y="164" width="88" height="12" rx="6"/>
+    </g>
+    <g opacity="0.5">
+      <circle cx="160" cy="46" r="9" fill="#2f6feb"/>
+      <circle cx="188" cy="46" r="9" fill="none" stroke="#2f6feb" stroke-width="2"/>
+      <circle cx="216" cy="46" r="9" fill="none" stroke="#2f6feb" stroke-width="2"/>
+      <circle cx="184" cy="108" r="9" fill="none" stroke="#2f6feb" stroke-width="2"/>
+      <circle cx="212" cy="108" r="9" fill="#2f6feb"/>
+      <circle cx="144" cy="170" r="9" fill="none" stroke="#2f6feb" stroke-width="2"/>
+      <circle cx="172" cy="170" r="9" fill="none" stroke="#2f6feb" stroke-width="2"/>
+      <circle cx="200" cy="170" r="9" fill="#2f6feb"/>
+    </g>
+  </g>
+
+  <!-- Lencana merek, menumpu di sudut kartu. -->
+  <g transform="translate(160 236)">
+    <circle cx="44" cy="44" r="44" fill="url(#mark)"/>
+    <path d="M28 30h34l-24 30h24" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
