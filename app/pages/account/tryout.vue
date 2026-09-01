@@ -20,7 +20,12 @@ const {
   refresh: blueprintRefresh,
 } = useTryoutBlueprint(slug)
 
-const session = useTryoutSession(slug, blueprint)
+const session = useTryoutSession(slug, blueprint, {
+  // Best-effort beacon so zenko-api has its own record of when this sitting
+  // began — see startTryoutSitting and Account.attemptSubmittedLate. Not
+  // awaited: the room must not stall on it before showing question one.
+  onStart: () => { void startTryoutSitting(slug) },
+})
 const isFlat = computed(() => blueprint.value?.mode === 'flat')
 
 useHead({
