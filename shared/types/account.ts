@@ -178,6 +178,10 @@ export interface Purchase {
   qrUrl: string | null
   /** Unix seconds the payment window closes; null when there is no deadline. */
   expiresAt: number | null
+  /** Duitku's reference for the pending charge (captured at QR creation, like
+   * qrUrl/expiresAt) — distinct from `reference`, which stays null until
+   * payment settles. Null if no charge was created. */
+  chargeReference: string | null
   status: OrderStatus
   items: PurchaseItem[]
   /** Biaya layanan penyedia pembayaran, ditagihkan apa adanya. */

@@ -520,6 +520,9 @@ watch(isRedirecting, (active, wasActive) => {
             Invoice <span class="font-semibold text-ink">{{ purchase.invoice }}</span>
             · Dibuat {{ formatDateLong(purchase.date) }}
           </p>
+          <p v-if="purchase.chargeReference" class="mt-1 text-center text-[0.82rem] text-muted">
+            Referensi Duitku <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
+          </p>
         </aside>
       </div>
     </template>
