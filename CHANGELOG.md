@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.3](https://github.com/artenanagara/zenko-web/compare/v0.15.2...v0.15.3) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ui:** align tutor status banner ([f6d5ee5](https://github.com/artenanagara/zenko-web/commit/f6d5ee5e7a2f7cc87b54463abdbbb8161856b68f))
+
 ## [0.15.2](https://github.com/artenanagara/zenko-web/compare/v0.15.1...v0.15.2) (2026-08-31)
 
 
