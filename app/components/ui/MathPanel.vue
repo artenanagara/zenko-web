@@ -166,6 +166,14 @@ const CATEGORIES: MathCategory[] = [
   },
 ]
 
+/**
+ * One flat, label-less palette — the category grouping stays in the source
+ * above for readability, but rendering every heading made the modal too tall
+ * (it overflowed the viewport). The order is preserved, so related symbols
+ * still sit together; the tooltip on each chip carries its meaning.
+ */
+const ALL_SYMBOLS: MathTemplate[] = CATEGORIES.flatMap(category => category.templates)
+
 const latexInputRef = ref<HTMLTextAreaElement | null>(null)
 
 /**
@@ -226,22 +234,17 @@ function onCodeKeydown(event: KeyboardEvent) {
 
 <template>
   <div class="grid gap-3">
-    <div class="grid max-h-76 gap-3 overflow-y-auto pr-1">
-      <div v-for="category in CATEGORIES" :key="category.title" class="grid gap-1.5">
-        <span class="math-cat-label">{{ category.title }}</span>
-        <div class="flex flex-wrap gap-1.5">
-          <button
-            v-for="tpl in category.templates"
-            :key="tpl.title"
-            type="button"
-            :title="tpl.title"
-            class="math-chip"
-            @click="insertTemplate(tpl)"
-          >
-            {{ tpl.label }}
-          </button>
-        </div>
-      </div>
+    <div class="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto pr-1">
+      <button
+        v-for="tpl in ALL_SYMBOLS"
+        :key="tpl.title"
+        type="button"
+        :title="tpl.title"
+        class="math-chip"
+        @click="insertTemplate(tpl)"
+      >
+        {{ tpl.label }}
+      </button>
     </div>
 
     <label class="grid gap-1.5 text-[0.8rem] font-semibold text-muted">
