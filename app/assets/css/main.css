@@ -438,17 +438,17 @@
     font-weight: 700;
   }
 
-  .prose-question ul,
+  .prose-question ul:not([data-type='taskList']),
   .prose-question ol {
     margin: 0.4em 0;
     padding-left: 1.4em;
   }
 
-  .prose-question ul {
+  .prose-question ul:not([data-type='taskList']) {
     list-style: disc;
   }
 
-  .prose-question ul ul {
+  .prose-question ul:not([data-type='taskList']) ul {
     list-style: circle;
   }
 
@@ -458,6 +458,35 @@
 
   .prose-question li {
     margin: 0.15em 0;
+  }
+
+  /* Daftar tugas (task list) — kotak centang non-interaktif di tampilan siswa
+     (pointer-events: none: HTML tersimpan tak menyertakan `disabled`, jadi
+     ini yang mencegah siswa mengubah centang yang statusnya ditetapkan tutor). */
+  .prose-question ul[data-type='taskList'] {
+    list-style: none;
+    margin: 0.4em 0;
+    padding-left: 0.2em;
+  }
+
+  .prose-question ul[data-type='taskList'] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+  }
+
+  .prose-question ul[data-type='taskList'] li > label {
+    margin-top: 0.2em;
+    flex-shrink: 0;
+  }
+
+  .prose-question ul[data-type='taskList'] li > div {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .prose-question ul[data-type='taskList'] input[type='checkbox'] {
+    pointer-events: none;
   }
 
   /* Tiptap membungkus isi tiap butir dalam <p>; margin bawaannya membuat
@@ -478,6 +507,47 @@
     border: none;
     border-top: 1px solid var(--color-line);
   }
+
+  /* Blok kode & kode sebaris — paritas dengan editor (.rte-content). */
+  .prose-question pre {
+    margin: 0.6em 0;
+    border-radius: var(--radius-xs);
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 0.75em 0.9em;
+    overflow-x: auto;
+    font-size: 0.88em;
+  }
+
+  .prose-question pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-family: 'Courier New', monospace;
+  }
+
+  .prose-question code {
+    background: var(--color-surface-alt);
+    border-radius: 3px;
+    padding: 0.1em 0.3em;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+  }
+
+  .prose-question mark {
+    border-radius: 2px;
+    padding: 0 0.05em;
+  }
+
+  /* Indentasi blok — dari atribut data-indent (bukan inline style). */
+  .prose-question [data-indent='1'] { padding-left: 1.5em; }
+  .prose-question [data-indent='2'] { padding-left: 3em; }
+  .prose-question [data-indent='3'] { padding-left: 4.5em; }
+  .prose-question [data-indent='4'] { padding-left: 6em; }
+  .prose-question [data-indent='5'] { padding-left: 7.5em; }
+  .prose-question [data-indent='6'] { padding-left: 9em; }
+  .prose-question [data-indent='7'] { padding-left: 10.5em; }
+  .prose-question [data-indent='8'] { padding-left: 12em; }
 
   .prose-question a {
     color: var(--color-primary);
