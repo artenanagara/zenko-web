@@ -19,7 +19,16 @@ import 'katex/dist/katex.min.css'
  * membuat mustahil menyusun sesuatu seperti `\alpha + \beta \leq \gamma`
  * lewat klik saja.
  */
-defineProps<{ submitLabel: string }>()
+defineProps<{
+  submitLabel: string
+  /**
+   * Ketika komponen ini dipakai sebagai isi modal (RteMathModal via
+   * RichTextEditor), tombol Sisipkan/Terapkan hidup di footer modal, jadi
+   * tombol internal di bawah disembunyikan agar tidak dobel. Enter di input
+   * LaTeX tetap men-submit lewat emit('submit').
+   */
+  hideSubmit?: boolean
+}>()
 
 const latex = defineModel<string>({ default: '' })
 
@@ -220,7 +229,7 @@ const previewHtml = computed(() => {
 
     <div v-if="previewHtml" class="math-preview" v-html="previewHtml" />
 
-    <AppButton type="button" size="xs" class="w-full" :disabled="!latex.trim()" @click="emit('submit')">
+    <AppButton v-if="!hideSubmit" type="button" size="xs" class="w-full" :disabled="!latex.trim()" @click="emit('submit')">
       {{ submitLabel }}
     </AppButton>
   </div>
