@@ -130,7 +130,7 @@ const editor = useEditor({
     // makes an inserted formula's values changeable at all.
     handleClickOn: (_view, _pos, node, nodePos) => {
       if (node.type.name !== 'inlineMath') return false
-      openMathEditor(node.attrs.latex as string, nodePos)
+      openMathEditor(node.attrs.latex as string, nodePos, node.attrs.display === 'yes')
       return true
     },
   },
@@ -299,20 +299,24 @@ function applyTable() {
  * ------------------------------------------------------------------------- */
 const mathModalOpen = ref(false)
 const mathLatex = ref('')
+/** Whether the formula renders on its own centered line (display/block math). */
+const mathDisplay = ref(false)
 /** null while inserting a new formula; the node's doc position while editing an existing one. */
 const mathEditPos = ref<number | null>(null)
 
-const mathModalTitle = computed(() => mathEditPos.value === null ? 'Sisipkan rumus' : 'Ubah rumus')
+const mathModalTitle = computed(() => mathEditPos.value === null ? 'Sisipkan Rumus (LaTeX)' : 'Ubah Rumus (LaTeX)')
 const mathSubmitLabel = computed(() => mathEditPos.value === null ? 'Sisipkan' : 'Terapkan')
 
 function openMathModal() {
   mathLatex.value = ''
+  mathDisplay.value = false
   mathEditPos.value = null
   mathModalOpen.value = true
 }
 
-function openMathEditor(latex: string, pos: number) {
+function openMathEditor(latex: string, pos: number, display: boolean) {
   mathLatex.value = latex
+  mathDisplay.value = display
   mathEditPos.value = pos
   mathModalOpen.value = true
 }
@@ -322,17 +326,18 @@ function submitMath() {
   const instance = editor.value
   if (!value || !instance) return
 
+  const display = mathDisplay.value ? 'yes' : 'no'
   if (mathEditPos.value !== null) {
     const pos = mathEditPos.value
     instance.chain().focus().command(({ tr }) => {
-      tr.setNodeMarkup(pos, undefined, { latex: value, evaluate: 'no', display: 'no' })
+      tr.setNodeMarkup(pos, undefined, { latex: value, evaluate: 'no', display })
       return true
     }).run()
   }
   else {
     instance.chain().focus().insertContent({
       type: 'inlineMath',
-      attrs: { latex: value, evaluate: 'no', display: 'no' },
+      attrs: { latex: value, evaluate: 'no', display },
     }).run()
   }
   mathModalOpen.value = false
@@ -1086,8 +1091,8 @@ defineExpose({
   </AppModal>
 
   <!-- LaTeX -->
-  <AppModal v-model="mathModalOpen" :title="mathModalTitle">
-    <MathPanel v-model="mathLatex" :submit-label="mathSubmitLabel" hide-submit @submit="submitMath" />
+  <AppModal v-model="mathModalOpen" :title="mathModalTitle" description="Tulis kode LaTeX, pratinjau tampil otomatis di bawah.">
+    <MathPanel v-model="mathLatex" v-model:display="mathDisplay" :submit-label="mathSubmitLabel" hide-submit @submit="submitMath" />
     <p class="mt-2 text-[0.78rem] text-muted">Klik rumus yang sudah ada di editor untuk mengubahnya.</p>
     <template #footer="{ close }">
       <AppButton variant="outline" size="sm" @click="close">Batal</AppButton>

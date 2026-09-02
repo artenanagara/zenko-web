@@ -31,6 +31,12 @@ defineProps<{
 }>()
 
 const latex = defineModel<string>({ default: '' })
+/**
+ * Whether the formula renders on its own centered line (display/block math,
+ * `$$..$$`) instead of inline. Bound from the "Tampilkan di baris sendiri"
+ * checkbox; the caller writes it onto the inlineMath node's `display` attr.
+ */
+const displayMode = defineModel<boolean>('display', { default: false })
 
 const emit = defineEmits<{ submit: [] }>()
 
@@ -93,6 +99,7 @@ const CATEGORIES: MathCategory[] = [
       symbol('-', '−'),
       symbol('\\times', '×'),
       symbol('\\div', '÷'),
+      symbol('\\%', '%'),
       symbol('\\pm', '±'),
       symbol('\\mp', '∓'),
       symbol('\\cdot', '·'),
@@ -159,7 +166,7 @@ const CATEGORIES: MathCategory[] = [
   },
 ]
 
-const latexInputRef = ref<HTMLInputElement | null>(null)
+const latexInputRef = ref<HTMLTextAreaElement | null>(null)
 
 /**
  * Sisipkan `tpl.latex` di posisi kursor input Kode LaTeX (bukan replace
@@ -183,16 +190,38 @@ function insertTemplate(tpl: MathTemplate) {
   })
 }
 
+/**
+ * Live KaTeX preview of the current code. `trust` stays at its default false
+ * (see zenko-web app/utils/richText.ts for why that invariant matters); this
+ * is the same renderer the student-facing view uses, so what the tutor sees
+ * here is what a student will see. Returns '' on empty or invalid input, which
+ * the template shows as the "belum ada" placeholder rather than a broken box.
+ */
 const previewHtml = computed(() => {
   const value = latex.value.trim()
   if (!value) return ''
   try {
-    return katex.renderToString(value, { throwOnError: false, displayMode: false })
+    return katex.renderToString(value, { throwOnError: false, displayMode: displayMode.value })
   }
   catch {
     return ''
   }
 })
+
+/** True only when there is code but KaTeX could not parse it — drives an inline hint. */
+const previewInvalid = computed(() => latex.value.trim() !== '' && previewHtml.value === '')
+
+/**
+ * The code box is a multi-line textarea (matrices and aligned blocks need real
+ * newlines), so a plain Enter must add a line, not submit. Ctrl/Cmd+Enter is
+ * the submit shortcut instead — the same chord the tutor question form uses.
+ */
+function onCodeKeydown(event: KeyboardEvent) {
+  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+    event.preventDefault()
+    emit('submit')
+  }
+}
 </script>
 
 <template>
@@ -217,17 +246,34 @@ const previewHtml = computed(() => {
 
     <label class="grid gap-1.5 text-[0.8rem] font-semibold text-muted">
       Kode LaTeX
-      <input
+      <textarea
         ref="latexInputRef"
         v-model="latex"
-        type="text"
+        rows="3"
         placeholder="\frac{1}{2} + \sqrt{x}"
-        class="math-input font-mono"
-        @keydown.enter.prevent="emit('submit')"
-      >
+        class="math-input math-textarea font-mono"
+        @keydown="onCodeKeydown"
+      />
     </label>
 
-    <div v-if="previewHtml" class="math-preview" v-html="previewHtml" />
+    <label class="flex cursor-pointer items-center gap-2.5 text-[0.86rem] text-ink">
+      <input
+        v-model="displayMode"
+        type="checkbox"
+        class="h-4 w-4 rounded-[4px] accent-primary"
+      >
+      Tampilkan di baris sendiri (rumus besar)
+    </label>
+
+    <div class="grid gap-1.5">
+      <span class="math-cat-label">Pratinjau</span>
+      <div class="math-preview" :class="{ 'math-preview--empty': !previewHtml }">
+        <div v-if="previewHtml" class="math-preview-render" v-html="previewHtml" />
+        <span v-else class="text-[0.85rem]" :class="previewInvalid ? 'text-amber-700' : 'text-placeholder'">
+          {{ previewInvalid ? 'Kode LaTeX belum bisa ditampilkan — periksa lagi.' : 'Pratinjau tampil di sini' }}
+        </span>
+      </div>
+    </div>
 
     <AppButton v-if="!hideSubmit" type="button" size="xs" class="w-full" :disabled="!latex.trim()" @click="emit('submit')">
       {{ submitLabel }}
@@ -283,15 +329,31 @@ const previewHtml = computed(() => {
   box-shadow: 0 0 0 4px rgba(47, 111, 235, 0.1);
 }
 
+.math-textarea {
+  height: auto;
+  min-height: 5rem;
+  padding-block: 0.55rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
 .math-preview {
   display: flex;
-  min-height: 2.75rem;
+  min-height: 4rem;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xs);
   border: 1px solid var(--color-hairline);
   background: var(--color-surface-alt);
-  padding: 0.5rem;
+  padding: 0.75rem;
   overflow-x: auto;
+}
+/* Empty (or invalid) preview reads as a placeholder, not a real result box. */
+.math-preview--empty {
+  border-style: dashed;
+  background: transparent;
+}
+.math-preview-render {
+  max-width: 100%;
 }
 </style>
