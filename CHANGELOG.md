@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.16.0](https://github.com/artenanagara/zenko-web/compare/v0.15.3...v0.16.0) (2026-09-02)
+
+
+### Features
+
+* **catalog:** add a fallback package cover, and drop the thumbnail URL input ([c2599b5](https://github.com/artenanagara/zenko-web/commit/c2599b5d99d7ec830913f8591e968b2e4dad74bf))
+* **dashboard:** replace the stacked revenue bars with one trend line ([56a16d2](https://github.com/artenanagara/zenko-web/commit/56a16d29f6e265f04db98f37b8065bf954991a17))
+* **tutor:** make CSV import an action, and pin the question grid ([4e2d0a3](https://github.com/artenanagara/zenko-web/commit/4e2d0a3f3a36075b5deb7fe7d401a74d7c307402))
+* **tutor:** move the wizard's explanations into a contextual info column ([fd798bf](https://github.com/artenanagara/zenko-web/commit/fd798bf847d69207cda6f3c710e9f214643d503a))
+* **tutor:** rework the dashboard chart, wizard steps, question import, covers and toasts ([67d394a](https://github.com/artenanagara/zenko-web/commit/67d394ae66001a7252c0c669bf7a2f16d4c2ad25))
+
+
+### Bug Fixes
+
+* **account:** move "Edit profil" into the panel header ([f371645](https://github.com/artenanagara/zenko-web/commit/f371645540bb9e14de52d3536c87f6854af3d1fb))
+* **dev:** let the CSP reach zenko-api on its own origin ([05a230a](https://github.com/artenanagara/zenko-web/commit/05a230a5ec1994b0c606e0baf9588db4f5ee122c))
+* **dev:** let the CSP reach zenko-api on its own origin ([945eee1](https://github.com/artenanagara/zenko-web/commit/945eee16028dd5f5b9f85d7ceb450babea8fb617))
+* **tryout:** tell zenko-api when a sitting actually starts ([b563ff2](https://github.com/artenanagara/zenko-web/commit/b563ff2e9ad79814e14bb28a7053ae66ff457a72))
+* **tryout:** tell zenko-api when a sitting actually starts ([613407c](https://github.com/artenanagara/zenko-web/commit/613407c03dc90cec86b08baf7c5d6d05d28576e1))
+* **tutor:** show "Tipe soal" only when the kind can be changed ([2dd7f72](https://github.com/artenanagara/zenko-web/commit/2dd7f7221cd62a681764559a74e1cffce4fc3b19))
+* **ui:** anchor toasts to the top-right corner ([c3bf3d3](https://github.com/artenanagara/zenko-web/commit/c3bf3d31da24e926fd9adff92ef8934f5acd420f))
+
 ## [0.15.3](https://github.com/artenanagara/zenko-web/compare/v0.15.2...v0.15.3) (2026-08-31)
 
 
