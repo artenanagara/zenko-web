@@ -67,6 +67,8 @@ const MATH_PATTERN = /<span\b[^>]*data-type="inlineMath"[^>]*>.*?<\/span>/gi
 
 const INLINE_MATH_SPAN_PATTERN = /<span\b([^>]*data-type="inlineMath"[^>]*)>.*?<\/span>/gi
 const LATEX_ATTR_PATTERN = /data-latex="([^"]*)"/
+/** `data-display="yes"` marks a block/display formula (own centered line) rather than inline. */
+const DISPLAY_ATTR_PATTERN = /data-display="yes"/
 
 /**
  * A second, plain-text math format: `$latex$` with no wrapping span, as
@@ -121,8 +123,11 @@ export function renderInlineMathHtml(html: string): string {
     const match = LATEX_ATTR_PATTERN.exec(attrs)
     if (!match) return whole
     const latex = decodeHtmlEntities(match[1] ?? '')
+    // Spread keeps the trust:false invariant; only displayMode varies, so a
+    // formula the tutor marked "baris sendiri" typesets as a centered block.
+    const options = { ...KATEX_OPTIONS, displayMode: DISPLAY_ATTR_PATTERN.test(attrs) }
     try {
-      return katex.renderToString(latex, KATEX_OPTIONS)
+      return katex.renderToString(latex, options)
     }
     catch {
       return whole
