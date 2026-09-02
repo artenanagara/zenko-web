@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { homePathFor } from '#shared/types/user'
 import type { EmailAuthFailure } from '~/composables/useAuth'
+import { safeInternalPath } from '~/utils/safeRedirect'
 
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ layout: 'auth', path: '/masuk' })
@@ -73,7 +74,11 @@ async function onSubmit() {
       submitError.value = result.message
       return
     }
-    await navigateTo(homePathFor(result.user.role))
+    // Return to the page the auth guard stashed in `?lanjut`, but only when it
+    // is a safe same-origin path — otherwise fall back to the role's home, so a
+    // crafted `lanjut` can never turn this into an open redirect.
+    const next = safeInternalPath(route.query.lanjut) ?? homePathFor(result.user.role)
+    await navigateTo(next)
   }
   finally {
     isSubmitting.value = false
