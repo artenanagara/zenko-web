@@ -75,18 +75,40 @@ const questionFormRef = ref<QuestionFormHandle | null>(null)
  */
 const newFormNonce = ref(0)
 
-/** Tab aktif saat tidak sedang mengedit soal — pemisah manual/CSV yang eksplisit. */
-const activeTab = ref<'manual' | 'csv'>('manual')
+/**
+ * Impor CSV: `null` = tidak sedang mengimpor (tampilan tulis-soal biasa),
+ * selain itu mode impor yang dipilih lewat modal di tombol "Impor soal".
+ *
+ * Dulu ini sepasang tab "Input Manual per Soal" / "Impor File CSV" di atas
+ * daftar soal, dengan sepasang tab lagi di dalamnya untuk memilih per-subtes
+ * atau semua-subtes — dua tingkat tab untuk satu aksi yang jarang dipakai,
+ * dan keduanya memakan lebar tepat di tempat soalnya ditulis. Sekarang impor
+ * adalah satu tombol di header panel, dan pilihan modenya ditanyakan sekali
+ * di dalam modal.
+ */
+type ImportMode = 'section' | 'combined'
+const importMode = ref<ImportMode | null>(null)
+const importPickerOpen = ref(false)
 
-const ENTRY_TABS: { id: 'manual' | 'csv', label: string }[] = [
-  { id: 'manual', label: 'Input Manual per Soal' },
-  { id: 'csv', label: 'Impor File CSV' },
-]
+/**
+ * Produk mini_tryout selalu tepat satu subtes, jadi "semua subtes sekaligus"
+ * tidak punya arti di sana — tidak ada yang perlu ditanyakan, tombolnya
+ * langsung membuka impor per subtes.
+ */
+const canImportCombined = computed(() => orderedSections.value.length > 1)
 
-// AppTabs works in plain strings; narrow its `update:modelValue` back onto
-// the entry-mode union instead of casting.
-function selectEntryTab(id: string) {
-  if (id === 'manual' || id === 'csv') activeTab.value = id
+function openImport() {
+  if (!canImportCombined.value) {
+    startImport('section')
+    return
+  }
+  importPickerOpen.value = true
+}
+
+function startImport(mode: ImportMode) {
+  importMode.value = mode
+  importPickerOpen.value = false
+  editorFor.value = ''
 }
 
 const formKey = computed(() => editorFor.value === 'new' ? `new-${newFormNonce.value}` : editorFor.value)
@@ -96,7 +118,7 @@ function selectSection(id: string) {
   activeSectionId.value = id
   editorFor.value = ''
   errorMessage.value = ''
-  activeTab.value = 'manual'
+  importMode.value = null
 }
 
 function openNewQuestion() {
@@ -112,7 +134,7 @@ function selectQuestion(id: string) {
 /** Return to the passage manager when a tutor needs to add a shared reading. */
 function openPassageManager() {
   editorFor.value = ''
-  activeTab.value = 'manual'
+  importMode.value = null
   errorMessage.value = ''
 }
 
@@ -293,6 +315,22 @@ const activeSectionDotClass = computed(() =>
     title="Soal per subtes"
     description="Pilih subtes lalu susun soalnya dengan menulis langsung atau mengimpor file CSV."
   >
+    <!-- Impor adalah aksi tingkat panel, bukan mode tab yang harus dilewati
+         setiap kali menulis soal — jadi tempatnya di header, di samping
+         judulnya. -->
+    <template #action>
+      <AppButton
+        v-if="orderedSections.length"
+        type="button"
+        variant="outline"
+        size="sm"
+        @click="openImport"
+      >
+        <AppIcon name="upload-simple" :size="15" aria-hidden="true" />
+        Impor soal
+      </AppButton>
+    </template>
+
     <p v-if="orderedSections.length === 0" class="py-6 text-center text-muted">
       Belum ada subtes. Tambahkan subtes dulu untuk mulai menyusun soal.
     </p>
@@ -394,9 +432,7 @@ const activeSectionDotClass = computed(() =>
               @refresh="emit('refresh')"
             />
 
-            <AppTabs :tabs="ENTRY_TABS" :model-value="activeTab" aria-label="Mode isi soal" @update:model-value="selectEntryTab" />
-
-            <div v-if="activeTab === 'manual'" class="mt-4">
+            <div v-if="importMode === null">
               <p v-if="activeSection!.questions.length === 0" class="py-2 text-[0.9rem] text-muted">
                 Belum ada soal di subtes ini.
               </p>
@@ -413,15 +449,30 @@ const activeSectionDotClass = computed(() =>
               </AppInlineMessage>
             </div>
 
-            <TutorCsvImport
-              v-else
-              class="mt-4"
-              :product-id="productId"
-              :section="activeSection!"
-              :sections="orderedSections"
-              :group-passages="passagesEnabled"
-              @refresh="emit('refresh')"
-            />
+            <div v-else class="grid gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="text-[0.9rem] font-semibold">
+                  {{ importMode === 'combined' ? 'Impor semua subtes sekaligus' : `Impor ke ${activeSection!.title}` }}
+                </h3>
+                <button
+                  type="button"
+                  class="inline-flex min-h-9 items-center gap-1.5 rounded-xs px-2 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink"
+                  @click="importMode = null"
+                >
+                  <AppIcon name="x" :size="14" aria-hidden="true" />
+                  Tutup impor
+                </button>
+              </div>
+
+              <TutorCsvImport
+                :product-id="productId"
+                :section="activeSection!"
+                :sections="orderedSections"
+                :mode="importMode"
+                :group-passages="passagesEnabled"
+                @refresh="emit('refresh')"
+              />
+            </div>
           </template>
         </div>
 
@@ -430,9 +481,17 @@ const activeSectionDotClass = computed(() =>
           atasnya), selalu tampil untuk seluruh target soal, termasuk saat
           semua slot masih kosong. Nomor kosong tetap bisa dipilih untuk
           langsung membuka form soal baru.
+
+          Menempel saat editor soal digulung: `self-start` wajib (tanpa itu
+          item grid meregang setinggi kolom kiri dan `sticky` tidak pernah
+          punya ruang gerak), offset `top-20` mengukur header dashboard yang
+          `sticky top-0` di layar ini. Target 110 soal (simulasi SKD) lebih
+          tinggi dari viewport, jadi kolomnya menggulung sendiri alih-alih
+          memotong panel "Urutan soal" di bawah grid.
         -->
         <TutorQuestionGrid
           v-if="activeSection"
+          class="lg:sticky lg:top-20 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto lg:pr-1"
           :questions="activeSection!.questions"
           :question-target="activeSection!.questionTarget"
           :active-id="editorFor"
@@ -443,5 +502,46 @@ const activeSectionDotClass = computed(() =>
         />
       </div>
     </div>
+
+    <!-- Pemilih mode impor. Ditanyakan sekali di sini, bukan sebagai tab
+         permanen di dalam panel impor: setelah dipilih, panelnya cuma perlu
+         menampilkan satu bentuk saja. -->
+    <AppModal
+      v-model="importPickerOpen"
+      title="Impor soal dari CSV"
+      description="Pilih cakupan file yang akan kamu unggah."
+    >
+      <div class="grid gap-3">
+        <button
+          type="button"
+          class="flex items-start gap-3 rounded-md border border-hairline-strong bg-surface px-4 py-3.5 text-left transition-colors hover:border-primary/40 hover:bg-primary-soft/40"
+          @click="startImport('section')"
+        >
+          <AppIcon name="file-csv" :size="20" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+          <span>
+            <span class="block font-bold tracking-[-0.02em] text-ink">Satu subtes saja</span>
+            <span class="mt-1 block text-[0.84rem] leading-[1.6] text-muted">
+              Semua baris masuk ke <strong class="font-semibold text-ink">{{ activeSection?.title }}</strong>,
+              subtes yang sedang kamu buka.
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="flex items-start gap-3 rounded-md border border-hairline-strong bg-surface px-4 py-3.5 text-left transition-colors hover:border-primary/40 hover:bg-primary-soft/40"
+          @click="startImport('combined')"
+        >
+          <AppIcon name="files" :size="20" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+          <span>
+            <span class="block font-bold tracking-[-0.02em] text-ink">Semua subtes sekaligus</span>
+            <span class="mt-1 block text-[0.84rem] leading-[1.6] text-muted">
+              Satu file untuk {{ orderedSections.length }} subtes — kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
+              tiap baris menentukan tujuannya.
+            </span>
+          </span>
+        </button>
+      </div>
+    </AppModal>
   </DashboardPanel>
 </template>

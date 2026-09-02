@@ -162,11 +162,11 @@ useHead({
       <div class="grid grid-cols-1 items-start gap-10 min-[901px]:grid-cols-[minmax(0,1fr)_360px]">
         <!-- Left column: content -->
         <div>
-          <img
+          <AppThumbnail
             :src="detail.thumbnailUrl"
             :alt="`Thumbnail paket ${detail.title}`"
             class="aspect-video w-full rounded-lg bg-[#edf3ff] object-cover shadow-xs"
-          >
+          />
 
           <h2 class="mt-10 mb-3 text-[1.35rem] font-bold tracking-[-0.03em]">Tentang paket ini</h2>
           <p class="leading-[1.75] text-muted">{{ detail.description }}</p>

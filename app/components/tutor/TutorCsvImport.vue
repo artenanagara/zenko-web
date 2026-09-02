@@ -2,30 +2,31 @@
 import type { QuestionDraft, QuestionImportDraft, TutorSection } from '#shared/types/tutor-product'
 import type { CsvPassageGroup } from '~/utils/questionCsv'
 
+type ImportMode = 'section' | 'combined'
+
 /**
  * Impor CSV soal — dua mode:
- * - "Per subtes" (default): parse di client (app/utils/questionCsv.ts),
- *   kirim batch ke POST .../sections/:sectionId/questions untuk subtes aktif.
- * - "Semua subtes sekaligus" (§7.4 kontrak): satu file berisi kolom `subtes`
- *   tambahan, dikirim ke POST .../questions/import — server mencocokkan tiap
- *   baris ke section produk ini dan melaporkan baris yang gagal cocok/valid
- *   di `problems`, tanpa membatalkan baris lain yang valid.
+ * - `section`: parse di client (app/utils/questionCsv.ts), kirim batch ke
+ *   POST .../sections/:sectionId/questions untuk subtes aktif.
+ * - `combined` (§7.4 kontrak): satu file berisi kolom `subtes` tambahan,
+ *   dikirim ke POST .../questions/import — server mencocokkan tiap baris ke
+ *   section produk ini dan melaporkan baris yang gagal cocok/valid di
+ *   `problems`, tanpa membatalkan baris lain yang valid.
  *
- * Produk mini_tryout selalu punya tepat satu subtes (ditegakkan server) —
- * mode gabungan tidak ada gunanya di sana (kolom `subtes` ekstra hanya
- * membingungkan tutor untuk satu-satunya subtes yang ada), jadi picker dua
- * tab disembunyikan total dan hanya form "per subtes" yang dirender. Dideteksi
- * dari `sections.length <= 1` — bukan lewat prop `mode` terpisah, karena
- * `sections` (daftar semua subtes produk ini) sudah tersedia di sini.
+ * Modenya datang dari pemanggil (modal "Impor soal" di TutorSectionEditor.vue),
+ * bukan dari tab di dalam panel ini: pilihannya sudah dijawab sebelum panel
+ * ini muncul, dan tab yang menjawab pertanyaan yang sama untuk kedua kalinya
+ * hanya menambah kesempatan mengunggah file dengan bentuk yang salah.
  *
- * Dirender sebagai isi tab "Impor CSV/Excel" di TutorSectionEditor.vue — lihat
- * docs/tutor-flow-contract.md §6 dan §7.4.
+ * Lihat docs/tutor-flow-contract.md §6 dan §7.4.
  */
 const props = defineProps<{
   productId: string
   section: TutorSection
-  /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota, dan untuk mendeteksi produk mini_tryout (1 subtes). */
+  /** Semua subtes produk ini — dipakai mode gabungan untuk template + kuota. */
   sections: TutorSection[]
+  /** Cakupan impor, dipilih di modal pemanggil. */
+  mode: ImportMode
   /**
    * Fitur grup wacana (produk TKA): kolom `wacana` yang identik pada baris
    * BERURUTAN otomatis menjadi satu wacana bersama (maksimal 5 soal per
@@ -35,29 +36,11 @@ const props = defineProps<{
   groupPassages?: boolean
 }>()
 
-/** mini_tryout: selalu tepat 1 subtes (§7.2 kontrak) — picker mode disembunyikan dan `mode` tidak pernah berpindah dari 'section'. */
-const isSingleSection = computed(() => props.sections.length <= 1)
-
 const emit = defineEmits<{ refresh: [] }>()
 
 const uid = useId()
 
-type ImportMode = 'section' | 'combined'
-const mode = ref<ImportMode>('section')
-
-const MODE_TABS: { id: ImportMode, label: string }[] = [
-  { id: 'section', label: 'Impor per subtes' },
-  { id: 'combined', label: 'Impor semua subtes sekaligus' },
-]
-
-// AppTabs works in plain strings; narrow its `update:modelValue` back onto
-// ImportMode instead of casting.
-function isImportMode(id: string): id is ImportMode {
-  return id === 'section' || id === 'combined'
-}
-function selectMode(id: string) {
-  if (isImportMode(id)) switchMode(id)
-}
+const mode = computed(() => props.mode)
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const fileName = ref('')
@@ -73,12 +56,11 @@ const importing = ref(false)
 const importProblems = ref<string[]>([])
 const toast = useToast()
 
-function switchMode(next: ImportMode) {
-  if (mode.value === next) return
-  mode.value = next
+/** Ganti mode = mulai dari nol; file yang sudah dipilih tidak cocok lagi. */
+watch(mode, () => {
   reset()
   importProblems.value = []
-}
+})
 
 /** Grup wacana hasil parse (fitur TKA) — dibuat lewat API saat impor. */
 const passageGroups = ref<CsvPassageGroup[]>([])
@@ -276,9 +258,7 @@ function reset() {
 
 <template>
   <div class="grid gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
-    <AppTabs v-if="!isSingleSection" :tabs="MODE_TABS" :model-value="mode" aria-label="Mode impor" @update:model-value="selectMode" />
-
-    <p v-if="!isSingleSection && mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
+    <p v-if="mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
       Satu file CSV bisa berisi soal dari beberapa subtes produk ini sekaligus — kolom
       <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
       di tiap baris menentukan section tujuannya (dicocokkan ke nama subtes produk ini,

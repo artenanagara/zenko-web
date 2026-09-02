@@ -71,6 +71,31 @@ export function useOwnedPackages(): AsyncResource<OwnedPackage[]> {
 }
 
 /**
+ * Tells zenko-api a sitting just started, so it has its own record of when
+ * the clock began — the authority CreateAttempt checks a submission's timing
+ * against, since the room's own countdown runs off sessionStorage, which is
+ * editable in devtools and only ever meant for the on-screen display.
+ *
+ * Fire-and-forget, mirroring recordAttempt's own best-effort posture: a
+ * failed beacon (offline, a blocked request) must not stop the sitting from
+ * starting — it only means this particular attempt falls back to the
+ * pre-existing behaviour of not enforcing a server-side deadline.
+ */
+export async function startTryoutSitting(slug: string): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+  try {
+    await useApiFetch(`/me/packages/${slug}/tryout/start`, {
+      baseURL: config.apiBase,
+      method: 'POST',
+      credentials: 'include',
+    })
+  }
+  catch {
+    // Best-effort — see the doc comment above.
+  }
+}
+
+/**
  * Persists a finished try out sitting and returns the stored attempt.
  *
  * Posts the result — score, per-section tallies, and every question's answer

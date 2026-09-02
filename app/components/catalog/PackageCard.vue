@@ -37,12 +37,12 @@ function authorProfilePath(author: Author) {
     <div
       class="flex flex-1 flex-col rounded-md bg-surface p-2.5 shadow-xs transition-shadow duration-300 ease-smooth group-hover:shadow-lift group-has-[a:focus-visible]:shadow-lift"
     >
-      <img
+      <AppThumbnail
         :src="item.thumbnailUrl"
         :alt="`Thumbnail paket ${item.title}`"
         loading="lazy"
         class="aspect-16/10 w-full rounded-sm bg-[#edf3ff] object-cover"
-      >
+      />
 
       <div class="flex flex-1 flex-col px-1.5 pt-3.5 pb-1.5">
         <h3 class="clamp-2 text-[1.06rem] leading-[1.35] font-bold tracking-[-0.03em] md:min-h-[2.7em]">

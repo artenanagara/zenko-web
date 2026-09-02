@@ -294,13 +294,14 @@ async function decide(approve: boolean, reason?: string) {
             <div class="sm:col-span-2">
               <dt class="text-[0.8rem] text-muted">Thumbnail</dt>
               <dd class="mt-1.5">
-                <img
-                  v-if="detail.thumbnailUrl"
+                <AppThumbnail
                   :src="detail.thumbnailUrl"
-                  alt=""
+                  :alt="detail.thumbnailUrl ? '' : 'Sampul bawaan Zenko — produk ini belum punya sampul sendiri'"
                   class="aspect-16/10 h-24 w-auto rounded-sm border border-hairline object-cover"
-                >
-                <span v-else class="text-[0.88rem] text-muted">Belum ada thumbnail</span>
+                />
+                <span v-if="!detail.thumbnailUrl" class="mt-1.5 block text-[0.82rem] text-muted">
+                  Belum ada sampul sendiri — katalog memakai gambar bawaan Zenko.
+                </span>
               </dd>
             </div>
           </dl>

@@ -164,6 +164,15 @@ export interface TryoutSessionOptions {
    * paid sitting, there is no locally computed score to fall back on.
    */
   grade?: (answers: Record<string, TryoutAnswerState>) => Promise<TryoutSampleScore>
+  /**
+   * Fired the moment a fresh sitting begins (start(), not a reload that
+   * resumes from sessionStorage) — the owned-package room uses it to tell
+   * zenko-api a sitting just started, so the server has its own clock to
+   * check a submission's timing against later. Left unset for flows with
+   * nothing server-side to record: the tutor/admin preview (`resume: false`)
+   * and the free sample, neither of which posts to CreateAttempt.
+   */
+  onStart?: () => void
 }
 
 /**
@@ -191,7 +200,7 @@ export function useTryoutSession(
   blueprintSource: MaybeRefOrGetter<TryoutBlueprint | null | undefined>,
   options: TryoutSessionOptions = {},
 ) {
-  const { resume = true, grade } = options
+  const { resume = true, grade, onStart } = options
   const blueprint = computed<TryoutBlueprint | null>(() => toValue(blueprintSource) ?? null)
   const key = storageKey(slug)
 
@@ -358,6 +367,7 @@ export function useTryoutSession(
   function start() {
     const currentBlueprint = blueprint.value
     if (!currentBlueprint) return
+    onStart?.()
     currentIndex.value = 0
     answers.value = {}
     // Flat mode counts down the blueprint's official total when it carries

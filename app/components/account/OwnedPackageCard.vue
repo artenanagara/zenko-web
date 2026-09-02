@@ -30,12 +30,12 @@ const stats = computed(() => packageStats(props.item))
       class="flex flex-1 flex-col rounded-md bg-surface p-2.5 shadow-xs transition-shadow duration-300 ease-smooth group-hover:shadow-lift group-focus-visible:shadow-lift"
     >
       <div class="relative">
-        <img
+        <AppThumbnail
           :src="item.thumbnailUrl"
           :alt="`Thumbnail paket ${item.title}`"
           loading="lazy"
           class="aspect-16/10 w-full rounded-sm bg-[#edf3ff] object-cover"
-        >
+        />
         <span
           class="absolute top-2.5 left-2.5 rounded-pill bg-white/90 px-2.5 py-1 text-[0.66rem] font-bold tracking-[0.08em] text-ink uppercase shadow-xs backdrop-blur-[2px]"
         >{{ item.category }}</span>

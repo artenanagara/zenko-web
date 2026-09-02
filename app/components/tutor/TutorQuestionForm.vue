@@ -116,11 +116,14 @@ function isQuestionKind(value: string | number): value is QuestionKind {
   return kindOptions.value.some(option => option.value === value)
 }
 
-/** Label statis jenis terkunci (SKD) — pengganti pemilih yang disembunyikan. */
-const lockedKindLabel = computed(() => {
-  if (!lockedKind.value) return ''
-  return KIND_OPTIONS.find(option => option.value === lockedKind.value)?.label ?? lockedKind.value
-})
+/**
+ * Pemilih jenis hanya dirender ketika jenisnya memang bisa diganti. Subtes
+ * SKD mengunci jenisnya ke satu (allowedKinds tunggal) — dulu tempat itu diisi
+ * kotak baca-saja "Tipe soal", tapi field yang tidak bisa diapa-apakan hanya
+ * menambah panjang form: jenisnya sudah tersirat dari bentuk editor di
+ * bawahnya (opsi berbobot 1–5 untuk TKP, A–E untuk TWK/TIU).
+ */
+const canChooseKind = computed(() => !lockedKind.value && kindOptions.value.length > 1)
 
 const stimulus = ref(props.initial?.stimulus ?? '')
 const stimulusOpen = ref(!!props.initial?.stimulus)
@@ -709,19 +712,9 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </span>
     </AppSectionMessage>
 
-    <!-- SKD: jenis soal mengikuti subtes (TWK/TIU pilihan ganda, TKP
-         berbobot) — tanpa pemilih, cukup keterangan jenisnya. -->
-    <div v-if="lockedKind" class="max-w-xl">
-      <span :class="FIELD_LABEL_CLASS">Tipe soal</span>
-      <p class="rounded-sm border border-hairline bg-surface-alt px-3.5 py-2.5 text-[0.9rem] font-semibold">
-        {{ lockedKindLabel }}
-      </p>
-      <p class="mt-2 text-[0.78rem] text-faint">
-        Jenis soal subtes ini terkunci mengikuti format resmi CAT BKN.
-      </p>
-    </div>
-
-    <div v-else class="max-w-xl">
+    <!-- Tipe soal hanya tampil ketika masih bisa diganti. Subtes yang
+         jenisnya sudah dikunci (SKD) tidak menampilkan apa pun di sini. -->
+    <div v-if="canChooseKind" class="max-w-xl">
       <!-- Same control and wording as the section-level "Tipe soal bawaan"
            (TutorCustomSections.vue), so the tutor reads the two as one
            setting: the subtes sets the default, the soal may override it. -->

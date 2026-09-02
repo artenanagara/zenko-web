@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StackedBarPoint, StackedBarSeries } from '~/components/dashboard/DashboardStackedBarChart.vue'
+import type { LinePoint } from '~/components/dashboard/DashboardLineChart.vue'
 import type { TutorProductSummary } from '#shared/types/tutor-product'
 
 definePageMeta({
@@ -103,57 +103,46 @@ function dayKey(unixSeconds: number): string {
 }
 
 /**
- * Pendapatan harian, ditumpuk per produk — 30 hari terakhir (hari ini
- * inklusif). Produk diurutkan dari total pendapatan terbanyak; top 8 jadi
- * series sendiri, sisanya digabung ke satu series "Lainnya", sama seperti
- * batas lama di chart per-produk yang terpisah.
+ * Pendapatan harian — 30 hari terakhir (hari ini inklusif), satu garis untuk
+ * seluruh produk.
+ *
+ * Tanpa pecahan per produk: chart lamanya menumpuk satu warna (dan satu baris
+ * legenda) per produk, jadi tutor dengan belasan paket mendapat legenda yang
+ * lebih tinggi dari chart-nya dan tidak ada garis tren yang bisa dibaca.
+ * Pertanyaan "produk mana yang laku" dijawab tabel Penjualan, yang memang
+ * punya nama produk per transaksi.
  */
-const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: StackedBarSeries[] }>(() => {
-  const byProduct = new Map<string, { title: string, total: number }>()
-  for (const sale of sales.value) {
-    const existing = byProduct.get(sale.productId)
-    if (existing) existing.total += sale.share
-    else byProduct.set(sale.productId, { title: sale.productTitle, total: sale.share })
-  }
-
-  const sortedIds = [...byProduct.entries()].sort((a, b) => b[1].total - a[1].total).map(([id]) => id)
-  const topIds = sortedIds.slice(0, 8)
-  const hasOthers = sortedIds.length > topIds.length
-
-  const series: StackedBarSeries[] = topIds.map((id, index) => ({
-    key: id,
-    label: byProduct.get(id)!.title,
-    color: `var(--color-chart-${index + 1})`,
-  }))
-  if (hasOthers) {
-    series.push({ key: 'lainnya', label: 'Lainnya', color: 'var(--color-faint)' })
-  }
-  const topIdSet = new Set(topIds)
-
-  const byDayThenProduct = new Map<string, Map<string, number>>()
+const dailyRevenue = computed<LinePoint[]>(() => {
+  const byDay = new Map<string, number>()
   for (const sale of sales.value) {
     const day = dayKey(sale.paidAt)
-    const seriesKey = topIdSet.has(sale.productId) ? sale.productId : 'lainnya'
-    const dayMap = byDayThenProduct.get(day) ?? new Map<string, number>()
-    dayMap.set(seriesKey, (dayMap.get(seriesKey) ?? 0) + sale.share)
-    byDayThenProduct.set(day, dayMap)
+    byDay.set(day, (byDay.get(day) ?? 0) + sale.share)
   }
 
   const now = Date.now()
-  const points: StackedBarPoint[] = []
+  const points: LinePoint[] = []
   for (let i = 29; i >= 0; i--) {
     const date = new Date(now - i * DAY_MS)
     const key = date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
-    const dayMap = byDayThenProduct.get(key)
     points.push({
       key,
       label: date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }),
-      segments: series.map(item => ({ key: item.key, value: dayMap?.get(item.key) ?? 0 })),
+      value: byDay.get(key) ?? 0,
     })
   }
 
-  return { points, series }
+  return points
 })
+
+/**
+ * Rupiah ringkas untuk label sumbu — "Rp1,2jt" alih-alih "Rp1.200.000", yang
+ * pada lebar sumbu chart akan bertabrakan dengan garis bantunya.
+ */
+function formatRupiahShort(value: number): string {
+  if (value >= 1_000_000) return `Rp${(value / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}jt`
+  if (value >= 1_000) return `Rp${(value / 1_000).toLocaleString('id-ID', { maximumFractionDigits: 0 })}rb`
+  return `Rp${value.toLocaleString('id-ID')}`
+}
 </script>
 
 <template>
@@ -192,8 +181,8 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
 
     <DashboardPanel
       id="pendapatan"
-      title="Pendapatan harian per produk"
-      description="Tren penjualan 30 hari terakhir untuk melihat paket yang paling diminati siswa."
+      title="Pendapatan harian"
+      description="Tren penjualan 30 hari terakhir. Rincian per paket ada di menu Penjualan."
     >
       <DashboardSkeleton v-if="salesPending" :count="3" label="Memuat data pendapatan..." />
 
@@ -203,12 +192,12 @@ const dailyProductRevenue = computed<{ points: StackedBarPoint[], series: Stacke
         Belum ada aktivitas penjualan pada periode ini.
       </p>
 
-      <DashboardStackedBarChart
+      <DashboardLineChart
         v-else
-        :points="dailyProductRevenue.points"
-        :series="dailyProductRevenue.series"
+        :points="dailyRevenue"
         :value-formatter="formatRupiah"
-        ariaLabel="Pendapatan harian per produk, 30 hari terakhir"
+        :axis-formatter="formatRupiahShort"
+        ariaLabel="Pendapatan harian, 30 hari terakhir"
       />
     </DashboardPanel>
 

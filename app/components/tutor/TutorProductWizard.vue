@@ -382,6 +382,72 @@ const sectionTitleOptions = computed(() => {
   }))
 })
 
+/* ------------------------------- kelompok 1/2: opsi & info kolom kanan ---- */
+
+/**
+ * Semua pilihan langkah 1 memakai dropdown yang sama bentuknya (kategori dulu
+ * berupa kartu radio, sub-kategori berupa strip chip). Alasannya bukan sekadar
+ * seragam: penjelasan tiap pilihan tidak lagi menempel di bawah kontrolnya —
+ * penjelasan itu pindah ke kolom info di kanan, yang isinya mengikuti apa yang
+ * sedang dipilih — jadi kontrolnya sendiri tinggal perlu memuat labelnya.
+ */
+const categoryOptions = computed(() =>
+  categoryCards.value.map(card => ({ value: card.value, label: card.title, description: card.description })),
+)
+
+const subcategoryOptions = computed(() =>
+  subcategoryCards.value.map(sub => ({ value: sub.value, label: sub.value, description: sub.description })),
+)
+
+const subcategoryLabel = computed(() => (categoryChoice.value === 'TKA' ? 'Jenjang' : 'Sub-kategori'))
+
+const selectedCategoryCard = computed(() =>
+  categoryCards.value.find(card => card.value === categoryChoice.value) ?? null,
+)
+
+/** Apa arti tiap jenis ujian — dipakai kolom info, bukan label dropdown-nya. */
+const PRODUCT_MODE_DESCRIPTION: Record<ProductMode, string> = {
+  simulasi: 'Paket utuh mengikuti standar resmi: susunan subtes, jumlah soal, durasi, dan penilaiannya terkunci.',
+  mini_tryout: 'Latihan satu subtes saja. Jumlah soal dan durasinya boleh kamu atur sendiri di langkah berikutnya.',
+}
+
+/**
+ * Subtes yang terkunci mengikuti standar resmi, sebagai baris ringkas untuk
+ * langkah 2 dan untuk kolom info langkah 1.
+ *
+ * Menggantikan tiga blok terpisah di langkah Konfigurasi (daftar subtes +
+ * kalimat total + strip chip penilaian), yang mengulang nama subtes yang sama
+ * sampai tiga kali dan membuat layar itu terbaca penuh padahal tidak ada satu
+ * pun yang bisa diubah di sana.
+ */
+interface LockedSectionRow {
+  title: string
+  questionTarget: number
+  durationMinutes: number
+  scoring: string
+  passingGrade: number | null
+}
+
+const lockedSections = computed<LockedSectionRow[]>(() => {
+  const exam = selectedExamType.value
+  if (!exam) return []
+  const sections = exam.category === 'SKD' && form.mode === 'simulasi'
+    ? exam.sections
+    : (selectedSectionTemplate.value ? [selectedSectionTemplate.value] : [])
+
+  return sections.map(section => ({
+    title: section.title,
+    questionTarget: section.questionTarget,
+    durationMinutes: section.durationMinutes,
+    scoring: section.scoringMode === 'weighted' ? 'bobot 1–5 per opsi' : `+${section.pointsCorrect} per jawaban benar`,
+    passingGrade: section.passingGrade ?? null,
+  }))
+})
+
+const lockedTotalQuestions = computed(() =>
+  lockedSections.value.reduce((sum, section) => sum + section.questionTarget, 0),
+)
+
 // AppSelect works in plain string|number; narrow its `update:modelValue`
 // back onto these typed fields instead of casting.
 function isProductType(value: string | number): value is ProductType {
@@ -1134,19 +1200,16 @@ const priceHintBlocking = computed(() =>
 
       <!-- ============================================= Kelompok 1: Jenis Ujian -->
       <DashboardPanel v-if="step === 1">
-        <div class="grid max-w-160 gap-5">
-          <!-- The controls below are disabled in edit mode; without this the
-               only cue is that they don't respond. Terkunci di sini bukan
-               karena status produk (lihat pemberitahuan di atas wizard) tapi
-               karena bentuk produknya sudah terlanjur dibuat: server pun
-               menolak mengubahnya. -->
-          <AppInlineMessage v-if="isEdit" type="info">
-            Tipe, kategori, sub-kategori, jenis ujian, dan subtes/mapel terkunci setelah produk
-            dibuat. Jumlah soal dan durasi mini tryout masih bisa disesuaikan di langkah
-            Konfigurasi Ujian selama produk berstatus draft.
-          </AppInlineMessage>
-
-          <div>
+        <!-- Dua kolom, pola yang sama dengan langkah Detail Produk: kontrol di
+             kiri, keterangan di kanan. Sebelumnya tiap pilihan membawa
+             penjelasannya sendiri tepat di bawahnya (kartu kategori dengan dua
+             baris teks, deskripsi jenis ujian, kotak info subtes SKD) sementara
+             separuh kanan panel dibiarkan kosong — kolomnya jadi panjang dan
+             penjelasan yang sudah tidak relevan tetap ikut terbaca. Sekarang
+             kolom kanan menampilkan penjelasan untuk apa yang SEDANG dipilih,
+             dan berubah mengikutinya. -->
+        <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div class="grid max-w-160 gap-5">
             <AppSelect
               :options="PRODUCT_TYPE_OPTIONS"
               :model-value="form.type"
@@ -1154,129 +1217,134 @@ const priceHintBlocking = computed(() =>
               label="Tipe"
               @update:model-value="(value) => { if (isProductType(value)) form.type = value }"
             />
-            <p class="mt-2 text-[0.82rem] text-muted">
-              {{ isSingle
-                ? 'Satu try-out utuh dengan subtes dan soal yang kamu susun sendiri.'
-                : 'Gabungan beberapa try-out tunggal milikmu yang sudah tayang, dijual satu harga.' }}
-            </p>
-          </div>
 
-          <template v-if="isSingle">
-            <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat kategori ujian...</p>
-            <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
-              Gagal memuat kategori ujian. Muat ulang halaman untuk mencoba lagi.
-            </p>
+            <template v-if="isSingle">
+              <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat kategori ujian...</p>
+              <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
+                Gagal memuat kategori ujian. Muat ulang halaman untuk mencoba lagi.
+              </p>
 
-            <template v-else>
-              <!-- 1a. Kategori (SKD/TKA) sebagai kartu pilihan. -->
-              <div ref="examTypeBlockRef" class="scroll-mt-24">
-                <span :class="FIELD_LABEL_CLASS">Kategori ujian</span>
-                <div class="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Kategori ujian">
-                  <button
-                    v-for="card in categoryCards"
-                    :key="card.value"
-                    type="button"
-                    role="radio"
-                    :aria-checked="categoryChoice === card.value"
+              <template v-else>
+                <!-- 1a. Kategori (SKD/TKA). -->
+                <div ref="examTypeBlockRef" class="scroll-mt-24">
+                  <AppSelect
+                    :options="categoryOptions"
+                    :model-value="categoryChoice"
                     :disabled="isEdit"
-                    class="rounded-md border px-4 py-3.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                    :class="categoryChoice === card.value
-                      ? 'border-primary/40 bg-primary-soft ring-1 ring-primary'
-                      : 'border-hairline-strong bg-surface hover:bg-surface-alt'"
-                    @click="selectCategory(card.value)"
-                  >
-                    <span class="block font-bold tracking-[-0.02em]">{{ card.title }}</span>
-                    <span class="mt-1 block text-[0.82rem] text-muted">{{ card.description }}</span>
-                  </button>
+                    label="Kategori ujian"
+                    placeholder="Pilih kategori ujian"
+                    @update:model-value="(value) => selectCategory(String(value))"
+                  />
                 </div>
 
-                <!-- Produk legacy: jenis ujiannya sudah tidak ada di daftar,
-                     jadi tidak ada kartu yang bisa dicocokkan — tampilkan
-                     identitas tersimpannya apa adanya. -->
-                <p v-if="isEdit && !selectedExamType && detail?.examType" class="mt-3 rounded-sm border border-hairline bg-surface-alt px-3.5 py-2.5 text-[0.86rem] text-muted">
-                  Produk ini memakai jenis ujian lama <strong class="text-ink">{{ detail.examType }}</strong>
-                  (kategori {{ detail.category || '—' }}) yang sudah tidak ditawarkan untuk produk baru.
-                  Produk tetap berfungsi dengan konfigurasi tersimpannya.
-                </p>
-              </div>
-
-              <!-- 1b. Sub-kategori: CPNS/Kedinasan untuk SKD, jenjang untuk TKA. -->
-              <div v-if="categoryChoice && subcategoryCards.length">
-                <span :class="FIELD_LABEL_CLASS">{{ categoryChoice === 'TKA' ? 'Jenjang' : 'Sub-kategori' }}</span>
-                <div class="flex flex-wrap gap-2" role="radiogroup" :aria-label="categoryChoice === 'TKA' ? 'Jenjang' : 'Sub-kategori'">
-                  <button
-                    v-for="sub in subcategoryCards"
-                    :key="sub.slug"
-                    type="button"
-                    role="radio"
-                    :aria-checked="subcategoryChoice === sub.value"
-                    :disabled="isEdit"
-                    class="rounded-pill border px-4 py-2 text-[0.88rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                    :class="subcategoryChoice === sub.value
-                      ? 'border-primary/40 bg-primary-soft text-primary'
-                      : 'border-hairline-strong bg-surface text-muted hover:text-ink'"
-                    @click="selectSubcategory(sub.value)"
-                  >
-                    {{ sub.value }}
-                  </button>
-                </div>
-                <p v-if="selectedExamType" class="mt-2 text-[0.82rem] leading-[1.6] text-muted">
-                  {{ selectedExamType.description }}
-                </p>
-              </div>
-
-              <!-- 1c. Jenis ujian: Simulasi (standar terkunci) / Mini Tryout. -->
-              <div v-if="selectedExamType?.sections.length">
+                <!-- 1b. Sub-kategori: CPNS/Kedinasan untuk SKD, jenjang untuk TKA. -->
                 <AppSelect
+                  v-if="categoryChoice && subcategoryOptions.length"
+                  :options="subcategoryOptions"
+                  :model-value="subcategoryChoice"
+                  :disabled="isEdit"
+                  :label="subcategoryLabel"
+                  :placeholder="`Pilih ${subcategoryLabel.toLowerCase()}`"
+                  @update:model-value="(value) => selectSubcategory(String(value))"
+                />
+
+                <!-- 1c. Jenis ujian: Simulasi (standar terkunci) / Mini Tryout. -->
+                <AppSelect
+                  v-if="selectedExamType?.sections.length"
                   :options="productModeOptions"
                   :model-value="form.mode"
                   :disabled="isEdit"
                   label="Jenis ujian"
                   @update:model-value="selectProductMode"
                 />
-              </div>
 
-              <!-- 1d. Subtes/mapel — SKD mini memilih satu subtes; produk TKA
-                   memilih satu mapel di kedua mode. SKD simulasi melewati
-                   langkah ini: ketiga subtes resminya terpasang otomatis. -->
-              <div v-if="needsSectionTitle" ref="sectionBlockRef" class="scroll-mt-24">
-                <AppSelect
-                  :options="sectionTitleOptions"
-                  :model-value="form.sectionTitle"
-                  :disabled="isEdit"
-                  :label="selectedExamType?.category === 'TKA' ? 'Mata pelajaran' : 'Subtes'"
-                  :placeholder="selectedExamType?.category === 'TKA' ? 'Pilih mata pelajaran' : 'Pilih subtes'"
-                  @update:model-value="(value) => { form.sectionTitle = String(value) }"
-                />
-                <AppInlineMessage
-                  v-if="zenkoExtraMapel(selectedExamType?.slug, form.sectionTitle)"
-                  type="info"
-                  class="mt-2"
-                >
-                  Bahasa Inggris adalah mapel tambahan Zenko — bukan mata uji TKA SMP nasional
-                  (mata uji resmi SD/SMP hanya Bahasa Indonesia dan Matematika).
-                </AppInlineMessage>
-              </div>
-
-              <AppSectionMessage
-                v-else-if="selectedExamType?.category === 'SKD' && form.mode === 'simulasi'"
-                appearance="information"
-                title="Subtes terpasang otomatis"
-              >
-                Simulasi SKD selalu berisi ketiga subtes resmi CAT BKN — tidak ada yang perlu dipilih:
-                <ul class="mt-2 grid list-disc gap-1 pl-5">
-                  <li v-for="section in selectedExamType.sections" :key="section.title">
-                    {{ section.title }} · {{ section.questionTarget }} soal
-                  </li>
-                </ul>
-              </AppSectionMessage>
+                <!-- 1d. Subtes/mapel — SKD mini memilih satu subtes; produk TKA
+                     memilih satu mapel di kedua mode. SKD simulasi melewati
+                     langkah ini: ketiga subtes resminya terpasang otomatis. -->
+                <div v-if="needsSectionTitle" ref="sectionBlockRef" class="scroll-mt-24">
+                  <AppSelect
+                    :options="sectionTitleOptions"
+                    :model-value="form.sectionTitle"
+                    :disabled="isEdit"
+                    :label="selectedExamType?.category === 'TKA' ? 'Mata pelajaran' : 'Subtes'"
+                    :placeholder="selectedExamType?.category === 'TKA' ? 'Pilih mata pelajaran' : 'Pilih subtes'"
+                    @update:model-value="(value) => { form.sectionTitle = String(value) }"
+                  />
+                </div>
+              </template>
             </template>
-          </template>
+          </div>
 
-          <AppSectionMessage v-else appearance="information">
-            Bundling berisi produk try-out tunggal milikmu yang berstatus Tayang.
-            Anggotanya dipilih di langkah Soal.
-          </AppSectionMessage>
+          <!-- Kolom info: satu kartu yang isinya mengikuti pilihan di kiri.
+               `self-start` wajib supaya item grid tidak meregang setinggi kolom
+               kiri (sticky tidak akan punya ruang gerak); offset `top-20`
+               mengukur header dashboard yang `sticky top-0` di layar ini. -->
+          <aside class="self-start lg:sticky lg:top-20">
+            <div class="grid gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-4 text-[0.84rem] leading-[1.65] text-muted">
+              <div>
+                <h3 class="text-[0.9rem] font-semibold text-ink">
+                  {{ isSingle ? 'Try-out tunggal' : 'Bundling' }}
+                </h3>
+                <p class="mt-1">
+                  {{ isSingle
+                    ? 'Satu try-out utuh dengan subtes dan soal yang kamu susun sendiri.'
+                    : 'Gabungan beberapa try-out tunggal milikmu yang sudah tayang, dijual satu harga. Anggotanya dipilih di langkah Soal.' }}
+                </p>
+              </div>
+
+              <template v-if="isSingle">
+                <div v-if="selectedCategoryCard" class="border-t border-hairline pt-4">
+                  <h3 class="text-[0.9rem] font-semibold text-ink">{{ selectedCategoryCard.title }}</h3>
+                  <p class="mt-1">{{ selectedCategoryCard.description }}</p>
+                  <p v-if="selectedExamType" class="mt-2">{{ selectedExamType.description }}</p>
+                </div>
+
+                <div v-if="selectedExamType?.sections.length" class="border-t border-hairline pt-4">
+                  <h3 class="text-[0.9rem] font-semibold text-ink">{{ PRODUCT_MODE_LABEL[form.mode] }}</h3>
+                  <p class="mt-1">{{ PRODUCT_MODE_DESCRIPTION[form.mode] }}</p>
+
+                  <!-- Simulasi SKD tidak punya langkah pilih-subtes: yang perlu
+                       diketahui tutor adalah apa yang sudah terpasang untuknya. -->
+                  <ul
+                    v-if="!needsSectionTitle && lockedSections.length"
+                    class="mt-2.5 grid gap-1"
+                  >
+                    <li
+                      v-for="section in lockedSections"
+                      :key="section.title"
+                      class="flex items-baseline justify-between gap-3"
+                    >
+                      <span class="text-ink">{{ section.title }}</span>
+                      <span class="shrink-0 tabular-nums">{{ section.questionTarget }} soal</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <p
+                  v-if="zenkoExtraMapel(selectedExamType?.slug, form.sectionTitle)"
+                  class="border-t border-hairline pt-4"
+                >
+                  <strong class="font-semibold text-ink">Bahasa Inggris</strong> adalah mapel tambahan Zenko —
+                  bukan mata uji TKA SMP nasional (mata uji resmi SD/SMP hanya Bahasa Indonesia dan Matematika).
+                </p>
+
+                <!-- Produk legacy: jenis ujiannya sudah tidak ada di daftar,
+                     jadi tidak ada opsi yang bisa dicocokkan — tampilkan
+                     identitas tersimpannya apa adanya. -->
+                <p v-if="isEdit && !selectedExamType && detail?.examType" class="border-t border-hairline pt-4">
+                  Produk ini memakai jenis ujian lama <strong class="font-semibold text-ink">{{ detail.examType }}</strong>
+                  (kategori {{ detail.category || '—' }}) yang sudah tidak ditawarkan untuk produk baru.
+                  Produk tetap berfungsi dengan konfigurasi tersimpannya.
+                </p>
+              </template>
+
+              <p v-if="isEdit" class="border-t border-hairline pt-4">
+                Tipe, kategori, sub-kategori, jenis ujian, dan subtes/mapel terkunci setelah produk
+                dibuat. Jumlah soal dan durasi mini tryout masih bisa disesuaikan di langkah
+                Konfigurasi Ujian selama produk berstatus draft.
+              </p>
+            </div>
+          </aside>
         </div>
       </DashboardPanel>
 
@@ -1286,39 +1354,19 @@ const priceHintBlocking = computed(() =>
         title="Konfigurasi Ujian"
         description="Jumlah soal, durasi, dan opsi pengerjaan paket ini."
       >
+        <!-- Susunan yang sama dengan langkah 1: yang bisa diatur di kiri, yang
+             hanya perlu diketahui di kanan. Versi lamanya menumpuk lima blok
+             berurutan — kotak "terkunci mengikuti standar resmi", daftar
+             subtes, kalimat total, strip chip penilaian, lalu kalimat aturan
+             CAT BKN — yang menyebut nama subtes yang sama sampai tiga kali
+             padahal tidak satu pun bisa diubah. Sekarang semuanya jadi satu
+             tabel ringkas: satu baris per subtes, membawa soal, durasi,
+             penilaian, dan ambangnya sekaligus. -->
         <template v-if="isSingle">
-          <div class="grid max-w-160 gap-5">
-            <!-- Simulasi SKD/TKA: terkunci mengikuti standar resmi (read-only). -->
-            <template v-if="configLocked && selectedExamType">
-              <AppSectionMessage appearance="information" title="Terkunci mengikuti standar resmi">
-                Jumlah soal dan durasi simulasi {{ selectedExamType.category }} mengikuti standar
-                resmi dan tidak dapat diubah. Tugasmu tinggal mengisi soalnya.
-              </AppSectionMessage>
-
-              <ul class="grid gap-2">
-                <li
-                  v-for="section in (selectedExamType.category === 'SKD' ? selectedExamType.sections : (selectedSectionTemplate ? [selectedSectionTemplate] : []))"
-                  :key="section.title"
-                  class="flex items-center justify-between gap-3 rounded-sm border border-hairline bg-surface-alt px-3.5 py-2.5 text-[0.88rem]"
-                >
-                  <span class="font-semibold">{{ section.title }}</span>
-                  <span class="shrink-0 text-muted tabular-nums">{{ section.questionTarget }} soal<template v-if="selectedExamType.category === 'TKA'"> · {{ section.durationMinutes }} menit</template></span>
-                </li>
-              </ul>
-              <p class="text-[0.88rem] font-semibold">
-                <template v-if="selectedExamType.category === 'SKD'">
-                  Total {{ selectedExamType.sections.reduce((sum, section) => sum + section.questionTarget, 0) }} soal ·
-                  {{ simulasiTotalMinutes }} menit dalam satu timer untuk seluruh subtes (persis CAT BKN).
-                </template>
-                <template v-else>
-                  Satu mata pelajaran · satu timer {{ simulasiTotalMinutes }} menit, meniru TKA resmi.
-                </template>
-              </p>
-            </template>
-
-            <!-- Mini tryout: bisa diatur, prefilled angka standar. -->
-            <template v-else-if="form.mode === 'mini_tryout' && !isCustom">
-              <div>
+          <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <div class="grid max-w-160 gap-5">
+              <!-- Mini tryout: bisa diatur, prefilled angka standar. -->
+              <div v-if="form.mode === 'mini_tryout' && !isCustom">
                 <p class="text-[0.88rem] text-muted">
                   Mini tryout {{ form.sectionTitle || 'subtes terpilih' }} — jumlah soal dan durasi
                   boleh berbeda dari standar, terisi otomatis dari nilai standarnya.
@@ -1335,62 +1383,84 @@ const priceHintBlocking = computed(() =>
                 </div>
                 <p class="mt-2 text-[0.82rem] text-muted">Maksimal 200 soal dan 300 menit.</p>
               </div>
-            </template>
 
-            <!-- Produk custom/legacy: subtesnya diatur di langkah Soal. -->
-            <AppSectionMessage v-else-if="isCustom" appearance="information">
-              Produk dengan jenis ujian custom mengatur subtes, jumlah soal, dan durasinya
-              langsung di langkah Soal.
-            </AppSectionMessage>
+              <!-- Produk custom/legacy: subtesnya diatur di langkah Soal. -->
+              <AppSectionMessage v-else-if="isCustom" appearance="information">
+                Produk dengan jenis ujian custom mengatur subtes, jumlah soal, dan durasinya
+                langsung di langkah Soal.
+              </AppSectionMessage>
 
-            <!-- SKD: scoring & ambang batas — selalu info terkunci, bukan input. -->
-            <div v-if="selectedExamType?.category === 'SKD'">
-              <span :class="FIELD_LABEL_CLASS">Penilaian &amp; ambang batas (terkunci)</span>
-              <ul class="flex flex-wrap gap-2">
-                <li
-                  v-for="section in (form.mode === 'simulasi' ? selectedExamType.sections : (selectedSectionTemplate ? [selectedSectionTemplate] : []))"
-                  :key="section.title"
-                  class="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-surface-alt px-3 py-1.5 text-[0.8rem] font-semibold text-muted"
+              <!-- Acak soal — berlaku untuk semua produk single, dan satu-satunya
+                   yang bisa diatur pada paket simulasi. -->
+              <div class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5">
+                <div>
+                  <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
+                    Acak urutan soal saat dikerjakan siswa
+                  </label>
+                  <p class="mt-1 text-[0.82rem] text-muted">
+                    Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
+                    selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
+                    soal ini tidak berubah.
+                  </p>
+                </div>
+                <button
+                  id="product-shuffle-questions"
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.shuffleQuestions"
+                  aria-labelledby="product-shuffle-questions-label"
+                  class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
+                  :disabled="!isFieldEditable('details')"
+                  @click="form.shuffleQuestions = !form.shuffleQuestions"
                 >
-                  <AppIcon name="lock-simple" :size="12" />
-                  {{ section.title }} ·
-                  {{ section.scoringMode === 'weighted' ? 'bobot 1–5 per opsi' : `+${section.pointsCorrect}/benar` }}<template v-if="section.passingGrade != null"> · ambang {{ section.passingGrade }}</template>
-                </li>
-              </ul>
-              <p class="mt-2 text-[0.82rem] text-muted">
-                Skor dan status Lulus/Tidak Lulus dihitung otomatis mengikuti aturan resmi CAT BKN.
-              </p>
+                  <span
+                    class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
+                    :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
+                  />
+                </button>
+              </div>
             </div>
 
-            <!-- Acak soal — berlaku untuk semua produk single. -->
-            <div class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5">
-              <div>
-                <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
-                  Acak urutan soal saat dikerjakan siswa
-                </label>
-                <p class="mt-1 text-[0.82rem] text-muted">
-                  Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
-                  selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
-                  soal ini tidak berubah.
+            <!-- Kolom kanan: standar resmi yang berlaku untuk paket ini. -->
+            <aside v-if="lockedSections.length" class="self-start lg:sticky lg:top-20">
+              <div class="rounded-md border border-hairline bg-surface-alt px-4 py-4">
+                <h3 class="flex items-center gap-1.5 text-[0.9rem] font-semibold text-ink">
+                  <AppIcon name="lock-simple" :size="14" aria-hidden="true" class="text-muted" />
+                  Standar resmi {{ selectedExamType?.category }}
+                </h3>
+                <p class="mt-1 text-[0.84rem] leading-[1.65] text-muted">
+                  {{ configLocked
+                    ? 'Susunan di bawah ini terkunci. Tugasmu tinggal mengisi soalnya.'
+                    : 'Angka standar subtes ini, sebagai pembanding jumlah soal dan durasi yang kamu isi.' }}
+                </p>
+
+                <ul class="mt-3 grid gap-2.5">
+                  <li v-for="section in lockedSections" :key="section.title" class="text-[0.84rem]">
+                    <span class="flex items-baseline justify-between gap-3">
+                      <span class="font-semibold text-ink">{{ section.title }}</span>
+                      <span class="shrink-0 text-muted tabular-nums">{{ section.questionTarget }} soal</span>
+                    </span>
+                    <span class="mt-0.5 block text-[0.8rem] text-muted">
+                      {{ section.scoring }}<template v-if="section.passingGrade != null"> · ambang {{ section.passingGrade }}</template>
+                    </span>
+                  </li>
+                </ul>
+
+                <p v-if="configLocked" class="mt-3 border-t border-hairline pt-3 text-[0.84rem] font-semibold text-ink tabular-nums">
+                  {{ lockedTotalQuestions }} soal · {{ simulasiTotalMinutes }} menit
+                  <span class="block text-[0.8rem] font-normal text-muted">
+                    {{ selectedExamType?.category === 'SKD'
+                      ? 'Satu timer untuk seluruh subtes, persis CAT BKN.'
+                      : 'Satu timer untuk satu mata pelajaran, meniru TKA resmi.' }}
+                  </span>
+                </p>
+
+                <p v-if="selectedExamType?.category === 'SKD'" class="mt-3 text-[0.8rem] leading-[1.6] text-muted">
+                  Skor dan status Lulus/Tidak Lulus dihitung otomatis mengikuti aturan resmi CAT BKN.
                 </p>
               </div>
-              <button
-                id="product-shuffle-questions"
-                type="button"
-                role="switch"
-                :aria-checked="form.shuffleQuestions"
-                aria-labelledby="product-shuffle-questions-label"
-                class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
-                :disabled="!isFieldEditable('details')"
-                @click="form.shuffleQuestions = !form.shuffleQuestions"
-              >
-                <span
-                  class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
-                  :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
-                />
-              </button>
-            </div>
+            </aside>
           </div>
         </template>
 
@@ -1676,13 +1746,14 @@ const priceHintBlocking = computed(() =>
               <div class="sm:col-span-2">
                 <dt class="text-[0.8rem] text-muted">Thumbnail</dt>
                 <dd class="mt-1.5">
-                  <img
-                    v-if="form.thumbnailUrl"
+                  <AppThumbnail
                     :src="form.thumbnailUrl"
-                    alt=""
+                    :alt="form.thumbnailUrl ? '' : 'Sampul bawaan Zenko — paket ini belum punya sampul sendiri'"
                     class="aspect-16/10 h-24 w-auto rounded-sm border border-hairline object-cover"
-                  >
-                  <span v-else class="text-[0.88rem] text-muted">Belum ada thumbnail</span>
+                  />
+                  <span v-if="!form.thumbnailUrl" class="mt-1.5 block text-[0.82rem] text-muted">
+                    Belum ada sampul sendiri — katalog memakai gambar bawaan Zenko.
+                  </span>
                 </dd>
               </div>
               <div class="sm:col-span-2">
