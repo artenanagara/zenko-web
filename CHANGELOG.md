@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.0](https://github.com/artenanagara/zenko-web/compare/v0.16.0...v0.17.0) (2026-09-03)
+
+
+### Features
+
+* **editor:** improve LaTeX modal — percent symbol, live preview, display math ([1006e0c](https://github.com/artenanagara/zenko-web/commit/1006e0c982308260270e8bfe77d17161da8ecd5b))
+* **editor:** LaTeX modal — percent symbol, live preview, display math ([be8137e](https://github.com/artenanagara/zenko-web/commit/be8137e315e04eb22e26e1ac7bfc19cd8b3fb1f5))
+
+
+### Bug Fixes
+
+* **editor:** flatten the LaTeX symbol palette into one grid ([5644c63](https://github.com/artenanagara/zenko-web/commit/5644c63e5dfda20b64053e89699e08d961005230))
+* **editor:** flatten the LaTeX symbol palette into one label-less grid ([a5d3709](https://github.com/artenanagara/zenko-web/commit/a5d3709c3dec7beda45deada674118cbaf5a0ae5))
+
 ## [0.16.0](https://github.com/artenanagara/zenko-web/compare/v0.15.3...v0.16.0) (2026-09-02)
 
 
