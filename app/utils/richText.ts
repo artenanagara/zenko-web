@@ -8,7 +8,21 @@
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 
-const HTML_TAG_PATTERN = /<\/?(p|br|h[1-3]|ul|ol|li|table|thead|tbody|tr|td|th|strong|b|em|i|u|s|strike|sub|sup|blockquote|hr|a|img|span)\b/i
+/**
+ * Shared KaTeX options for every render path below.
+ *
+ * SECURITY INVARIANT — `trust` is pinned to false (its default) and MUST stay
+ * that way. This markup is injected (via v-html) into HTML the server already
+ * sanitized (see zenko-api internal/richtext), i.e. downstream of the trust
+ * boundary, and it comes from tutor-authored `data-latex`. With `trust: true`
+ * KaTeX would honour commands like \href and \htmlData, letting that LaTeX
+ * smuggle a `javascript:` link or arbitrary attributes into every student's
+ * exam view — stored XSS. Do not enable it; if a formula ever needs a trusted
+ * command, gate it far more narrowly than a blanket `trust: true`.
+ */
+const KATEX_OPTIONS = { throwOnError: false, displayMode: false, trust: false } as const
+
+const HTML_TAG_PATTERN = /<\/?(p|br|h[1-3]|ul|ol|li|table|thead|tbody|tr|td|th|strong|b|em|i|u|s|strike|sub|sup|blockquote|hr|pre|code|mark|a|img|span)\b/i
 
 /** Heuristic: does this already look like markup the editor itself would produce? */
 export function looksLikeRichTextHtml(value: string): boolean {
@@ -53,6 +67,8 @@ const MATH_PATTERN = /<span\b[^>]*data-type="inlineMath"[^>]*>.*?<\/span>/gi
 
 const INLINE_MATH_SPAN_PATTERN = /<span\b([^>]*data-type="inlineMath"[^>]*)>.*?<\/span>/gi
 const LATEX_ATTR_PATTERN = /data-latex="([^"]*)"/
+/** `data-display="yes"` marks a block/display formula (own centered line) rather than inline. */
+const DISPLAY_ATTR_PATTERN = /data-display="yes"/
 
 /**
  * A second, plain-text math format: `$latex$` with no wrapping span, as
@@ -82,7 +98,7 @@ function renderBareMathSegments(html: string): string {
       // the tutor's actual LaTeX source (e.g. "x < y", "a & b" in a matrix),
       // not literal "&lt;"/"&amp;" — mirrors the span path just below, which
       // decodes its data-latex attribute for the same reason.
-      return katex.renderToString(decodeHtmlEntities(latex), { throwOnError: false, displayMode: false })
+      return katex.renderToString(decodeHtmlEntities(latex), KATEX_OPTIONS)
     }
     catch {
       return whole
@@ -107,8 +123,11 @@ export function renderInlineMathHtml(html: string): string {
     const match = LATEX_ATTR_PATTERN.exec(attrs)
     if (!match) return whole
     const latex = decodeHtmlEntities(match[1] ?? '')
+    // Spread keeps the trust:false invariant; only displayMode varies, so a
+    // formula the tutor marked "baris sendiri" typesets as a centered block.
+    const options = { ...KATEX_OPTIONS, displayMode: DISPLAY_ATTR_PATTERN.test(attrs) }
     try {
-      return katex.renderToString(latex, { throwOnError: false, displayMode: false })
+      return katex.renderToString(latex, options)
     }
     catch {
       return whole
