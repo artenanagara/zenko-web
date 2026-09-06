@@ -32,6 +32,7 @@ const columns: FooterColumn[] = [
       { label: 'Cara Kerja', to: '/#cara-kerja' },
       { label: 'Tentang Kami', to: '/tentang' },
       { label: 'Jadi Tutor', to: '/jadi-tutor' },
+      { label: 'Daftarkan Bimbel', to: '/bimbel' },
       { label: 'Syarat Tutor', to: '/syarat-tutor' },
     ],
   },

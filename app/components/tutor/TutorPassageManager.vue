@@ -16,6 +16,7 @@ import { MAX_QUESTIONS_PER_PASSAGE } from '#shared/types/tutor-product'
 const props = defineProps<{
   productId: string
   section: TutorSection
+  workspace?: ProductWorkspace
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -72,10 +73,10 @@ async function save() {
   try {
     const draft = { title: title.value.trim(), content: content.value }
     if (editorFor.value === 'new') {
-      await createTutorPassage(props.productId, props.section.id, draft)
+      await createTutorPassage(props.productId, props.section.id, draft, props.workspace)
     }
     else {
-      await updateTutorPassage(props.productId, props.section.id, editorFor.value, draft)
+      await updateTutorPassage(props.productId, props.section.id, editorFor.value, draft, props.workspace)
     }
     closeEditor()
     emit('refresh')
@@ -102,7 +103,7 @@ async function remove(passage: TutorPassage) {
 
   errorMessage.value = ''
   try {
-    await deleteTutorPassage(props.productId, props.section.id, passage.id)
+    await deleteTutorPassage(props.productId, props.section.id, passage.id, props.workspace)
     if (editorFor.value === passage.id) closeEditor()
     emit('refresh')
   }

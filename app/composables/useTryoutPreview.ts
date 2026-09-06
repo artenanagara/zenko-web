@@ -53,6 +53,7 @@ export function useTryoutPreview(
   scope: PreviewScope,
   productId: string,
   sectionId: () => string,
+  bimbelId?: string,
 ): TryoutPreviewResource {
   const { public: config } = useRuntimeConfig()
 
@@ -73,7 +74,8 @@ export function useTryoutPreview(
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TryoutBlueprint>(`/${scope}/products/${productId}/preview`, {
+      const root = bimbelId ? `/bimbel/${bimbelId}` : `/${scope}`
+      data.value = await useApiFetch<TryoutBlueprint>(`${root}/products/${productId}/preview`, {
         baseURL: config.apiBase,
         credentials: 'include',
         query: { section },
