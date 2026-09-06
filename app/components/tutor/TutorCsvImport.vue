@@ -34,6 +34,7 @@ const props = defineProps<{
    * flag ini kolom `wacana` tetap jadi stimulus per soal seperti sebelumnya.
    */
   groupPassages?: boolean
+  workspace?: ProductWorkspace
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -160,7 +161,7 @@ async function createGroupedPassages(
     let passageId = reusable.get(key)?.shift()
 
     if (!passageId) {
-      const product = await createTutorPassage(props.productId, targetSection.id, { content: group.content })
+      const product = await createTutorPassage(props.productId, targetSection.id, { content: group.content }, props.workspace)
       const updated = product.sections?.find(candidate => candidate.id === targetSection.id)
       const newest = updated?.passages?.[updated.passages.length - 1]
       if (!newest) continue
@@ -185,7 +186,7 @@ async function createGroupedPassages(
 async function rollbackCreatedPassages(created: CreatedPassage[]): Promise<void> {
   for (const passage of created) {
     try {
-      await deleteTutorPassage(props.productId, passage.sectionId, passage.passageId)
+      await deleteTutorPassage(props.productId, passage.sectionId, passage.passageId, props.workspace)
     }
     catch {
       // Best-effort saja.
@@ -213,13 +214,13 @@ async function importQuestions() {
     let imported: number
     if (mode.value === 'combined') {
       if (passageGroups.value.length) createdPassages = await createGroupedPassages(combinedParsed.value)
-      const result = await importTutorQuestions(props.productId, combinedParsed.value)
+      const result = await importTutorQuestions(props.productId, combinedParsed.value, props.workspace)
       imported = result.imported
       importProblems.value = result.problems
     }
     else {
       if (passageGroups.value.length) createdPassages = await createGroupedPassages(parsed.value)
-      await createTutorQuestionBatch(props.productId, props.section.id, parsed.value)
+      await createTutorQuestionBatch(props.productId, props.section.id, parsed.value, props.workspace)
       imported = parsed.value.length
     }
     reset()

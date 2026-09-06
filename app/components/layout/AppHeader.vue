@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { label: 'Paket', to: '/paket' },
   { label: 'Tentang Kami', to: '/tentang' },
   { label: 'Jadi Tutor', to: '/jadi-tutor' },
+  { label: 'Untuk Bimbel', to: '/bimbel' },
 ] as const
 
 const isScrolled = ref(false)

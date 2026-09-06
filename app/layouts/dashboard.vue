@@ -14,6 +14,8 @@
 const { user } = useAuth()
 const nav = useDashboardNav()
 const route = useRoute()
+const routeBimbelId = typeof route.params.bimbelId === 'string' ? route.params.bimbelId : ''
+const { refresh: refreshBimbelMemberships } = useBimbelMemberships()
 
 const collapsed = useCookie<boolean>('zenko-sidebar-collapsed', {
   default: () => false,
@@ -43,7 +45,9 @@ const activeLabel = computed(() =>
  *
  * DashboardSidebar hides badges at 0, so zeroes can be assigned freely.
  */
-const { data: badgeProducts, refresh: refreshBadgeProducts } = useTutorProducts()
+const { data: badgeProducts, refresh: refreshBadgeProducts } = useTutorProducts(
+  routeBimbelId ? { bimbelId: routeBimbelId } : undefined,
+)
 const { data: adminSummary, refresh: refreshAdminSummary } = useAdminSummary()
 
 const sidebarBadges = computed<Record<string, number>>(() => {
@@ -65,11 +69,19 @@ const sidebarBadges = computed<Record<string, number>>(() => {
   }
 
   const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
-  if (rejected > 0) badges['/dashboard/tutor/products'] = rejected
+  const productPath = routeBimbelId
+    ? `/dashboard/bimbel/${routeBimbelId}/products`
+    : '/dashboard/tutor/products'
+  if (rejected > 0) badges[productPath] = rejected
   return badges
 })
 
 onMounted(() => {
+  if (routeBimbelId) {
+    refreshBimbelMemberships()
+    refreshBadgeProducts()
+    return
+  }
   if (user.value?.role === 'tutor') refreshBadgeProducts()
   if (user.value?.role === 'admin') refreshAdminSummary()
 })

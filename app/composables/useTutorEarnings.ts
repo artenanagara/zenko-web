@@ -28,8 +28,11 @@ export interface TutorSalesQuery {
   productId?: string
 }
 
+export interface EarningsWorkspace { bimbelId?: string }
+const earningsRoot = (workspace?: EarningsWorkspace) => workspace?.bimbelId ? `/bimbel/${workspace.bimbelId}` : '/tutor'
+
 /** GET /tutor/sales — summary + rows; server melakukan filter via query. */
-export function useTutorSales() {
+export function useTutorSales(workspace?: EarningsWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const summary = ref<TutorSalesSummary>({ count: 0, gross: 0, share: 0 })
@@ -42,7 +45,7 @@ export function useTutorSales() {
     error.value = ''
     try {
       // $fetch drops undefined query values, so an empty filter sends none.
-      const response = await useApiFetch<TutorSalesResponse>('/tutor/sales', {
+      const response = await useApiFetch<TutorSalesResponse>(`${earningsRoot(workspace)}/sales`, {
         baseURL: config.apiBase,
         credentials: 'include',
         query,
@@ -62,7 +65,7 @@ export function useTutorSales() {
 }
 
 /** GET /tutor/balance — agregat ledger. */
-export function useTutorBalance() {
+export function useTutorBalance(workspace?: EarningsWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<TutorBalance>({ available: 0, held: 0, totalPaidOut: 0 })
@@ -73,7 +76,7 @@ export function useTutorBalance() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TutorBalance>('/tutor/balance', {
+      data.value = await useApiFetch<TutorBalance>(`${earningsRoot(workspace)}/balance`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -93,7 +96,7 @@ export function useTutorBalance() {
  * GET /tutor/bank-account. 404 is the ordinary "belum ada rekening" answer,
  * so it resolves to null rather than an error (mirrors useMyTutorApplication).
  */
-export function useTutorBankAccount() {
+export function useTutorBankAccount(workspace?: EarningsWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<BankAccount | null>(null)
@@ -102,7 +105,7 @@ export function useTutorBankAccount() {
   async function refresh() {
     pending.value = true
     try {
-      data.value = await useApiFetch<BankAccount>('/tutor/bank-account', {
+      data.value = await useApiFetch<BankAccount>(`${earningsRoot(workspace)}/bank-account`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -123,10 +126,10 @@ export function useTutorBankAccount() {
  * sekali; panggilan berikutnya (terverifikasi atau belum) ditolak 409 — sejak
  * itu perubahan lewat requestTutorBankAccountChange. Throws on any non-2xx.
  */
-export async function saveTutorBankAccount(account: BankAccountInput): Promise<void> {
+export async function saveTutorBankAccount(account: BankAccountInput, workspace?: EarningsWorkspace): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch('/tutor/bank-account', {
+  await useApiFetch(`${earningsRoot(workspace)}/bank-account`, {
     baseURL: config.apiBase,
     method: 'PUT',
     body: account,
@@ -139,7 +142,7 @@ export async function saveTutorBankAccount(account: BankAccountInput): Promise<v
  * pending, kalau ada. 404 adalah jawaban normal "tidak ada yang pending", jadi
  * resolve ke null alih-alih error (mirrors useTutorBankAccount).
  */
-export function useTutorBankAccountChangeRequest() {
+export function useTutorBankAccountChangeRequest(workspace?: EarningsWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<BankAccountChangeRequest | null>(null)
@@ -148,7 +151,7 @@ export function useTutorBankAccountChangeRequest() {
   async function refresh() {
     pending.value = true
     try {
-      data.value = await useApiFetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
+      data.value = await useApiFetch<BankAccountChangeRequest>(`${earningsRoot(workspace)}/bank-account/change-request`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -172,10 +175,11 @@ export function useTutorBankAccountChangeRequest() {
  */
 export async function requestTutorBankAccountChange(
   account: BankAccountInput,
+  workspace?: EarningsWorkspace,
 ): Promise<BankAccountChangeRequest> {
   const { public: config } = useRuntimeConfig()
 
-  return await useApiFetch<BankAccountChangeRequest>('/tutor/bank-account/change-request', {
+  return await useApiFetch<BankAccountChangeRequest>(`${earningsRoot(workspace)}/bank-account/change-request`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: account,
@@ -184,7 +188,7 @@ export async function requestTutorBankAccountChange(
 }
 
 /** GET /tutor/payouts — riwayat pencairan, terbaru di atas. */
-export function useTutorPayouts() {
+export function useTutorPayouts(workspace?: EarningsWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<TutorPayout[]>([])
@@ -195,7 +199,7 @@ export function useTutorPayouts() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TutorPayout[]>('/tutor/payouts', {
+      data.value = await useApiFetch<TutorPayout[]>(`${earningsRoot(workspace)}/payouts`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -212,10 +216,10 @@ export function useTutorPayouts() {
 }
 
 /** POST /tutor/payouts — ≥ Rp100.000, ≤ saldo tersedia, rekening harus ada. */
-export async function requestTutorPayout(amount: number): Promise<TutorPayout> {
+export async function requestTutorPayout(amount: number, workspace?: EarningsWorkspace): Promise<TutorPayout> {
   const { public: config } = useRuntimeConfig()
 
-  return await useApiFetch<TutorPayout>('/tutor/payouts', {
+  return await useApiFetch<TutorPayout>(`${earningsRoot(workspace)}/payouts`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { amount },

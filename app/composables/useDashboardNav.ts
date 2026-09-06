@@ -5,6 +5,7 @@ import IconGrid from '~/components/icons/IconGrid.vue'
 import IconHome from '~/components/icons/IconHome.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
 import IconSettings from '~/components/icons/IconSettings.vue'
+import IconTarget from '~/components/icons/IconTarget.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconUsers from '~/components/icons/IconUsers.vue'
 import IconWallet from '~/components/icons/IconWallet.vue'
@@ -69,6 +70,15 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
         ],
       },
       { label: 'Daftar Siswa', to: '/dashboard/admin/students', icon: IconUsers },
+      {
+        label: 'Bimbel',
+        to: '/dashboard/admin/bimbels/applications',
+        icon: IconUsers,
+        children: [
+          { label: 'Pengajuan bimbel', to: '/dashboard/admin/bimbels/applications' },
+          { label: 'Pembayaran bimbel', to: '/dashboard/admin/bimbels/orders' },
+        ],
+      },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
       // Uang masuk sebelum uang keluar: verifikasi pembayaran adalah antrean
       // yang menahan akses pembeli yang sudah membayar, jadi ia duduk di atas
@@ -136,8 +146,33 @@ const EMPTY_NAV: DashboardNav = { title: '', items: [] }
  */
 export function useDashboardNav() {
   const { user } = useAuth()
+  const route = useRoute()
+  const { data: memberships } = useBimbelMemberships()
 
   return computed<DashboardNav>(() => {
+    const bimbelId = typeof route.params.bimbelId === 'string' ? route.params.bimbelId : ''
+    if (route.path.startsWith('/dashboard/bimbel/') && bimbelId) {
+      const membership = memberships.value.find(item => item.bimbelId === bimbelId && item.status === 'active')
+      if (!membership || membership.role === 'student') return EMPTY_NAV
+
+      const base = `/dashboard/bimbel/${bimbelId}`
+      const items: DashboardNavItem[] = [
+        { label: 'Ringkasan', to: base, icon: IconHome, exact: true },
+        { label: 'Bank soal', to: `${base}/products`, icon: IconGrid },
+        { label: 'Penugasan', to: `${base}/assignments`, icon: IconTarget },
+        { label: 'Kelas', to: `${base}/classes`, icon: IconUsers },
+      ]
+      if (membership.role === 'admin' || membership.role === 'owner') {
+        items.push({ label: 'Siswa & tim', to: `${base}/members`, icon: IconUser })
+        items.push({ label: 'Pengaturan', to: `${base}/settings`, icon: IconSettings })
+      }
+      if (membership.role === 'owner') {
+        items.push({ label: 'Penjualan', to: `${base}/sales`, icon: IconWallet })
+        items.push({ label: 'Langganan', to: `${base}/billing`, icon: IconReceipt })
+      }
+      return { title: membership.bimbelName, items }
+    }
+
     const role = user.value?.role
     return role === 'admin' || role === 'tutor' ? NAV_BY_ROLE[role] : EMPTY_NAV
   })
