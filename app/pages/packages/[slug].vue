@@ -80,7 +80,14 @@ const productJsonLd = {
   description: detail.value.description,
   category: detail.value.category,
   image: detail.value.thumbnailUrl,
-  brand: { '@type': 'Brand', name: detail.value.author.name },
+  // Brand is who sells it, author is who wrote it — and for a bimbel's package
+  // those are two different parties. Naming the tutor as the brand was right
+  // while a tutor was the only kind of seller; now that a package can be sold
+  // under an organisation's name, the markup should say the same thing the
+  // page does rather than credit the seller to whoever happens to be listed
+  // first. Author is stated in both cases, so the person is never dropped.
+  brand: { '@type': 'Brand', name: detail.value.bimbel?.name || detail.value.author.name },
+  author: { '@type': 'Person', name: detail.value.author.name },
   offers: {
     '@type': 'Offer',
     price: detail.value.price,
