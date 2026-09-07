@@ -162,12 +162,12 @@ function submenuId(item: DashboardNavItem): string {
            depend on its content, so there is no layout shift while it fills
            in a beat after mount. -->
       <ClientOnly>
-        <p
-          v-if="!collapsed"
-          class="px-3.5 pt-1 pb-2 text-[0.72rem] font-bold tracking-widest text-faint uppercase"
-        >
-          {{ nav.title }}
-        </p>
+        <!-- Pemilih konteks menggantikan judul statis: ia menyebut ruang yang
+             sedang dibuka sekaligus jadi jalan ke ruang lain. Judul lama hanya
+             mengulang apa yang sudah ditampilkan trigger-nya. -->
+        <div class="px-2.5 pt-1 pb-3">
+          <DashboardContextSwitcher :collapsed="collapsed" />
+        </div>
 
         <ul class="grid gap-1">
           <li v-for="item in nav.items" :key="item.to">

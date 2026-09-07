@@ -1,6 +1,12 @@
 export type BimbelRole = 'owner' | 'admin' | 'teacher' | 'student'
 export type BimbelStatus = 'trial' | 'active' | 'grace' | 'suspended'
-export type BimbelMemberStatus = 'pending' | 'active' | 'suspended' | 'left'
+/**
+ * `pending` dan `invited` sama-sama berarti "belum masuk", tapi menunggu pihak
+ * yang berlawanan: `pending` menunggu bimbel menjawab permintaan bergabung,
+ * `invited` menunggu akun menjawab undangan. Dipisah karena satu nilai membuat
+ * kedua sisi tidak bisa menampilkan daftar hal-yang-harus-dijawab.
+ */
+export type BimbelMemberStatus = 'pending' | 'invited' | 'active' | 'suspended' | 'left'
 
 export interface BimbelMembership {
   bimbelId: string
@@ -11,6 +17,19 @@ export interface BimbelMembership {
   status: BimbelMemberStatus
   bimbelStatus: BimbelStatus
   joinedAt: number
+}
+
+/** Balasan atas undangan — status akhirnya `active` (diterima) atau `left` (ditolak). */
+export interface InvitationAnswer {
+  bimbelId: string
+  bimbelName: string
+  role: BimbelRole
+  status: BimbelMemberStatus
+}
+
+export interface OwnershipTransfer {
+  owner: BimbelMember
+  previousOwner: BimbelMember
 }
 
 export interface Bimbel {

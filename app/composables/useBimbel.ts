@@ -9,6 +9,8 @@ import type {
   BimbelMembership,
   BimbelOrder,
   BimbelQuote,
+  InvitationAnswer,
+  OwnershipTransfer,
   StudentAssignment,
 } from '#shared/types/bimbel'
 
@@ -68,11 +70,25 @@ export const useStudentAssignments = () => resource(
 export const useMyBimbelApplication = () => resource(
   () => bimbelRequest<BimbelApplication | null>('/bimbel-applications/me'), null, 'Gagal memuat pengajuan.',
 )
+/**
+ * Undangan yang menunggu jawaban akun ini — bukan permintaan bergabung yang
+ * menunggu jawaban bimbel. Endpoint-nya tidak pernah 404: akun tanpa undangan
+ * mendapat daftar kosong, karena ini yang dipakai untuk memberi badge pada
+ * menu profil.
+ */
+export const useBimbelInvitations = () => resource(
+  () => bimbelRequest<BimbelMembership[]>('/me/bimbel-invitations'), [], 'Gagal memuat undangan bimbel.',
+)
 export const useBimbelOrders = (id: string) => resource(
   () => bimbelRequest<BimbelOrder[]>(bimbelPath(id, '/billing/orders')), [], 'Gagal memuat tagihan.',
 )
 
 export const joinBimbel = (code: string) => bimbelRequest<{ bimbelId: string, bimbelName: string, status: string }>('/bimbel/join', { method: 'POST', body: { code } })
+export const acceptBimbelInvitation = (bimbelId: string) => bimbelRequest<InvitationAnswer>(`/me/bimbel-invitations/${bimbelId}/accept`, { method: 'POST' })
+export const declineBimbelInvitation = (bimbelId: string) => bimbelRequest<InvitationAnswer>(`/me/bimbel-invitations/${bimbelId}/decline`, { method: 'POST' })
+/** Keluar dari bimbel. Owner ditolak server — ia harus transfer kepemilikan dulu. */
+export const leaveBimbel = (id: string) => bimbelRequest<void>(bimbelPath(id, '/members/me'), { method: 'DELETE' })
+export const transferBimbelOwnership = (id: string, accountId: string) => bimbelRequest<OwnershipTransfer>(bimbelPath(id, '/transfer-ownership'), { method: 'POST', body: { accountId } })
 export const applyBimbel = (body: { bimbelName: string, whatsapp: string, city: string, studentCount: number, about: string }) => bimbelRequest<BimbelApplication>('/bimbel-applications', { method: 'POST', body })
 export const updateBimbel = (id: string, body: Partial<Pick<Bimbel, 'name' | 'city' | 'description' | 'logoUrl'>>) => bimbelRequest<Bimbel>(bimbelPath(id), { method: 'PATCH', body })
 export const rotateBimbelJoinCode = (id: string) => bimbelRequest<Bimbel>(bimbelPath(id, '/join-code/rotate'), { method: 'POST' })

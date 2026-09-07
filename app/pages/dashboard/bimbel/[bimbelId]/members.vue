@@ -27,9 +27,17 @@ const ROLE_LABEL: Record<BimbelRole, string> = {
   student: 'Siswa',
 }
 
+/**
+ * `pending` dan `invited` sama-sama berarti "belum masuk", tapi menunggu pihak
+ * yang berlawanan — jadi labelnya menyebut siapa yang berutang jawaban, bukan
+ * sekadar "Menunggu". Yang menunggu pengelola diberi tone warning karena ia
+ * pekerjaan yang bisa diselesaikan dari halaman ini; yang menunggu orangnya
+ * netral karena tidak ada yang bisa dilakukan pengelola selain menunggu.
+ */
 const STATUS_LABEL: Record<BimbelMemberStatus, string> = {
   active: 'Aktif',
-  pending: 'Menunggu',
+  pending: 'Perlu disetujui',
+  invited: 'Undangan terkirim',
   suspended: 'Ditangguhkan',
   left: 'Keluar',
 }
@@ -37,6 +45,7 @@ const STATUS_LABEL: Record<BimbelMemberStatus, string> = {
 const STATUS_TONE: Record<BimbelMemberStatus, 'success' | 'warning' | 'neutral'> = {
   active: 'success',
   pending: 'warning',
+  invited: 'neutral',
   suspended: 'neutral',
   left: 'neutral',
 }
