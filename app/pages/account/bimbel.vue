@@ -48,7 +48,7 @@ function statusLabel(item: BimbelMembership): string {
 /** Hanya anggota aktif yang punya tujuan; sisanya belum punya ruang untuk dibuka. */
 function destinationFor(item: BimbelMembership): string | null {
   if (item.status !== 'active') return null
-  return item.role === 'student' ? '/akun/tugas-bimbel' : `/dashboard/bimbel/${item.bimbelId}`
+  return item.role === 'student' ? '/akun/paket-bimbel' : `/dashboard/bimbel/${item.bimbelId}`
 }
 
 async function join() {
@@ -160,7 +160,7 @@ async function answer(item: BimbelMembership, accept: boolean) {
             size="sm"
             :variant="item.role === 'student' ? 'secondary' : 'primary'"
           >
-            {{ item.role === 'student' ? 'Lihat tugas' : 'Buka dashboard' }}
+            {{ item.role === 'student' ? 'Lihat paket' : 'Buka dashboard' }}
           </AppButton>
           <DashboardBadge v-else tone="warning">Menunggu</DashboardBadge>
         </article>
@@ -180,7 +180,7 @@ async function answer(item: BimbelMembership, accept: boolean) {
         </form>
       </DashboardPanel>
 
-      <DashboardPanel title="Punya bimbel sendiri?" description="Kelola siswa, beri tugas, dan jual paketmu di Zenko.">
+      <DashboardPanel title="Punya bimbel sendiri?" description="Kelola siswa, buka bank soal untuk mereka, dan jual paketmu di Zenko.">
         <BimbelApplicationStatus v-if="application.data.value" :application="application.data.value" />
         <AppButton
           v-if="!application.data.value || application.data.value.status === 'rejected'"

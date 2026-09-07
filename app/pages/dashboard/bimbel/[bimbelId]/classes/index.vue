@@ -39,7 +39,7 @@ async function createClass() {
 async function remove(item: BimbelClass) {
   const accepted = await confirm({
     title: `Hapus kelas "${item.name}"?`,
-    description: 'Siswa tidak dihapus dari bimbel. Tugas lama tetap tersimpan.',
+    description: 'Siswa tidak dihapus dari bimbel dan tetap dapat mengerjakan seluruh bank soal.',
     confirmLabel: 'Hapus kelas',
   })
   if (!accepted) return
@@ -57,7 +57,9 @@ async function remove(item: BimbelClass) {
 
 <template>
   <div class="grid gap-6">
-    <AppPageHeader title="Kelas" description="Kelompokkan siswa agar satu penugasan dapat dibagikan ke rombel atau program tertentu." />
+    <!-- Kelas mengelompokkan siswa untuk keperluan administrasi. Ia tidak
+         mengatur akses: bank soal bimbel terbuka bagi setiap anggota aktif. -->
+    <AppPageHeader title="Kelas" description="Kelompokkan siswa ke dalam rombel atau program agar daftarnya tetap terbaca saat jumlahnya bertambah." />
 
     <DashboardPanel v-if="canManage" title="Buat kelas">
       <form class="flex max-w-xl items-end gap-3" @submit.prevent="createClass">
@@ -101,7 +103,7 @@ async function remove(item: BimbelClass) {
       <AppEmptyState
         v-else
         title="Belum ada kelas"
-        description="Kelas memudahkan penugasan ke sekelompok siswa sekaligus, tanpa mencentang namanya satu per satu."
+        description="Kelas memudahkan membaca dan menyaring daftar siswa per rombel atau program, alih-alih satu daftar panjang."
         :action-label="canManage ? 'Buat kelas' : undefined"
         @action="focusField('bimbel-class-name')"
       />

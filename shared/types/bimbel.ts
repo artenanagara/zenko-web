@@ -67,53 +67,20 @@ export interface BimbelClass {
   memberIds?: string[]
 }
 
-export type AssignmentTargetKind = 'all' | 'class' | 'member'
-export type AssignmentStatus = 'draft' | 'scheduled' | 'closed'
-export type AssignmentPhase = 'draft' | 'scheduled' | 'ongoing' | 'closed'
-export type AssignmentReviewPolicy = 'immediate' | 'after_close' | 'manual'
-
-export interface BimbelAssignment {
-  id: string
-  bimbelId: string
-  productId: string
-  packageSlug: string
-  title: string
-  targetKind: AssignmentTargetKind
-  targetIds?: string[]
-  opensAt: number
-  closesAt: number
-  maxAttempts: number
-  reviewPolicy: AssignmentReviewPolicy
-  status: AssignmentStatus
-  phase: AssignmentPhase
-  createdBy: string
-  createdAt: number
-}
-
-export interface AssignmentInput {
-  productId: string
-  title: string
-  targetKind: AssignmentTargetKind
-  targetIds: string[]
-  opensAt: number
-  closesAt: number
-  maxAttempts: number
-  reviewPolicy: AssignmentReviewPolicy
-}
-
-export interface StudentAssignment {
-  id: string
+/**
+ * Satu paket yang terbuka bagi siswa lewat keanggotaan bimbel — bukan lewat
+ * pembelian. Aksesnya berlaku selama keanggotaannya aktif, jadi tidak ada
+ * jadwal, batas percobaan, maupun fase yang perlu diikutkan di sini.
+ */
+export interface BimbelStudentPackage {
   bimbelId: string
   bimbelName: string
-  title: string
+  productId: string
   packageSlug: string
-  opensAt: number
-  closesAt: number
-  maxAttempts: number
+  title: string
+  category: string
   attemptsUsed: number
-  phase: 'scheduled' | 'ongoing' | 'closed'
-  canStart: boolean
-  reviewOpen: boolean
+  /** `-1` berarti paket ini belum pernah dikerjakan. */
   bestScore: number
 }
 
@@ -159,19 +126,23 @@ export interface BimbelOrder {
   paidAt?: number
 }
 
-export interface AssignmentResult {
+export interface BimbelProductResultRow {
   accountId: string
   name: string
-  status: 'belum' | 'selesai'
-  attemptId?: string
   attemptsUsed: number
   score: number
   rank: number
-  finishedAt?: number
+  finishedAt: number
 }
 
-export interface AssignmentResults {
-  assignment: BimbelAssignment
-  summary: { assigned: number, submitted: number, average: number, highest: number, lowest: number }
-  results: AssignmentResult[]
+/**
+ * Rekap satu paket lintas anggota bimbel.
+ *
+ * `rows` hanya berisi anggota yang pernah mengerjakan. Tanpa daftar sasaran
+ * tidak ada himpunan "seharusnya mengerjakan", jadi "siapa yang belum" memang
+ * tidak dapat diturunkan — dan tidak boleh dikarang di UI.
+ */
+export interface BimbelProductResults {
+  summary: { attempted: number, average: number, highest: number, lowest: number }
+  rows: BimbelProductResultRow[]
 }

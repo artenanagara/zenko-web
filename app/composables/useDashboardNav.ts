@@ -5,7 +5,6 @@ import IconGrid from '~/components/icons/IconGrid.vue'
 import IconHome from '~/components/icons/IconHome.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
 import IconSettings from '~/components/icons/IconSettings.vue'
-import IconTarget from '~/components/icons/IconTarget.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconUsers from '~/components/icons/IconUsers.vue'
 import IconWallet from '~/components/icons/IconWallet.vue'
@@ -159,7 +158,6 @@ export function useDashboardNav() {
       const items: DashboardNavItem[] = [
         { label: 'Ringkasan', to: base, icon: IconHome, exact: true },
         { label: 'Bank soal', to: `${base}/products`, icon: IconGrid },
-        { label: 'Penugasan', to: `${base}/assignments`, icon: IconTarget },
         { label: 'Kelas', to: `${base}/classes`, icon: IconUsers },
       ]
       if (membership.role === 'admin' || membership.role === 'owner') {

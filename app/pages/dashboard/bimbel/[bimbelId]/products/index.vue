@@ -25,7 +25,7 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
     if (action === 'archive') await archiveTutorProduct(product.id, workspace)
     if (action === 'delete') await deleteTutorProduct(product.id, workspace)
     await refresh()
-    toast.success(action === 'marketplace' ? 'Salinan marketplace diajukan.' : action === 'publish' ? 'Paket siap ditugaskan.' : action === 'archive' ? 'Paket diarsipkan.' : 'Paket dihapus.')
+    toast.success(action === 'marketplace' ? 'Salinan marketplace diajukan.' : action === 'publish' ? 'Paket tayang untuk siswa bimbel.' : action === 'archive' ? 'Paket diarsipkan.' : 'Paket dihapus.')
   }
   catch (cause) {
     problems.value = tutorSubmitProblems(cause)
@@ -53,7 +53,11 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
           </div>
           <div class="flex flex-wrap gap-2">
             <AppButton v-if="product.status === 'draft' || product.status === 'rejected' || product.status === 'live'" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/edit`" size="sm" variant="secondary">Edit</AppButton>
-            <AppButton v-if="product.visibility === 'bimbel' && (product.status === 'draft' || product.status === 'rejected')" size="sm" :loading="busyId === product.id" @click="run(product, 'publish')">Siapkan untuk tugas</AppButton>
+            <AppButton v-if="product.visibility === 'bimbel' && (product.status === 'draft' || product.status === 'rejected')" size="sm" :loading="busyId === product.id" @click="run(product, 'publish')">Tayangkan</AppButton>
+            <!-- Rekap hasil jadi route sendiri, menggantikan panel Hasil kelompok
+                 yang dulu menempel pada penugasan. Hanya paket privat yang pernah
+                 tayang yang bisa punya percobaan untuk direkap. -->
+            <AppButton v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" size="sm" variant="secondary">Lihat hasil</AppButton>
             <AppButton v-if="product.visibility === 'bimbel' && product.status === 'live' && canManageMarketplace" size="sm" variant="secondary" :loading="busyId === product.id" @click="run(product, 'marketplace')">Jual di marketplace</AppButton>
             <AppButton v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" size="sm" :loading="busyId === product.id" @click="run(product, 'marketplace')">Ajukan ulang</AppButton>
             <AppButton v-if="product.status === 'live'" size="sm" variant="ghost" :loading="busyId === product.id" @click="run(product, 'archive')">Arsipkan</AppButton>

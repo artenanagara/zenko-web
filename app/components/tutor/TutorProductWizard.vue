@@ -1120,7 +1120,7 @@ const priceHintBlocking = computed(() =>
   <div class="grid gap-6 pb-24">
     <AppPageHeader
       :title="isEdit ? 'Edit produk' : 'Buat produk'"
-      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah lengkap, paket dapat langsung ditugaskan ke siswa.' : 'Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
+      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah tayang, paket langsung terbuka untuk seluruh siswa bimbel.' : 'Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
     >
       <template #actions>
         <p
@@ -1159,14 +1159,14 @@ const priceHintBlocking = computed(() =>
     </DashboardPanel>
 
     <!-- Submitted: replace the wizard so nothing invites further edits. -->
-    <DashboardPanel v-else-if="submitted" :title="isBimbelPrivateProduct ? 'Paket siap ditugaskan' : 'Produk diajukan untuk tayang'">
+    <DashboardPanel v-else-if="submitted" :title="isBimbelPrivateProduct ? 'Paket tayang di bank soal' : 'Produk diajukan untuk tayang'">
       <div class="py-4 text-center">
         <span class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success-soft" aria-hidden="true">
           <IconCheck class="h-7 w-7 text-success-ink" />
         </span>
         <p class="mx-auto mt-4 max-w-105 leading-[1.7] text-muted">
           {{ isBimbelPrivateProduct
-            ? 'Paket sudah aktif di bank soal privat. Sekarang buat penugasan untuk semua siswa, kelas tertentu, atau siswa pilihan.'
+            ? 'Paket sudah aktif di bank soal privat dan terbuka untuk seluruh siswa bimbel yang keanggotaannya aktif.'
             : 'Tim kurasi Zenko akan segera meninjau paket soalmu. Begitu disetujui, paket akan tayang di katalog.' }}
         </p>
         <AppButton :to="productDashboardPath" class="mt-6">Kembali ke daftar produk</AppButton>
@@ -1894,7 +1894,7 @@ const priceHintBlocking = computed(() =>
               : isLiveProduct
                 ? 'Ajukan ulang untuk ditinjau'
                 : isBimbelPrivateProduct
-                  ? 'Siapkan untuk ditugaskan'
+                  ? 'Tayangkan ke bank soal'
                   : 'Ajukan untuk tayang' }}
           </AppButton>
         </div>

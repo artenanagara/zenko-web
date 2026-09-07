@@ -1,17 +1,15 @@
 import type {
-  AssignmentInput,
-  AssignmentResults,
   Bimbel,
   BimbelApplication,
-  BimbelAssignment,
   BimbelClass,
   BimbelMember,
   BimbelMembership,
   BimbelOrder,
+  BimbelProductResults,
   BimbelQuote,
+  BimbelStudentPackage,
   InvitationAnswer,
   OwnershipTransfer,
-  StudentAssignment,
 } from '#shared/types/bimbel'
 
 function bimbelPath(id: string, suffix = ''): string {
@@ -61,11 +59,13 @@ export const useBimbelMembers = (id: string) => resource(
 export const useBimbelClasses = (id: string) => resource(
   () => bimbelRequest<BimbelClass[]>(bimbelPath(id, '/classes')), [], 'Gagal memuat kelas.',
 )
-export const useBimbelAssignments = (id: string) => resource(
-  () => bimbelRequest<BimbelAssignment[]>(bimbelPath(id, '/assignments')), [], 'Gagal memuat penugasan.',
-)
-export const useStudentAssignments = () => resource(
-  () => bimbelRequest<StudentAssignment[]>('/me/assignments'), [], 'Gagal memuat tugas bimbel.',
+/**
+ * Paket yang terbuka lewat keanggotaan bimbel. Daftar kosong untuk akun yang
+ * tidak tergabung di bimbel mana pun — bukan 404 — jadi pemanggilnya cukup
+ * membedakan "kosong" dari "gagal".
+ */
+export const useMyBimbelPackages = () => resource(
+  () => bimbelRequest<BimbelStudentPackage[]>('/me/bimbel-packages'), [], 'Gagal memuat paket bimbel.',
 )
 export const useMyBimbelApplication = () => resource(
   () => bimbelRequest<BimbelApplication | null>('/bimbel-applications/me'), null, 'Gagal memuat pengajuan.',
@@ -98,11 +98,7 @@ export const createBimbelClass = (id: string, name: string) => bimbelRequest<Bim
 export const getBimbelClass = (id: string, classId: string) => bimbelRequest<BimbelClass>(bimbelPath(id, `/classes/${classId}`))
 export const updateBimbelClassMembers = (id: string, classId: string, accountIds: string[]) => bimbelRequest<BimbelClass>(bimbelPath(id, `/classes/${classId}/members`), { method: 'PUT', body: { accountIds } })
 export const deleteBimbelClass = (id: string, classId: string) => bimbelRequest<void>(bimbelPath(id, `/classes/${classId}`), { method: 'DELETE' })
-export const createBimbelAssignment = (id: string, body: AssignmentInput) => bimbelRequest<BimbelAssignment>(bimbelPath(id, '/assignments'), { method: 'POST', body })
-export const publishBimbelAssignment = (id: string, assignmentId: string) => bimbelRequest<BimbelAssignment>(bimbelPath(id, `/assignments/${assignmentId}/publish`), { method: 'POST' })
-export const closeBimbelAssignment = (id: string, assignmentId: string) => bimbelRequest<BimbelAssignment>(bimbelPath(id, `/assignments/${assignmentId}/close`), { method: 'POST' })
-export const deleteBimbelAssignment = (id: string, assignmentId: string) => bimbelRequest<void>(bimbelPath(id, `/assignments/${assignmentId}`), { method: 'DELETE' })
-export const getBimbelAssignmentResults = (id: string, assignmentId: string) => bimbelRequest<AssignmentResults>(bimbelPath(id, `/assignments/${assignmentId}/results`))
+export const getBimbelProductResults = (id: string, productId: string) => bimbelRequest<BimbelProductResults>(bimbelPath(id, `/products/${productId}/results`))
 export const getBimbelQuote = (id: string, seats?: number, months?: number) => bimbelRequest<BimbelQuote>(bimbelPath(id, '/billing/quote'), { query: seats ? { seats, months } : undefined })
 export const createBimbelOrder = (id: string, seatQuota: number, months: number) => bimbelRequest<BimbelOrder>(bimbelPath(id, '/billing/orders'), { method: 'POST', body: { seatQuota, months } })
 export const cancelBimbelOrder = (id: string, orderId: string) => bimbelRequest<void>(bimbelPath(id, `/billing/orders/${orderId}/cancel`), { method: 'POST' })
