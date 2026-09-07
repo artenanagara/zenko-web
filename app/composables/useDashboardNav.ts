@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import IconBank from '~/components/icons/IconBank.vue'
+import IconCheckCircle from '~/components/icons/IconCheckCircle.vue'
 import IconEye from '~/components/icons/IconEye.vue'
 import IconGrid from '~/components/icons/IconGrid.vue'
 import IconHome from '~/components/icons/IconHome.vue'
@@ -78,6 +79,17 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
           { label: 'Pembayaran bimbel', to: '/dashboard/admin/bimbels/orders' },
         ],
       },
+      // Antrean bukti transfer langganan bimbel. Berdiri sendiri di samping
+      // grup Bimbel, bukan sebagai anaknya, supaya ia bisa membawa ikonnya
+      // sendiri: grup itu masih memakai IconUsers yang bertabrakan dengan
+      // "Daftar Siswa" (docs/konsep-bimbel-agency.md §9), dan menambah entri di
+      // dalamnya hanya akan menumpuk pada tabrakan yang sama.
+      //
+      // Bedanya dengan "Pembayaran bimbel" di grup itu: di sana admin
+      // mengaktifkan tagihan langsung dari daftar tagihan; di sini keputusannya
+      // berangkat dari bukti transfer yang dikirim bimbel. Keduanya bermuara
+      // pada Activate yang sama.
+      { label: 'Verifikasi langganan', to: '/dashboard/admin/bimbel-payments', icon: IconCheckCircle },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
       // Uang masuk sebelum uang keluar: verifikasi pembayaran adalah antrean
       // yang menahan akses pembeli yang sudah membayar, jadi ia duduk di atas

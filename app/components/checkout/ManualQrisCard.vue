@@ -40,6 +40,15 @@ onMounted(async () => {
   }
 })
 
+/**
+ * Janji waktu verifikasi, dibaca dari tenggat yang sama yang dipakai server.
+ * 24 jam ditulis "1×24 jam" karena itu yang lazim dibaca di Indonesia.
+ */
+const verificationWindow = computed(() => {
+  const hours = method.value?.deadlineHours ?? 24
+  return hours === 24 ? '1×24 jam' : `${hours} jam`
+})
+
 const amounts = computed(() => manualTransferBreakdown(props.purchase))
 
 /** Ditolak admin: alasannya yang pertama dibaca, sebelum QR-nya. */
@@ -75,15 +84,6 @@ onUnmounted(() => {
   if (copyResetHandle !== null) clearTimeout(copyResetHandle)
 })
 
-/**
- * Janji waktu verifikasi, dibaca dari tenggat yang sama yang dipakai server.
- * 24 jam ditulis "1×24 jam" karena itu yang lazim dibaca di Indonesia.
- */
-const verificationWindow = computed(() => {
-  const hours = method.value?.deadlineHours ?? 24
-  return hours === 24 ? '1×24 jam' : `${hours} jam`
-})
-
 const paySteps = computed(() => [
   'Buka aplikasi bank atau e-wallet yang mendukung QRIS.',
   'Pilih "Scan QR", lalu arahkan kamera ke kode di atas. Kalau kamu membuka halaman ini dari HP, simpan dulu gambarnya lalu unggah di aplikasi bank.',
@@ -112,30 +112,7 @@ const paySteps = computed(() => [
     </div>
 
     <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-      <!-- Quiet zone diberikan lewat padding putih di sekeliling gambar, bukan
-           di dalam file-nya, supaya kodenya tetap terbaca pemindai. -->
-      <div class="grid shrink-0 justify-items-center gap-3">
-        <div class="rounded-sm bg-white p-4 shadow-xs">
-          <img
-            src="/pembayaran/qris-zenko.webp"
-            alt="Kode QRIS Zenko Edukasi"
-            width="458"
-            height="458"
-            class="h-48 w-48 object-contain sm:h-56 sm:w-56"
-          >
-        </div>
-        <!-- Di bawah kodenya, karena inilah yang dilakukan orang saat membuka
-             halaman ini dari HP: simpan gambarnya, lalu unggah di aplikasi
-             banknya — kamera tidak bisa memindai layarnya sendiri. -->
-        <a
-          href="/pembayaran/qris-zenko-poster.jpg"
-          download="QRIS-Zenko-Edukasi.jpg"
-          class="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-hairline-strong bg-surface px-3.5 py-2 text-[0.84rem] font-semibold hover:bg-surface-sunken"
-        >
-          <AppIcon name="download-simple" :size="16" aria-hidden="true" />
-          Simpan gambar QRIS
-        </a>
-      </div>
+      <ManualQrisCode />
 
       <!-- Kolom kanan: siapa yang dibayar, berapa, lalu satu tindakan.
            Nominalnya sengaja tidak sebesar angka Total di ringkasan pesanan —

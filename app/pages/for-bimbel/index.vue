@@ -15,17 +15,17 @@ definePageMeta({ path: '/untuk-bimbel' })
  * Semua klaim di halaman ini dibatasi pada yang benar-benar berjalan hari ini:
  * kelas, akses lewat keanggotaan, rekap hasil per paket, paket privat milik
  * bimbel, pengajuan paket ke katalog publik, kode bergabung, dan langganan
- * per kursi.
- * Yang belum ada — notifikasi email, impor CSV, tingkat langganan, bagi hasil
- * bimbel ke tutor, pembayaran otomatis — tidak disebut sebagai fitur.
+ * bertingkat dengan kursi terukur.
+ * Yang belum ada — notifikasi email, impor CSV, bagi hasil bimbel ke tutor,
+ * pembayaran otomatis — tidak disebut sebagai fitur.
  */
 useSeoMeta({
   title: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   description:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Rp3.000 per siswa per bulan, minimum 25 kursi, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa, dengan uji coba 14 hari untuk 50 siswa.',
   ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   ogDescription:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Rp3.000 per siswa per bulan, minimum 25 kursi, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa, dengan uji coba 14 hari untuk 50 siswa.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel',
   twitterCard: 'summary_large_image',
@@ -100,12 +100,17 @@ const faqs = [
   {
     question: 'Berapa biaya berlangganan Zenko untuk bimbel?',
     answer:
-      'Rp3.000 per siswa per bulan, dengan kuota minimum 25 kursi dan kelipatan 5 kursi. Tidak ada biaya pendaftaran, dan satu tagihan bisa dibuat untuk maksimal 12 bulan sekaligus.',
+      'Ada tiga tingkat: Langganan Dasar Rp75.000 per bulan sudah termasuk 25 kursi siswa, Langganan Pro Rp135.000 untuk 50 kursi, dan Langganan Institusi Rp375.000 untuk 150 kursi. Siswa di atas kursi yang sudah termasuk ditagih Rp3.000 per siswa per bulan di semua tingkat, dengan kelipatan kuota 5 kursi. Tidak ada biaya pendaftaran, dan satu tagihan bisa dibuat untuk maksimal 12 bulan sekaligus.',
+  },
+  {
+    question: 'Apa untungnya membayar tahunan?',
+    answer:
+      'Langganan 12 bulan ditagih 10 bulan — hemat sekitar 17% dibanding membayar bulanan, dan berlaku di ketiga tingkat. Harganya tetap dihitung server saat tagihan dibuat, jadi yang kamu bayar sama dengan yang tertulis di invoice.',
   },
   {
     question: 'Apakah ada masa uji coba?',
     answer:
-      'Ada. Begitu pengajuanmu disetujui, bimbelmu mendapat 14 hari uji coba untuk 50 siswa tanpa biaya dan tanpa kartu kredit, cukup untuk menjalankan satu try out dengan angkatan yang sebenarnya.',
+      'Ada. Begitu pengajuanmu disetujui, bimbelmu mendapat 14 hari uji coba dengan kemampuan Langganan Pro untuk 50 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan angkatan yang sebenarnya.',
   },
   {
     question: 'Bagaimana cara membayar tagihannya?',
@@ -130,7 +135,7 @@ const faqs = [
   {
     question: 'Berapa pengajar yang bisa saya libatkan?',
     answer:
-      'Satu bimbel bisa punya beberapa pengelola dengan peran berbeda: owner, admin, dan pengajar. Yang dihitung sebagai kursi berlangganan hanya siswa, bukan pengajarmu.',
+      'Tergantung tingkat langganannya: Langganan Dasar sampai 3 pengajar, Langganan Pro sampai 10, dan Langganan Institusi tanpa batas. Pengajar dan admin tidak pernah dihitung sebagai kursi berlangganan — yang dihitung hanya siswa.',
   },
 ] as const
 
@@ -271,11 +276,12 @@ void stepRef
             Harga
           </p>
           <h2 id="harga-bimbel-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Bayar sesuai <span class="text-accent">jumlah kursi siswa</span>
+            Tiga tingkat, <span class="text-accent">kursi tetap terukur</span>
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
-            Satu harga per kursi, tanpa biaya pendaftaran. Kamu memilih kuotanya
-            sendiri saat membuat tagihan.
+            Tiap tingkat sudah termasuk sejumlah kursi siswa, dan kelebihannya
+            ditagih per siswa. Tanpa biaya pendaftaran — kamu memilih tingkat
+            dan kuotanya sendiri saat membuat tagihan.
           </p>
         </div>
 
