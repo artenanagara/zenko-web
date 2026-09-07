@@ -7,10 +7,6 @@ const slug = route.params.slug as string
 
 const detail = await usePackageDetail(slug)
 const related = useRelatedPackages(detail.value.category, slug)
-const authorProfilePath = computed(() => {
-  const identifier = detail.value.author.username || detail.value.author.id
-  return identifier ? `/tutor/${encodeURIComponent(identifier)}` : undefined
-})
 
 // Same pre-checkout guard as /checkout/:slug, applied to the "Beli sekarang"
 // CTA: an already-owned package points at the account instead of a checkout
@@ -133,20 +129,10 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <!-- Linked when the tutor has a public profile identifier;
-                 platform-owned seed paket carry neither username nor ID. -->
-            <NuxtLink
-              v-if="authorProfilePath"
-              :to="authorProfilePath"
-              class="-my-2 flex items-center gap-2 py-2 font-semibold text-ink transition-colors duration-200 ease-smooth hover:text-primary hover:underline"
-            >
-              <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
-              {{ detail.author.name }}
-            </NuxtLink>
-            <span v-else class="flex items-center gap-2">
-              <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
-              <span class="font-semibold text-ink">{{ detail.author.name }}</span>
-            </span>
+            <!-- Penulis + bimbel penerbitnya, komponen yang sama dengan kartu
+                 katalog supaya satu paket tidak beratribusi berbeda antara
+                 tempat ia ditemukan dan tempat ia dibeli. -->
+            <PackageAttribution :author="detail.author" :bimbel="detail.bimbel" variant="detail" />
             <span class="flex items-center gap-1.5">
               <IconStar class="h-3.5 w-3.5 text-star" />
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>

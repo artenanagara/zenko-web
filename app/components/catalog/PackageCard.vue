@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Author, Package } from '#shared/types/catalog'
+import type { Package } from '#shared/types/catalog'
 
 /**
  * The card used to be a single <NuxtLink> wrapping everything. That had to go
@@ -19,11 +19,6 @@ import type { Author, Package } from '#shared/types/catalog'
 import { NuxtLink } from '#components'
 
 defineProps<{ item: Package }>()
-
-function authorProfilePath(author: Author) {
-  const identifier = author.username || author.id
-  return identifier ? `/tutor/${encodeURIComponent(identifier)}` : undefined
-}
 </script>
 
 <template>
@@ -56,17 +51,13 @@ function authorProfilePath(author: Author) {
 
         <!-- Avatar and name are one target so the tutor link clears a usable
              tap size; the negative margin keeps that padding from moving the
-             price row down. `authorProfilePath` also handles legacy tutors
-             whose account exists but whose public username is still empty. -->
-        <component
-          :is="authorProfilePath(item.author) ? NuxtLink : 'div'"
-          :to="authorProfilePath(item.author)"
-          class="relative z-1 mt-3 -mb-2 flex w-fit items-center gap-2 py-2 text-[0.88rem] text-muted"
-          :class="authorProfilePath(item.author) ? 'transition-colors duration-200 ease-smooth hover:text-primary hover:underline' : ''"
-        >
-          <img :src="item.author.avatarUrl" alt="" loading="lazy" class="h-6 w-6 shrink-0 rounded-full object-cover">
-          <span>{{ item.author.name }}</span>
-        </component>
+             price row down. -->
+        <PackageAttribution
+          :author="item.author"
+          :bimbel="item.bimbel"
+          variant="card"
+          class="mt-3 -mb-2"
+        />
 
         <p class="mt-4 flex items-center gap-1.5 text-[0.82rem] text-muted">
           <IconStar class="h-3.5 w-3.5 shrink-0 text-star" /> {{ item.rating.toFixed(1) }}

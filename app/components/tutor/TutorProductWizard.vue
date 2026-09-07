@@ -40,6 +40,61 @@ const productDashboardPath = computed(() => props.bimbelId
 
 const isEdit = computed(() => Boolean(props.productId))
 
+/* ----------------------------------------------- kepemilikan ("Terbitkan sebagai") */
+
+/**
+ * Pemilik paket ditentukan sekali, saat paket dibuat. Server menolak
+ * memindahkannya sesudah itu, jadi pemilih ini tidak pernah tampil di mode
+ * edit — pilihan yang tidak bisa dijalankan lebih buruk daripada tidak ada.
+ *
+ * Dari ruang kerja bimbel (`bimbelId` ada), pemiliknya sudah ditentukan URL
+ * dan server menolak body yang menyebut bimbel lain; yang tampil di sana
+ * adalah keadaannya, bukan pilihan.
+ */
+const bimbelMemberships = useBimbelMemberships()
+
+onMounted(() => {
+  // Layout dashboard sudah memuat keanggotaan di route bimbel — di ruang kerja
+  // tutor tidak, jadi hanya di sanalah wizard perlu memintanya sendiri.
+  if (!isEdit.value && !props.bimbelId) bimbelMemberships.refresh()
+})
+
+/** Bimbel tempat akun ini boleh menerbitkan: anggota aktif, dan bukan siswa. */
+const publishableBimbels = computed(() =>
+  bimbelMemberships.data.value.filter(item => item.status === 'active' && item.role !== 'student'),
+)
+
+const lockedOwnerBimbel = computed(() =>
+  props.bimbelId
+    ? bimbelMemberships.data.value.find(item => item.bimbelId === props.bimbelId) ?? null
+    : null,
+)
+
+/** Kosong = paket pribadi tutor. Hanya diisi dari ruang kerja tutor. */
+const ownerBimbelId = ref('')
+
+/**
+ * Satu opsi bukan pilihan: tutor tanpa keanggotaan aktif non-student tidak
+ * diberi pemilih sama sekali, bukan pemilih berisi "Saya sendiri" saja.
+ */
+const showOwnerPicker = computed(() =>
+  !isEdit.value && !props.bimbelId && publishableBimbels.value.length > 0,
+)
+
+const ownerOptions = computed(() => [
+  { value: '', label: 'Saya sendiri' },
+  ...publishableBimbels.value.map(item => ({ value: item.bimbelId, label: item.bimbelName })),
+])
+
+const OWNER_CONSEQUENCE = 'Paket milik bimbel masuk ke bank soal privat bimbel dan langsung terbuka untuk siswanya; paket pribadi dijual di katalog publik.'
+
+/**
+ * Pemilik yang dipilih menentukan ruang kerja paket yang baru dibuat — bukan
+ * URL tempat wizard dibuka. Draft milik bimbel hidup di `/bimbel/:id/products`,
+ * jadi PATCH lanjutan dan seluruh langkah 4–5 harus menuju ke sana.
+ */
+const createOwnerBimbelId = computed(() => props.bimbelId || ownerBimbelId.value)
+
 /**
  * Same cookie key the dashboard layout keys its rail width off (see
  * app/layouts/dashboard.vue) — `useCookie` shares reactive state by key, so
@@ -821,12 +876,24 @@ async function createAndContinue() {
     const created = await createTutorProduct({
       type: form.type,
       title: form.title.trim(),
+      // Dari ruang kerja bimbel pemiliknya sudah dari URL, jadi tidak
+      // diulang di body; dari ruang kerja tutor inilah satu-satunya cara
+      // pilihan "Terbitkan sebagai" sampai ke server.
+      ...(!props.bimbelId && ownerBimbelId.value ? { ownerBimbelId: ownerBimbelId.value } : {}),
       examTypeSlug: isSingle.value ? form.examTypeSlug : undefined,
       mode: form.mode,
       ...(isSingle.value && sendSectionTitle && form.sectionTitle ? { sectionTitle: form.sectionTitle } : {}),
       ...(sendConfig && form.questionTarget ? { questionTarget: form.questionTarget } : {}),
       ...(sendConfig && form.durationMinutes ? { durationMinutes: form.durationMinutes } : {}),
     }, workspace.value)
+
+    // Draft ini sekarang milik pemilik yang dipilih; sisa wizard mengikutinya.
+    const ownedWorkspace: ProductWorkspace | undefined = createOwnerBimbelId.value
+      ? { bimbelId: createOwnerBimbelId.value }
+      : undefined
+    const ownedDashboardPath = createOwnerBimbelId.value
+      ? `/dashboard/bimbel/${createOwnerBimbelId.value}/products`
+      : productDashboardPath.value
 
     const patch: UpdateProductRequest = {}
     if (form.description.trim()) patch.description = form.description.trim()
@@ -836,7 +903,7 @@ async function createAndContinue() {
     if (form.price) patch.price = form.price
     if (form.priceOriginal) patch.priceOriginal = form.priceOriginal
     if (isSingle.value && form.shuffleQuestions) patch.shuffleQuestions = form.shuffleQuestions
-    if (Object.keys(patch).length) await updateTutorProduct(created.id, patch, workspace.value)
+    if (Object.keys(patch).length) await updateTutorProduct(created.id, patch, ownedWorkspace)
 
     saveState.value = 'saved'
     // Everything typed so far now lives on the server; the leave guard must
@@ -846,7 +913,7 @@ async function createAndContinue() {
     form.thumbnailUrl = ''
     form.includes = []
     await navigateTo({
-      path: `${productDashboardPath.value}/${created.id}/edit`,
+      path: `${ownedDashboardPath}/${created.id}/edit`,
       query: { langkah: '4' },
       replace: true,
     })
@@ -1224,6 +1291,30 @@ const priceHintBlocking = computed(() =>
              dan berubah mengikutinya. -->
         <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div class="grid max-w-160 gap-5">
+            <!-- Kepemilikan: keadaan di ruang kerja bimbel, pilihan di ruang
+                 kerja tutor, dan tidak ada sama sekali untuk tutor tanpa
+                 keanggotaan aktif maupun di mode edit. -->
+            <AppSectionMessage
+              v-if="!isEdit && lockedOwnerBimbel"
+              appearance="information"
+              title="Terbitkan sebagai"
+            >
+              Paket ini dibuat di ruang kerja <strong class="font-semibold text-ink">{{ lockedOwnerBimbel.bimbelName }}</strong>,
+              jadi bimbel itu pemiliknya dan tidak bisa diubah di sini. {{ OWNER_CONSEQUENCE }}
+            </AppSectionMessage>
+
+            <div v-else-if="showOwnerPicker">
+              <AppSelect
+                :options="ownerOptions"
+                :model-value="ownerBimbelId"
+                label="Terbitkan sebagai"
+                @update:model-value="(value) => { ownerBimbelId = String(value) }"
+              />
+              <p class="mt-1.5 text-[0.8rem] leading-[1.6] text-muted">
+                {{ OWNER_CONSEQUENCE }} Pemiliknya tidak bisa dipindah setelah paket dibuat.
+              </p>
+            </div>
+
             <AppSelect
               :options="PRODUCT_TYPE_OPTIONS"
               :model-value="form.type"

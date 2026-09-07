@@ -102,4 +102,50 @@ test.describe('catalog (/paket)', () => {
     await expect(seededCard.getByText(seeded.author.name)).toBeVisible()
     await expect(seededCard.getByRole('link', { name: seeded.author.name })).toHaveCount(0)
   })
+
+  /**
+   * Atribusi ganda. Paket bimbel dulu tampil dengan nama bimbel MENGGANTIKAN
+   * penulisnya; sekarang keduanya ada. Yang dijaga di sini: penulisnya tidak
+   * hilang lagi, dan nama bimbel tidak diam-diam berubah jadi tautan — halaman
+   * publik bimbel belum ada, jadi tautannya akan mati.
+   */
+  test('a bimbel paket shows its tutor and its bimbel, and only the tutor links', async ({ page }) => {
+    const card = page.locator(CARD).first()
+
+    await expect(card.getByRole('link', { name: CPNS.author.name })).toBeVisible()
+    await expect(card.getByText(CPNS.bimbel!.name)).toBeVisible()
+    await expect(card.getByRole('link', { name: CPNS.bimbel!.name })).toHaveCount(0)
+
+    // Paket pribadi — mayoritas katalog — tidak menumbuhkan baris kedua.
+    const personal = PACKAGES['prediksi-bumn-2026']!
+    expect(personal.bimbel).toBeUndefined()
+    const personalCard = page.locator(`article:has(a[href="/paket/${personal.slug}"])`).first()
+    await expect(personalCard.getByText('Bimbel', { exact: false })).toHaveCount(0)
+  })
+
+  /**
+   * Kartu katalog itu grid: nama bimbel yang panjang harus dipotong, bukan
+   * melebarkan kartunya. Diuji di lebar mobile karena di situlah ruangnya
+   * paling sempit.
+   */
+  test('a long bimbel name is truncated instead of widening the card', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 })
+
+    const long = PACKAGES['snbt-master-class-2026']!
+    const card = page.locator(`article:has(a[href="/paket/${long.slug}"])`).first()
+    const name = card.getByText(long.bimbel!.name)
+
+    await expect(name).toBeVisible()
+    const overflowsCard = await name.evaluate((el) => {
+      const article = el.closest('article')!
+      // scrollWidth > clientWidth artinya teksnya memang dipotong, dan
+      // kartunya sendiri tidak ikut melar melebihi kolom gridnya.
+      return {
+        clipped: el.scrollWidth > el.clientWidth,
+        cardOverflows: article.scrollWidth > article.clientWidth,
+      }
+    })
+
+    expect(overflowsCard).toEqual({ clipped: true, cardOverflows: false })
+  })
 })

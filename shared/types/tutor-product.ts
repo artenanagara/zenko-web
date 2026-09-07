@@ -268,6 +268,13 @@ export interface TutorPricingEligibility {
 export interface CreateProductRequest {
   type: ProductType
   title: string
+  /**
+   * Pemilik paket, dipilih di langkah 1 wizard. Kosong/absen berarti paket
+   * pribadi tutor. Terisi berarti paket milik bimbel itu — server memvalidasi
+   * keanggotaan pemanggil (role minimal `teacher`, status `active`), jadi ini
+   * niat, bukan otorisasi.
+   */
+  ownerBimbelId?: string
   examTypeSlug?: string
   /** single only: defaults to `simulasi` server-side when omitted. */
   mode?: ProductMode
