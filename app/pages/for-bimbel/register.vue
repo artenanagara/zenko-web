@@ -18,7 +18,7 @@ definePageMeta({ path: '/untuk-bimbel/daftar' })
 useSeoMeta({
   title: 'Daftarkan Bimbel di Zenko',
   description:
-    'Ajukan bimbelmu untuk memakai Zenko: kelas, penugasan try out, dan rekap hasil siswa dalam satu ruang kerja.',
+    'Ajukan bimbelmu untuk memakai Zenko: kelas, bank soal privat, dan rekap hasil siswa dalam satu ruang kerja.',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel/daftar',
 })
 

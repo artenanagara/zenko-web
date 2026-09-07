@@ -85,7 +85,7 @@ async function order() {
   <div class="grid gap-6">
     <AppPageHeader
       title="Langganan"
-      description="Pilih kapasitas siswa dan periode. Jumlah bank soal dan penugasan tidak dibatasi oleh paket."
+      description="Pilih kapasitas siswa dan periode. Jumlah bank soal dan kelas tidak dibatasi oleh langganan."
     />
 
     <AppSectionMessage appearance="information" title="Langganan berdasarkan kursi siswa aktif">

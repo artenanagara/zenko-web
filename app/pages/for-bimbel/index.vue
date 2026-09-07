@@ -13,18 +13,19 @@ definePageMeta({ path: '/untuk-bimbel' })
  * /untuk-bimbel/daftar, tempat login baru diminta.
  *
  * Semua klaim di halaman ini dibatasi pada yang benar-benar berjalan hari ini:
- * kelas, penugasan bertarget, rekap hasil, paket privat milik bimbel,
- * pengajuan paket ke katalog publik, kode bergabung, dan langganan per kursi.
+ * kelas, akses lewat keanggotaan, rekap hasil per paket, paket privat milik
+ * bimbel, pengajuan paket ke katalog publik, kode bergabung, dan langganan
+ * per kursi.
  * Yang belum ada — notifikasi email, impor CSV, tingkat langganan, bagi hasil
  * bimbel ke tutor, pembayaran otomatis — tidak disebut sebagai fitur.
  */
 useSeoMeta({
   title: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   description:
-    'Kelola siswa, kelas, dan penugasan try out bimbelmu dalam satu tempat. Rp3.000 per siswa per bulan, minimum 25 kursi, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Rp3.000 per siswa per bulan, minimum 25 kursi, dengan uji coba 14 hari untuk 50 siswa.',
   ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   ogDescription:
-    'Kelola siswa, kelas, dan penugasan try out bimbelmu dalam satu tempat. Rp3.000 per siswa per bulan, minimum 25 kursi, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Rp3.000 per siswa per bulan, minimum 25 kursi, dengan uji coba 14 hari untuk 50 siswa.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel',
   twitterCard: 'summary_large_image',
@@ -45,16 +46,16 @@ const benefits = [
       'Kelompokkan siswa ke dalam kelas, lalu kelola siapa yang aktif dan siapa yang masih menunggu persetujuan.',
   },
   {
-    icon: 'clipboard-text',
-    title: 'Penugasan yang terjadwal',
+    icon: 'lock-simple-open',
+    title: 'Akses terbuka selama jadi anggota',
     description:
-      'Tugaskan paket try out ke seluruh bimbel, satu kelas, atau siswa tertentu, lengkap dengan jadwal buka–tutup dan batas percobaan.',
+      'Begitu siswa aktif di bimbelmu, seluruh bank soal privat bimbel bisa ia kerjakan kapan saja — tanpa perlu ditugaskan satu per satu.',
   },
   {
     icon: 'chart-bar',
     title: 'Hasil langsung terekap',
     description:
-      'Lihat siapa yang sudah mengerjakan, skornya, dan peringkatnya begitu penugasan berjalan — tanpa merekap manual.',
+      'Tiap paket punya rekapnya sendiri: siapa saja yang sudah mengerjakan, skor terbaiknya, dan peringkatnya — tanpa merekap manual.',
   },
   {
     icon: 'folder-lock',
@@ -163,10 +164,9 @@ void stepRef
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Kelola siswa, bagi mereka ke dalam kelas, dan berikan penugasan try
-            out yang dinilai otomatis. Bimbelmu memakai mesin CBT yang sama
-            dengan yang dipakai siswa Zenko, tanpa perlu membangun sistem
-            sendiri.
+            Kelola siswa, bagi mereka ke dalam kelas, dan buka bank soal try out
+            yang dinilai otomatis. Bimbelmu memakai mesin CBT yang sama dengan
+            yang dipakai siswa Zenko, tanpa perlu membangun sistem sendiri.
           </p>
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
