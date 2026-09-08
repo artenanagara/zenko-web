@@ -12,7 +12,7 @@ export interface InvoiceTotals {
   serviceFee: number
   /**
    * Kode unik QRIS manual, dibawa sebagai barisnya sendiri supaya rincian
-   * invoice tetap berjumlah persis. 0 di jalur Duitku dan pada pesanan gratis.
+   * invoice tetap berjumlah persis. 0 pada pesanan gratis.
    */
   uniqueCode: number
   total: number

@@ -18,7 +18,7 @@ import type { TableControlOption } from '~/composables/useTableControls'
  *
  * Persetujuan di sini adalah satu-satunya hal yang melunasi pesanan pada jalur
  * manual (admin_payment_proofs.go): server memanggil MarkPaidByInvoice lalu
- * hook ledger yang sama persis dengan yang dipakai callback Duitku.
+ * hook ledger yang sama persis dengan yang dipakai callback DOKU.
  */
 definePageMeta({
   layout: 'dashboard',
@@ -221,6 +221,21 @@ const PROOF_STATUS_TONE: Record<AdminPaymentProof['status'], 'warning' | 'succes
   rejected: 'neutral',
 }
 
+/**
+ * Sudah berapa lama sejak pembeli checkout, dibulatkan kasar.
+ *
+ * Dipakai untuk memilah antrean, bukan untuk mencatat apa pun, jadi
+ * pembulatannya tidak perlu tepat — yang dibutuhkan admin adalah melihat
+ * sekilas mana yang sudah menunggu sehari dan mana yang baru lima menit lalu.
+ */
+function waitedSince(unixSeconds: number): string {
+  const minutes = Math.max(0, Math.floor((Date.now() / 1000 - unixSeconds) / 60))
+  if (minutes < 60) return `menunggu ${minutes} menit`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `menunggu ${hours} jam`
+  return `menunggu ${Math.floor(hours / 24)} hari`
+}
+
 /** Selisih nominal ditandai, karena itu alasan penolakan yang paling sering. */
 function amountMismatch(proof: AdminPaymentProof): boolean {
   return proof.paidAmount !== proof.amountDue
@@ -385,13 +400,21 @@ const zoomed = ref<AdminPaymentProof | null>(null)
                 <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Nama pengirim</dt>
                 <dd class="mt-0.5 truncate text-[0.9rem]">{{ proof.senderName }}</dd>
               </div>
+              <!-- Waktu checkout lebih dulu daripada waktu konfirmasi: itu yang
+                   menentukan sudah berapa lama pembeli menunggu, dan karena
+                   pembeli tidak lagi mengunggah bukti apa pun, lamanya menunggu
+                   adalah satu-satunya hal yang membedakan antrean yang mendesak
+                   dari yang baru masuk. -->
               <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Dikonfirmasi</dt>
-                <dd class="mt-0.5 text-[0.9rem]">{{ formatDateLong(proof.createdAt) }}</dd>
+                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Waktu checkout</dt>
+                <dd class="mt-0.5 text-[0.9rem]">
+                  {{ formatDateLong(proof.orderDate) }}
+                  <span class="text-muted">· {{ waitedSince(proof.orderDate) }}</span>
+                </dd>
               </div>
               <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Pesanan dibuat</dt>
-                <dd class="mt-0.5 text-[0.9rem]">{{ formatDateLong(proof.orderDate) }}</dd>
+                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Dikonfirmasi pembeli</dt>
+                <dd class="mt-0.5 text-[0.9rem]">{{ formatDateLong(proof.createdAt) }}</dd>
               </div>
             </dl>
 

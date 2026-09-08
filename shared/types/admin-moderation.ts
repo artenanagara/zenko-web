@@ -167,7 +167,7 @@ export interface AdminSummary {
   pendingBankChangeRequests: number
   /**
    * Bukti transfer QRIS manual yang menunggu diperiksa. Optional karena API
-   * lama belum mengirimkannya, dan karena pada jalur Duitku antrean ini
+   * lama belum mengirimkannya, dan karena pada jalur otomatis antrean ini
    * memang tidak pernah terisi.
    */
   pendingPaymentProofs?: number

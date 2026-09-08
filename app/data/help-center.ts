@@ -288,7 +288,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Bayar dengan QRIS',
-        body: 'Klik "Bayar Sekarang" untuk memunculkan kode QRIS, lalu scan menggunakan aplikasi m-Banking atau e-Wallet yang mendukung QRIS (pembayaran diproses lewat Duitku).',
+        body: 'Klik "Bayar Sekarang" untuk memunculkan kode QRIS, lalu scan menggunakan aplikasi m-Banking atau e-Wallet yang mendukung QRIS (pembayaran diproses lewat DOKU).',
         screenshot: 'Jendela pop-up kode QRIS beserta batas waktu pembayaran.',
       },
       {
@@ -304,7 +304,7 @@ export const helpArticles: HelpArticle[] = [
           'Lihat panduan "Panduan jika Pembayaran QRIS Berhasil tetapi Paket Belum Aktif" di kategori Kendala Teknis untuk langkah lengkapnya.',
       },
     ],
-    keywords: ['beli paket', 'bayar qris', 'checkout', 'duitku'],
+    keywords: ['beli paket', 'bayar qris', 'checkout', 'doku'],
   },
   {
     slug: 'aktivasi-kode-akses-bimbel',

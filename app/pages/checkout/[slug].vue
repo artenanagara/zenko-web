@@ -30,13 +30,27 @@ const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.v
 
 const { state, error, pay, reset } = useCheckout()
 
-// The order body carries only the slug — the server prices it and the
-// session says who is buying. Zenko charges QRIS only, so there is no method
-// to choose. A real QR sends the buyer straight to /pembayaran/:invoice (see
-// useCheckout) — this page only ever sees 'awaiting-payment' for the no-QR
+// Which methods this deployment can actually charge, and which one the buyer
+// picked. Loaded on mount rather than during SSR: it needs the session cookie,
+// and a checkout page that renders without it is better than one that waits.
+const methods = usePaymentMethods()
+onMounted(() => {
+  // A free package never reaches a payment method at all, so there is nothing
+  // to ask about — see the Rp0 branch in the template.
+  if (detail.value.price > 0) methods.load()
+})
+
+// The order body carries the slug and, at most, the method the buyer picked —
+// the server prices the slug, the session says who is buying, and the chosen
+// channel is validated against the server's own list before anything is
+// charged. A real QR sends the buyer straight to /pembayaran/:invoice (see
+// useCheckout); this page only ever sees 'awaiting-payment' for the no-QR
 // local-dev fallback.
 function onSubmit() {
-  pay({ slug }, detail.value.price === 0)
+  pay(
+    { slug, ...(methods.selected.value ? { paymentChannel: methods.selected.value } : {}) },
+    detail.value.price === 0,
+  )
 }
 
 /**
@@ -140,6 +154,14 @@ function onSignedIn() {
               </span>
             </span>
           </div>
+          <!-- Satu pilihan bukanlah pilihan: kalau deployment ini hanya bisa
+               menagih lewat satu jalur, tombol radio hanya menambah langkah
+               tanpa menambah keputusan. -->
+          <CheckoutPaymentMethodPicker
+            v-else-if="methods.hasChoice.value"
+            v-model="methods.selected.value"
+            :channels="methods.available.value"
+          />
           <div v-else class="flex items-center gap-3.5 rounded-sm border border-primary bg-primary-soft/40 px-4 py-3.5">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-primary">
               <IconGrid class="h-4.5 w-4.5" />

@@ -98,10 +98,12 @@ async function checkStatus() {
   checkingStatus.value = true
   try {
     await refresh()
-    // Hanya dicatat kalau memang masih menunggu. Kalau statusnya sudah
-    // berubah, layar ini digantikan layar lain dan catatan waktunya tidak
-    // relevan lagi.
-    if (purchase.value?.status === 'verifying') lastCheckedAt.value = new Date()
+    // Hanya dicatat kalau memang masih menunggu — baik menunggu admin
+    // (verifying) maupun menunggu pembayaran masuk (pending). Kalau statusnya
+    // sudah berubah, layar ini digantikan layar lain dan catatan waktunya
+    // tidak relevan lagi.
+    const status = purchase.value?.status
+    if (status === 'verifying' || status === 'pending') lastCheckedAt.value = new Date()
   }
   finally {
     checkingStatus.value = false
@@ -126,7 +128,7 @@ const showManual = computed(() =>
   isManual.value && !isExpired.value && !isPaid.value && !isVerifying.value,
 )
 
-// `qrUrl` now carries Duitku's raw QRIS payload string, not a hosted image —
+// `qrUrl` now carries DOKU's raw QRIS payload string, not a hosted image —
 // rendered into an image locally (no third-party image API ever sees a
 // payment code). Regenerates whenever the payload changes; starts over
 // (cleared, not stale) the moment it does, so a slow generation never shows
@@ -376,6 +378,29 @@ watch(isRedirecting, (active, wasActive) => {
               <div class="grid w-full gap-5 text-center sm:text-left">
                 <p class="text-[0.9rem] font-semibold">Scan dari aplikasi bank atau e-wallet apa pun</p>
 
+                <!-- Nominalnya sudah tertanam di kode, jadi tidak ada yang
+                     perlu diketik. Tetap ditulis di sini karena angkanya
+                     berakhir dengan kode unik: pembeli yang melihat
+                     Rp99.347 di aplikasi banknya berhak tahu itu memang
+                     tagihannya dan bukan kesalahan. -->
+                <div
+                  v-if="purchase && invoiceTotals(purchase).total > 0"
+                  class="rounded-sm border border-primary/25 bg-primary-soft/40 px-4 py-3 text-left"
+                >
+                  <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">Nominal</p>
+                  <p class="mt-1 text-[1.2rem] leading-none font-extrabold tracking-[-0.03em] tabular-nums">
+                    {{ formatRupiah(invoiceTotals(purchase).total) }}
+                  </p>
+                  <p
+                    v-if="invoiceTotals(purchase).uniqueCode > 0"
+                    class="mt-1.5 text-[0.8rem] text-muted"
+                  >
+                    Termasuk kode unik
+                    <span class="font-semibold tabular-nums text-ink">{{ invoiceTotals(purchase).uniqueCode }}</span>
+                    — sudah tertanam di kode QR, tidak perlu diketik.
+                  </p>
+                </div>
+
                 <!-- Cincin countdown: lebih terlihat daripada teks polos, dan
                      berubah amber begitu waktunya tinggal sedikit. -->
                 <div v-if="countdown" class="flex items-center justify-center gap-3.5 sm:justify-start">
@@ -422,10 +447,32 @@ watch(isRedirecting, (active, wasActive) => {
               Halaman ini otomatis lanjut begitu pembayaran diterima.
             </p>
 
+            <!-- Tombol yang sama seperti pada layar menunggu verifikasi. Di
+                 jalur otomatis ia bukan sekadar penenang: memeriksa status
+                 membuat server menanyakan langsung ke penyedia pembayaran
+                 (lihat Payments.ReconcilePending), jadi pembayaran yang
+                 callback-nya tidak pernah sampai bisa benar-benar tuntas dari
+                 sini. Menunggu tanpa bisa berbuat apa-apa itulah yang membuat
+                 orang memuat ulang halaman berkali-kali. -->
+            <div class="mt-4 grid justify-items-center gap-2">
+              <AppButton
+                variant="outline"
+                class="w-full max-w-70"
+                :disabled="checkingStatus"
+                @click="checkStatus"
+              >
+                <IconSpinner v-if="checkingStatus" class="h-4 w-4 animate-spin" aria-hidden="true" />
+                {{ checkingStatus ? 'Memeriksa…' : 'Cek status pembayaran' }}
+              </AppButton>
+              <p v-if="lastCheckedLabel" class="text-[0.8rem] text-muted tabular-nums" role="status">
+                Terakhir diperiksa {{ lastCheckedLabel }} — pembayaran belum masuk.
+              </p>
+            </div>
+
             <!-- Atribusi penyedia pembayaran ditampilkan di layar tempat uang
                  benar-benar berpindah, bukan hanya di halaman legal. -->
             <p class="mt-4 text-center text-[0.8rem] leading-[1.6] text-muted">
-              Pembayaran diproses oleh <strong class="font-semibold text-ink">Duitku</strong>.
+              Pembayaran diproses oleh <strong class="font-semibold text-ink">DOKU</strong>.
               Zenko tidak pernah meminta PIN, OTP, atau kata sandimu.
               <NuxtLink to="/kebijakan-refund" class="font-semibold text-primary hover:underline">
                 Kebijakan Refund
@@ -521,7 +568,7 @@ watch(isRedirecting, (active, wasActive) => {
             · Dibuat {{ formatDateLong(purchase.date) }}
           </p>
           <p v-if="purchase.chargeReference" class="mt-1 text-center text-[0.82rem] text-muted">
-            Referensi Duitku <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
+            Referensi DOKU <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
           </p>
         </aside>
       </div>

@@ -139,8 +139,20 @@ export interface PurchaseItem {
  */
 export type OrderStatus = 'pending' | 'verifying' | 'paid' | 'expired'
 
-/** How an order is meant to be paid. Chosen by the server, never the browser. */
-export type PaymentChannel = 'duitku_qris' | 'manual_qris'
+/**
+ * How an order is meant to be paid.
+ *
+ * The buyer picks between whatever GET /payments/methods says this deployment
+ * can offer; the server still validates the choice and derives every amount
+ * itself, so picking a channel changes how an order is paid and never how much
+ * it costs.
+ *
+ * `duitku_qris` is kept because history needs it: every order created before
+ * the manual channel existed carries it as its stored channel, so dropping it
+ * here would break the purchase list, not just a payment page. Nothing new is
+ * created on it.
+ */
+export type PaymentChannel = 'doku_qris' | 'duitku_qris' | 'manual_qris'
 
 /** Where the buyer's newest transfer receipt stands. */
 export type PaymentProofStatus = 'submitted' | 'approved' | 'rejected'
@@ -171,14 +183,14 @@ export interface Purchase {
   method: string | null
   /** Nomor rujukan dari penyedia pembayaran; null sebelum ada. */
   reference: string | null
-  /** Duitku's raw QRIS payload string, rendered into a scannable code
+  /** DOKU's raw QRIS payload string, rendered into a scannable code
    * client-side (see payment.vue); null once the charge was never created.
    * Always null on the manual channel — one static poster serves every buyer,
    * so there is no per-order code. */
   qrUrl: string | null
   /** Unix seconds the payment window closes; null when there is no deadline. */
   expiresAt: number | null
-  /** Duitku's reference for the pending charge (captured at QR creation, like
+  /** DOKU's reference for the pending charge (captured at QR creation, like
    * qrUrl/expiresAt) — distinct from `reference`, which stays null until
    * payment settles. Null if no charge was created. */
   chargeReference: string | null
@@ -189,12 +201,18 @@ export interface Purchase {
   /** Which payment path this order took — see PaymentChannel. */
   paymentChannel: PaymentChannel
   /**
-   * Tiga digit yang ditambahkan ke nominal transfer pada jalur QRIS manual,
-   * supaya dua pesanan untuk paket yang sama tidak pernah meminta angka yang
-   * persis sama dan admin bisa mencocokkannya dengan mutasi bank.
+   * Tiga digit yang ditambahkan ke nominal yang harus dibayar, supaya dua
+   * pesanan untuk paket yang sama tidak pernah meminta angka yang persis sama.
+   *
+   * Di jalur manual angka inilah satu-satunya pegangan admin untuk mencocokkan
+   * mutasi bank dengan pesanan — tidak ada bukti transfer yang diunggah. Di
+   * jalur otomatis ia tidak dipakai untuk mencocokkan apa pun (QRIS dinamis
+   * membawa nominalnya sendiri dan DOKU menyebut ordernya di callback); ia
+   * tetap ada supaya angka yang dilihat pembeli tidak berubah tergantung
+   * metode yang dipilihnya.
    *
    * Bukan bagian dari harga: bagi hasil tutor tetap dihitung dari harga item.
-   * 0 pada jalur Duitku.
+   * 0 pada pesanan gratis.
    */
   uniqueCode: number
   /** Bukti transfer terbaru pada pesanan ini; null kalau belum pernah unggah. */
