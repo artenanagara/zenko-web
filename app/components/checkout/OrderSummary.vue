@@ -8,7 +8,19 @@ const props = defineProps<{ item: PackageDetail }>()
  * server recomputes the amount from the slug when the order is created. A
  * number rendered here is for the buyer's eyes only.
  */
-const discount = computed(() => Math.max(0, props.item.priceOriginal - props.item.price))
+
+/**
+ * priceOriginal is the pre-discount list price, and 0 means "no discount" —
+ * the tutor wizard stores an empty field as 0, and every other place that
+ * renders a price guards on `priceOriginal > price` before showing a struck
+ * -through figure (see PackageCard and the admin product page).
+ *
+ * This summary did not, so a product priced flat at Rp50.000 rendered
+ * "Harga paket Rp0" directly above "Total Rp50.000". Falling back to `price`
+ * keeps the two lines agreeing whenever there is nothing to discount.
+ */
+const listPrice = computed(() => Math.max(props.item.priceOriginal, props.item.price))
+const discount = computed(() => listPrice.value - props.item.price)
 </script>
 
 <template>
@@ -33,7 +45,7 @@ const discount = computed(() => Math.max(0, props.item.priceOriginal - props.ite
     <dl class="mt-6 grid gap-3 border-t border-line pt-6 text-[0.94rem]">
       <div class="flex items-center justify-between gap-4">
         <dt class="text-muted">Harga paket</dt>
-        <dd>{{ formatRupiah(item.priceOriginal) }}</dd>
+        <dd>{{ formatRupiah(listPrice) }}</dd>
       </div>
       <div v-if="discount > 0" class="flex items-center justify-between gap-4">
         <dt class="text-muted">Diskon</dt>

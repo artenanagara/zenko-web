@@ -21,8 +21,8 @@ export interface AccountNavItem {
 export const ACCOUNT_NAV: AccountNavItem[] = [
   { label: 'Ringkasan', to: '/akun', icon: IconHome },
   { label: 'Paket saya', to: '/akun/paket', icon: IconGrid },
-  { label: 'Tugas bimbel', to: '/akun/tugas-bimbel', icon: IconTarget },
-  { label: 'Bimbel saya', to: '/bimbel', icon: IconUsers },
+  { label: 'Paket bimbel', to: '/akun/paket-bimbel', icon: IconTarget },
+  { label: 'Bimbel saya', to: '/akun/bimbel', icon: IconUsers },
   { label: 'Riwayat pembelian', to: '/akun/pembelian', icon: IconReceipt },
   { label: 'Akun saya', to: '/akun/profil', icon: IconUser },
 ]
@@ -36,6 +36,10 @@ export const ACCOUNT_NAV: AccountNavItem[] = [
 export const ACCOUNT_MENU: AccountNavItem[] = [
   { label: 'Ringkasan', to: '/akun', icon: IconHome },
   { label: 'Paket saya', to: '/akun/paket', icon: IconGrid },
-  { label: 'Bimbel saya', to: '/bimbel', icon: IconUsers },
+  // Paket bimbel ada di sini karena ia yang paling sering dituju siswa yang
+  // punya bimbel — sebelumnya ia hanya hidup di sidebar, jadi dari halaman
+  // publik mana pun ia butuh dua klik lewat Ringkasan.
+  { label: 'Paket bimbel', to: '/akun/paket-bimbel', icon: IconTarget },
+  { label: 'Bimbel saya', to: '/akun/bimbel', icon: IconUsers },
   { label: 'Akun saya', to: '/akun/profil', icon: IconUser },
 ]

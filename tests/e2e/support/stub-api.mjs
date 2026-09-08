@@ -108,6 +108,17 @@ function route(pathname, query, method, body) {
   if (!pathname.startsWith(PREFIX)) return null
   const path = pathname.slice(PREFIX.length)
 
+  // The one /auth/* route this stub answers, and the exception is deliberate.
+  // Everything else under /auth is session state, which differs per spec and so
+  // belongs to whichever spec is asserting it (support/auth.ts). A CSRF token
+  // is not session state: useApiFetch fetches one before *every* write and
+  // throws if it comes back empty, so leaving it to the 401 fallback made each
+  // spec responsible for a preflight it never mentions — and any spec that
+  // forgot it failed on the assertion after the write, pointing at the wrong
+  // thing entirely. The real API hands a token to anyone who asks, so one
+  // constant answer here matches production and no spec can forget it.
+  if (path === '/auth/csrf') return { status: 200, body: { csrfToken: 'stub-csrf-token' } }
+
   if (path === '/packages') return { status: 200, body: listPackages(query) }
 
   // Both halves of "coba gratis", and the split between them is the point: the
