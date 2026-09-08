@@ -26,20 +26,23 @@ useHead({
  * disebut: social proof menyusul kalau datanya sudah nyata.
  */
 
-/** Dua sisi masalah yang melatarbelakangi produk ini. */
-const problems = [
-  {
-    label: 'Sisi siswa',
-    title: 'Bahan latihan berserak tanpa kurasi',
-    description:
-      'Materi persiapan SKD dan TKA menumpuk di grup percakapan dan berkas unduhan — tanpa ada yang memastikan mutunya, dan tanpa simulasi yang benar-benar menyerupai ujiannya.',
-  },
-  {
-    label: 'Sisi tutor',
-    title: 'Keahlian terhenti di urusan teknis',
-    description:
-      'Banyak pengajar punya bank soal bagus, tapi berhenti di hal teknis: sistem CBT, penilaian otomatis, dan cara mendistribusikan soal tanpa karyanya beredar bebas.',
-  },
+/**
+ * Perbandingan keadaan sebelum dan sesudah Zenko, dibaca berpasangan baris
+ * per baris. Sisi kanan hanya memuat kemampuan yang sudah berjalan, supaya
+ * bagian ini tidak berubah jadi daftar janji.
+ */
+const withoutZenko = [
+  'Soal berserak di grup percakapan dan berkas unduhan',
+  'Tidak ada yang memastikan mutu dan kesesuaian kisi-kisinya',
+  'Latihan dikerjakan tanpa timer dan dinilai manual',
+  'Pengajar dengan bank soal bagus berhenti di urusan teknis',
+] as const
+
+const withZenko = [
+  'Satu katalog paket yang bisa dicari dan dibandingkan',
+  'Tiap paket dikurasi tim Zenko, dengan rating dan ulasan siswa',
+  'Simulasi CBT dengan timer dan penilaian mengikuti ujian aslinya',
+  'Tutor cukup menyiapkan soal — sistem ujiannya sudah tersedia',
 ] as const
 
 /** Alur marketplace, dari paket disusun sampai dikerjakan siswa. */
@@ -245,39 +248,65 @@ const faqs = [
     </section>
 
     <!-- ==================================================================
-         2. Latar belakang — judul dan lead di kiri, dua panel masalah di
-         kanan, memutus pola "blok teks tengah" yang dipakai hero.
+         2. Latar belakang — dua panel berhadapan: keadaan yang biasa
+         dihadapi di kiri, dan yang Zenko ubah di kanan. Barisnya sengaja
+         berpasangan supaya perbandingannya terbaca baris per baris.
          ================================================================== -->
     <section class="py-18 md:py-22" aria-labelledby="latar-heading">
       <div class="container-page">
-        <div class="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,460px)] md:gap-12">
-          <div class="md:self-center">
-            <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
-              Latar belakang
-            </p>
-            <h2 id="latar-heading" class="max-w-[13ch] text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-              Kenapa Zenko <span class="text-accent">dibangun</span>
-            </h2>
-            <p class="mt-5 max-w-[46ch] text-[1.15rem] leading-[1.6] font-semibold tracking-[-0.01em] text-ink">
-              Ada cara yang lebih tertata untuk mempertemukan siswa yang butuh latihan
-              dengan pengajar yang punya soalnya.
-            </p>
-          </div>
+        <div class="mx-auto mb-11 max-w-160 text-center">
+          <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
+            Latar belakang
+          </p>
+          <h2 id="latar-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter text-balance">
+            Kenapa Zenko <span class="text-accent">dibangun</span>
+          </h2>
+          <p class="mt-3.5 text-[1.02rem] text-pretty text-muted">
+            Dua keluhan yang saling berhadapan: siswa sulit menemukan latihan yang
+            bermutu, dan pengajar sulit menyalurkan soal yang sudah mereka punya.
+          </p>
+        </div>
 
-          <div class="grid gap-4">
-            <article
-              v-for="problem in problems"
-              :key="problem.title"
-              class="rounded-3xl border border-hairline bg-surface p-6 shadow-xs"
-            >
-              <AppBadge variant="warning" size="sm">{{ problem.label }}</AppBadge>
-              <h3 class="mt-3.5 mb-2 flex items-start gap-2.5 text-[1.05rem] font-bold tracking-[-0.02em]">
-                <AppIcon name="warning-circle" :size="18" class="mt-0.5 text-warning" />
-                {{ problem.title }}
-              </h3>
-              <p class="leading-[1.62] text-muted">{{ problem.description }}</p>
-            </article>
-          </div>
+        <div class="mx-auto grid max-w-300 grid-cols-1 gap-4 rounded-4xl bg-surface-alt p-4 md:grid-cols-2 md:p-6">
+          <article class="rounded-[26px] border border-hairline bg-surface p-6 shadow-xs md:p-8">
+            <span class="inline-flex rounded-pill bg-surface-sunken px-3 py-1 text-[0.72rem] font-bold tracking-[0.12em] text-muted uppercase">
+              Tanpa Zenko
+            </span>
+            <h3 class="mt-4 mb-6 text-[1.28rem] font-bold tracking-[-0.03em]">
+              Persiapan yang serba diurus sendiri
+            </h3>
+
+            <ul class="grid gap-4">
+              <li
+                v-for="item in withoutZenko"
+                :key="item"
+                class="flex items-start gap-3 leading-[1.55] text-muted"
+              >
+                <AppIcon name="x-circle" :size="20" class="mt-0.5 text-faint" />
+                {{ item }}
+              </li>
+            </ul>
+          </article>
+
+          <article class="panel-inset rounded-[26px] bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark p-6 md:p-8">
+            <span class="inline-flex rounded-pill bg-white/15 px-3 py-1 text-[0.72rem] font-bold tracking-[0.12em] text-white uppercase">
+              Dengan Zenko
+            </span>
+            <h3 class="mt-4 mb-6 text-[1.28rem] font-bold tracking-[-0.03em] text-white">
+              Satu alur yang sudah tertata
+            </h3>
+
+            <ul class="grid gap-4">
+              <li
+                v-for="item in withZenko"
+                :key="item"
+                class="flex items-start gap-3 leading-[1.55] text-white/85"
+              >
+                <AppIcon name="check-circle" :size="20" weight="fill" class="mt-0.5 text-white" />
+                {{ item }}
+              </li>
+            </ul>
+          </article>
         </div>
       </div>
     </section>
