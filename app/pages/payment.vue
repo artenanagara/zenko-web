@@ -321,7 +321,7 @@ watch(isRedirecting, (active, wasActive) => {
                    berikutnya — jujur soal apa yang dikerjakannya: memeriksa
                    status, bukan mempercepat orang yang memverifikasi. -->
               <AppButton
-                variant="outline"
+                variant="secondary"
                 size="lg"
                 class="w-full"
                 :disabled="checkingStatus"
@@ -456,7 +456,7 @@ watch(isRedirecting, (active, wasActive) => {
                  orang memuat ulang halaman berkali-kali. -->
             <div class="mt-4 grid justify-items-center gap-2">
               <AppButton
-                variant="outline"
+                variant="secondary"
                 class="w-full max-w-70"
                 :disabled="checkingStatus"
                 @click="checkStatus"

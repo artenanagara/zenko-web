@@ -112,7 +112,7 @@ async function exitSimulation() {
         </AppSectionMessage>
         <div class="flex flex-wrap gap-3">
           <AppButton variant="outline" size="sm" @click="refresh">Coba lagi</AppButton>
-          <AppButton :to="backTo" variant="light" size="sm" class="border border-hairline-strong shadow-none">
+          <AppButton :to="backTo" variant="light" size="sm">
             {{ backLabel }}
           </AppButton>
         </div>
