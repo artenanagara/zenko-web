@@ -1,6 +1,5 @@
 import type { Component } from 'vue'
 import IconBank from '~/components/icons/IconBank.vue'
-import IconCheckCircle from '~/components/icons/IconCheckCircle.vue'
 import IconEye from '~/components/icons/IconEye.vue'
 import IconGrid from '~/components/icons/IconGrid.vue'
 import IconHome from '~/components/icons/IconHome.vue'
@@ -85,15 +84,14 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // "Daftar Siswa" (docs/konsep-bimbel-agency.md §9), dan menambah entri di
       // dalamnya hanya akan menumpuk pada tabrakan yang sama.
       //
-      // Bedanya dengan "Pembayaran bimbel" di grup itu: di sana admin
-      // mengaktifkan tagihan langsung dari daftar tagihan; di sini keputusannya
-      // berangkat dari bukti transfer yang dikirim bimbel. Keduanya bermuara
-      // pada Activate yang sama.
-      { label: 'Verifikasi langganan', to: '/dashboard/admin/bimbel-payments', icon: IconCheckCircle },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
       // Uang masuk sebelum uang keluar: verifikasi pembayaran adalah antrean
       // yang menahan akses pembeli yang sudah membayar, jadi ia duduk di atas
       // Pencairan.
+      // Satu pintu untuk dua jenis pembayaran manual: pembelian paket siswa dan
+      // tagihan langganan bimbel. Dulu dua menu terpisah, yang berarti dua
+      // tempat untuk satu kebiasaan — dan satu di antaranya rutin terlupakan,
+      // padahal yang menunggu di sana adalah orang yang sudah membayar.
       { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt },
       { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet },
       {

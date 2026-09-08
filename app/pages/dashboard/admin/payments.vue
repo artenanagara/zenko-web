@@ -1,24 +1,32 @@
 <script setup lang="ts">
-import type { AdminPaymentProof } from '#shared/types/admin-moderation'
+import type { VerificationItem } from '#shared/types/admin-moderation'
 import type { TableControlOption } from '~/composables/useTableControls'
 
 /**
- * Verifikasi pembayaran — antrean konfirmasi pembayaran QRIS manual.
+ * Verifikasi pembayaran — satu antrean untuk dua jenis pembayaran manual:
+ * pembelian paket oleh siswa, dan tagihan langganan bimbel.
  *
- * Yang membuktikan uangnya masuk adalah mutasi di dashboard merchant: kode
- * unik di nominalnya menunjuk persis satu pesanan. Baris di sini adalah
- * pembeli yang bilang "saya sudah transfer" — sinyal untuk memeriksa, bukan
- * buktinya sendiri — dengan lampiran opsional yang hanya menolong kalau
- * nominalnya ternyata tidak cocok mutasi mana pun.
+ * Keduanya digabung karena pekerjaan admin identik: buka daftar mutasi bank,
+ * cocokkan nominalnya, putuskan. Dua halaman untuk satu kebiasaan berarti satu
+ * di antaranya rutin terlupakan, dan yang terlupakan adalah orang yang sudah
+ * membayar.
+ *
+ * Yang TIDAK digabung adalah akibat keputusannya, dan itu disengaja.
+ * Menyetujui pembelian paket melunasi satu pesanan lalu memanggil hook ledger
+ * yang sama persis dengan callback DOKU. Menyetujui langganan memanggil
+ * BimbelBilling.Activate — mengaktifkan langganan dengan kuota kursi dan
+ * durasinya. Dua endpoint berbeda, dua konsekuensi berbeda, jadi tiap kartu
+ * membawa angka yang jenisnya butuhkan (kode unik dan paket untuk pembelian;
+ * tingkat, kuota kursi, dan durasi untuk langganan) dan tombolnya memanggil
+ * jalurnya masing-masing.
+ *
+ * Yang membuktikan uangnya masuk tetap mutasi di dashboard merchant. Baris di
+ * sini hanyalah pembayar yang bilang "saya sudah transfer" — sinyal untuk
+ * memeriksa, bukan buktinya sendiri.
  *
  * Berbeda dari antrean lain yang berbentuk tabel, satu keputusan di sini
- * dibuat dengan membandingkan beberapa angka berdampingan: tagihan versus yang
- * diklaim, nama akun versus nama pengirim. Jadi tiap baris tampil sebagai
- * kartu, bukan baris yang harus diklik dulu.
- *
- * Persetujuan di sini adalah satu-satunya hal yang melunasi pesanan pada jalur
- * manual (admin_payment_proofs.go): server memanggil MarkPaidByInvoice lalu
- * hook ledger yang sama persis dengan yang dipakai callback DOKU.
+ * dibuat dengan membandingkan beberapa angka berdampingan. Jadi tiap baris
+ * tampil sebagai kartu, bukan baris yang harus diklik dulu.
  */
 definePageMeta({
   layout: 'dashboard',
@@ -31,8 +39,27 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { data: proofs, pending, error, refresh } = useAdminPaymentProofs()
+const { items: proofs, pending, error, refresh } = useAdminVerificationQueue()
 const { refresh: refreshSummary } = useAdminSummary()
+
+const runtimeConfig = useRuntimeConfig().public
+
+/** Rute gambar per jenis — dua endpoint, dua pemeriksaan peran di server. */
+function proofImageUrl(proof: VerificationItem): string {
+  return proof.kind === 'package'
+    ? adminPaymentProofImageUrl(proof.id)
+    : `${runtimeConfig.apiBase}/admin/bimbel-payment-proofs/${proof.id}/image`
+}
+
+const KIND_LABEL: Record<VerificationItem['kind'], string> = {
+  package: 'Pembelian paket',
+  subscription: 'Langganan bimbel',
+}
+
+/** Siapa yang membayar, dibaca dari cabang union masing-masing. */
+function payerName(proof: VerificationItem): string {
+  return proof.kind === 'package' ? proof.buyerName : proof.bimbelName
+}
 
 // Skeleton hanya untuk muat pertama; refetch setelah keputusan membiarkan
 // daftar lama tampil sampai data barunya datang.
@@ -42,8 +69,14 @@ onMounted(async () => {
   loaded.value = true
 })
 
+// Jenis ikut jadi filter, bukan hanya kolom. Menggabungkan antrean tidak boleh
+// berarti admin kehilangan kemampuan mengerjakan satu jenis sekaligus — itu
+// justru bagaimana daftar mutasi bank dibaca: per kelompok nominal, bukan
+// selang-seling.
 const FILTER_OPTIONS: TableControlOption[] = [
   { value: 'queue', label: 'Perlu diperiksa' },
+  { value: 'queue-package', label: 'Perlu diperiksa · paket' },
+  { value: 'queue-subscription', label: 'Perlu diperiksa · langganan' },
   { value: 'approved', label: 'Disetujui' },
   { value: 'rejected', label: 'Ditolak' },
   { value: 'all', label: 'Semua' },
@@ -63,10 +96,17 @@ const {
   total,
   isActive,
   reset,
-} = useTableControls<AdminPaymentProof>(() => proofs.value, {
-  searchFields: proof => [proof.invoice, proof.buyerName, proof.buyerEmail, proof.senderName],
+} = useTableControls<VerificationItem>(() => proofs.value, {
+  // Email hanya ada pada pembelian paket — server sengaja tidak mengirim
+  // identitas pembayar pada baris langganan — jadi pencariannya menyesuaikan
+  // per jenis alih-alih memaksa satu bentuk.
+  searchFields: proof => proof.kind === 'package'
+    ? [proof.invoice, proof.buyerName, proof.buyerEmail, proof.senderName]
+    : [proof.invoice, proof.bimbelName, proof.senderName],
   filters: {
     queue: proof => proof.status === 'submitted',
+    'queue-package': proof => proof.status === 'submitted' && proof.kind === 'package',
+    'queue-subscription': proof => proof.status === 'submitted' && proof.kind === 'subscription',
     approved: proof => proof.status === 'approved',
     rejected: proof => proof.status === 'rejected',
     all: () => true,
@@ -115,24 +155,36 @@ async function refreshAll() {
  * uang ke saldo tutor, jadi lewat modal konfirmasi yang menyebut nominalnya.
  * ------------------------------------------------------------------------ */
 
-const approveTarget = ref<AdminPaymentProof | null>(null)
+const approveTarget = ref<VerificationItem | null>(null)
 const approveBusy = ref(false)
 const approveError = ref('')
 
-function openApprove(proof: AdminPaymentProof) {
+function openApprove(proof: VerificationItem) {
   clearNotices()
   approveError.value = ''
   approveTarget.value = proof
 }
 
+/**
+ * Kalimat konfirmasi menyebut akibat yang sebenarnya, per jenis.
+ *
+ * Ini bukan sekadar copy. Menyetujui pembelian melunasi satu pesanan;
+ * menyetujui langganan menjalankan langganan berbulan-bulan dengan kuota
+ * kursi. Satu kalimat generik akan membuat dua keputusan dengan bobot yang
+ * jauh berbeda terbaca sama.
+ */
 const approveDescription = computed(() => {
   const target = approveTarget.value
   if (!target) return ''
   const mismatch = target.paidAmount !== target.amountDue
-    ? ` Perhatikan: pembeli menuliskan ${formatRupiah(target.paidAmount)}, berbeda dari tagihan.`
+    ? ` Perhatikan: pembayar menuliskan ${formatRupiah(target.paidAmount)}, berbeda dari tagihan.`
     : ''
-  return `Pesanan ${target.invoice} akan langsung lunas dan paketnya jadi milik ${target.buyerName}. `
-    + `Bagi hasil tutor ikut dicatat. Pastikan mutasi ${formatRupiah(target.amountDue)} benar-benar masuk.${mismatch}`
+  const consequence = target.kind === 'package'
+    ? `Pesanan ${target.invoice} akan langsung lunas dan paketnya jadi milik ${target.buyerName}. `
+      + 'Bagi hasil tutor ikut dicatat. '
+    : `Tagihan ${target.invoice} akan langsung lunas dan ${bimbelPlanLabel(target.plan)} `
+      + `${target.bimbelName} berjalan ${target.months} bulan dengan kuota ${target.seatQuota} kursi. `
+  return `${consequence}Pastikan mutasi ${formatRupiah(target.amountDue)} benar-benar masuk.${mismatch}`
 })
 
 async function confirmApprove() {
@@ -142,9 +194,17 @@ async function confirmApprove() {
   approveError.value = ''
   approveBusy.value = true
   try {
-    await decideAdminPaymentProof(target.id, { action: 'approve' })
+    // Dua endpoint, bukan satu: server yang melunasi pesanan dan server yang
+    // mengaktifkan langganan adalah jalur berbeda, masing-masing transaksional
+    // dan idempoten. Menggabungkan tampilannya tidak boleh menciptakan jalur
+    // ketiga menuju uang.
+    if (target.kind === 'package') await decideAdminPaymentProof(target.id, { action: 'approve' })
+    else await decideBimbelProof(target.id, { action: 'approve' })
+
     approveTarget.value = null
-    successMessage.value = `Pembayaran ${target.invoice} disetujui. Paketnya sudah aktif untuk ${target.buyerName}.`
+    successMessage.value = target.kind === 'package'
+      ? `Pembayaran ${target.invoice} disetujui. Paketnya sudah aktif untuk ${target.buyerName}.`
+      : `Tagihan ${target.invoice} disetujui. Langganan ${target.bimbelName} sudah berjalan.`
     await refreshAll()
   }
   catch (cause) {
@@ -168,11 +228,11 @@ async function confirmApprove() {
  * pembeli dengan tenggat baru.
  * ------------------------------------------------------------------------ */
 
-const rejectTarget = ref<AdminPaymentProof | null>(null)
+const rejectTarget = ref<VerificationItem | null>(null)
 const rejectBusy = ref(false)
 const rejectError = ref('')
 
-function openReject(proof: AdminPaymentProof) {
+function openReject(proof: VerificationItem) {
   clearNotices()
   rejectError.value = ''
   rejectTarget.value = proof
@@ -185,9 +245,12 @@ async function confirmReject(reason: string) {
   rejectError.value = ''
   rejectBusy.value = true
   try {
-    await decideAdminPaymentProof(target.id, { action: 'reject', reason })
+    if (target.kind === 'package') await decideAdminPaymentProof(target.id, { action: 'reject', reason })
+    else await decideBimbelProof(target.id, { action: 'reject', reason })
+
     rejectTarget.value = null
-    successMessage.value = `Konfirmasi ${target.invoice} ditolak. ${target.buyerName} diberi tahu dan bisa mengirim ulang.`
+    successMessage.value =
+      `Konfirmasi ${target.invoice} ditolak. ${payerName(target)} diberi tahu dan bisa mengirim ulang.`
     await refreshAll()
   }
   catch (cause) {
@@ -209,13 +272,13 @@ async function confirmReject(reason: string) {
  * Pembacaan per baris.
  * ------------------------------------------------------------------------ */
 
-const PROOF_STATUS_LABEL: Record<AdminPaymentProof['status'], string> = {
+const PROOF_STATUS_LABEL: Record<VerificationItem['status'], string> = {
   submitted: 'Menunggu diperiksa',
   approved: 'Disetujui',
   rejected: 'Ditolak',
 }
 
-const PROOF_STATUS_TONE: Record<AdminPaymentProof['status'], 'warning' | 'success' | 'neutral'> = {
+const PROOF_STATUS_TONE: Record<VerificationItem['status'], 'warning' | 'success' | 'neutral'> = {
   submitted: 'warning',
   approved: 'success',
   rejected: 'neutral',
@@ -237,11 +300,11 @@ function waitedSince(unixSeconds: number): string {
 }
 
 /** Selisih nominal ditandai, karena itu alasan penolakan yang paling sering. */
-function amountMismatch(proof: AdminPaymentProof): boolean {
+function amountMismatch(proof: VerificationItem): boolean {
   return proof.paidAmount !== proof.amountDue
 }
 
-const zoomed = ref<AdminPaymentProof | null>(null)
+const zoomed = ref<VerificationItem | null>(null)
 </script>
 
 <template>
@@ -252,10 +315,11 @@ const zoomed = ref<AdminPaymentProof | null>(null)
           Verifikasi pembayaran
         </h1>
         <p class="mt-2 max-w-2xl text-[0.92rem] leading-[1.6] text-muted">
-          Pembeli yang menyatakan sudah transfer lewat QRIS manual. Cocokkan
-          nominalnya dengan mutasi bank — kode uniknya menunjuk persis satu
-          pesanan — lalu setujui. Persetujuan inilah yang melunasi pesanan dan
-          mengaktifkan paketnya.
+          Pembelian paket siswa dan tagihan langganan bimbel yang menunggu
+          diperiksa. Cocokkan nominalnya dengan mutasi bank, lalu setujui —
+          persetujuan di sinilah yang melunasi pesanan atau menjalankan
+          langganan. Perhatikan kolom jenisnya: akibat kedua keputusan itu
+          berbeda.
         </p>
       </div>
       <DashboardBadge v-if="queueCount > 0" tone="warning">
@@ -292,7 +356,7 @@ const zoomed = ref<AdminPaymentProof | null>(null)
       class="mt-6"
       search-id="admin-payment-proofs-search"
       search-label="Cari konfirmasi pembayaran"
-      search-placeholder="Cari invoice, pembeli, atau nama pengirim…"
+      search-placeholder="Cari invoice, pembeli, bimbel, atau nama pengirim…"
       :filter-options="FILTER_OPTIONS"
       :sort-options="SORT_OPTIONS"
       :result-count="rows.length"
@@ -336,7 +400,7 @@ const zoomed = ref<AdminPaymentProof | null>(null)
             @click="zoomed = proof"
           >
             <img
-              :src="adminPaymentProofImageUrl(proof.id)"
+              :src="proofImageUrl(proof)"
               :alt="`Bukti transfer untuk ${proof.invoice}`"
               loading="lazy"
               class="h-40 w-40 object-contain"
@@ -356,9 +420,25 @@ const zoomed = ref<AdminPaymentProof | null>(null)
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div class="min-w-0">
+                <!-- Jenis di atas invoice, bukan di samping status: ia yang
+                     menentukan bagaimana sisa kartu ini dibaca, jadi mata harus
+                     menemukannya sebelum angka mana pun. -->
+                <p
+                  class="mb-1 inline-flex items-center rounded-full px-2 py-0.5 text-[0.72rem] font-bold tracking-wide uppercase"
+                  :class="proof.kind === 'package'
+                    ? 'bg-primary-soft text-primary'
+                    : 'bg-amber-100 text-amber-800'"
+                >
+                  {{ KIND_LABEL[proof.kind] }}
+                </p>
                 <p class="font-bold tracking-[-0.02em] tabular-nums">{{ proof.invoice }}</p>
                 <p class="mt-0.5 truncate text-[0.86rem] text-muted">
-                  {{ proof.items[0]?.title ?? 'Paket tidak ditemukan' }}
+                  <template v-if="proof.kind === 'package'">
+                    {{ proof.items[0]?.title ?? 'Paket tidak ditemukan' }}
+                  </template>
+                  <template v-else>
+                    {{ bimbelPlanLabel(proof.plan) }} · {{ proof.months }} bulan · {{ proof.seatQuota }} kursi
+                  </template>
                 </p>
               </div>
               <DashboardBadge :tone="PROOF_STATUS_TONE[proof.status]">
@@ -372,7 +452,10 @@ const zoomed = ref<AdminPaymentProof | null>(null)
                 <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Tagihan</dt>
                 <dd class="mt-0.5 font-semibold tabular-nums">
                   {{ formatRupiah(proof.amountDue) }}
-                  <span v-if="proof.uniqueCode > 0" class="ml-1 text-[0.8rem] font-normal text-muted">
+                  <span
+                    v-if="proof.kind === 'package' && proof.uniqueCode > 0"
+                    class="ml-1 text-[0.8rem] font-normal text-muted"
+                  >
                     (kode unik {{ proof.uniqueCode }})
                   </span>
                 </dd>
@@ -390,10 +473,18 @@ const zoomed = ref<AdminPaymentProof | null>(null)
                 </dd>
               </div>
               <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Pembeli</dt>
+                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">
+                  {{ proof.kind === 'package' ? 'Pembeli' : 'Bimbel' }}
+                </dt>
                 <dd class="mt-0.5 truncate text-[0.9rem]">
-                  {{ proof.buyerName }}
-                  <span class="text-muted">· {{ proof.buyerEmail }}</span>
+                  <template v-if="proof.kind === 'package'">
+                    {{ proof.buyerName }}
+                    <span class="text-muted">· {{ proof.buyerEmail }}</span>
+                  </template>
+                  <!-- Server sengaja tidak mengirim identitas pembayar pada
+                       baris langganan, jadi tidak ada email untuk ditampilkan
+                       di sini. -->
+                  <template v-else>{{ proof.bimbelName }}</template>
                 </dd>
               </div>
               <div>
@@ -419,7 +510,7 @@ const zoomed = ref<AdminPaymentProof | null>(null)
             </dl>
 
             <p v-if="proof.note" class="mt-3.5 rounded-sm bg-surface-sunken px-3.5 py-2.5 text-[0.86rem] leading-[1.55]">
-              <span class="font-semibold">Catatan pembeli:</span> {{ proof.note }}
+              <span class="font-semibold">Catatan pembayar:</span> {{ proof.note }}
             </p>
 
             <p
@@ -450,11 +541,11 @@ const zoomed = ref<AdminPaymentProof | null>(null)
       v-if="zoomed"
       :model-value="Boolean(zoomed)"
       title="Bukti transfer"
-      :description="`${zoomed.invoice} · tagihan ${formatRupiah(zoomed.amountDue)}`"
+      :description="`${KIND_LABEL[zoomed.kind]} · ${zoomed.invoice} · tagihan ${formatRupiah(zoomed.amountDue)}`"
       @update:model-value="zoomed = null"
     >
       <img
-        :src="adminPaymentProofImageUrl(zoomed.id)"
+        :src="proofImageUrl(zoomed)"
         :alt="`Bukti transfer untuk ${zoomed.invoice}`"
         class="max-h-[70vh] w-full bg-white object-contain"
       >
@@ -474,7 +565,7 @@ const zoomed = ref<AdminPaymentProof | null>(null)
     <AdminReasonModal
       :open="Boolean(rejectTarget)"
       title="Tolak konfirmasi pembayaran"
-      description="Pembeli akan menerima email berisi alasan ini dan bisa mengirim konfirmasi ulang. Pesanannya tidak hangus."
+      description="Pembayar akan menerima email berisi alasan ini dan bisa mengirim konfirmasi ulang. Tagihannya tidak hangus."
       placeholder="Misalnya: tidak ada mutasi masuk dengan nominal ini, atau nominalnya kurang Rp347 dari tagihan."
       confirm-label="Tolak konfirmasi"
       :busy="rejectBusy"
