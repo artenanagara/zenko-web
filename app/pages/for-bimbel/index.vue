@@ -22,10 +22,10 @@ definePageMeta({ path: '/untuk-bimbel' })
 useSeoMeta({
   title: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   description:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
   ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   ogDescription:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel',
   twitterCard: 'summary_large_image',
@@ -68,24 +68,24 @@ const benefits = [
 /** Empat langkah dari pengajuan sampai siswa pertama masuk. */
 const steps = [
   {
-    title: 'Ajukan bimbelmu',
+    title: 'Daftarkan bimbelmu',
     description:
       'Isi formulir singkat: nama bimbel, kontak pengelola, dan perkiraan jumlah siswa.',
   },
   {
-    title: 'Tim Zenko meninjau',
+    title: 'Ruang bimbel langsung jadi',
     description:
-      'Kami memeriksa data bimbelmu, lalu mengabari hasilnya lewat WhatsApp atau email.',
-  },
-  {
-    title: 'Uji coba 14 hari',
-    description:
-      'Ruang bimbel langsung aktif untuk 50 siswa. Tanpa kartu kredit dan tanpa tagihan di muka.',
+      'Tidak ada antrean persetujuan. Begitu formulirnya terkirim, dashboard bimbelmu sudah bisa dibuka.',
   },
   {
     title: 'Undang siswamu',
     description:
       'Bagikan kode bergabung ke siswa, lalu aktifkan permintaan yang masuk dari dashboard.',
+  },
+  {
+    title: 'Pilih kelas langganan',
+    description:
+      'Uji coba 7 hari untuk 25 siswa berjalan lebih dulu. Perpanjang dengan kelas dan kuota kursi yang kamu tentukan sendiri.',
   },
 ] as const
 
@@ -110,7 +110,7 @@ const faqs = [
   {
     question: 'Apakah ada masa uji coba?',
     answer:
-      'Ada. Begitu pengajuanmu disetujui, bimbelmu mendapat 14 hari uji coba dengan kemampuan Kelas Pro untuk 50 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan angkatan yang sebenarnya.',
+      'Ada. Begitu formulirnya terkirim, bimbelmu langsung mendapat 7 hari uji coba dengan kemampuan Kelas Pro untuk 25 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan satu rombel yang sebenarnya.',
   },
   {
     question: 'Bagaimana cara membayar tagihannya?',
@@ -164,7 +164,7 @@ void stepRef
             class="mb-5 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-2 pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
           >
             <span class="h-2 w-2 rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
-            Uji coba 14 hari untuk 50 siswa
+            Uji coba 7 hari untuk 25 siswa
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
@@ -339,11 +339,11 @@ void stepRef
       <div class="container-page">
         <div class="mx-auto max-w-160 text-center">
           <h2 id="cta-bimbel-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Mulai dari <span class="text-accent">uji coba 14 hari</span>
+            Mulai dari <span class="text-accent">uji coba 7 hari</span>
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
-            Ajukan bimbelmu hari ini. Setelah disetujui, ruang bimbel langsung
-            aktif untuk 50 siswa tanpa biaya.
+            Daftarkan bimbelmu hari ini. Tanpa menunggu persetujuan — ruang
+            bimbel langsung aktif untuk 25 siswa tanpa biaya.
           </p>
           <AppButton :to="REGISTER_PATH" size="lg" class="mt-8">Daftarkan bimbel</AppButton>
           <p class="mt-4 text-[0.86rem] text-muted">

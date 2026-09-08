@@ -332,7 +332,7 @@ function onPaymentUpdated(updated: BimbelOrder) {
           </template>
         </BimbelBillingToggle>
 
-        <div class="mt-6 grid gap-4 lg:grid-cols-3" role="group" aria-label="Tingkat langganan">
+        <div class="mt-6 grid gap-5 lg:grid-cols-3" role="group" aria-label="Tingkat langganan">
           <BimbelPlanCard
             v-for="plan in plans.data.value"
             :key="plan.plan"

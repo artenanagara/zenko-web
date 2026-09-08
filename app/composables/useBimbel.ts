@@ -181,6 +181,17 @@ export function confirmBimbelOrderPayment(
 export const cancelBimbelOrder = (id: string, orderId: string) => bimbelRequest<void>(bimbelPath(id, `/billing/orders/${orderId}/cancel`), { method: 'POST' })
 export const submitBimbelProductPublic = (id: string, productId: string) => bimbelRequest(bimbelPath(id, `/products/${productId}/submit-public`), { method: 'POST' })
 
+/**
+ * Direktori bimbel untuk admin — seluruh organisasi, terbaru dulu.
+ *
+ * Menggantikan antrean persetujuan, yang hilang bersama persetujuannya:
+ * mendaftarkan bimbel sekarang langsung membuat ruangnya. Pertanyaan yang
+ * tersisa bukan lagi "boleh ada atau tidak", melainkan siapa yang mendaftar,
+ * di tingkat apa, dan langganannya masih hidup atau tidak.
+ */
+export const useAdminBimbels = () => resource(
+  () => bimbelRequest<Bimbel[]>('/admin/bimbels'), [], 'Gagal memuat daftar bimbel.',
+)
 export const useAdminBimbelApplications = (status = 'pending') => resource(
   () => bimbelRequest<BimbelApplication[]>('/admin/bimbel-applications', { query: { status } }), [], 'Gagal memuat pengajuan bimbel.',
 )

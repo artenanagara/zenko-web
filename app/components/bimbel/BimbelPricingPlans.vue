@@ -94,7 +94,10 @@ const priceFootnote = computed(() => (period.value === 12 ? 'Ditagih 10 bulan un
 </script>
 
 <template>
-  <div class="mx-auto grid max-w-220 gap-5">
+  <!-- Lebih lebar dari kolom teks di atasnya: tiga kartu harga dibaca
+       menyamping, dan pada max-w-220 kolomnya tinggal ~280px — cukup untuk
+       "Rp75.000" tapi tidak untuk "Rp3.750.000". -->
+  <div class="mx-auto grid max-w-300 gap-6">
     <!-- Tiga tingkat. Kartu, bukan tabel perbandingan: di 390px tabel empat
          kolom hanya bisa dibaca dengan menggulung ke samping, dan kolom yang
          terpotong justru kolom tingkat teratas. -->
@@ -106,7 +109,7 @@ const priceFootnote = computed(() => (period.value === 12 ? 'Ditagih 10 bulan un
       </BimbelBillingToggle>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-3">
+    <div class="grid gap-5 md:grid-cols-3">
       <BimbelPlanCard
         v-for="tier in TIERS"
         :key="tier.plan"

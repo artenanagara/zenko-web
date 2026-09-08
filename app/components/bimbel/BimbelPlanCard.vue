@@ -67,10 +67,10 @@ defineEmits<{ action: [] }>()
 
 <template>
   <div
-    class="flex flex-col rounded-[22px] border bg-surface p-2 pb-5 transition-shadow duration-200"
+    class="@container flex flex-col rounded-[22px] border bg-surface p-2.5 pb-6 transition-shadow duration-200"
     :class="selected ? 'border-primary shadow-lift' : 'border-hairline shadow-xs'"
   >
-    <div class="rounded-[16px] bg-surface-alt px-5 py-7 text-center">
+    <div class="rounded-[16px] bg-surface-alt px-4 py-8 text-center">
       <!-- Barisnya selalu ada, berisi atau tidak. Kartu bertanda yang tumbuh
            sendirian akan menggeser daftar centangnya ke bawah, dan tiga daftar
            yang tidak sebaris justru merusak perbandingan yang jadi alasan
@@ -88,9 +88,16 @@ defineEmits<{ action: [] }>()
       <p class="text-[0.74rem] font-bold tracking-[0.14em] text-muted uppercase">{{ name }}</p>
 
       <p v-if="priceLead" class="mt-4 text-[0.86rem] text-muted">{{ priceLead }}</p>
+      <!-- Ukurannya mengikuti lebar kartunya, bukan jumlah karakter harganya.
+           Dulu ia berpindah ke ukuran kecil setelah 12 karakter, dan
+           "Rp3.750.000" — harga tahunan tingkat teratas — berhenti tepat di
+           bawah ambang itu: sebelas karakter pada ukuran penuh, di kartu yang
+           tidak cukup lebar untuk memuatnya. Clamp terhadap `cqi` tidak bisa
+           salah menghitung panjang karena ia tidak menghitungnya sama sekali;
+           ia cuma tidak pernah lebih besar dari ruang yang ada. -->
       <p
-        class="font-extrabold tracking-[-0.04em] text-ink"
-        :class="[priceLead ? 'mt-0.5' : 'mt-4', price.length > 12 ? 'text-[1.75rem] leading-tight' : 'text-[2.6rem] leading-none']"
+        class="text-[clamp(1.45rem,11cqi,2.6rem)] leading-none font-extrabold tracking-[-0.04em] whitespace-nowrap text-ink tabular-nums"
+        :class="priceLead ? 'mt-0.5' : 'mt-4'"
       >
         {{ price }}
       </p>

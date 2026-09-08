@@ -96,7 +96,6 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt, section: 'Antrean' },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye, section: 'Antrean' },
       { label: 'Pengajuan tutor', to: '/dashboard/admin/applications', icon: IconCheckCircle, section: 'Antrean' },
-      { label: 'Pengajuan bimbel', to: '/dashboard/admin/bimbels/applications', icon: IconHandshake, section: 'Antrean' },
 
       // Keuangan — catatan uang, bukan antrean keputusan. Pencairan lebih dulu
       // karena ia yang ditunggu tutor, rekening bank adalah syarat yang
@@ -128,6 +127,10 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // terbedakan sama sekali.
       { label: 'Daftar tutor', to: '/dashboard/admin/tutors', icon: IconUser, section: 'Direktori' },
       { label: 'Daftar siswa', to: '/dashboard/admin/students', icon: IconUsers, section: 'Direktori' },
+      // Dulu "Pengajuan bimbel" di Antrean. Mendaftarkan bimbel tidak lagi
+      // menunggu persetujuan, jadi tidak ada satu baris pun di sana yang
+      // menunggu admin — yang tersisa daftar bacaan, dan tempatnya di sini.
+      { label: 'Daftar bimbel', to: '/dashboard/admin/bimbels', icon: IconHandshake, section: 'Direktori' },
     ],
   },
   tutor: {
