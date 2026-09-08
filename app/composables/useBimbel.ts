@@ -30,15 +30,39 @@ export function useBimbelMemberships() {
   const data = useState<BimbelMembership[]>('bimbel-memberships', () => [])
   const pending = useState('bimbel-memberships-pending', () => false)
   const error = useState('bimbel-memberships-error', () => '')
+  /** Sudah pernah dicoba dimuat di sesi ini — dasar `ensure` di bawah. */
+  const loaded = useState('bimbel-memberships-loaded', () => false)
 
   async function refresh() {
     pending.value = true
     error.value = ''
     try { data.value = await bimbelRequest<BimbelMembership[]>('/me/bimbels') }
     catch (cause) { error.value = tutorApiMessage(cause, 'Gagal memuat bimbel.') }
-    finally { pending.value = false }
+    finally {
+      pending.value = false
+      loaded.value = true
+    }
   }
-  return { data, pending, error, refresh }
+
+  /**
+   * Muat sekali saja, kalau belum pernah.
+   *
+   * Untuk permukaan yang perlu tahu keanggotaan tetapi tidak boleh membayar
+   * satu request di setiap halaman. Menu profil ada di header setiap halaman
+   * dan memakai ini saat menunya dibuka, jadi akun yang tidak pernah membuka
+   * menu itu tidak pernah menembakkan request-nya sama sekali.
+   *
+   * Kegagalan tidak dicoba ulang otomatis: `loaded` ditandai di `finally`,
+   * karena permukaan yang memanggilnya hanya kehilangan satu entri menu kalau
+   * gagal, dan mencoba lagi di tiap pembukaan menu akan mengulang request yang
+   * sama pada akun yang memang tidak punya bimbel.
+   */
+  async function ensure() {
+    if (loaded.value || pending.value) return
+    await refresh()
+  }
+
+  return { data, pending, error, refresh, ensure }
 }
 
 function resource<T>(loader: () => Promise<T>, fallback: T, message: string) {

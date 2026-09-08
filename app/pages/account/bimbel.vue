@@ -23,7 +23,7 @@ import type { BimbelMembership, BimbelRole } from '#shared/types/bimbel'
 definePageMeta({ path: '/akun/bimbel', layout: 'account', middleware: 'auth' })
 useHead({ title: 'Bimbel Saya | Zenko', meta: [{ name: 'robots', content: 'noindex' }] })
 
-const { data: memberships, pending, error, refresh } = useBimbelMemberships()
+const { data: memberships, refresh } = useBimbelMemberships()
 const packages = useMyBimbelPackages()
 const invitations = useBimbelInvitations()
 const application = useMyBimbelApplication()
@@ -53,28 +53,32 @@ const ROLE_LABEL: Record<BimbelRole, string> = {
 }
 
 /**
- * `invited` sengaja tidak muncul di sini: undangan punya kartunya sendiri di
- * panel atas, lengkap dengan tombol jawabannya.
+ * Keanggotaan yang belum membuka apa pun, dan karena itu satu-satunya yang
+ * masih perlu disebut di halaman ini.
+ *
+ * Keanggotaan aktif tidak: paketnya sudah tampil di bawah lengkap dengan nama
+ * bimbelnya, dan ruang kerja pengelola dibuka dari menu profil. Yang tersisa
+ * adalah keadaan yang tidak menghasilkan apa pun di layar dan tetap butuh
+ * penjelasan — permintaan bergabung yang belum dijawab, dan keanggotaan yang
+ * ditangguhkan. Tanpa ini keduanya jadi tak terlihat sama sekali, dan siswa
+ * yang baru memasukkan kode akan melihat halaman kosong tanpa tahu kenapa.
+ *
+ * `invited` tidak ikut: undangan punya panelnya sendiri di atas, lengkap dengan
+ * tombol jawabannya.
  */
-function statusLabel(item: BimbelMembership): string {
-  if (item.status === 'active') return 'Aktif'
-  if (item.status === 'suspended') return 'Ditangguhkan'
-  return 'Menunggu persetujuan'
-}
+const waiting = computed(() =>
+  memberships.value.filter(item => item.status === 'pending' || item.status === 'suspended'),
+)
 
-/**
- * Hanya pengelola yang punya tujuan: ruang kerja bimbelnya. Siswa tidak lagi
- * dikirim ke mana pun — paketnya sudah ada di halaman yang sama, beberapa baris
- * di atas kartu ini.
- */
-function workspacePathFor(item: BimbelMembership): string | null {
-  if (item.status !== 'active' || item.role === 'student') return null
-  return `/dashboard/bimbel/${item.bimbelId}`
+function waitingNote(item: BimbelMembership): string {
+  return item.status === 'suspended'
+    ? `Keanggotaanmu di ${item.bimbelName} sedang ditangguhkan, jadi paketnya tidak terbuka. Hubungi pengelola bimbelmu.`
+    : `Permintaan bergabung ke ${item.bimbelName} sudah terkirim dan menunggu persetujuan pengelolanya.`
 }
 
 /**
  * Pengajuan yang masih punya kabar untuk disampaikan. Yang `approved` sudah
- * berubah jadi keanggotaan, jadi kartunya di "Ruang bimbel" yang bicara.
+ * jadi keanggotaan, dan pintunya ada di menu profil.
  */
 const pendingApplication = computed(() => {
   const item = application.data.value
@@ -160,6 +164,17 @@ async function answer(item: BimbelMembership, accept: boolean) {
       :application="pendingApplication"
     />
 
+    <!-- Keanggotaan yang belum membuka apa pun. Satu baris pesan, bukan kartu:
+         tidak ada yang bisa dilakukan pengguna di sini selain menunggu. -->
+    <AppSectionMessage
+      v-for="item in waiting"
+      :key="item.bimbelId"
+      :appearance="item.status === 'suspended' ? 'warning' : 'information'"
+      :title="item.status === 'suspended' ? 'Keanggotaan ditangguhkan' : 'Menunggu persetujuan'"
+    >
+      {{ waitingNote(item) }}
+    </AppSectionMessage>
+
     <!--
       Undangan diletakkan paling atas karena ia satu-satunya bagian halaman ini
       yang menunggu tindakan pengguna; sisanya hanya status.
@@ -239,54 +254,19 @@ async function answer(item: BimbelMembership, accept: boolean) {
       />
     </DashboardPanel>
 
-    <DashboardPanel
-      title="Ruang bimbel"
-      description="Setiap akun bisa tergabung di lebih dari satu bimbel dengan peran berbeda."
+    <!-- Pintu ke sisi pengelola, di kaki halaman karena di situlah
+         pertanyaannya muncul setelah semua yang di atas dibaca: "kalau bimbelku
+         sendiri, bagaimana?" -->
+    <p
+      v-if="!application.data.value || application.data.value.status === 'rejected'"
+      class="text-sm text-muted"
     >
-      <DashboardSkeleton v-if="pending" :count="3" label="Memuat bimbel…" />
-      <AccountError v-else-if="error" @retry="refresh">{{ error }}</AccountError>
-      <div v-else-if="memberships.length" class="grid gap-3">
-        <article
-          v-for="item in memberships"
-          :key="item.bimbelId"
-          class="flex flex-col gap-4 rounded-md border border-hairline p-4 sm:flex-row sm:items-center"
-        >
-          <div class="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary-soft font-bold text-primary">
-            {{ item.bimbelName.charAt(0) }}
-          </div>
-          <div class="min-w-0 flex-1">
-            <h2 class="truncate font-semibold">{{ item.bimbelName }}</h2>
-            <p class="mt-0.5 text-sm text-muted">{{ ROLE_LABEL[item.role] }} · {{ statusLabel(item) }}</p>
-          </div>
-          <!-- Pengelola keluar dari area akun ke ruang kerjanya; siswa tidak
-               punya tombol karena tujuannya bukan halaman lain. -->
-          <AppButton v-if="workspacePathFor(item)" :to="workspacePathFor(item)!" size="sm">
-            Buka dashboard bimbel
-          </AppButton>
-          <DashboardBadge v-else-if="item.status !== 'active'" tone="warning">Menunggu</DashboardBadge>
-        </article>
-      </div>
-      <AppEmptyState
-        v-else
-        title="Belum tergabung di bimbel"
-        description="Masukkan kode dari pengelola bimbel, atau daftarkan bimbel milikmu sendiri."
-        action-label="Gabung bimbel"
-        @action="openJoin()"
-      />
-
-      <!-- Pintu ke sisi pengelola, ditaruh di kaki panel keanggotaan karena di
-           situlah pertanyaannya muncul: "kalau bimbelku sendiri, bagaimana?" -->
-      <p
-        v-if="!application.data.value || application.data.value.status === 'rejected'"
-        class="mt-5 border-t border-hairline pt-4 text-sm text-muted"
-      >
-        Punya bimbel sendiri?
-        <NuxtLink to="/untuk-bimbel" class="font-semibold text-primary hover:underline">
-          {{ application.data.value?.status === 'rejected' ? 'Ajukan ulang bimbelmu' : 'Daftarkan bimbelmu' }}
-        </NuxtLink>
-        untuk mengelola siswa dan menjual paketmu di Zenko.
-      </p>
-    </DashboardPanel>
+      Punya bimbel sendiri?
+      <NuxtLink to="/untuk-bimbel" class="font-semibold text-primary hover:underline">
+        {{ application.data.value?.status === 'rejected' ? 'Ajukan ulang bimbelmu' : 'Daftarkan bimbelmu' }}
+      </NuxtLink>
+      untuk mengelola siswa dan menjual paketmu di Zenko.
+    </p>
 
     <AppModal
       :model-value="joinOpen"
