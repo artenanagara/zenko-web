@@ -3,14 +3,22 @@ import type { Purchase } from '#shared/types/account'
 
 /**
  * Kartu pembayaran QRIS manual: satu QRIS statis milik Zenko, nominal yang
- * harus dibayar sampai digit terakhir, dan formulir bukti transfer.
+ * harus dibayar sampai digit terakhir, dan satu tombol konfirmasi.
  *
- * Berbeda dari jalur Duitku, kode di sini tidak membawa nominal — QRIS statis
+ * Berbeda dari jalur otomatis, kode di sini tidak membawa nominal — QRIS statis
  * memang tidak bisa — jadi pembeli mengetik sendiri angkanya di aplikasi bank.
  * Itulah alasan tiga digit kode unik ditampilkan terpisah lalu dijumlahkan:
  * satu digit yang meleset membuat admin tidak bisa mencocokkan transfernya
  * dengan pesanan ini, dan pembeli berhak tahu dari mana angka ganjil itu
  * datang.
+ *
+ * Tidak ada unggahan bukti transfer, dan tidak ada isian nama maupun nominal.
+ * Yang membuktikan uangnya masuk adalah daftar mutasi merchant, tempat kode
+ * unik itu menunjuk pesanannya sendiri — tangkapan layar justru bukti yang
+ * lebih lemah karena bisa dipalsukan, dan tiap kolom tambahan adalah satu lagi
+ * cara pembayar jujur tersangkut. Tombolnya hanya mengerjakan dua hal yang
+ * tidak bisa dikerjakan kode unik: memberi tahu bahwa ada yang perlu diperiksa,
+ * dan menghentikan hitungan kedaluwarsa.
  */
 
 const props = defineProps<{ purchase: Purchase }>()
@@ -40,6 +48,15 @@ onMounted(async () => {
   }
 })
 
+/**
+ * Janji waktu verifikasi, dibaca dari tenggat yang sama yang dipakai server.
+ * 24 jam ditulis "1×24 jam" karena itu yang lazim dibaca di Indonesia.
+ */
+const verificationWindow = computed(() => {
+  const hours = method.value?.deadlineHours ?? 24
+  return hours === 24 ? '1×24 jam' : `${hours} jam`
+})
+
 const amounts = computed(() => manualTransferBreakdown(props.purchase))
 
 /** Ditolak admin: alasannya yang pertama dibaca, sebelum QR-nya. */
@@ -48,11 +65,14 @@ const rejection = computed(() => {
   return proof?.status === 'rejected' && proof.rejectReason ? proof.rejectReason : null
 })
 
-const formOpen = ref(false)
+const { error: confirmError, confirmPayment } = useCheckout()
+const confirming = ref(false)
 
-function onConfirmed(updated: Purchase) {
-  formOpen.value = false
-  emit('confirmed', updated)
+async function onConfirm() {
+  confirming.value = true
+  const updated = await confirmPayment(props.purchase.invoice)
+  confirming.value = false
+  if (updated) emit('confirmed', updated)
 }
 
 const copied = ref(false)
@@ -75,20 +95,11 @@ onUnmounted(() => {
   if (copyResetHandle !== null) clearTimeout(copyResetHandle)
 })
 
-/**
- * Janji waktu verifikasi, dibaca dari tenggat yang sama yang dipakai server.
- * 24 jam ditulis "1×24 jam" karena itu yang lazim dibaca di Indonesia.
- */
-const verificationWindow = computed(() => {
-  const hours = method.value?.deadlineHours ?? 24
-  return hours === 24 ? '1×24 jam' : `${hours} jam`
-})
-
 const paySteps = computed(() => [
   'Buka aplikasi bank atau e-wallet yang mendukung QRIS.',
   'Pilih "Scan QR", lalu arahkan kamera ke kode di atas. Kalau kamu membuka halaman ini dari HP, simpan dulu gambarnya lalu unggah di aplikasi bank.',
   `Ketik nominalnya persis ${formatRupiah(amounts.value.total)} — termasuk tiga digit terakhir.`,
-  'Selesaikan pembayaran, lalu beri tahu kami lewat tombol di bawah.',
+  'Selesaikan pembayaran, lalu tekan "Saya sudah bayar" di bawah supaya kami memeriksanya.',
 ])
 </script>
 
@@ -103,39 +114,16 @@ const paySteps = computed(() => [
     >
       <p class="flex items-center gap-2 font-semibold text-amber-900">
         <IconAlert class="h-4.5 w-4.5 shrink-0" aria-hidden="true" />
-        Bukti pembayaran sebelumnya belum bisa diterima
+        Konfirmasi pembayaran sebelumnya belum bisa diterima
       </p>
       <p class="mt-1.5 text-[0.88rem] leading-[1.6] text-amber-800">{{ rejection }}</p>
       <p class="mt-1.5 text-[0.84rem] text-amber-800">
-        Pesananmu belum hangus — perbaiki lalu konfirmasi lagi di bawah.
+        Pesananmu belum hangus — pastikan nominalnya persis, lalu konfirmasi lagi di bawah.
       </p>
     </div>
 
     <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-      <!-- Quiet zone diberikan lewat padding putih di sekeliling gambar, bukan
-           di dalam file-nya, supaya kodenya tetap terbaca pemindai. -->
-      <div class="grid shrink-0 justify-items-center gap-3">
-        <div class="rounded-sm bg-white p-4 shadow-xs">
-          <img
-            src="/pembayaran/qris-zenko.webp"
-            alt="Kode QRIS Zenko Edukasi"
-            width="458"
-            height="458"
-            class="h-48 w-48 object-contain sm:h-56 sm:w-56"
-          >
-        </div>
-        <!-- Di bawah kodenya, karena inilah yang dilakukan orang saat membuka
-             halaman ini dari HP: simpan gambarnya, lalu unggah di aplikasi
-             banknya — kamera tidak bisa memindai layarnya sendiri. -->
-        <a
-          href="/pembayaran/qris-zenko-poster.jpg"
-          download="QRIS-Zenko-Edukasi.jpg"
-          class="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-hairline-strong bg-surface px-3.5 py-2 text-[0.84rem] font-semibold hover:bg-surface-sunken"
-        >
-          <AppIcon name="download-simple" :size="16" aria-hidden="true" />
-          Simpan gambar QRIS
-        </a>
-      </div>
+      <ManualQrisCode />
 
       <!-- Kolom kanan: siapa yang dibayar, berapa, lalu satu tindakan.
            Nominalnya sengaja tidak sebesar angka Total di ringkasan pesanan —
@@ -183,12 +171,20 @@ const paySteps = computed(() => [
           </dl>
         </div>
 
-        <!-- Satu tindakan di kartu ini. Isian rinciannya diminta di dalam
-             dialog, bukan di halaman, supaya kolom ini tetap terbaca sekali
-             pandang: bayar ke siapa, berapa, lalu apa. -->
-        <AppButton size="lg" class="w-full" @click="formOpen = true">
-          Saya sudah transfer
+        <!-- Satu tindakan, tanpa dialog dan tanpa isian: kode unik di
+             nominalnya sudah menunjuk pesanan ini, jadi tidak ada yang perlu
+             ditanyakan lagi ke pembeli. -->
+        <AppButton
+          size="lg"
+          class="w-full"
+          :disabled="confirming"
+          @click="onConfirm"
+        >
+          {{ confirming ? 'Mengirim…' : 'Saya sudah bayar' }}
         </AppButton>
+        <p v-if="confirmError" role="alert" class="text-[0.84rem] text-danger">
+          {{ confirmError }}
+        </p>
 
       </div>
     </div>
@@ -211,13 +207,5 @@ const paySteps = computed(() => [
       </NuxtLink>
     </p>
 
-    <AppModal
-      :model-value="formOpen"
-      title="Konfirmasi pembayaran"
-      description="Beri tahu kami supaya pembayaranmu masuk antrean pemeriksaan dan pesananmu tidak hangus sambil menunggu."
-      @update:model-value="formOpen = $event"
-    >
-      <PaymentProofForm :purchase="purchase" @confirmed="onConfirmed" />
-    </AppModal>
   </div>
 </template>

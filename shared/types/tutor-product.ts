@@ -11,6 +11,7 @@ export type ProductMode = 'simulasi' | 'mini_tryout'
 
 /** draft → review → live | rejected (→ draft again after edits) → archived */
 export type ProductStatus = 'draft' | 'review' | 'live' | 'rejected' | 'archived'
+export type ProductVisibility = 'public' | 'bimbel'
 
 export type QuestionKind =
   | 'single_choice'
@@ -187,6 +188,10 @@ export interface TutorProductSummary {
   price: number
   priceOriginal: number
   status: ProductStatus
+  /** Public marketplace listing or a bimbel's private question-bank source. */
+  visibility: ProductVisibility
+  /** Present on a marketplace copy submitted from a private bimbel product. */
+  sourceProductId?: string
   /** Present when status is `rejected`. */
   rejectReason?: string
   questionCount: number
@@ -263,6 +268,13 @@ export interface TutorPricingEligibility {
 export interface CreateProductRequest {
   type: ProductType
   title: string
+  /**
+   * Pemilik paket, dipilih di langkah 1 wizard. Kosong/absen berarti paket
+   * pribadi tutor. Terisi berarti paket milik bimbel itu — server memvalidasi
+   * keanggotaan pemanggil (role minimal `teacher`, status `active`), jadi ini
+   * niat, bukan otorisasi.
+   */
+  ownerBimbelId?: string
   examTypeSlug?: string
   /** single only: defaults to `simulasi` server-side when omitted. */
   mode?: ProductMode

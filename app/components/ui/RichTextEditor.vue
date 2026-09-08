@@ -625,7 +625,7 @@ defineExpose({
               type="button"
               title="Format teks"
               aria-label="Format teks"
-              class="rte-btn gap-1 !px-2.5"
+              class="rte-btn gap-1 px-2.5!"
               @mousedown.prevent
               @click="open"
             >
@@ -727,7 +727,7 @@ defineExpose({
             <button
               type="button"
               title="Jenis font"
-              class="rte-btn !px-2.5"
+              class="rte-btn px-2.5!"
               @mousedown.prevent
               @click="fontFamilyPopoverOpen = !fontFamilyPopoverOpen"
             >
@@ -760,7 +760,7 @@ defineExpose({
             <button
               type="button"
               title="Ukuran font"
-              class="rte-btn !px-2.5"
+              class="rte-btn px-2.5!"
               @mousedown.prevent
               @click="fontSizePopoverOpen = !fontSizePopoverOpen"
             >

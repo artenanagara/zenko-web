@@ -1,41 +1,60 @@
 <script setup lang="ts">
-import type { Purchase } from '#shared/types/account'
-
 /**
- * Isian konfirmasi pembayaran untuk pesanan QRIS manual. Dirender di dalam
- * dialog yang dibuka tombol "Saya sudah transfer", jadi judul dan kalimat
- * pembukanya milik dialog itu — komponen ini langsung ke isiannya.
+ * Isian konfirmasi pembayaran QRIS manual — hanya isiannya.
  *
- * Yang membuktikan uangnya masuk adalah mutasi di dashboard merchant — kode
- * unik di nominalnya yang menunjuk pesanan mana — jadi tangkapan layar di sini
- * bersifat opsional, bukan syarat. Formulir ini ada untuk dua hal yang tidak
- * bisa dikerjakan kode unik: memberi tahu bahwa ada yang harus diperiksa, dan
- * menghentikan hitungan kedaluwarsa supaya pesanan yang sudah dibayar tidak
- * hangus sementara menunggu giliran diperiksa.
+ * Dipisah dari pengirimnya karena dua hal membayar ke QRIS yang sama tapi ke
+ * endpoint yang berbeda: pesanan paket milik siswa dan tagihan langganan
+ * bimbel. Aturan isiannya identik dan tidak boleh menyimpang, jadi validasi,
+ * batas ukuran berkas, dan kalimatnya tinggal di satu tempat; pemanggilnya
+ * hanya menentukan ke mana payload-nya dikirim.
+ *
+ * Yang membuktikan uangnya masuk adalah mutasi di dashboard merchant — nominal
+ * yang menunjuk tagihan mana — jadi tangkapan layar di sini bersifat opsional,
+ * bukan syarat. Formulir ini ada untuk dua hal yang tidak bisa dikerjakan
+ * nominal: memberi tahu bahwa ada yang harus diperiksa, dan menghentikan
+ * hitungan kedaluwarsa supaya yang sudah dibayar tidak hangus sambil menunggu
+ * giliran diperiksa.
  *
  * Nama pengirim tetap wajib. Justru saat nominalnya salah ketik — mutasinya
- * tidak cocok pesanan mana pun — nama itulah satu-satunya benang untuk
- * melacak pembayarannya kembali ke pemiliknya.
+ * tidak cocok tagihan mana pun — nama itulah satu-satunya benang untuk melacak
+ * pembayarannya kembali ke pemiliknya.
  */
 
-const props = defineProps<{ purchase: Purchase }>()
-const emit = defineEmits<{ confirmed: [Purchase] }>()
+export interface PaymentProofPayload {
+  file: File | null
+  senderName: string
+  paidAmount: number
+  note?: string
+}
 
-const { error: checkoutError, confirmPayment } = useCheckout()
+const props = defineProps<{
+  /** Nominal yang seharusnya ditransfer; jadi isian awal kolom nominal. */
+  expectedAmount: number
+  /** Pesan kesalahan dari server milik pemanggil. */
+  error?: string
+  submitting?: boolean
+}>()
+
+const emit = defineEmits<{ submit: [PaymentProofPayload] }>()
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024
 const ACCEPTED = 'image/png,image/jpeg,image/webp,image/gif'
 
+const uid = useId()
+const senderId = `proof-sender-${uid}`
+const amountId = `proof-amount-${uid}`
+const fileId = `proof-file-${uid}`
+const noteId = `proof-note-${uid}`
+
 const file = ref<File | null>(null)
 const previewUrl = ref<string | null>(null)
 const senderName = ref('')
-const amount = ref<number | null>(manualTransferBreakdown(props.purchase).total)
+const amount = ref<number | null>(props.expectedAmount)
 const note = ref('')
 const localError = ref('')
-const submitting = ref(false)
 
 /** Kesalahan dari server dan dari pemeriksaan di browser tampil di satu tempat. */
-const message = computed(() => localError.value || checkoutError.value)
+const message = computed(() => localError.value || props.error || '')
 
 function releasePreview() {
   if (previewUrl.value) {
@@ -54,7 +73,7 @@ function onFileChange(event: Event) {
 
   if (!picked) return
 
-  // Dicek di sini supaya pembeli tahu sebelum menunggu unggahan gagal. Server
+  // Dicek di sini supaya pembayar tahu sebelum menunggu unggahan gagal. Server
   // memeriksa ulang tipe aslinya dari isi berkas, bukan dari namanya.
   if (!ACCEPTED.split(',').includes(picked.type)) {
     localError.value = 'Format gambar harus PNG, JPEG, WebP, atau GIF.'
@@ -81,7 +100,18 @@ function clearFile() {
 
 onUnmounted(releasePreview)
 
-async function submit() {
+/** Dipanggil pemanggil setelah kirimannya diterima server. */
+function reset() {
+  releasePreview()
+  file.value = null
+  if (fileInput.value) fileInput.value.value = ''
+  senderName.value = ''
+  note.value = ''
+  localError.value = ''
+}
+defineExpose({ reset })
+
+function submit() {
   localError.value = ''
 
   if (!senderName.value.trim()) {
@@ -93,21 +123,12 @@ async function submit() {
     return
   }
 
-  submitting.value = true
-  const updated = await confirmPayment(props.purchase.invoice, {
+  emit('submit', {
     file: file.value,
     senderName: senderName.value.trim(),
     paidAmount: amount.value,
     note: note.value.trim() || undefined,
   })
-  submitting.value = false
-
-  if (updated) {
-    releasePreview()
-    // Pesanan yang dikembalikan server sudah berstatus verifying. Halaman
-    // induk yang memutuskan apa yang tampil sesudahnya.
-    emit('confirmed', updated)
-  }
 }
 </script>
 
@@ -116,9 +137,9 @@ async function submit() {
     <div class="grid gap-4">
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <label for="proof-sender" class="text-[0.86rem] font-semibold">Nama pengirim</label>
+          <label :for="senderId" class="text-[0.86rem] font-semibold">Nama pengirim</label>
           <input
-            id="proof-sender"
+            :id="senderId"
             v-model="senderName"
             type="text"
             maxlength="120"
@@ -128,9 +149,9 @@ async function submit() {
           >
         </div>
         <div>
-          <label for="proof-amount" class="text-[0.86rem] font-semibold">Nominal ditransfer</label>
+          <label :for="amountId" class="text-[0.86rem] font-semibold">Nominal ditransfer</label>
           <input
-            id="proof-amount"
+            :id="amountId"
             v-model.number="amount"
             type="number"
             inputmode="numeric"
@@ -143,11 +164,11 @@ async function submit() {
       <!-- Opsional, dan dikatakan begitu di labelnya. Lampiran hanya membantu
            kalau nominalnya ternyata tidak cocok dengan mutasi mana pun. -->
       <div>
-        <label for="proof-file" class="text-[0.86rem] font-semibold">
+        <label :for="fileId" class="text-[0.86rem] font-semibold">
           Bukti transfer <span class="font-normal text-muted">(opsional)</span>
         </label>
         <input
-          id="proof-file"
+          :id="fileId"
           ref="fileInput"
           type="file"
           :accept="ACCEPTED"
@@ -174,11 +195,11 @@ async function submit() {
       </div>
 
       <div>
-        <label for="proof-note" class="text-[0.86rem] font-semibold">
+        <label :for="noteId" class="text-[0.86rem] font-semibold">
           Catatan <span class="font-normal text-muted">(opsional)</span>
         </label>
         <textarea
-          id="proof-note"
+          :id="noteId"
           v-model="note"
           rows="2"
           maxlength="500"

@@ -35,6 +35,7 @@ const props = defineProps<{
    * memakai aturan longgar seperti sebelumnya, sama dengan servernya.
    */
   examType?: ExamType | null
+  workspace?: ProductWorkspace
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -207,10 +208,10 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext
   errorMessage.value = ''
   try {
     if (editorFor.value && editorFor.value !== 'new') {
-      await updateTutorQuestion(props.productId, section.id, editorFor.value, draft)
+      await updateTutorQuestion(props.productId, section.id, editorFor.value, draft, props.workspace)
     }
     else {
-      await createTutorQuestion(props.productId, section.id, draft)
+      await createTutorQuestion(props.productId, section.id, draft, props.workspace)
     }
     if (andNext) openNewQuestion()
     else editorFor.value = ''
@@ -250,7 +251,7 @@ async function removeQuestion(section: TutorSection, questionId: string) {
 
   errorMessage.value = ''
   try {
-    await deleteTutorQuestion(props.productId, section.id, question.id)
+    await deleteTutorQuestion(props.productId, section.id, question.id, props.workspace)
     if (editorFor.value === question.id) editorFor.value = ''
     emit('refresh')
   }
@@ -262,7 +263,7 @@ async function removeQuestion(section: TutorSection, questionId: string) {
 async function reorderQuestions(section: TutorSection, questionIds: string[]) {
   errorMessage.value = ''
   try {
-    await reorderTutorQuestions(props.productId, section.id, questionIds)
+    await reorderTutorQuestions(props.productId, section.id, questionIds, props.workspace)
     emit('refresh')
   }
   catch (cause) {
@@ -429,6 +430,7 @@ const activeSectionDotClass = computed(() =>
               class="mb-4"
               :product-id="productId"
               :section="activeSection"
+              :workspace="workspace"
               @refresh="emit('refresh')"
             />
 
@@ -470,6 +472,7 @@ const activeSectionDotClass = computed(() =>
                 :sections="orderedSections"
                 :mode="importMode"
                 :group-passages="passagesEnabled"
+                :workspace="workspace"
                 @refresh="emit('refresh')"
               />
             </div>

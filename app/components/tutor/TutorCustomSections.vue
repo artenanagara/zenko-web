@@ -8,6 +8,7 @@ import type { QuestionKind, ScoringMode, SectionInput, TutorSection } from '#sha
 const props = defineProps<{
   productId: string
   sections: TutorSection[]
+  workspace?: ProductWorkspace
 }>()
 
 const emit = defineEmits<{ refresh: [] }>()
@@ -145,7 +146,7 @@ async function save() {
 
   saving.value = true
   try {
-    await updateTutorProduct(props.productId, { sections: payload })
+    await updateTutorProduct(props.productId, { sections: payload }, props.workspace)
     emit('refresh')
     toast.success('Subtes tersimpan.')
   }

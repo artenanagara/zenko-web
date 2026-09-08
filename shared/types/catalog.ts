@@ -15,6 +15,22 @@ export interface Author {
   username: string
 }
 
+/**
+ * Bimbel pemilik paket, ikut pada respons publik hanya ketika paketnya memang
+ * milik sebuah bimbel — paket pribadi tutor tidak membawa field ini sama
+ * sekali. Penulisnya tetap ada di `author`: sejak "Terbitkan sebagai", bimbel
+ * menambah bendera di atas nama tutor, bukan menggantikannya.
+ *
+ * `slug` sengaja belum dipakai untuk menaut ke mana pun — halaman publik
+ * bimbel (`/bimbel/:slug`) belum ada, dan tautan mati lebih buruk daripada
+ * teks biasa.
+ */
+export interface PackageBimbel {
+  name: string
+  slug: string
+  logoUrl?: string
+}
+
 export interface Package {
   id: string
   slug: string
@@ -27,6 +43,8 @@ export interface Package {
   subcategory: string
   thumbnailUrl: string
   author: Author
+  /** Absen untuk paket pribadi tutor. */
+  bimbel?: PackageBimbel
   rating: number
   /**
    * Berapa kali paket ini sudah dikerjakan, sudah diformat untuk ditampilkan

@@ -69,10 +69,29 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
         ],
       },
       { label: 'Daftar Siswa', to: '/dashboard/admin/students', icon: IconUsers },
+      {
+        label: 'Bimbel',
+        to: '/dashboard/admin/bimbels/applications',
+        icon: IconUsers,
+        children: [
+          { label: 'Pengajuan bimbel', to: '/dashboard/admin/bimbels/applications' },
+          { label: 'Pembayaran bimbel', to: '/dashboard/admin/bimbels/orders' },
+        ],
+      },
+      // Antrean bukti transfer langganan bimbel. Berdiri sendiri di samping
+      // grup Bimbel, bukan sebagai anaknya, supaya ia bisa membawa ikonnya
+      // sendiri: grup itu masih memakai IconUsers yang bertabrakan dengan
+      // "Daftar Siswa" (docs/konsep-bimbel-agency.md §9), dan menambah entri di
+      // dalamnya hanya akan menumpuk pada tabrakan yang sama.
+      //
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
       // Uang masuk sebelum uang keluar: verifikasi pembayaran adalah antrean
       // yang menahan akses pembeli yang sudah membayar, jadi ia duduk di atas
       // Pencairan.
+      // Satu pintu untuk dua jenis pembayaran manual: pembelian paket siswa dan
+      // tagihan langganan bimbel. Dulu dua menu terpisah, yang berarti dua
+      // tempat untuk satu kebiasaan — dan satu di antaranya rutin terlupakan,
+      // padahal yang menunggu di sana adalah orang yang sudah membayar.
       { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt },
       { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet },
       {
@@ -136,8 +155,32 @@ const EMPTY_NAV: DashboardNav = { title: '', items: [] }
  */
 export function useDashboardNav() {
   const { user } = useAuth()
+  const route = useRoute()
+  const { data: memberships } = useBimbelMemberships()
 
   return computed<DashboardNav>(() => {
+    const bimbelId = typeof route.params.bimbelId === 'string' ? route.params.bimbelId : ''
+    if (route.path.startsWith('/dashboard/bimbel/') && bimbelId) {
+      const membership = memberships.value.find(item => item.bimbelId === bimbelId && item.status === 'active')
+      if (!membership || membership.role === 'student') return EMPTY_NAV
+
+      const base = `/dashboard/bimbel/${bimbelId}`
+      const items: DashboardNavItem[] = [
+        { label: 'Ringkasan', to: base, icon: IconHome, exact: true },
+        { label: 'Bank soal', to: `${base}/products`, icon: IconGrid },
+        { label: 'Kelas', to: `${base}/classes`, icon: IconUsers },
+      ]
+      if (membership.role === 'admin' || membership.role === 'owner') {
+        items.push({ label: 'Siswa & tim', to: `${base}/members`, icon: IconUser })
+        items.push({ label: 'Pengaturan', to: `${base}/settings`, icon: IconSettings })
+      }
+      if (membership.role === 'owner') {
+        items.push({ label: 'Penjualan', to: `${base}/sales`, icon: IconWallet })
+        items.push({ label: 'Langganan', to: `${base}/billing`, icon: IconReceipt })
+      }
+      return { title: membership.bimbelName, items }
+    }
+
     const role = user.value?.role
     return role === 'admin' || role === 'tutor' ? NAV_BY_ROLE[role] : EMPTY_NAV
   })

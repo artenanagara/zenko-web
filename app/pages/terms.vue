@@ -125,8 +125,8 @@ const revenueShare = [
     <ul>
       <li>Harga ditampilkan dalam Rupiah pada halaman Paket atau checkout.</li>
       <li>Potongan harga, pajak, atau biaya tambahan yang berlaku akan ditampilkan sebelum pembayaran diselesaikan.</li>
-      <li>Pembayaran diproses oleh Duitku dan kanal pembayaran yang tersedia pada saat transaksi.</li>
-      <li>Pesanan dianggap berhasil setelah status pembayaran dikonfirmasi oleh sistem Zenko berdasarkan informasi dari Duitku.</li>
+      <li>Pembayaran diproses oleh DOKU dan kanal pembayaran yang tersedia pada saat transaksi.</li>
+      <li>Pesanan dianggap berhasil setelah status pembayaran dikonfirmasi oleh sistem Zenko berdasarkan informasi dari DOKU.</li>
       <li>Instruksi, batas waktu, dan biaya kanal pembayaran tertentu mengikuti ketentuan penyedia pembayaran.</li>
     </ul>
     <p>
@@ -235,7 +235,7 @@ const revenueShare = [
     <p>
       Refund dapat diberikan penuh atau proporsional sesuai bagian layanan yang gagal.
       Pembayaran ganda dan kegagalan akses total yang memenuhi syarat dikembalikan penuh.
-      Dana dikembalikan ke metode pembayaran awal apabila didukung Duitku; jika tidak,
+      Dana dikembalikan ke metode pembayaran awal apabila didukung DOKU; jika tidak,
       kami dapat meminta rekening atau dompet digital atas nama pembeli yang telah
       diverifikasi. Setelah disetujui, pemrosesan umumnya memerlukan 5&ndash;14 Hari Kerja,
       tidak termasuk keterlambatan bank atau penyedia pembayaran.

@@ -7,10 +7,6 @@ const slug = route.params.slug as string
 
 const detail = await usePackageDetail(slug)
 const related = useRelatedPackages(detail.value.category, slug)
-const authorProfilePath = computed(() => {
-  const identifier = detail.value.author.username || detail.value.author.id
-  return identifier ? `/tutor/${encodeURIComponent(identifier)}` : undefined
-})
 
 // Same pre-checkout guard as /checkout/:slug, applied to the "Beli sekarang"
 // CTA: an already-owned package points at the account instead of a checkout
@@ -84,7 +80,14 @@ const productJsonLd = {
   description: detail.value.description,
   category: detail.value.category,
   image: detail.value.thumbnailUrl,
-  brand: { '@type': 'Brand', name: detail.value.author.name },
+  // Brand is who sells it, author is who wrote it — and for a bimbel's package
+  // those are two different parties. Naming the tutor as the brand was right
+  // while a tutor was the only kind of seller; now that a package can be sold
+  // under an organisation's name, the markup should say the same thing the
+  // page does rather than credit the seller to whoever happens to be listed
+  // first. Author is stated in both cases, so the person is never dropped.
+  brand: { '@type': 'Brand', name: detail.value.bimbel?.name || detail.value.author.name },
+  author: { '@type': 'Person', name: detail.value.author.name },
   offers: {
     '@type': 'Offer',
     price: detail.value.price,
@@ -133,20 +136,10 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <!-- Linked when the tutor has a public profile identifier;
-                 platform-owned seed paket carry neither username nor ID. -->
-            <NuxtLink
-              v-if="authorProfilePath"
-              :to="authorProfilePath"
-              class="-my-2 flex items-center gap-2 py-2 font-semibold text-ink transition-colors duration-200 ease-smooth hover:text-primary hover:underline"
-            >
-              <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
-              {{ detail.author.name }}
-            </NuxtLink>
-            <span v-else class="flex items-center gap-2">
-              <img :src="detail.author.avatarUrl" alt="" class="h-7 w-7 rounded-full object-cover">
-              <span class="font-semibold text-ink">{{ detail.author.name }}</span>
-            </span>
+            <!-- Penulis + bimbel penerbitnya, komponen yang sama dengan kartu
+                 katalog supaya satu paket tidak beratribusi berbeda antara
+                 tempat ia ditemukan dan tempat ia dibeli. -->
+            <PackageAttribution :author="detail.author" :bimbel="detail.bimbel" variant="detail" />
             <span class="flex items-center gap-1.5">
               <IconStar class="h-3.5 w-3.5 text-star" />
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>

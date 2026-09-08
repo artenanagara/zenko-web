@@ -80,7 +80,7 @@ const categories: FaqCategory[] = [
       {
         question: 'Metode pembayaran apa yang tersedia?',
         answer:
-          'Zenko menerima pembayaran QRIS yang diproses melalui Duitku, sehingga bisa dibayar dari aplikasi bank maupun e-wallet apa pun yang mendukung QRIS.',
+          'Zenko menerima pembayaran QRIS yang diproses melalui DOKU, sehingga bisa dibayar dari aplikasi bank maupun e-wallet apa pun yang mendukung QRIS.',
       },
       {
         question: 'Pembayaran saya sudah berhasil, tapi paketnya belum muncul di akun. Bagaimana?',
