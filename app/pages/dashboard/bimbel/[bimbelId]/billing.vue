@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BimbelOrder, BimbelOrderStatus, BimbelPlan, BimbelQuote } from '#shared/types/bimbel'
+import type { BimbelOrder, BimbelOrderStatus, BimbelPlan, BimbelPlanOption, BimbelQuote } from '#shared/types/bimbel'
 
 /**
  * Halaman langganan bimbel.
@@ -62,6 +62,47 @@ const freeMonths = computed(() => {
   if (!yearly) return 0
   return Math.max(0, yearly.months - yearly.billedMonths)
 })
+
+/**
+ * Syarat periode, ditulis di tiap kartu saat Tahunan aktif.
+ *
+ * Angkanya milik quote tahunan, bukan hasil kali di sini: harga kartu tetap
+ * harga per bulan tingkatnya, dan yang berubah hanyalah keterangan bagaimana ia
+ * ditagih. Menghitung "harga efektif per bulan" di klien akan jadi tempat kedua
+ * harga bisa berbeda dari invoice.
+ */
+const periodFootnote = computed(() => {
+  const yearly = yearlyQuote.value
+  if (period.value !== 12 || !yearly || freeMonths.value <= 0) return ''
+  return `Ditagih ${yearly.billedMonths} bulan untuk ${yearly.months} bulan`
+})
+
+/**
+ * Sisa hari uji coba. Ditulis di kartu tingkat yang sedang dijalankan trial —
+ * trial berjalan di atas satu tingkat sungguhan, jadi kartunyalah yang bisa
+ * menjawab "yang sekarang saya pakai ini sampai kapan".
+ */
+const trialDaysLeft = computed(() => {
+  const detail = bimbel.data.value
+  if (!detail || detail.status !== 'trial' || !detail.activeUntil) return 0
+  const days = Math.ceil((detail.activeUntil - Math.floor(Date.now() / 1000)) / 86400)
+  return Math.max(0, days)
+})
+
+function planBadge(plan: BimbelPlan): string {
+  if (bimbel.data.value?.plan !== plan) return ''
+  if (trialDaysLeft.value > 0) return `Sisa ${trialDaysLeft.value} hari uji coba`
+  return 'Tingkat saat ini'
+}
+
+/** Isi tingkat, tiga baris yang benar-benar ditegakkan server. */
+function planFeatures(plan: BimbelPlanOption): string[] {
+  return [
+    `${plan.includedSeats} kursi siswa termasuk`,
+    bimbelLimitLabel(plan.teacherLimit, 'pengajar'),
+    bimbelLimitLabel(plan.productLimit, 'paket bank soal privat'),
+  ]
+}
 
 let quoteToken = 0
 let quoteDebounce: ReturnType<typeof setTimeout> | null = null
@@ -269,75 +310,32 @@ function onPaymentUpdated(updated: BimbelOrder) {
       </div>
 
       <template v-else-if="plans.data.value.length">
-        <!-- Periode. "Tahunan" menyebut hematnya secara eksplisit, diturunkan
-             dari selisih months dan billedMonths pada quote tahunan — bukan
-             dari pengali yang disalin ke klien. -->
-        <div
-          class="inline-flex w-fit rounded-md border border-hairline bg-surface p-1"
-          role="group"
-          aria-label="Periode langganan"
-        >
-          <button
-            v-for="item in ([1, 12] as const)"
-            :key="item"
-            type="button"
-            class="flex items-center gap-2 rounded-sm px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            :class="period === item ? 'bg-primary text-white' : 'text-muted hover:bg-surface-alt'"
-            :aria-pressed="period === item"
-            @click="period = item"
-          >
-            {{ item === 1 ? 'Bulanan' : 'Tahunan' }}
-            <AppLozenge v-if="item === 12 && freeMonths > 0" appearance="success">
-              Gratis {{ freeMonths }} bulan
-            </AppLozenge>
-          </button>
-        </div>
+        <!-- Periode. Hematnya disebut eksplisit, diturunkan dari selisih
+             months dan billedMonths pada quote tahunan — bukan dari pengali
+             yang disalin ke klien. -->
+        <BimbelBillingToggle v-model="period">
+          <template v-if="freeMonths > 0" #note>
+            <AppLozenge appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
+          </template>
+        </BimbelBillingToggle>
 
-        <p v-if="period === 12 && freeMonths > 0 && yearlyQuote" class="mt-3 text-sm text-muted">
-          Langganan tahunan ditagih {{ yearlyQuote.billedMonths }} bulan untuk masa aktif
-          {{ yearlyQuote.months }} bulan.
-        </p>
-
-        <div class="mt-5 grid gap-4 lg:grid-cols-3" role="group" aria-label="Tingkat langganan">
-          <button
+        <div class="mt-6 grid gap-4 lg:grid-cols-3" role="group" aria-label="Tingkat langganan">
+          <BimbelPlanCard
             v-for="plan in plans.data.value"
             :key="plan.plan"
-            type="button"
-            class="flex flex-col rounded-lg border p-5 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            :class="selectedPlan === plan.plan ? 'border-primary bg-primary-soft shadow-lift' : 'border-hairline bg-surface hover:border-primary/30'"
-            :aria-pressed="selectedPlan === plan.plan"
-            @click="choosePlan(plan.plan)"
-          >
-            <div class="flex items-start justify-between gap-2">
-              <p class="text-xs font-bold tracking-wide text-primary uppercase">
-                {{ bimbelPlanLabel(plan.plan, plan.name) }}
-              </p>
-              <AppLozenge v-if="bimbel.data.value?.plan === plan.plan">Tingkat saat ini</AppLozenge>
-            </div>
-
-            <p class="mt-3 text-2xl font-bold tabular-nums">
-              {{ formatRupiah(plan.pricePerMonth) }}
-              <span class="text-sm font-medium text-muted">/ bulan</span>
-            </p>
-
-            <dl class="mt-4 grid gap-2 text-sm">
-              <div class="flex items-center gap-2">
-                <AppIcon name="users-three" :size="16" class="shrink-0 text-muted" aria-hidden="true" />
-                <dt class="sr-only">Kursi termasuk</dt>
-                <dd>{{ plan.includedSeats }} kursi siswa termasuk</dd>
-              </div>
-              <div class="flex items-center gap-2">
-                <AppIcon name="chalkboard-teacher" :size="16" class="shrink-0 text-muted" aria-hidden="true" />
-                <dt class="sr-only">Batas pengajar</dt>
-                <dd>{{ bimbelLimitLabel(plan.teacherLimit, 'pengajar') }}</dd>
-              </div>
-              <div class="flex items-center gap-2">
-                <AppIcon name="folder-lock" :size="16" class="shrink-0 text-muted" aria-hidden="true" />
-                <dt class="sr-only">Batas bank soal privat</dt>
-                <dd>{{ bimbelLimitLabel(plan.productLimit, 'paket bank soal privat') }}</dd>
-              </div>
-            </dl>
-          </button>
+            :name="bimbelPlanLabel(plan.plan, plan.name)"
+            price-lead="Mulai dari"
+            :price="formatRupiah(plan.pricePerMonth)"
+            price-note="per bulan"
+            :price-footnote="periodFootnote"
+            :description="`${plan.includedSeats} kursi sudah termasuk. Siswa di atasnya ditagih per kursi.`"
+            :features="planFeatures(plan)"
+            :badge="planBadge(plan.plan)"
+            :selected="selectedPlan === plan.plan"
+            :action-label="selectedPlan === plan.plan ? 'Tingkat dipilih' : 'Pilih tingkat ini'"
+            :action-variant="selectedPlan === plan.plan ? 'primary' : 'light'"
+            @action="choosePlan(plan.plan)"
+          />
         </div>
 
         <!-- ============================================================

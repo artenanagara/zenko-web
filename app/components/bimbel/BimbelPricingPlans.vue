@@ -26,36 +26,54 @@
  * Empat dimensi yang benar-benar bisa ditegakkan server hari ini: kursi sudah
  * jadi dasar billing, pengajar dihitung dari anggota ber-role ≥ teacher, dan
  * bank soal dari produk milik bimbel.
+ *
+ * Harga tahunan ditulis sebagai angka tersendiri, bukan hasil kali harga
+ * bulanan. Aturannya memang "12 bulan ditagih 10 bulan", jadi mengalikannya di
+ * sini akan benar hari ini — tapi berkas ini sudah menyalin angka dari backend,
+ * dan salinan yang ikut membawa rumusnya berarti dua hal yang bisa menyimpang,
+ * bukan satu. Di dalam dashboard tidak satu pun dari keduanya disalin: harga
+ * dan potongannya sama-sama datang dari endpoint quote.
  */
 const TIERS = [
   {
     plan: 'Langganan Dasar',
-    price: 'Rp75.000',
+    monthly: 'Rp75.000',
+    yearly: 'Rp750.000',
     for: 'Satu program atau kelas pertama.',
-    seats: '25 kursi siswa',
-    teachers: '3 pengajar',
-    products: '10 paket bank soal privat',
-    highlight: false,
+    features: ['25 kursi siswa termasuk', '3 pengajar', '10 paket bank soal privat'],
+    badge: '',
   },
   {
     plan: 'Langganan Pro',
-    price: 'Rp135.000',
+    monthly: 'Rp135.000',
+    yearly: 'Rp1.350.000',
     for: 'Beberapa kelas dengan tim pengajar.',
-    seats: '50 kursi siswa',
-    teachers: '10 pengajar',
-    products: 'Bank soal privat tak terbatas',
-    highlight: true,
+    features: ['50 kursi siswa termasuk', '10 pengajar', 'Bank soal privat tak terbatas'],
+    badge: 'Paling dipilih',
   },
   {
     plan: 'Langganan Institusi',
-    price: 'Rp375.000',
+    monthly: 'Rp375.000',
+    yearly: 'Rp3.750.000',
     for: 'Lembaga dengan banyak angkatan.',
-    seats: '150 kursi siswa',
-    teachers: 'Pengajar tak terbatas',
-    products: 'Bank soal privat tak terbatas',
-    highlight: false,
+    features: ['150 kursi siswa termasuk', 'Pengajar tak terbatas', 'Bank soal privat tak terbatas'],
+    badge: '',
   },
 ] as const
+
+/**
+ * Periode yang sedang ditampilkan. Bulanan yang aktif saat halaman dibuka:
+ * angka terkecil dulu, lalu tahunan sebagai penawaran — bukan sebaliknya, yang
+ * akan membuat harga pertama yang dilihat pengunjung sepuluh kali lipat dari
+ * yang ia kira.
+ */
+const period = ref<1 | 12>(1)
+
+/** Selisih 12 bulan masa aktif dan 10 bulan yang ditagih, disalin dari §4. */
+const FREE_MONTHS = 2
+
+const priceNote = computed(() => (period.value === 12 ? 'per tahun' : 'per bulan'))
+const priceFootnote = computed(() => (period.value === 12 ? 'Ditagih 10 bulan untuk 12 bulan' : ''))
 
 const FACTS = [
   { icon: 'users-three', label: 'Kursi tambahan', value: 'Rp3.000 / siswa / bulan' },
@@ -69,41 +87,31 @@ const FACTS = [
     <!-- Tiga tingkat. Kartu, bukan tabel perbandingan: di 390px tabel empat
          kolom hanya bisa dibaca dengan menggulung ke samping, dan kolom yang
          terpotong justru kolom tingkat teratas. -->
+    <div class="flex justify-center">
+      <BimbelBillingToggle v-model="period">
+        <template #note>
+          <AppLozenge appearance="success">Gratis {{ FREE_MONTHS }} bulan</AppLozenge>
+        </template>
+      </BimbelBillingToggle>
+    </div>
+
     <div class="grid gap-4 md:grid-cols-3">
-      <div
+      <BimbelPlanCard
         v-for="tier in TIERS"
         :key="tier.plan"
-        class="flex flex-col rounded-[22px] border bg-surface p-6 shadow-xs"
-        :class="tier.highlight ? 'border-primary/40 shadow-lift' : 'border-hairline'"
-      >
-        <div class="flex items-start justify-between gap-2">
-          <p class="text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
-            {{ tier.plan }}
-          </p>
-          <AppLozenge v-if="tier.highlight" appearance="new">Paling dipilih</AppLozenge>
-        </div>
-
-        <p class="mt-3 flex flex-wrap items-baseline gap-x-1.5">
-          <b class="text-[1.9rem] leading-none font-extrabold tracking-tighter">{{ tier.price }}</b>
-          <span class="text-[0.9rem] font-semibold text-muted">/ bulan</span>
-        </p>
-        <p class="mt-2 text-[0.9rem] leading-[1.6] text-muted">{{ tier.for }}</p>
-
-        <ul class="mt-5 grid gap-2.5 border-t border-hairline pt-5 text-[0.92rem]">
-          <li class="flex items-start gap-2.5">
-            <AppIcon name="users-three" :size="17" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-            <span><b class="font-semibold">{{ tier.seats }}</b> sudah termasuk</span>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <AppIcon name="chalkboard-teacher" :size="17" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-            <span>{{ tier.teachers }}</span>
-          </li>
-          <li class="flex items-start gap-2.5">
-            <AppIcon name="folder-lock" :size="17" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-            <span>{{ tier.products }}</span>
-          </li>
-        </ul>
-      </div>
+        :name="tier.plan"
+        price-lead="Mulai dari"
+        :price="period === 12 ? tier.yearly : tier.monthly"
+        :price-note="priceNote"
+        :price-footnote="priceFootnote"
+        :description="tier.for"
+        :features="[...tier.features]"
+        :badge="tier.badge"
+        badge-tone="brand"
+        action-to="/untuk-bimbel/daftar"
+        action-label="Daftarkan bimbel"
+        :action-variant="tier.badge ? 'primary' : 'light'"
+      />
     </div>
 
     <!-- Dua aturan yang berlaku sama di ketiga tingkat, jadi tidak diulang di
@@ -160,11 +168,6 @@ const FACTS = [
         </p>
       </div>
     </div>
-
-    <AppSectionMessage appearance="success" title="Bayar tahunan: 10 bulan untuk 12">
-      Langganan 12 bulan ditagih 10 bulan, di semua tingkat — hemat sekitar 17%
-      dibanding membayar bulanan.
-    </AppSectionMessage>
 
     <AppSectionMessage appearance="discovery" title="Uji coba 14 hari, 50 kursi">
       Begitu pengajuanmu disetujui, ruang bimbel langsung aktif selama 14 hari
