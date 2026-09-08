@@ -27,12 +27,13 @@ const wideCols = computed(() => WIDE_COLS[props.columns])
 
 /**
  * Deterministic width variation, so rows read as content, not as stripes.
- * `!`-prefixed (important) because AppSkeleton's `type="text"` already
- * ships its own `w-full` default — plain utility classes can't reliably
- * out-rank that from a parent without a merge helper (this app has none),
- * so `!w-*` is the only dependable override here.
+ * Marked important because AppSkeleton's `type="text"` already ships its
+ * own `w-full` default — plain utility classes can't reliably out-rank that
+ * from a parent without a merge helper (this app has none), so `w-*!` is the
+ * only dependable override here. Tailwind v4 takes the `!` as a suffix; the
+ * v3 prefix form is silently inert.
  */
-const ROW_WIDTHS = ['!w-3/5', '!w-2/5', '!w-1/2', '!w-2/3'] as const
+const ROW_WIDTHS = ['w-3/5!', 'w-2/5!', 'w-1/2!', 'w-2/3!'] as const
 function rowWidth(index: number): string {
   return ROW_WIDTHS[(index - 1) % ROW_WIDTHS.length] as string
 }
@@ -48,8 +49,8 @@ function rowWidth(index: number): string {
         :key="n"
         class="rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs"
       >
-        <AppSkeleton type="text" className="!h-3.5 !w-24 !rounded-pill" />
-        <AppSkeleton type="text" className="mt-2.5 !h-7 !w-32 !rounded-pill" />
+        <AppSkeleton type="text" className="h-3.5! w-24! rounded-pill!" />
+        <AppSkeleton type="text" className="mt-2.5 h-7! w-32! rounded-pill!" />
       </div>
     </div>
 
@@ -59,8 +60,8 @@ function rowWidth(index: number): string {
         :key="n"
         class="flex min-h-12 items-center gap-4 border-t border-hairline first:border-0"
       >
-        <AppSkeleton type="text" :className="`!h-4 !rounded-pill ${rowWidth(n)}`" />
-        <AppSkeleton type="text" className="ml-auto !h-6 !w-20 shrink-0 !rounded-pill" />
+        <AppSkeleton type="text" :className="`h-4! rounded-pill! ${rowWidth(n)}`" />
+        <AppSkeleton type="text" className="ml-auto h-6! w-20! shrink-0 rounded-pill!" />
       </li>
     </ul>
   </div>
