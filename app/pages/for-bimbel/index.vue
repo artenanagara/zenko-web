@@ -100,7 +100,7 @@ const faqs = [
   {
     question: 'Berapa biaya berlangganan Zenko untuk bimbel?',
     answer:
-      'Ada tiga tingkat: Langganan Dasar Rp75.000 per bulan sudah termasuk 25 kursi siswa, Langganan Pro Rp135.000 untuk 50 kursi, dan Langganan Institusi Rp375.000 untuk 150 kursi. Siswa di atas kursi yang sudah termasuk ditagih Rp3.000 per siswa per bulan di semua tingkat, dengan kelipatan kuota 5 kursi. Tidak ada biaya pendaftaran, dan satu tagihan bisa dibuat untuk maksimal 12 bulan sekaligus.',
+      'Ada tiga tingkat: Kelas Dasar Rp75.000 per bulan sudah termasuk 25 kursi siswa, Kelas Pro Rp135.000 untuk 50 kursi, dan Kelas Institusi Rp375.000 untuk 150 kursi. Siswa di atas kursi yang sudah termasuk ditagih Rp3.000 per siswa per bulan di semua tingkat, dengan kelipatan kuota 5 kursi. Tidak ada biaya pendaftaran, dan satu tagihan bisa dibuat untuk maksimal 12 bulan sekaligus.',
   },
   {
     question: 'Apa untungnya membayar tahunan?',
@@ -110,7 +110,7 @@ const faqs = [
   {
     question: 'Apakah ada masa uji coba?',
     answer:
-      'Ada. Begitu pengajuanmu disetujui, bimbelmu mendapat 14 hari uji coba dengan kemampuan Langganan Pro untuk 50 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan angkatan yang sebenarnya.',
+      'Ada. Begitu pengajuanmu disetujui, bimbelmu mendapat 14 hari uji coba dengan kemampuan Kelas Pro untuk 50 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan angkatan yang sebenarnya.',
   },
   {
     question: 'Bagaimana cara membayar tagihannya?',
@@ -135,14 +135,18 @@ const faqs = [
   {
     question: 'Berapa pengajar yang bisa saya libatkan?',
     answer:
-      'Tergantung tingkat langganannya: Langganan Dasar sampai 3 pengajar, Langganan Pro sampai 10, dan Langganan Institusi tanpa batas. Pengajar dan admin tidak pernah dihitung sebagai kursi berlangganan — yang dihitung hanya siswa.',
+      'Tergantung tingkat langganannya: Kelas Dasar sampai 3 pengajar, Kelas Pro sampai 10, dan Kelas Institusi tanpa batas. Pengajar dan admin tidak pernah dihitung sebagai kursi berlangganan — yang dihitung hanya siswa.',
   },
 ] as const
 
-// Satu observer per section; tiap kartu lalu menjalankan --cycle sendiri.
-const { target: benefitRef, ready: benefitReady, isInView: benefitInView } = useInView(0.15)
+// Satu observer untuk section "Cara kerja"; tiap kartu lalu menjalankan
+// --cycle sendiri.
+//
+// Section "Manfaat" sengaja tidak punya observer. Empat kartunya berisi
+// kalimat yang menjelaskan produk, bukan yang memamerkannya, dan memunculkan
+// mereka satu per satu membuat orang yang menggulung cepat membaca kartu yang
+// masih setengah tampil — biaya yang tidak dibayar oleh apa pun.
 const { target: stepRef, ready: stepReady, isInView: stepInView } = useInView(0.2)
-void benefitRef
 void stepRef
 </script>
 
@@ -185,12 +189,7 @@ void stepRef
     <!-- ==================================================================
          2. Manfaat
          ================================================================== -->
-    <section
-      ref="benefitRef"
-      class="py-18 md:py-22"
-      :class="[benefitReady && 'anim-ready', benefitInView && 'is-inview']"
-      aria-labelledby="manfaat-bimbel-heading"
-    >
+    <section class="py-18 md:py-22" aria-labelledby="manfaat-bimbel-heading">
       <div class="container-page">
         <div class="mx-auto mb-11 max-w-160 text-center">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
@@ -207,10 +206,9 @@ void stepRef
 
         <div class="mx-auto grid max-w-300 grid-cols-1 gap-5 rounded-4xl bg-surface-alt p-4 md:grid-cols-2 md:p-6">
           <article
-            v-for="(benefit, index) in benefits"
+            v-for="benefit in benefits"
             :key="benefit.title"
-            class="anim-item flex flex-col rounded-[26px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
-            :style="{ '--delay': `${index * 110}ms` }"
+            class="flex flex-col rounded-[26px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
           >
             <span
               class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-linear-to-b from-primary-light to-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_14px_rgba(47,111,235,0.22)]"

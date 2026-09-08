@@ -3,11 +3,11 @@
  * Satu kartu tingkat langganan, dipakai bersama oleh halaman marketing publik
  * dan pemilih tingkat di dashboard bimbel.
  *
- * Bentuknya: blok abu-abu di atas yang memuat nama tingkat, harganya, satu
- * kalimat untuk siapa tingkat itu, dan satu aksi — lalu daftar isinya di bawah
- * blok itu, di atas latar kartu. Pembagian itu yang membuat kartunya bisa
- * dibaca dua kali: sekali menyapu harga dari kiri ke kanan, sekali lagi
- * membandingkan isi baris per baris.
+ * Bentuknya: blok abu-abu di atas yang memuat nama tingkat dan harganya, lalu
+ * daftar isinya, lalu aksinya di paling bawah. Urutan itu yang membuat kartunya
+ * bisa dibaca dua kali: sekali menyapu harga dari kiri ke kanan, sekali lagi
+ * membandingkan isi baris per baris — dan tombolnya baru ditemui setelah
+ * keduanya selesai dibaca, yang memang urutan orang memutuskan.
  *
  * Murni presentasi. Tidak ada satu angka pun yang dihitung di sini — harga dan
  * catatannya datang sudah jadi dari pemanggilnya, yang di dashboard berarti
@@ -15,7 +15,7 @@
  * bisa berbeda dari invoice.
  */
 withDefaults(defineProps<{
-  /** Nama tingkat, mis. "Langganan Pro". */
+  /** Nama tingkat, mis. "Kelas Pro". */
   name: string
   /** Harga yang sudah diformat, atau kalimat pengganti seperti "Hubungi kami". */
   price: string
@@ -25,9 +25,14 @@ withDefaults(defineProps<{
   priceNote?: string
   /** Satu baris di bawah harga untuk syarat periodenya. */
   priceFootnote?: string
-  description: string
   features: string[]
-  /** Pita di tepi atas kartu, mis. "Sisa 2 hari uji coba". */
+  /**
+   * Pita di atas nama tingkat, mis. "Paling dipilih" atau "Sisa 2 hari uji
+   * coba". Di dalam blok, bukan menumpang tepi kartu: pita yang menggantung di
+   * tepi terbaca sebagai stiker yang ditempelkan pada kartu, sementara yang di
+   * dalam terbaca sebagai keterangan tingkatnya sendiri — dan keterangan itulah
+   * yang dimaksud.
+   */
   badge?: string
   /**
    * Warna pita. `warning` untuk yang menyebut waktu yang sedang habis,
@@ -62,21 +67,24 @@ defineEmits<{ action: [] }>()
 
 <template>
   <div
-    class="relative flex flex-col rounded-[22px] border bg-surface p-2 pb-6 transition-shadow duration-200"
+    class="flex flex-col rounded-[22px] border bg-surface p-2 pb-5 transition-shadow duration-200"
     :class="selected ? 'border-primary shadow-lift' : 'border-hairline shadow-xs'"
   >
-    <!-- Pita menumpang tepi atas kartu, bukan di dalam bloknya: di dalam ia
-         mendorong seluruh isi kartu turun dan membuat kartu bertanda jadi lebih
-         tinggi dari tetangganya, yang justru merusak perbandingan harga. -->
-    <span
-      v-if="badge"
-      class="absolute -top-2.5 left-6 z-1 rounded-pill px-2.5 py-1 text-[0.7rem] font-bold"
-      :class="badgeTone === 'brand' ? 'bg-primary-soft text-primary' : 'bg-warning-soft text-warning-ink'"
-    >
-      {{ badge }}
-    </span>
-
     <div class="rounded-[16px] bg-surface-alt px-5 py-7 text-center">
+      <!-- Barisnya selalu ada, berisi atau tidak. Kartu bertanda yang tumbuh
+           sendirian akan menggeser daftar centangnya ke bawah, dan tiga daftar
+           yang tidak sebaris justru merusak perbandingan yang jadi alasan
+           daftar itu ada. -->
+      <div class="mb-3 flex min-h-7 items-center justify-center">
+        <p
+          v-if="badge"
+          class="rounded-pill px-2.5 py-1 text-[0.7rem] font-bold"
+          :class="badgeTone === 'brand' ? 'bg-primary-soft text-primary' : 'bg-warning-soft text-warning-ink'"
+        >
+          {{ badge }}
+        </p>
+      </div>
+
       <p class="text-[0.74rem] font-bold tracking-[0.14em] text-muted uppercase">{{ name }}</p>
 
       <p v-if="priceLead" class="mt-4 text-[0.86rem] text-muted">{{ priceLead }}</p>
@@ -88,29 +96,6 @@ defineEmits<{ action: [] }>()
       </p>
       <p v-if="priceNote" class="mt-1.5 text-[0.86rem] text-muted">{{ priceNote }}</p>
       <p v-if="priceFootnote" class="mt-1 text-[0.78rem] font-semibold text-success-ink">{{ priceFootnote }}</p>
-
-      <p class="mx-auto mt-5 max-w-64 text-[0.9rem] leading-[1.6] text-muted">{{ description }}</p>
-
-      <AppButton
-        v-if="actionTo"
-        :to="actionTo"
-        :variant="actionVariant"
-        size="sm"
-        class="mt-5"
-      >
-        {{ actionLabel }}
-      </AppButton>
-      <AppButton
-        v-else
-        :variant="actionVariant"
-        size="sm"
-        class="mt-5"
-        :aria-pressed="selected"
-        @click="$emit('action')"
-      >
-        <AppIcon v-if="selected" name="check" :size="15" aria-hidden="true" />
-        {{ actionLabel }}
-      </AppButton>
     </div>
 
     <ul class="mt-6 grid gap-3 px-4 text-[0.92rem]">
@@ -121,5 +106,31 @@ defineEmits<{ action: [] }>()
         <span class="leading-[1.5]">{{ feature }}</span>
       </li>
     </ul>
+
+    <!-- Aksi di kaki kartu, dan `mt-auto` supaya ia sejajar antarkartu meski
+         daftar isinya berbeda panjang — tiga tombol yang tidak sebaris membuat
+         kartu terpendek terlihat seperti pilihan yang belum selesai. -->
+    <div class="mt-auto px-4 pt-6">
+      <AppButton
+        v-if="actionTo"
+        :to="actionTo"
+        :variant="actionVariant"
+        size="sm"
+        class="w-full"
+      >
+        {{ actionLabel }}
+      </AppButton>
+      <AppButton
+        v-else
+        :variant="actionVariant"
+        size="sm"
+        class="w-full"
+        :aria-pressed="selected"
+        @click="$emit('action')"
+      >
+        <AppIcon v-if="selected" name="check" :size="15" aria-hidden="true" />
+        {{ actionLabel }}
+      </AppButton>
+    </div>
   </div>
 </template>

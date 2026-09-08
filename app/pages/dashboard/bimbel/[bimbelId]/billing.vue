@@ -95,12 +95,25 @@ function planBadge(plan: BimbelPlan): string {
   return 'Tingkat saat ini'
 }
 
-/** Isi tingkat, tiga baris yang benar-benar ditegakkan server. */
+/**
+ * Isi tingkat. Tiga baris pertama yang membedakan tingkat, lalu yang berlaku
+ * sama di semuanya — pembaca membandingkan tiga kolom baris per baris, dan
+ * baris identik di ketiganya cuma menahan mata sebelum sampai ke yang berbeda.
+ *
+ * Harga kursi tambahan diambil dari quote, bukan dikonstankan di sini. Bagi
+ * hasil memang satu angka untuk semua tingkat: server memakai satu
+ * `tutorSharePercent` untuk setiap penjual, jadi menuliskannya berbeda per
+ * tingkat berarti menjual pembeda yang tidak ditegakkan siapa pun.
+ */
 function planFeatures(plan: BimbelPlanOption): string[] {
+  const extraSeat = quote.value?.extraSeatPrice
   return [
     `${plan.includedSeats} kursi siswa termasuk`,
     bimbelLimitLabel(plan.teacherLimit, 'pengajar'),
     bimbelLimitLabel(plan.productLimit, 'paket bank soal privat'),
+    ...(extraSeat ? [`Kursi tambahan ${formatRupiah(extraSeat)} / siswa / bulan`] : []),
+    'Kelas, roster siswa, dan rekap hasil per paket',
+    'Bagi hasil 70% dari penjualan paket di marketplace',
   ]
 }
 
@@ -328,7 +341,6 @@ function onPaymentUpdated(updated: BimbelOrder) {
             :price="formatRupiah(plan.pricePerMonth)"
             price-note="per bulan"
             :price-footnote="periodFootnote"
-            :description="`${plan.includedSeats} kursi sudah termasuk. Siswa di atasnya ditagih per kursi.`"
             :features="planFeatures(plan)"
             :badge="planBadge(plan.plan)"
             :selected="selectedPlan === plan.plan"
