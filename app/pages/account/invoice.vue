@@ -181,7 +181,7 @@ function print() {
               <dl class="mt-2.5 grid gap-1 text-[0.84rem]">
                 <div class="flex justify-between gap-4">
                   <dt class="text-muted">Harga normal</dt>
-                  <dd class="text-muted tabular-nums">{{ formatRupiah(line.priceOriginal) }}</dd>
+                  <dd class="text-muted tabular-nums">{{ formatRupiah(itemListPrice(line)) }}</dd>
                 </div>
                 <div v-if="line.priceOriginal > line.price" class="flex justify-between gap-4">
                   <dt class="text-muted">Diskon</dt>
@@ -217,7 +217,7 @@ function print() {
                   </td>
                   <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ line.category }}</td>
                   <td class="py-3.5 pr-4 text-right text-[0.9rem] text-muted tabular-nums">
-                    {{ formatRupiah(line.priceOriginal) }}
+                    {{ formatRupiah(itemListPrice(line)) }}
                   </td>
                   <td class="py-3.5 pr-4 text-right text-[0.9rem] tabular-nums">
                     <span v-if="line.priceOriginal > line.price" class="font-semibold text-success-ink">

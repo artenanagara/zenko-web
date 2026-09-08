@@ -1,4 +1,4 @@
-import type { OrderStatus, Purchase } from '#shared/types/account'
+import type { OrderStatus, Purchase, PurchaseItem } from '#shared/types/account'
 import type { AsyncResource } from '~/composables/useAccountResource'
 
 /**
@@ -6,7 +6,7 @@ import type { AsyncResource } from '~/composables/useAccountResource'
  */
 
 export interface InvoiceTotals {
-  /** Sum of the items' original prices. */
+  /** Sum of the items' list prices — see invoiceTotals for what "list" means. */
   subtotal: number
   discount: number
   serviceFee: number
@@ -18,9 +18,31 @@ export interface InvoiceTotals {
   total: number
 }
 
-/** Computed from the line items, never stored — totals must match their own breakdown. */
+/**
+ * The list price of one line — what a "harga normal" row should show.
+ *
+ * See invoiceTotals for why `priceOriginal` cannot be rendered raw: 0 there
+ * means "no discount", not "free". Kept beside the totals so the per-line
+ * rows and the summary they add up to can never disagree.
+ */
+export function itemListPrice(item: PurchaseItem): number {
+  return Math.max(item.priceOriginal, item.price)
+}
+
+/**
+ * Computed from the line items, never stored — totals must match their own
+ * breakdown.
+ *
+ * `priceOriginal` is the pre-discount list price, and 0 means "no discount":
+ * the tutor wizard stores an empty field as 0, which is what most products
+ * carry. Summing it raw made every undiscounted order render "Subtotal Rp0"
+ * above a non-zero total — on the payment page and the invoice alike — and
+ * hid the arithmetic that was supposed to explain the figure being asked for.
+ * Falling back to the paid price is the same guard OrderSummary.vue and
+ * PackageCard already apply before drawing a struck-through price.
+ */
 export function invoiceTotals(purchase: Purchase): InvoiceTotals {
-  const subtotal = purchase.items.reduce((sum, item) => sum + item.priceOriginal, 0)
+  const subtotal = purchase.items.reduce((sum, item) => sum + itemListPrice(item), 0)
   const paidForItems = purchase.items.reduce((sum, item) => sum + item.price, 0)
 
   return {
