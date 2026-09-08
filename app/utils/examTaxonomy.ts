@@ -88,12 +88,7 @@ export function isConfigLocked(exam: ExamType | null, mode: ProductMode): boolea
   return mode === 'simulasi' && exam?.fidelity === 'official'
 }
 
-/** A section's timer in whole minutes, reading the exact value when set. */
-export function sectionMinutes(section: Pick<SectionTemplate, 'durationMinutes' | 'durationSeconds'>): number {
-  return section.durationSeconds ? Math.round(section.durationSeconds / 60) : section.durationMinutes
-}
-
 /** "30 soal · 65 menit" — one section's shape, as every list of them shows it. */
 export function sectionSummary(section: SectionTemplate): string {
-  return `${section.questionTarget} soal · ${sectionMinutes(section)} menit`
+  return `${section.questionTarget} soal · ${sectionDurationLabel(section)}`
 }

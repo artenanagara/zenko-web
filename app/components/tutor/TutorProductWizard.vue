@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ProductIdentity } from './wizard/ProductIdentityPicker.vue'
 import type {
+  ExamType,
   ProductMode,
   ProductType,
   TutorProductDetail,
@@ -173,25 +174,38 @@ function cleanIncludes(rows: string[]): string[] {
   return rows.map(row => row.trim()).filter(row => row.length > 0)
 }
 
-const INCLUDE_OPTIONS = [
-  { label: 'Pembahasan video untuk setiap soal', category: null },
-  { label: 'Pembahasan tertulis tiap soal', category: null },
-  { label: 'Analisis skor per subtes', category: null },
-  { label: 'Akses selamanya, bisa diulang kapan saja', category: null },
-  { label: 'Grup diskusi bersama tutor', category: null },
-  { label: 'Simulasi antarmuka CAT BKN', category: 'SKD' },
-  { label: 'Skor & ambang batas resmi per subtes SKD', category: 'SKD' },
-  { label: 'Simulasi antarmuka ujian TKA (Pusmendik)', category: 'TKA' },
-  { label: 'Skor otomatis skala 0–100 seperti TKA resmi', category: 'TKA' },
-].filter((option, index, options) => options.findIndex(item => item.label === option.label) === index)
+/**
+ * Ready-made "Yang kamu dapatkan" bullets. Two of them used to promise a
+ * "Simulasi antarmuka CAT BKN" and a "Simulasi antarmuka ujian TKA
+ * (Pusmendik)"; both are gone, because every exam room now wears Zenko's own
+ * chrome and neither claim was true any more.
+ *
+ * `appliesTo` filters rather than sorts: a bullet only offered when it is
+ * actually true of this package cannot be ticked onto one where it is false.
+ */
+const INCLUDE_OPTIONS: { label: string, appliesTo?: (exam: ExamType) => boolean }[] = [
+  { label: 'Pembahasan tertulis tiap soal' },
+  { label: 'Pembahasan video untuk setiap soal' },
+  { label: 'Analisis skor per bagian' },
+  { label: 'Akses selamanya, bisa diulang kapan saja' },
+  { label: 'Grup diskusi bersama tutor' },
+  {
+    label: 'Waktu pengerjaan per bagian seperti ujian aslinya',
+    appliesTo: exam => exam.timerPolicy === 'sequential',
+  },
+  {
+    label: 'Skor otomatis skala 0–100 seperti ujian aslinya',
+    appliesTo: exam => exam.scoreScale === 'normalized_100',
+  },
+  {
+    label: 'Skor dan ambang batas resmi per bagian',
+    appliesTo: exam => exam.sections.some(section => section.passingGrade != null),
+  },
+]
 
 const includeOptions = computed(() => {
-  const category = selectedExamType.value?.category?.toLowerCase() ?? ''
-  return [...INCLUDE_OPTIONS].sort((a, b) => {
-    const aRelevant = a.category ? category.includes(a.category.toLowerCase()) : false
-    const bRelevant = b.category ? category.includes(b.category.toLowerCase()) : false
-    return Number(bRelevant) - Number(aRelevant)
-  })
+  const exam = selectedExamType.value
+  return INCLUDE_OPTIONS.filter(option => !option.appliesTo || (exam ? option.appliesTo(exam) : false))
 })
 
 function toggleInclude(label: string) {
@@ -279,7 +293,9 @@ const simulasiTotalMinutes = computed(() => {
   const exam = selectedExamType.value
   if (!exam) return 0
   if (exam.simulasiTotalMinutes) return exam.simulasiTotalMinutes
-  return lockedSections.value.reduce((sum, section) => sum + section.durationMinutes, 0)
+  return Math.round(
+    lockedSections.value.reduce((sum, section) => sum + section.durationSeconds, 0) / 60,
+  )
 })
 
 /**
@@ -364,7 +380,8 @@ const PRODUCT_TYPE_OPTIONS: { value: ProductType, label: string }[] = [
 interface LockedSectionRow {
   title: string
   questionTarget: number
-  durationMinutes: number
+  /** Kept in seconds so summing them never rounds twice. */
+  durationSeconds: number
   scoring: string
   passingGrade: number | null
 }
@@ -381,7 +398,7 @@ const lockedSections = computed<LockedSectionRow[]>(() => {
   return sections.map(section => ({
     title: section.title,
     questionTarget: section.questionTarget,
-    durationMinutes: sectionMinutes(section),
+    durationSeconds: sectionSeconds(section),
     scoring: section.scoringMode === 'weighted'
       ? `bobot 1–${section.maxOptionWeight || 5} per opsi`
       : `+${section.pointsCorrect} per jawaban benar`,
@@ -631,7 +648,9 @@ async function persist(): Promise<boolean> {
 /* ----------------------------------------------------------------- steps */
 
 const STEPS = [
-  { n: 1, label: 'Jenis Ujian' },
+  // "Identitas Paket", not "Jenis Ujian": a school exercise has no exam type,
+  // and the step is where both kinds of package get their identity.
+  { n: 1, label: 'Identitas Paket' },
   { n: 2, label: 'Konfigurasi Ujian' },
   { n: 3, label: 'Detail Produk' },
   { n: 4, label: 'Soal' },
@@ -1312,7 +1331,7 @@ const priceHintBlocking = computed(() =>
                   </span>
                 </span>
                 <span class="shrink-0 text-muted tabular-nums sm:text-right">
-                  {{ section.questionTarget }} soal · {{ section.durationMinutes }} menit
+                  {{ section.questionTarget }} soal · {{ formatMinutes(section.durationSeconds) }}
                 </span>
               </li>
             </ul>

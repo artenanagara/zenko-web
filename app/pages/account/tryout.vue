@@ -38,7 +38,7 @@ const totalQuestions = computed(() => blueprint.value?.sections.reduce((sum, s) 
 // jumlah durasi per subtes); payload lama jatuh ke penjumlahan seperti dulu.
 const totalMinutes = computed(() =>
   blueprint.value?.totalDurationMinutes
-  || (blueprint.value?.sections.reduce((sum, section) => sum + sectionDurationSeconds(section) / 60, 0) ?? 0),
+  || Math.round(totalSeconds(blueprint.value?.sections ?? []) / 60),
 )
 
 const nextSection = computed(() => blueprint.value?.sections[session.sectionIndex.value + 1] ?? null)

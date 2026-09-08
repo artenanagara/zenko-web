@@ -377,8 +377,8 @@ export function useTryoutSession(
     const totalSeconds = currentBlueprint.mode === 'flat'
       ? (currentBlueprint.totalDurationMinutes
           ? currentBlueprint.totalDurationMinutes * 60
-          : currentBlueprint.sections.reduce((sum, section) => sum + sectionDurationSeconds(section), 0))
-      : sectionDurationSeconds(currentBlueprint.sections[0]!)
+          : currentBlueprint.sections.reduce((sum, section) => sum + sectionSeconds(section), 0))
+      : sectionSeconds(currentBlueprint.sections[0]!)
     sectionEndsAt.value = Date.now() + totalSeconds * 1_000
     result.value = null
     grading.value = false
@@ -456,7 +456,7 @@ export function useTryoutSession(
     const nextSection = currentBlueprint.sections[nextIndex]
     if (!nextSection) return
     currentIndex.value = sectionOffsets.value[nextIndex] ?? currentIndex.value
-    sectionEndsAt.value = Date.now() + sectionDurationSeconds(nextSection) * 1_000
+    sectionEndsAt.value = Date.now() + sectionSeconds(nextSection) * 1_000
     phase.value = 'running'
     persist()
   }
