@@ -161,6 +161,7 @@ function onSignedIn() {
             v-else-if="methods.hasChoice.value"
             v-model="methods.selected.value"
             :channels="methods.available.value"
+            :upcoming="methods.upcoming.value"
           />
           <div v-else class="flex items-center gap-3.5 rounded-sm border border-primary bg-primary-soft/40 px-4 py-3.5">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-primary">

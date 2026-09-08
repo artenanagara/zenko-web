@@ -137,8 +137,15 @@ const paySteps = computed(() => [
           <p v-if="method?.nmid" class="mt-0.5 text-[0.82rem] text-muted tabular-nums">
             NMID {{ method.nmid }}
           </p>
+          <!-- Penerbitnya disebut, bukan disembunyikan: pembeli yang melihat
+               nama DANA muncul di aplikasinya perlu tahu itu memang benar dan
+               bukan QR orang lain. Disebut sebagai penerbit, bukan sebagai
+               syarat — QRIS ini bisa dibayar dari aplikasi apa pun. -->
+          <p class="mt-0.5 text-[0.82rem] text-muted">Diterbitkan lewat DANA</p>
           <p class="mt-2 text-[0.84rem] leading-[1.55] text-muted">
             Pastikan nama ini yang muncul di aplikasi pembayaranmu sebelum menekan bayar.
+            Kamu bisa membayarnya dari aplikasi bank atau e-wallet apa pun yang mendukung QRIS —
+            tidak harus DANA.
           </p>
         </div>
 

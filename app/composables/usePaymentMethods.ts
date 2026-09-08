@@ -34,10 +34,29 @@ const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string
   },
   manual_qris: {
     label: 'Transfer QRIS manual',
-    hint: 'Scan QRIS Zenko, lalu tekan "Saya sudah bayar"',
+    // DANA is named as the issuer, never as the method. The poster is a QRIS
+    // and every QRIS-capable app can pay it; calling the option "DANA" would
+    // turn away buyers without that one app from a payment they could have
+    // made perfectly well.
+    hint: 'QRIS Zenko terbitan DANA — bayar dari aplikasi bank atau e-wallet apa pun',
     timing: 'Dicek admin dulu — biasanya beberapa jam kerja',
   },
 }
+
+/**
+ * Jalur yang sudah diumumkan tapi belum bisa dipakai.
+ *
+ * Ditampilkan sebagai pilihan mati berlabel "Segera", bukan disembunyikan,
+ * supaya pembeli yang menimbang transfer manual tahu pembayaran seketika
+ * sedang disiapkan — dan supaya jalur manual tidak terbaca sebagai
+ * satu-satunya cara Zenko akan pernah menerima uang.
+ *
+ * Ini bukan sakelar terpisah yang bisa lupa dimatikan: begitu server menyebut
+ * sebuah channel di `available`, ia berhenti muncul di sini dengan sendirinya.
+ * Mengaktifkan DOKU cukup mengisi kredensialnya — tidak perlu deploy kedua
+ * hanya untuk mencabut label "Segera".
+ */
+const ANNOUNCED: PaymentChannel[] = ['doku_qris']
 
 export function paymentChannelCopy(channel: PaymentChannel) {
   return COPY[channel] ?? COPY.doku_qris
@@ -65,8 +84,20 @@ export function usePaymentMethods() {
     }
   }
 
-  /** Only worth drawing a picker when there is an actual choice to make. */
-  const hasChoice = computed(() => available.value.length > 1)
+  /** Diumumkan tapi belum hidup — lihat ANNOUNCED. Kosong dengan sendirinya
+   *  begitu server mulai menawarkannya. */
+  const upcoming = computed(() =>
+    ANNOUNCED.filter(channel => !available.value.includes(channel)),
+  )
 
-  return { available, selected, hasChoice, load }
+  /**
+   * Picker digambar kalau ada yang bisa dipilih DAN ada sesuatu untuk
+   * dibandingkan — entah channel kedua yang hidup, atau satu yang sedang
+   * disiapkan. Satu pilihan tunggal tanpa pembanding hanya menambah langkah.
+   */
+  const hasChoice = computed(() =>
+    available.value.length > 0 && (available.value.length > 1 || upcoming.value.length > 0),
+  )
+
+  return { available, upcoming, selected, hasChoice, load }
 }
