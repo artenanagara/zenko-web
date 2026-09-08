@@ -86,14 +86,23 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // menurut siapa yang paling dirugikan oleh keterlambatan: pembeli yang
       // sudah membayar, lalu tutor yang produknya belum tayang, lalu akun yang
       // belum bisa mulai bekerja sama sekali.
+      //
+      // "Tagihan bimbel" dulu berdiri di sini bernama "Pembayaran bimbel", dan
+      // itu keliru dua kali. Namanya nyaris tidak bisa dibedakan dari
+      // "Verifikasi pembayaran" di atasnya, dan isinya bukan antrean sama
+      // sekali: tagihan yang belum dibayar sedang menunggu bimbelnya, bukan
+      // menunggu admin. Ia sekarang buku catatan di Keuangan — kata benda,
+      // bukan kata kerja, dan itulah pembeda namanya.
       { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt, section: 'Antrean' },
-      { label: 'Pembayaran bimbel', to: '/dashboard/admin/bimbels/orders', icon: IconRepeat, section: 'Antrean' },
       { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye, section: 'Antrean' },
       { label: 'Pengajuan tutor', to: '/dashboard/admin/applications', icon: IconCheckCircle, section: 'Antrean' },
       { label: 'Pengajuan bimbel', to: '/dashboard/admin/bimbels/applications', icon: IconHandshake, section: 'Antrean' },
 
-      // Keuangan — uang keluar. Pencairan lebih dulu karena ia yang ditunggu
-      // tutor; rekening bank adalah syarat yang melayaninya.
+      // Keuangan — catatan uang, bukan antrean keputusan. Pencairan lebih dulu
+      // karena ia yang ditunggu tutor, rekening bank adalah syarat yang
+      // melayaninya, dan tagihan bimbel menutup daftar: tidak ada yang
+      // menunggu di sana, ia dibuka untuk mencari tahu di mana posisi
+      // langganan sebuah bimbel.
       { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet, section: 'Keuangan' },
       {
         label: 'Rekening bank',
@@ -109,6 +118,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
           { label: 'Perubahan', to: '/dashboard/admin/bank-accounts/changes' },
         ],
       },
+      { label: 'Tagihan bimbel', to: '/dashboard/admin/bimbels/orders', icon: IconRepeat, section: 'Keuangan' },
 
       // Direktori — tidak ada yang menunggu di sini; ini tempat mencari orang,
       // bukan tempat memutuskan sesuatu. Ikon di seluruh sidebar ini sengaja

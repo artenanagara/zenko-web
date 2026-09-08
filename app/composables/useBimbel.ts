@@ -161,10 +161,33 @@ export const useAdminBimbelApplications = (status = 'pending') => resource(
   () => bimbelRequest<BimbelApplication[]>('/admin/bimbel-applications', { query: { status } }), [], 'Gagal memuat pengajuan bimbel.',
 )
 export const decideBimbelApplication = (id: string, status: 'approved' | 'rejected', reason = '') => bimbelRequest<BimbelApplication>(`/admin/bimbel-applications/${id}/decision`, { method: 'POST', body: { status, reason } })
-export const useAdminBimbelOrders = (status = 'pending') => resource(
-  () => bimbelRequest<BimbelOrder[]>('/admin/bimbel-orders', { query: { status } }), [], 'Gagal memuat pembayaran bimbel.',
+/**
+ * Buku tagihan langganan bimbel — seluruh status, bukan satu.
+ *
+ * Dulu defaultnya `pending`, dan itu diam-diam membuat halamannya jadi daftar
+ * tagihan yang menunggu *pembayarnya* sambil terlihat seperti antrean yang
+ * menunggu Zenko. Yang paling sering ditanyakan justru hilang: tagihan
+ * `verifying` — "bukti saya sudah masuk belum?" — lenyap dari daftar tepat saat
+ * buktinya datang. Antrean yang benar-benar menunggu admin ada di
+ * `/dashboard/admin/payments`, disusun dari bukti transfer, bukan dari sini.
+ *
+ * Dimuat sekali lalu disaring di klien, seperti meja verifikasi: jumlah
+ * tagihannya kecil dan berpindah filter tidak boleh berarti menunggu jaringan.
+ */
+export const useAdminBimbelOrders = () => resource(
+  () => bimbelRequest<BimbelOrder[]>('/admin/bimbel-orders', { query: { status: 'all' } }), [], 'Gagal memuat tagihan bimbel.',
 )
-export const activateBimbelOrder = (id: string) => bimbelRequest<BimbelOrder>(`/admin/bimbel-orders/${id}/activate`, { method: 'POST' })
+/**
+ * Aktivasi manual: mengakui pembayaran yang tidak pernah dilihat sistem.
+ *
+ * `reason` wajib dan ditolak server kalau kosong — endpoint ini memberi kursi
+ * dan periode berbayar tanpa satu pun bukti tersimpan, jadi catatannya adalah
+ * satu-satunya jejak yang tersisa. Jalur biasanya bukan ini, melainkan antrean
+ * bukti transfer di Verifikasi pembayaran.
+ */
+export const activateBimbelOrder = (id: string, reason: string) => bimbelRequest<BimbelOrder>(`/admin/bimbel-orders/${id}/activate`, { method: 'POST', body: { reason } })
+/** Menagih pemilik bimbel lewat email. Hanya untuk tagihan yang masih `pending`. */
+export const remindBimbelOrder = (id: string) => bimbelRequest<BimbelOrder>(`/admin/bimbel-orders/${id}/reminder`, { method: 'POST' })
 
 /**
  * Antrean verifikasi bukti transfer langganan bimbel.
