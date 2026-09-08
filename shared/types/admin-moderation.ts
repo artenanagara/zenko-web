@@ -3,6 +3,7 @@
  * /admin/* section of docs/tutor-flow-contract.md.
  */
 
+import type { AdminBimbelPaymentProof } from '#shared/types/bimbel'
 import type { OrderStatus, PaymentProofStatus, PurchaseItem } from './account'
 import type { TutorProductDetail, TutorProductSummary } from './tutor-product'
 import type { BankAccount, PayoutStatus } from './tutor-earnings'
@@ -167,10 +168,16 @@ export interface AdminSummary {
   pendingBankChangeRequests: number
   /**
    * Bukti transfer QRIS manual yang menunggu diperiksa. Optional karena API
-   * lama belum mengirimkannya, dan karena pada jalur Duitku antrean ini
+   * lama belum mengirimkannya, dan karena pada jalur otomatis antrean ini
    * memang tidak pernah terisi.
    */
   pendingPaymentProofs?: number
+  /**
+   * Separuh langganan dari antrean verifikasi yang sama. Dikirim terpisah,
+   * bukan dijumlahkan server, supaya dashboard masih bisa menyebut jenis
+   * pekerjaan yang menunggu — bukan cuma banyaknya.
+   */
+  pendingBimbelPaymentProofs?: number
   /**
    * Current headcount per role, not a queue — backs the Ringkasan page's
    * stat cards. Optional so older API responses (before the backend shipped
@@ -180,3 +187,25 @@ export interface AdminSummary {
   totalStudents?: number
   totalTutors?: number
 }
+
+/**
+ * Satu baris di meja verifikasi pembayaran, apa pun jenisnya.
+ *
+ * Dua jenis pembayaran mendarat di meja yang sama karena pekerjaannya identik:
+ * cocokkan nominal dengan mutasi bank, lalu setujui atau tolak. Yang tidak
+ * identik adalah akibatnya — menyetujui pembelian paket melunasi satu pesanan
+ * dan mencatat bagi hasil tutor, sedangkan menyetujui langganan MENGAKTIFKAN
+ * langganan bimbel dengan kuota kursi dan durasinya. Karena itu ini union
+ * dengan pembeda, bukan satu bentuk rata: tiap cabang tetap membawa data yang
+ * dibutuhkan untuk memutuskan jenisnya, dan tiap keputusan tetap dikirim ke
+ * endpoint-nya sendiri.
+ *
+ * Field yang sama-sama dimiliki keduanya (invoice, status, amountDue,
+ * paidAmount, orderDate, createdAt, senderName, note, rejectReason, hasImage)
+ * bisa dibaca langsung dari union tanpa menyempitkan tipenya lebih dulu.
+ */
+export type VerificationKind = 'package' | 'subscription'
+
+export type VerificationItem =
+  | ({ kind: 'package' } & AdminPaymentProof)
+  | ({ kind: 'subscription' } & AdminBimbelPaymentProof)

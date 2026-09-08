@@ -15,6 +15,18 @@ import type {
   UpdateProductRequest,
 } from '#shared/types/tutor-product'
 
+export interface ProductWorkspace {
+  bimbelId?: string
+}
+
+function workspaceRoot(workspace?: ProductWorkspace): string {
+  return workspace?.bimbelId ? `/bimbel/${workspace.bimbelId}` : '/tutor'
+}
+
+function productsRoot(workspace?: ProductWorkspace): string {
+  return `${workspaceRoot(workspace)}/products`
+}
+
 /**
  * Produk tutor: exam types, daftar/detail produk, soal per subtes, dan submit.
  *
@@ -39,7 +51,7 @@ export function useExamTypes() {
 }
 
 /** The caller's own products. Call `refresh()` from onMounted. */
-export function useTutorProducts() {
+export function useTutorProducts(workspace?: ProductWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<TutorProductSummary[]>([])
@@ -50,7 +62,7 @@ export function useTutorProducts() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TutorProductSummary[]>('/tutor/products', {
+      data.value = await useApiFetch<TutorProductSummary[]>(productsRoot(workspace), {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -67,7 +79,7 @@ export function useTutorProducts() {
 }
 
 /** One product in full. Call `refresh()` from onMounted; re-call after edits. */
-export function useTutorProductDetail(id: string) {
+export function useTutorProductDetail(id: string, workspace?: ProductWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<TutorProductDetail | null>(null)
@@ -78,7 +90,7 @@ export function useTutorProductDetail(id: string) {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TutorProductDetail>(`/tutor/products/${id}`, {
+      data.value = await useApiFetch<TutorProductDetail>(`${productsRoot(workspace)}/${id}`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -104,7 +116,7 @@ export function useTutorProductDetail(id: string) {
  * memblokir wizard — `data` tetap null dan checklist jatuh ke aturan longgar,
  * karena server tetap penjaga sebenarnya saat submit.
  */
-export function useTutorPricingEligibility() {
+export function useTutorPricingEligibility(workspace?: ProductWorkspace) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<TutorPricingEligibility | null>(null)
@@ -115,7 +127,7 @@ export function useTutorPricingEligibility() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TutorPricingEligibility>('/tutor/product-pricing', {
+      data.value = await useApiFetch<TutorPricingEligibility>(`${workspaceRoot(workspace)}/product-pricing`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
@@ -132,10 +144,10 @@ export function useTutorPricingEligibility() {
 }
 
 /** POST /tutor/products → draft baru. Throws on any non-2xx. */
-export async function createTutorProduct(body: CreateProductRequest): Promise<TutorProductDetail> {
+export async function createTutorProduct(body: CreateProductRequest, workspace?: ProductWorkspace): Promise<TutorProductDetail> {
   const { public: config } = useRuntimeConfig()
 
-  return await useApiFetch<TutorProductDetail>('/tutor/products', {
+  return await useApiFetch<TutorProductDetail>(productsRoot(workspace), {
     baseURL: config.apiBase,
     method: 'POST',
     body,
@@ -144,10 +156,10 @@ export async function createTutorProduct(body: CreateProductRequest): Promise<Tu
 }
 
 /** PATCH /tutor/products/:id — partial; hanya draft/rejected yang diterima. */
-export async function updateTutorProduct(id: string, patch: UpdateProductRequest): Promise<TutorProductDetail> {
+export async function updateTutorProduct(id: string, patch: UpdateProductRequest, workspace?: ProductWorkspace): Promise<TutorProductDetail> {
   const { public: config } = useRuntimeConfig()
 
-  return await useApiFetch<TutorProductDetail>(`/tutor/products/${id}`, {
+  return await useApiFetch<TutorProductDetail>(`${productsRoot(workspace)}/${id}`, {
     baseURL: config.apiBase,
     method: 'PATCH',
     body: patch,
@@ -160,11 +172,12 @@ export async function createTutorQuestion(
   productId: string,
   sectionId: string,
   question: QuestionDraft,
+  workspace?: ProductWorkspace,
 ): Promise<TutorQuestion> {
   const { public: config } = useRuntimeConfig()
 
   return await useApiFetch<TutorQuestion>(
-    `/tutor/products/${productId}/sections/${sectionId}/questions`,
+    `${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions`,
     { baseURL: config.apiBase, method: 'POST', body: question, credentials: 'include' },
   )
 }
@@ -180,7 +193,7 @@ export async function uploadTutorImage(file: File): Promise<string> {
   const body = new FormData()
   body.append('image', file)
 
-  const result = await useApiFetch<{ url: string }>('/tutor/uploads', {
+  const result = await useApiFetch<{ url: string }>('/uploads', {
     baseURL: config.apiBase,
     method: 'POST',
     body,
@@ -194,10 +207,11 @@ export async function createTutorQuestionBatch(
   productId: string,
   sectionId: string,
   questions: QuestionDraft[],
+  workspace?: ProductWorkspace,
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/questions`, {
+  await useApiFetch(`${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { questions },
@@ -215,10 +229,11 @@ export async function createTutorQuestionBatch(
 export async function importTutorQuestions(
   productId: string,
   questions: QuestionImportDraft[],
+  workspace?: ProductWorkspace,
 ): Promise<QuestionImportResult> {
   const { public: config } = useRuntimeConfig()
 
-  return await useApiFetch<QuestionImportResult>(`/tutor/products/${productId}/questions/import`, {
+  return await useApiFetch<QuestionImportResult>(`${productsRoot(workspace)}/${productId}/questions/import`, {
     baseURL: config.apiBase,
     method: 'POST',
     body: { questions },
@@ -232,11 +247,12 @@ export async function updateTutorQuestion(
   sectionId: string,
   questionId: string,
   question: QuestionDraft,
+  workspace?: ProductWorkspace,
 ): Promise<TutorQuestion> {
   const { public: config } = useRuntimeConfig()
 
   return await useApiFetch<TutorQuestion>(
-    `/tutor/products/${productId}/sections/${sectionId}/questions/${questionId}`,
+    `${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions/${questionId}`,
     { baseURL: config.apiBase, method: 'PATCH', body: question, credentials: 'include' },
   )
 }
@@ -245,10 +261,11 @@ export async function deleteTutorQuestion(
   productId: string,
   sectionId: string,
   questionId: string,
+  workspace?: ProductWorkspace,
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/questions/${questionId}`, {
+  await useApiFetch(`${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions/${questionId}`, {
     baseURL: config.apiBase,
     method: 'DELETE',
     credentials: 'include',
@@ -264,11 +281,12 @@ export async function createTutorPassage(
   productId: string,
   sectionId: string,
   passage: PassageDraft,
+  workspace?: ProductWorkspace,
 ): Promise<TutorProductDetail> {
   const { public: config } = useRuntimeConfig()
 
   return await useApiFetch<TutorProductDetail>(
-    `/tutor/products/${productId}/sections/${sectionId}/passages`,
+    `${productsRoot(workspace)}/${productId}/sections/${sectionId}/passages`,
     { baseURL: config.apiBase, method: 'POST', body: passage, credentials: 'include' },
   )
 }
@@ -279,11 +297,12 @@ export async function updateTutorPassage(
   sectionId: string,
   passageId: string,
   passage: PassageDraft,
+  workspace?: ProductWorkspace,
 ): Promise<TutorProductDetail> {
   const { public: config } = useRuntimeConfig()
 
   return await useApiFetch<TutorProductDetail>(
-    `/tutor/products/${productId}/sections/${sectionId}/passages/${passageId}`,
+    `${productsRoot(workspace)}/${productId}/sections/${sectionId}/passages/${passageId}`,
     { baseURL: config.apiBase, method: 'PATCH', body: passage, credentials: 'include' },
   )
 }
@@ -296,10 +315,11 @@ export async function deleteTutorPassage(
   productId: string,
   sectionId: string,
   passageId: string,
+  workspace?: ProductWorkspace,
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/passages/${passageId}`, {
+  await useApiFetch(`${productsRoot(workspace)}/${productId}/sections/${sectionId}/passages/${passageId}`, {
     baseURL: config.apiBase,
     method: 'DELETE',
     credentials: 'include',
@@ -315,10 +335,11 @@ export async function reorderTutorQuestions(
   productId: string,
   sectionId: string,
   questionIds: string[],
+  workspace?: ProductWorkspace,
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${productId}/sections/${sectionId}/questions/reorder`, {
+  await useApiFetch(`${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions/reorder`, {
     baseURL: config.apiBase,
     method: 'PUT',
     body: { questionIds },
@@ -330,10 +351,17 @@ export async function reorderTutorQuestions(
  * POST /tutor/products/:id/submit — validasi server lalu status `review`.
  * A 422 carries `problems: string[]`; read them with tutorSubmitProblems.
  */
-export async function submitTutorProduct(id: string): Promise<void> {
+export async function submitTutorProduct(
+  id: string,
+  workspace?: ProductWorkspace,
+  visibility: 'public' | 'bimbel' = 'public',
+): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${id}/submit`, {
+  const action = workspace?.bimbelId
+    ? (visibility === 'bimbel' ? 'publish' : 'submit-public')
+    : 'submit'
+  await useApiFetch(`${productsRoot(workspace)}/${id}/${action}`, {
     baseURL: config.apiBase,
     method: 'POST',
     credentials: 'include',
@@ -345,10 +373,10 @@ export async function submitTutorProduct(id: string): Promise<void> {
  * its endpoint; this mirrors the /submit shape and must be confirmed against
  * zenko-api once that side lands.
  */
-export async function archiveTutorProduct(id: string): Promise<void> {
+export async function archiveTutorProduct(id: string, workspace?: ProductWorkspace): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${id}/archive`, {
+  await useApiFetch(`${productsRoot(workspace)}/${id}/archive`, {
     baseURL: config.apiBase,
     method: 'POST',
     credentials: 'include',
@@ -360,10 +388,10 @@ export async function archiveTutorProduct(id: string): Promise<void> {
  * products qualify; live must be archived first, and an archived product with
  * existing buyers is refused too (409). See tutor_products.go Delete.
  */
-export async function deleteTutorProduct(id: string): Promise<void> {
+export async function deleteTutorProduct(id: string, workspace?: ProductWorkspace): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  await useApiFetch(`/tutor/products/${id}`, {
+  await useApiFetch(`${productsRoot(workspace)}/${id}`, {
     baseURL: config.apiBase,
     method: 'DELETE',
     credentials: 'include',

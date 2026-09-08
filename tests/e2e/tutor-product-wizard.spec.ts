@@ -101,8 +101,11 @@ async function openWizard(page: Page): Promise<void> {
 
 /** Kelompok 1 untuk mini tryout TKA SMP, lalu Lanjut ke kelompok 2. */
 async function pickTkaMiniAndGoToConfig(page: Page, mapel: string): Promise<void> {
-  await page.getByRole('radio', { name: /TKA/ }).click()
-  await page.getByRole('radio', { name: 'SMP', exact: true }).click()
+  // Kategori dan jenjang adalah AppSelect, bukan kartu radio: langkah 1
+  // seluruhnya kolom dropdown. Sub-kategori berlabel "Jenjang" untuk TKA dan
+  // "Sub-kategori" untuk SKD, jadi nama comboboxnya ikut kategori yang dipilih.
+  await chooseOption(page, 'Kategori ujian', 'TKA')
+  await chooseOption(page, 'Jenjang', 'SMP')
   await chooseOption(page, 'Jenis ujian', 'Mini Try Out')
   await chooseOption(page, 'Mata pelajaran', mapel)
   await page.getByRole('button', { name: 'Lanjut' }).click()
@@ -172,15 +175,26 @@ test.describe('wizard berkelompok — simulasi SKD terkunci', () => {
     const { createdBodies } = await mockWizardApi(page)
     await openWizard(page)
 
-    await page.getByRole('radio', { name: /SKD/ }).click()
-    await page.getByRole('radio', { name: 'CPNS', exact: true }).click()
-    // Jenis ujian default: Simulasi — langkah subtes dilewati (info 3 subtes).
-    await expect(page.getByText('Subtes terpasang otomatis')).toBeVisible()
+    await chooseOption(page, 'Kategori ujian', 'SKD')
+    await chooseOption(page, 'Sub-kategori', 'CPNS')
+    // Jenis ujian default: Simulasi — langkah subtes dilewati, karena ketiga
+    // subtes resmi SKD terpasang otomatis dan tidak boleh dipilih satu per satu.
+    //
+    // Diuji lewat ketiadaan comboboxnya, bukan lewat kalimat penjelas: kalimat
+    // yang dulu diassert di sini sudah lama hilang dari UI dan test-nya ikut
+    // mati diam-diam. Ketiadaan kontrol adalah aturannya; copy hanya menjelaskan.
+    await expect(page.getByRole('combobox', { name: 'Subtes', exact: true })).toHaveCount(0)
     await page.getByRole('button', { name: 'Lanjut' }).click()
 
-    // Kelompok 2: konfigurasi tampil read-only, tanpa input jumlah soal.
-    await expect(page.getByText('Terkunci mengikuti standar resmi')).toBeVisible()
+    // Kelompok 2: konfigurasi simulasi terkunci standar resmi, jadi tidak ada
+    // satu pun kolom yang bisa mengubahnya.
+    //
+    // Sama seperti di atas, diuji lewat ketiadaan kontrolnya. Kotak berlabel
+    // "terkunci mengikuti standar resmi" yang dulu diassert di sini sudah
+    // diganti tabel ringkas per subtes, dan assertion-nya ikut basi tanpa ada
+    // yang menyadarinya.
     await expect(page.locator('#product-question-target')).toHaveCount(0)
+    await expect(page.locator('#product-duration-minutes')).toHaveCount(0)
     await page.getByRole('button', { name: 'Lanjut' }).click()
 
     await fillDetailAndSaveDraft(page, 'Simulasi SKD CPNS Lengkap')

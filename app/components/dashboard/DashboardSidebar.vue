@@ -15,6 +15,10 @@ import type { DashboardNav, DashboardNavChild, DashboardNavItem } from '~/compos
  * — the children own the routes) over a nested list. Children carry no icon
  * by construction; they are indented so their labels line up under the
  * parent's.
+ *
+ * `item.section` is the other, flatter kind of grouping: a heading printed
+ * over a run of entries that share it. It only labels tingkatnya — every
+ * entry keeps its own route and its own row.
  */
 const props = withDefaults(defineProps<{
   nav: DashboardNav
@@ -47,6 +51,31 @@ function rowBadge(item: DashboardNavItem): number {
 const emit = defineEmits<{ toggle: [], close: [] }>()
 
 const route = useRoute()
+
+/* --------------------------------------------------------------------------
+ * Kelompok bertingkat
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Daftar dipecah menjadi kelompok menurut `item.section`, mengikuti urutan
+ * aslinya — jadi nav yang menentukan tingkatnya, bukan komponen ini.
+ *
+ * Entri berurutan dengan section yang sama masuk ke kelompok yang sama; entri
+ * tanpa section membentuk kelompok tanpa judul. Sengaja tidak dikumpulkan
+ * berdasarkan nama (mis. semua 'Keuangan' ditarik jadi satu di mana pun
+ * letaknya): itu akan diam-diam menyusun ulang nav, dan urutan di
+ * `useDashboardNav` justru bagian yang harus bisa dibaca apa adanya.
+ */
+const sections = computed<{ label: string, items: DashboardNavItem[] }[]>(() => {
+  const groups: { label: string, items: DashboardNavItem[] }[] = []
+  for (const item of props.nav.items) {
+    const label = item.section ?? ''
+    const last = groups[groups.length - 1]
+    if (last && last.label === label) last.items.push(item)
+    else groups.push({ label, items: [item] })
+  }
+  return groups
+})
 
 /* --------------------------------------------------------------------------
  * Sub-menu expansion
@@ -162,69 +191,82 @@ function submenuId(item: DashboardNavItem): string {
            depend on its content, so there is no layout shift while it fills
            in a beat after mount. -->
       <ClientOnly>
-        <p
-          v-if="!collapsed"
-          class="px-3.5 pt-1 pb-2 text-[0.72rem] font-bold tracking-widest text-faint uppercase"
-        >
-          {{ nav.title }}
-        </p>
+        <!-- Pemilih konteks menggantikan judul statis: ia menyebut ruang yang
+             sedang dibuka sekaligus jadi jalan ke ruang lain. Judul lama hanya
+             mengulang apa yang sudah ditampilkan trigger-nya. -->
+        <div class="px-2.5 pt-1 pb-3">
+          <DashboardContextSwitcher :collapsed="collapsed" />
+        </div>
 
-        <ul class="grid gap-1">
-          <li v-for="item in nav.items" :key="item.to">
-            <!-- Group: a button over a nested list. Only when there is room for
-                 the list — the icon-only rail falls through to the link below. -->
-            <template v-if="hasChildren(item) && !collapsed">
-              <button
-                type="button"
-                class="w-full"
-                :class="itemClass(false, { within: isGroupActive(item) })"
-                :aria-expanded="isExpanded(item)"
-                :aria-controls="submenuId(item)"
-                @click="toggleGroup(item)"
+        <template v-for="(section, index) in sections" :key="section.label || `plain-${index}`">
+          <!-- Judul kelompok. Pada rail yang diciutkan tidak ada ruang untuk
+               teks, jadi pemisahnya jadi garis: tingkatnya tetap terbaca tanpa
+               ikon yang tiba-tiba kehilangan konteks. -->
+          <p
+            v-if="section.label && !collapsed"
+            class="px-3.5 pt-5 pb-1.5 text-[0.68rem] font-bold tracking-[0.1em] text-faint uppercase"
+          >
+            {{ section.label }}
+          </p>
+          <hr v-else-if="section.label" class="mx-3 my-2.5 border-t border-hairline">
+
+          <ul class="grid gap-1" :aria-label="section.label || undefined">
+            <li v-for="item in section.items" :key="item.to">
+              <!-- Group: a button over a nested list. Only when there is room for
+                   the list — the icon-only rail falls through to the link below. -->
+              <template v-if="hasChildren(item) && !collapsed">
+                <button
+                  type="button"
+                  class="w-full"
+                  :class="itemClass(false, { within: isGroupActive(item) })"
+                  :aria-expanded="isExpanded(item)"
+                  :aria-controls="submenuId(item)"
+                  @click="toggleGroup(item)"
+                >
+                  <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
+                  <span class="truncate">{{ item.label }}</span>
+
+                  <span class="ml-auto flex shrink-0 items-center gap-1.5">
+                    <!-- Aggregate only while collapsed: an open sub-menu already
+                         shows each child's number, and showing both double-counts. -->
+                    <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
+                    <IconChevron
+                      class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
+                      :class="isExpanded(item) ? '' : '-rotate-90'"
+                    />
+                  </span>
+                </button>
+
+                <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
+                  <li v-for="child in item.children ?? []" :key="child.to">
+                    <NuxtLink
+                      :to="child.to"
+                      :class="itemClass(isDashboardItemActive(child, route), { child: true })"
+                      :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
+                    >
+                      <span class="truncate">{{ child.label }}</span>
+                      <DashboardNavBadge :count="badgeFor(child)" />
+                    </NuxtLink>
+                  </li>
+                </ul>
+              </template>
+
+              <!-- Leaf — and the icon-only rail's stand-in for a group, which
+                   points at its first child since a sub-menu cannot render here. -->
+              <NuxtLink
+                v-else
+                :to="item.children?.[0]?.to ?? item.to"
+                :class="itemClass(isDashboardItemActive(item, route))"
+                :title="collapsed ? item.label : undefined"
+                :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
               >
                 <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
-                <span class="truncate">{{ item.label }}</span>
-
-                <span class="ml-auto flex shrink-0 items-center gap-1.5">
-                  <!-- Aggregate only while collapsed: an open sub-menu already
-                       shows each child's number, and showing both double-counts. -->
-                  <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
-                  <IconChevron
-                    class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
-                    :class="isExpanded(item) ? '' : '-rotate-90'"
-                  />
-                </span>
-              </button>
-
-              <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
-                <li v-for="child in item.children ?? []" :key="child.to">
-                  <NuxtLink
-                    :to="child.to"
-                    :class="itemClass(isDashboardItemActive(child, route), { child: true })"
-                    :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
-                  >
-                    <span class="truncate">{{ child.label }}</span>
-                    <DashboardNavBadge :count="badgeFor(child)" />
-                  </NuxtLink>
-                </li>
-              </ul>
-            </template>
-
-            <!-- Leaf — and the icon-only rail's stand-in for a group, which
-                 points at its first child since a sub-menu cannot render here. -->
-            <NuxtLink
-              v-else
-              :to="item.children?.[0]?.to ?? item.to"
-              :class="itemClass(isDashboardItemActive(item, route))"
-              :title="collapsed ? item.label : undefined"
-              :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
-            >
-              <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
-              <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
-              <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
-            </NuxtLink>
-          </li>
-        </ul>
+                <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
+                <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
+              </NuxtLink>
+            </li>
+          </ul>
+        </template>
       </ClientOnly>
     </nav>
 

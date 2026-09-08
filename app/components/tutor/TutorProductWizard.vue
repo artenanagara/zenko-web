@@ -29,9 +29,71 @@ import type {
  * menelusuri semua langkah; isi soalnya dibuka lewat tombol Edit soal jika
  * rollout edit konten live diaktifkan.
  */
-const props = defineProps<{ productId?: string }>()
+const props = defineProps<{ productId?: string, bimbelId?: string }>()
+
+const workspace = computed<ProductWorkspace | undefined>(() =>
+  props.bimbelId ? { bimbelId: props.bimbelId } : undefined,
+)
+const productDashboardPath = computed(() => props.bimbelId
+  ? `/dashboard/bimbel/${props.bimbelId}/products`
+  : '/dashboard/tutor/products')
 
 const isEdit = computed(() => Boolean(props.productId))
+
+/* ----------------------------------------------- kepemilikan ("Terbitkan sebagai") */
+
+/**
+ * Pemilik paket ditentukan sekali, saat paket dibuat. Server menolak
+ * memindahkannya sesudah itu, jadi pemilih ini tidak pernah tampil di mode
+ * edit — pilihan yang tidak bisa dijalankan lebih buruk daripada tidak ada.
+ *
+ * Dari ruang kerja bimbel (`bimbelId` ada), pemiliknya sudah ditentukan URL
+ * dan server menolak body yang menyebut bimbel lain; yang tampil di sana
+ * adalah keadaannya, bukan pilihan.
+ */
+const bimbelMemberships = useBimbelMemberships()
+
+onMounted(() => {
+  // Layout dashboard sudah memuat keanggotaan di route bimbel — di ruang kerja
+  // tutor tidak, jadi hanya di sanalah wizard perlu memintanya sendiri.
+  if (!isEdit.value && !props.bimbelId) bimbelMemberships.refresh()
+})
+
+/** Bimbel tempat akun ini boleh menerbitkan: anggota aktif, dan bukan siswa. */
+const publishableBimbels = computed(() =>
+  bimbelMemberships.data.value.filter(item => item.status === 'active' && item.role !== 'student'),
+)
+
+const lockedOwnerBimbel = computed(() =>
+  props.bimbelId
+    ? bimbelMemberships.data.value.find(item => item.bimbelId === props.bimbelId) ?? null
+    : null,
+)
+
+/** Kosong = paket pribadi tutor. Hanya diisi dari ruang kerja tutor. */
+const ownerBimbelId = ref('')
+
+/**
+ * Satu opsi bukan pilihan: tutor tanpa keanggotaan aktif non-student tidak
+ * diberi pemilih sama sekali, bukan pemilih berisi "Saya sendiri" saja.
+ */
+const showOwnerPicker = computed(() =>
+  !isEdit.value && !props.bimbelId && publishableBimbels.value.length > 0,
+)
+
+const ownerOptions = computed(() => [
+  { value: '', label: 'Saya sendiri' },
+  ...publishableBimbels.value.map(item => ({ value: item.bimbelId, label: item.bimbelName })),
+])
+
+const OWNER_CONSEQUENCE = 'Paket milik bimbel masuk ke bank soal privat bimbel dan langsung terbuka untuk siswanya; paket pribadi dijual di katalog publik.'
+
+/**
+ * Pemilik yang dipilih menentukan ruang kerja paket yang baru dibuat — bukan
+ * URL tempat wizard dibuka. Draft milik bimbel hidup di `/bimbel/:id/products`,
+ * jadi PATCH lanjutan dan seluruh langkah 4–5 harus menuju ke sana.
+ */
+const createOwnerBimbelId = computed(() => props.bimbelId || ownerBimbelId.value)
 
 /**
  * Same cookie key the dashboard layout keys its rail width off (see
@@ -51,14 +113,14 @@ const {
   pending: detailPending,
   error: detailError,
   refresh: refreshDetail,
-} = useTutorProductDetail(props.productId ?? '')
+} = useTutorProductDetail(props.productId ?? '', workspace.value)
 
 onMounted(() => {
   if (props.productId) refreshDetail()
 })
 
 /** Own products, fetched lazily — only a bundle's step 3 and 4 need them. */
-const own = useTutorProducts()
+const own = useTutorProducts(workspace.value)
 const ownRequested = ref(false)
 
 /**
@@ -67,13 +129,13 @@ const ownRequested = ref(false)
  * saat gagal — checklist lalu bersikap longgar, karena submit di server tetap
  * penjaga sebenarnya dan kalimat penolakannya datang dari sana juga.
  */
-const { data: pricingRule, refresh: refreshPricingRule } = useTutorPricingEligibility()
+const { data: pricingRule, refresh: refreshPricingRule } = useTutorPricingEligibility(workspace.value)
 
 onMounted(refreshPricingRule)
 
 /**
  * Harga hanya dikunci ketika checkout belum diaktifkan pada environment ini.
- * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk Duitku Sandbox, jadi
+ * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk menguji DOKU, jadi
  * tutor bisa mengisi harga berbayar; nilai Rp0 tetap dikirim sebagai paket
  * gratis dan checkout tidak perlu memanggil gateway.
  */
@@ -661,7 +723,7 @@ async function persist(): Promise<boolean> {
 
   saveState.value = 'saving'
   try {
-    await updateTutorProduct(props.productId, patch)
+    await updateTutorProduct(props.productId, patch, workspace.value)
     if (savedFields.value) {
       savedFields.value = {
         title: form.title.trim(),
@@ -814,12 +876,24 @@ async function createAndContinue() {
     const created = await createTutorProduct({
       type: form.type,
       title: form.title.trim(),
+      // Dari ruang kerja bimbel pemiliknya sudah dari URL, jadi tidak
+      // diulang di body; dari ruang kerja tutor inilah satu-satunya cara
+      // pilihan "Terbitkan sebagai" sampai ke server.
+      ...(!props.bimbelId && ownerBimbelId.value ? { ownerBimbelId: ownerBimbelId.value } : {}),
       examTypeSlug: isSingle.value ? form.examTypeSlug : undefined,
       mode: form.mode,
       ...(isSingle.value && sendSectionTitle && form.sectionTitle ? { sectionTitle: form.sectionTitle } : {}),
       ...(sendConfig && form.questionTarget ? { questionTarget: form.questionTarget } : {}),
       ...(sendConfig && form.durationMinutes ? { durationMinutes: form.durationMinutes } : {}),
-    })
+    }, workspace.value)
+
+    // Draft ini sekarang milik pemilik yang dipilih; sisa wizard mengikutinya.
+    const ownedWorkspace: ProductWorkspace | undefined = createOwnerBimbelId.value
+      ? { bimbelId: createOwnerBimbelId.value }
+      : undefined
+    const ownedDashboardPath = createOwnerBimbelId.value
+      ? `/dashboard/bimbel/${createOwnerBimbelId.value}/products`
+      : productDashboardPath.value
 
     const patch: UpdateProductRequest = {}
     if (form.description.trim()) patch.description = form.description.trim()
@@ -829,7 +903,7 @@ async function createAndContinue() {
     if (form.price) patch.price = form.price
     if (form.priceOriginal) patch.priceOriginal = form.priceOriginal
     if (isSingle.value && form.shuffleQuestions) patch.shuffleQuestions = form.shuffleQuestions
-    if (Object.keys(patch).length) await updateTutorProduct(created.id, patch)
+    if (Object.keys(patch).length) await updateTutorProduct(created.id, patch, ownedWorkspace)
 
     saveState.value = 'saved'
     // Everything typed so far now lives on the server; the leave guard must
@@ -839,7 +913,7 @@ async function createAndContinue() {
     form.thumbnailUrl = ''
     form.includes = []
     await navigateTo({
-      path: `/dashboard/tutor/products/${created.id}/edit`,
+      path: `${ownedDashboardPath}/${created.id}/edit`,
       query: { langkah: '4' },
       replace: true,
     })
@@ -1034,7 +1108,7 @@ const simulatableSections = computed(() =>
 )
 
 function simulateHref(sectionId: string): string {
-  return `/dashboard/tutor/products/${props.productId}/simulasikan?section=${encodeURIComponent(sectionId)}`
+  return `${productDashboardPath.value}/${props.productId}/simulasikan?section=${encodeURIComponent(sectionId)}`
 }
 
 /* --------------------------------------------------------------- submit */
@@ -1043,6 +1117,7 @@ const submitting = ref(false)
 const submitted = ref(false)
 const submitProblems = ref<string[]>([])
 const submitError = ref('')
+const isBimbelPrivateProduct = computed(() => Boolean(props.bimbelId) && detail.value?.visibility !== 'public')
 
 async function submitForReview() {
   if (!props.productId) return
@@ -1058,7 +1133,11 @@ async function submitForReview() {
 
   submitting.value = true
   try {
-    await submitTutorProduct(props.productId)
+    await submitTutorProduct(
+      props.productId,
+      workspace.value,
+      detail.value?.visibility ?? (props.bimbelId ? 'bimbel' : 'public'),
+    )
     submitted.value = true
     // Produk ini meninggalkan draft, jadi apa yang tayang milik tutor bisa
     // berubah — dan dengan itu, kelayakan paket gratis berikutnya.
@@ -1108,7 +1187,7 @@ const priceHintBlocking = computed(() =>
   <div class="grid gap-6 pb-24">
     <AppPageHeader
       :title="isEdit ? 'Edit produk' : 'Buat produk'"
-      description="Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog."
+      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah tayang, paket langsung terbuka untuk seluruh siswa bimbel.' : 'Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
     >
       <template #actions>
         <p
@@ -1143,19 +1222,21 @@ const priceHintBlocking = computed(() =>
       :description="`Status saat ini: ${PRODUCT_STATUS_LABEL[detail.status]}`"
     >
       <p class="text-muted">{{ LOCKED_EXPLANATION[detail.status] }}</p>
-      <AppButton to="/dashboard/tutor/products" size="sm" class="mt-5">Kembali ke daftar produk</AppButton>
+      <AppButton :to="productDashboardPath" size="sm" class="mt-5">Kembali ke daftar produk</AppButton>
     </DashboardPanel>
 
     <!-- Submitted: replace the wizard so nothing invites further edits. -->
-    <DashboardPanel v-else-if="submitted" title="Produk diajukan untuk tayang">
+    <DashboardPanel v-else-if="submitted" :title="isBimbelPrivateProduct ? 'Paket tayang di bank soal' : 'Produk diajukan untuk tayang'">
       <div class="py-4 text-center">
         <span class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-success-soft" aria-hidden="true">
           <IconCheck class="h-7 w-7 text-success-ink" />
         </span>
         <p class="mx-auto mt-4 max-w-105 leading-[1.7] text-muted">
-          Tim kurasi Zenko akan segera meninjau paket soalmu. Kamu bisa memantau statusnya di menu Produk Saya. Begitu disetujui, paketmu akan langsung tayang di katalog.
+          {{ isBimbelPrivateProduct
+            ? 'Paket sudah aktif di bank soal privat dan terbuka untuk seluruh siswa bimbel yang keanggotaannya aktif.'
+            : 'Tim kurasi Zenko akan segera meninjau paket soalmu. Begitu disetujui, paket akan tayang di katalog.' }}
         </p>
-        <AppButton to="/dashboard/tutor/products" class="mt-6">Kembali ke Produk Saya</AppButton>
+        <AppButton :to="productDashboardPath" class="mt-6">Kembali ke daftar produk</AppButton>
       </div>
     </DashboardPanel>
 
@@ -1210,6 +1291,30 @@ const priceHintBlocking = computed(() =>
              dan berubah mengikutinya. -->
         <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div class="grid max-w-160 gap-5">
+            <!-- Kepemilikan: keadaan di ruang kerja bimbel, pilihan di ruang
+                 kerja tutor, dan tidak ada sama sekali untuk tutor tanpa
+                 keanggotaan aktif maupun di mode edit. -->
+            <AppSectionMessage
+              v-if="!isEdit && lockedOwnerBimbel"
+              appearance="information"
+              title="Terbitkan sebagai"
+            >
+              Paket ini dibuat di ruang kerja <strong class="font-semibold text-ink">{{ lockedOwnerBimbel.bimbelName }}</strong>,
+              jadi bimbel itu pemiliknya dan tidak bisa diubah di sini. {{ OWNER_CONSEQUENCE }}
+            </AppSectionMessage>
+
+            <div v-else-if="showOwnerPicker">
+              <AppSelect
+                :options="ownerOptions"
+                :model-value="ownerBimbelId"
+                label="Terbitkan sebagai"
+                @update:model-value="(value) => { ownerBimbelId = String(value) }"
+              />
+              <p class="mt-1.5 text-[0.8rem] leading-[1.6] text-muted">
+                {{ OWNER_CONSEQUENCE }} Pemiliknya tidak bisa dipindah setelah paket dibuat.
+              </p>
+            </div>
+
             <AppSelect
               :options="PRODUCT_TYPE_OPTIONS"
               :model-value="form.type"
@@ -1639,6 +1744,7 @@ const priceHintBlocking = computed(() =>
             v-if="isCustom && productId && detail"
             :product-id="productId"
             :sections="detail.sections ?? []"
+            :workspace="workspace"
             @refresh="refreshDetail"
           />
           <TutorSectionEditor
@@ -1649,6 +1755,7 @@ const priceHintBlocking = computed(() =>
             :is-custom="isCustom"
             :exam-type-slug="detail.examType ?? form.examTypeSlug"
             :exam-type="selectedExamType"
+            :workspace="workspace"
             @refresh="refreshDetail"
           />
           <DashboardPanel v-else>
@@ -1877,7 +1984,9 @@ const priceHintBlocking = computed(() =>
               ? 'Mengajukan...'
               : isLiveProduct
                 ? 'Ajukan ulang untuk ditinjau'
-                : 'Ajukan untuk tayang' }}
+                : isBimbelPrivateProduct
+                  ? 'Tayangkan ke bank soal'
+                  : 'Ajukan untuk tayang' }}
           </AppButton>
         </div>
       </div>

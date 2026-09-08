@@ -66,10 +66,15 @@ onUnmounted(() => {
       </AppButton>
     </slot>
 
-    <!-- Floating Action Menu -->
+    <!-- Floating Action Menu.
+         Dibatasi tingginya dan bisa digulir: menu ini juga dipakai sebagai
+         pemilih konteks dashboard, yang daftarnya sepanjang jumlah bimbel yang
+         dikelola akun. Tanpa batas ini, akun dengan banyak bimbel mendapat
+         panel yang menjulur melewati layar, dan entri terakhirnya — termasuk
+         pintu ke "Bimbel saya" — tidak bisa dijangkau sama sekali. -->
     <div
       v-if="isOpen"
-      class="absolute top-[calc(100%+6px)] z-50 w-full min-w-48 rounded-md border border-line bg-surface p-1.5 shadow-float"
+      class="absolute top-[calc(100%+6px)] z-50 max-h-[min(70vh,22rem)] w-full min-w-48 overflow-y-auto rounded-md border border-line bg-surface p-1.5 shadow-float"
       :class="align === 'right' ? 'right-0' : 'left-0'"
     >
       <template v-for="item in items" :key="item.id">
@@ -85,12 +90,14 @@ onUnmounted(() => {
           ]"
           @click="handleSelect(item.id)"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex min-w-0 items-center gap-2">
             <span v-if="item.dot" class="h-1.5 w-1.5 shrink-0 rounded-full" :class="DOT_COLORS[item.dot]" />
             <AppIcon v-if="item.icon" :name="item.icon" :size="14" />
-            <span>{{ item.label }}</span>
+            <!-- Nama bimbel datang dari penggunanya dan bisa sepanjang apa pun;
+                 dipotong supaya panelnya tidak melebar mengikuti yang terpanjang. -->
+            <span class="truncate">{{ item.label }}</span>
           </div>
-          <span v-if="item.badge" class="rounded bg-primary-soft px-1.5 py-0.2 text-[0.65rem] font-bold text-primary">{{ item.badge }}</span>
+          <span v-if="item.badge" class="ml-2 shrink-0 rounded bg-primary-soft px-1.5 py-0.2 text-[0.65rem] font-bold text-primary">{{ item.badge }}</span>
         </button>
       </template>
     </div>

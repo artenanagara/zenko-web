@@ -319,7 +319,7 @@ const quickLinks = [
           <p class="mx-auto mt-8 max-w-[60ch] border-t border-white/15 pt-6 text-[0.88rem] leading-[1.7] text-white/70">
             Zenko diselenggarakan oleh <strong class="font-semibold text-white">PT Zenko Edukasi Digital</strong>,
             Klaten, Jawa Tengah, Indonesia. Pembayaran diproses melalui QRIS oleh
-            <strong class="font-semibold text-white">Duitku</strong>. Zenko tidak pernah
+            <strong class="font-semibold text-white">DOKU</strong>. Zenko tidak pernah
             meminta PIN, OTP, atau kata sandi lewat email maupun telepon.
           </p>
         </div>

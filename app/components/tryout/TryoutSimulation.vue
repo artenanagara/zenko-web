@@ -31,6 +31,7 @@ const props = defineProps<{
   backTo: string
   /** Label tombol kembali, mis. "Kembali ke produk". */
   backLabel: string
+  bimbelId?: string
 }>()
 
 const {
@@ -38,7 +39,7 @@ const {
   pending,
   error,
   refresh,
-} = useTryoutPreview(props.scope, props.productId, () => props.sectionId)
+} = useTryoutPreview(props.scope, props.productId, () => props.sectionId, props.bimbelId)
 
 /**
  * Kunci sesi wajib unik terhadap slug paket siswa: slug itu memberi kunci
@@ -111,7 +112,7 @@ async function exitSimulation() {
         </AppSectionMessage>
         <div class="flex flex-wrap gap-3">
           <AppButton variant="outline" size="sm" @click="refresh">Coba lagi</AppButton>
-          <AppButton :to="backTo" variant="light" size="sm" class="border border-hairline-strong shadow-none">
+          <AppButton :to="backTo" variant="light" size="sm">
             {{ backLabel }}
           </AppButton>
         </div>

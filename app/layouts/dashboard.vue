@@ -14,6 +14,8 @@
 const { user } = useAuth()
 const nav = useDashboardNav()
 const route = useRoute()
+const routeBimbelId = typeof route.params.bimbelId === 'string' ? route.params.bimbelId : ''
+const { refresh: refreshBimbelMemberships } = useBimbelMemberships()
 
 const collapsed = useCookie<boolean>('zenko-sidebar-collapsed', {
   default: () => false,
@@ -43,7 +45,9 @@ const activeLabel = computed(() =>
  *
  * DashboardSidebar hides badges at 0, so zeroes can be assigned freely.
  */
-const { data: badgeProducts, refresh: refreshBadgeProducts } = useTutorProducts()
+const { data: badgeProducts, refresh: refreshBadgeProducts } = useTutorProducts(
+  routeBimbelId ? { bimbelId: routeBimbelId } : undefined,
+)
 const { data: adminSummary, refresh: refreshAdminSummary } = useAdminSummary()
 
 const sidebarBadges = computed<Record<string, number>>(() => {
@@ -54,9 +58,15 @@ const sidebarBadges = computed<Record<string, number>>(() => {
     if (summary) {
       badges['/dashboard/admin/applications'] = summary.pendingTutorApplications
       badges['/dashboard/admin/products'] = summary.pendingProducts
-      // Absent on the Duitku channel, where nobody ever files a receipt —
-      // and on an API that predates the manual one.
-      badges['/dashboard/admin/payments'] = summary.pendingPaymentProofs ?? 0
+      // Both halves of the one verification queue. Counting only package
+      // proofs would send an admin to a page whose badge disagrees with the
+      // list they then see — and would leave subscription payers waiting
+      // behind a badge that never lit up.
+      //
+      // Either field is absent on an API that predates its queue, so both
+      // default to zero rather than making the badge disappear.
+      badges['/dashboard/admin/payments']
+        = (summary.pendingPaymentProofs ?? 0) + (summary.pendingBimbelPaymentProofs ?? 0)
       badges['/dashboard/admin/payouts'] = summary.pendingPayouts
       badges['/dashboard/admin/bank-accounts'] = summary.pendingBankVerifications
       badges['/dashboard/admin/bank-accounts/changes'] = summary.pendingBankChangeRequests
@@ -65,11 +75,19 @@ const sidebarBadges = computed<Record<string, number>>(() => {
   }
 
   const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
-  if (rejected > 0) badges['/dashboard/tutor/products'] = rejected
+  const productPath = routeBimbelId
+    ? `/dashboard/bimbel/${routeBimbelId}/products`
+    : '/dashboard/tutor/products'
+  if (rejected > 0) badges[productPath] = rejected
   return badges
 })
 
 onMounted(() => {
+  if (routeBimbelId) {
+    refreshBimbelMemberships()
+    refreshBadgeProducts()
+    return
+  }
   if (user.value?.role === 'tutor') refreshBadgeProducts()
   if (user.value?.role === 'admin') refreshAdminSummary()
 })

@@ -57,7 +57,9 @@ const cards = computed<QueueCard[]>(() => {
       to: '/dashboard/admin/payments',
       label: 'Verifikasi pembayaran',
       icon: 'receipt',
-      count: s ? (s.pendingPaymentProofs ?? 0) : null,
+      // Kedua paruh antrean, sama seperti badge di sidebar — kartu yang
+      // menghitung setengahnya akan berselisih dengan daftar yang dibuka.
+      count: s ? (s.pendingPaymentProofs ?? 0) + (s.pendingBimbelPaymentProofs ?? 0) : null,
     },
     {
       to: '/dashboard/admin/payouts',
