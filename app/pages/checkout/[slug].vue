@@ -157,7 +157,7 @@ function onSignedIn() {
           <!-- Satu pilihan bukanlah pilihan: kalau deployment ini hanya bisa
                menagih lewat satu jalur, tombol radio hanya menambah langkah
                tanpa menambah keputusan. -->
-          <CheckoutPaymentMethodPicker
+          <PaymentMethodPicker
             v-else-if="methods.hasChoice.value"
             v-model="methods.selected.value"
             :channels="methods.available.value"
