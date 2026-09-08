@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.18.0](https://github.com/artenanagara/zenko-web/compare/v0.17.0...v0.18.0) (2026-09-08)
+
+
+### Features
+
+* **admin:** satu antrean verifikasi untuk pembelian dan langganan ([4d0a1df](https://github.com/artenanagara/zenko-web/commit/4d0a1df8347aaf82b35f2f02241159a40e056249))
+* bimbel workspaces, DOKU checkout, and a reworked About page ([7002925](https://github.com/artenanagara/zenko-web/commit/7002925f96ad6c5256ad7007d891f9fc40a7306c))
+* **bimbel:** context switcher, and one job per URL ([b674d9c](https://github.com/artenanagara/zenko-web/commit/b674d9cd48c164afe9dd0280580d9efe1f71bac3))
+* **bimbel:** converge the dashboard on the design system, add the public landing ([6812697](https://github.com/artenanagara/zenko-web/commit/681269705d3fbb7ea1aba3b1159e9d39456d623e))
+* **bimbel:** ganti penugasan dengan akses lewat keanggotaan ([dd0701b](https://github.com/artenanagara/zenko-web/commit/dd0701b68ee56b37c0e68075a81ecd1d2a2a43e5))
+* **bimbel:** kepemilikan paket jadi pilihan, penulisnya berhenti dihilangkan ([e882e5b](https://github.com/artenanagara/zenko-web/commit/e882e5baa61e70c3c374a405842c4772503bcc0c))
+* **bimbel:** tingkat langganan, diskon tahunan nyata, dan jalur pembayaran ([a6faf2f](https://github.com/artenanagara/zenko-web/commit/a6faf2f70142b45fa593c6167c05cbb507d7474d))
+* **checkout:** DOKU tampil sebagai "Segera", DANA disebut sebagai penerbit ([ccc4523](https://github.com/artenanagara/zenko-web/commit/ccc45237644e965fef3c45dbf9eb05d1b2fcc5a8))
+* **payment:** pilihan metode di checkout, konfirmasi tanpa bukti, DOKU ([86a014a](https://github.com/artenanagara/zenko-web/commit/86a014a317e25f89c146ab7f966beaefae1f01f8))
+
+
+### Bug Fixes
+
+* **bimbel:** stop selling the assignment feature that no longer exists ([c78b6eb](https://github.com/artenanagara/zenko-web/commit/c78b6eb470ff45d4ed4acfdf3c1eff32137dd9a0))
+* **checkout:** jangan tampilkan "Harga paket Rp0" di atas total non-nol ([e4a0764](https://github.com/artenanagara/zenko-web/commit/e4a0764e8a7020ebf7bccd91c5896817155ab5aa))
+* **checkout:** pilih metode pembayaran tidak pernah tampil ([1c0a9eb](https://github.com/artenanagara/zenko-web/commit/1c0a9eb0a6e1b70ba82d89f969a7a317ab8470f6))
+* **invoice:** "Subtotal Rp0" di atas total non-nol ([07352da](https://github.com/artenanagara/zenko-web/commit/07352da2f08f6b79edea3799624b8a84acbbc78c))
+* **seo:** the brand is the seller, the author is the writer ([d30d62f](https://github.com/artenanagara/zenko-web/commit/d30d62f7180fc2ebf51e9f69c3c852d6289514fd))
+* **ui:** selesaikan migrasi modifier important ke sintaks Tailwind v4 ([a92250b](https://github.com/artenanagara/zenko-web/commit/a92250b506d4a963c4f2fe5ed4fc992257c3898b))
+
 ## [0.17.0](https://github.com/artenanagara/zenko-web/compare/v0.16.0...v0.17.0) (2026-09-03)
 
 
