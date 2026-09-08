@@ -5,10 +5,10 @@ definePageMeta({ path: '/tentang' })
 useSeoMeta({
   title: 'Tentang Kami | Zenko',
   description:
-    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Tutor menyusun paketnya, tim Zenko mengkurasi, siswa berlatih di simulasi yang mendekati ujian aslinya.',
+    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
   ogTitle: 'Tentang Kami | Zenko',
   ogDescription:
-    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Tutor menyusun paketnya, tim Zenko mengkurasi, siswa berlatih di simulasi yang mendekati ujian aslinya.',
+    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/tentang',
   twitterCard: 'summary_large_image',
@@ -20,32 +20,94 @@ useHead({
 })
 
 /**
- * Copy halaman ini dibatasi pada yang benar-benar berjalan hari ini: kategori
- * SKD & TKA, kurasi paket sebelum tayang, sistem CBT, dan ruang bimbel.
- * Angka pemakaian (jumlah siswa/tutor) dan klaim penghasilan sengaja tidak
- * disebut — pembayaran masih di balik `paymentEnabled`, dan social proof
- * menyusul kalau datanya sudah nyata.
+ * Halaman ini menjelaskan Zenko lewat kemampuan yang benar-benar berjalan
+ * hari ini — katalog terkurasi, contoh soal gratis, mesin CBT, penilaian
+ * server, riwayat attempt, dan ruang bimbel. Angka pemakaian dan klaim
+ * penghasilan sengaja tidak disebut: pembayaran masih di balik
+ * `paymentEnabled`, dan social proof menyusul kalau datanya sudah nyata.
  */
-
-/** Tiga simpul alur marketplace, dibaca kiri ke kanan pada visual hero. */
-const flow = [
+const features = [
   {
-    icon: 'note-pencil',
-    role: 'Tutor',
-    title: 'Menyusun paket',
-    description: 'Soal, kunci, dan pembahasannya disusun tutor di editor paket Zenko.',
+    icon: 'storefront',
+    title: 'Katalog dari banyak tutor',
+    description:
+      'Paket try out datang dari berbagai tutor dengan spesialisasi berbeda, lengkap dengan rating dan ulasan siswa yang sudah mengerjakannya.',
   },
   {
     icon: 'seal-check',
-    role: 'Zenko',
-    title: 'Mengkurasi',
-    description: 'Tiap paket diperiksa tim kami dulu sebelum boleh tayang di katalog.',
+    title: 'Dikurasi sebelum tayang',
+    description:
+      'Tiap paket diperiksa tim Zenko lebih dulu. Yang belum memenuhi standar tidak akan sampai ke katalog publik.',
   },
   {
-    icon: 'exam',
-    role: 'Siswa',
-    title: 'Berlatih',
-    description: 'Dikerjakan sebagai simulasi CBT, lalu ditinjau lewat skor dan pembahasan.',
+    icon: 'play-circle',
+    title: 'Contoh soal gratis',
+    description:
+      'Paket satuan menyediakan sebagian soal aslinya untuk dicoba gratis, jadi kamu tahu isinya sebelum mengambil paketnya.',
+  },
+  {
+    icon: 'timer',
+    title: 'Simulasi CBT sungguhan',
+    description:
+      'Timer, navigator soal, dan aturan pengerjaan mengikuti ujian aslinya — SKD satu timer untuk 110 soal, TKA per mata pelajaran.',
+  },
+  {
+    icon: 'list-checks',
+    title: 'Skor dan pembahasan otomatis',
+    description:
+      'Begitu selesai, server menghitung skor per subtes beserta ambang kelulusan SKD, lalu membuka pembahasan tiap soal.',
+  },
+  {
+    icon: 'clock-counter-clockwise',
+    title: 'Riwayat yang tersimpan',
+    description:
+      'Paket yang sudah kamu miliki bisa dikerjakan ulang, dan tiap percobaan lama tetap bisa ditinjau kembali.',
+  },
+] as const
+
+/** Tiga peran yang dilayani produk hari ini, masing-masing punya pintu masuknya sendiri. */
+const audiences = [
+  {
+    icon: 'student',
+    label: 'Siswa',
+    title: 'Sedang mengejar seleksi',
+    description:
+      'Berlatih terarah untuk ujian yang kamu tuju, tanpa mengumpulkan materi ke sana ke mari.',
+    points: [
+      'Simulasi SKD (CPNS & Kedinasan) dan TKA (SD–SMK)',
+      'Skor, ambang kelulusan, dan pembahasan tiap soal',
+      'Riwayat pengerjaan tersimpan di akunmu',
+    ],
+    to: '/paket',
+    cta: 'Lihat katalog paket',
+  },
+  {
+    icon: 'chalkboard-teacher',
+    label: 'Tutor',
+    title: 'Punya bank soal sendiri',
+    description:
+      'Susun paketmu di editor Zenko dan biarkan urusan teknis ujiannya kami yang tangani.',
+    points: [
+      'Editor paket dengan mesin CBT yang sudah jadi',
+      'Kurasi tim Zenko sebelum paket tayang',
+      'Profil tutor publik berisi paket dan ulasanmu',
+    ],
+    to: '/jadi-tutor',
+    cta: 'Cara jadi tutor',
+  },
+  {
+    icon: 'buildings',
+    label: 'Bimbel',
+    title: 'Mengelola banyak siswa',
+    description:
+      'Punya ruang try out sendiri untuk siswa bimbelmu, terpisah dari katalog publik.',
+    points: [
+      'Kelas dan roster siswa dalam satu dashboard',
+      'Bank soal privat yang hanya untuk siswamu',
+      'Rekap hasil dan peringkat tiap paket',
+    ],
+    to: '/untuk-bimbel',
+    cta: 'Zenko untuk bimbel',
   },
 ] as const
 
@@ -66,162 +128,94 @@ const markMeanings: MarkMeaning[] = [
   { icon: 'ear', title: 'Telinga rubah', meaning: 'Siaga menyimak kebutuhan belajarmu' },
   { icon: 'smiley', title: 'Senyum ramah', meaning: 'Pendamping, bukan penguji' },
 ]
-
-/** Tiga peran yang dilayani produk hari ini, masing-masing punya pintu masuk sendiri. */
-const audiences = [
-  {
-    icon: 'student',
-    label: 'Siswa',
-    title: 'Yang sedang mengejar seleksi',
-    description:
-      'Kerjakan simulasi SKD atau TKA dengan timer dan aturan penilaian yang mengikuti ujian aslinya, lalu pelajari pembahasannya.',
-    to: '/paket',
-    cta: 'Lihat katalog paket',
-  },
-  {
-    icon: 'chalkboard-teacher',
-    label: 'Tutor',
-    title: 'Yang punya bank soal sendiri',
-    description:
-      'Susun paketmu di editor Zenko tanpa memikirkan sistem CBT-nya. Setelah lolos kurasi, paketmu tayang di katalog publik.',
-    to: '/jadi-tutor',
-    cta: 'Cara jadi tutor',
-  },
-  {
-    icon: 'buildings',
-    label: 'Bimbel',
-    title: 'Yang mengelola banyak siswa',
-    description:
-      'Kelola kelas dan roster siswa, terbitkan bank soal privat milik bimbelmu, dan lihat rekap hasil tiap paket dalam satu dashboard.',
-    to: '/untuk-bimbel',
-    cta: 'Zenko untuk bimbel',
-  },
-]
 </script>
 
 <template>
   <main>
     <!-- ==================================================================
-         1. Hero — pernyataan tunggal di tengah, lalu visual alur sebagai
-         kartu putih yang mengambang di atas wash biru panel.
+         1. Hero — proporsi yang sama dengan /jadi-tutor dan /untuk-bimbel,
+         supaya halaman marketing Zenko dibuka dengan bentuk yang seragam.
          ================================================================== -->
     <section class="container-page pt-3 md:pt-5">
       <div
-        class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-14 pb-14 md:rounded-xl md:px-10 md:pt-20 md:pb-16"
+        class="dot-grid dot-grid-hero hero-aurora relative overflow-hidden rounded-[26px] px-5 pt-12 pb-16 md:rounded-xl md:px-10 md:pt-16 md:pb-20"
       >
         <div class="relative z-1 mx-auto max-w-190 text-center">
-          <p class="mb-3 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
-            Tentang kami
-          </p>
+          <span
+            class="mb-5 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-2 pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
+          >
+            <span class="h-2 w-2 rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
+            Marketplace try out SKD &amp; TKA
+          </span>
 
-          <h1 class="mx-auto max-w-[20ch] text-[clamp(2.3rem,5vw,4rem)] leading-[1.05] tracking-tighter text-balance">
-            Belajar terarah, bukan sekadar
-            <span class="text-accent mt-1 block">menumpuk soal</span>
+          <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
+            Satu tempat untuk latihan
+            <span class="text-accent mt-1 block">ujian yang kamu tuju</span>
           </h1>
 
-          <p class="mx-auto mt-5 max-w-[52ch] text-[1.08rem] leading-[1.6] text-pretty text-muted md:text-[1.22rem]">
-            Zenko adalah marketplace try out CBT untuk SKD (CPNS &amp; Sekolah Kedinasan)
-            dan TKA (SD–SMK) — tempat tutor menyusun paket latihannya, dan siswa
-            mengerjakannya sebagai simulasi yang mendekati ujian sebenarnya.
+          <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
+            Zenko mempertemukan tutor yang menyusun paket try out dengan siswa yang
+            membutuhkannya. Tiap paket dikurasi lebih dulu, lalu dikerjakan sebagai
+            simulasi CBT dengan skor dan pembahasan yang keluar otomatis.
           </p>
+
+          <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <AppButton to="/paket" size="lg">Cari paket try out</AppButton>
+            <AppButton to="/jadi-tutor" size="lg" variant="outline">Jadi tutor</AppButton>
+          </div>
         </div>
-
-        <!-- Alur marketplace: tutor → kurasi → siswa. Panah hanya muncul di
-             layar lebar; pada mobile urutannya sudah dibawa oleh tumpukan. -->
-        <ol
-          class="relative z-1 mx-auto mt-12 grid max-w-260 items-stretch gap-3 rounded-[24px] border border-white/70 bg-white/85 p-4 shadow-float backdrop-blur-[6px] md:mt-14 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-4 md:p-5"
-        >
-          <template v-for="(node, index) in flow" :key="node.title">
-            <li
-              v-if="index"
-              class="hidden justify-center text-primary/40 md:flex"
-              aria-hidden="true"
-            >
-              <AppIcon name="arrow-right" :size="22" />
-            </li>
-
-            <li class="rounded-[18px] bg-surface-alt p-5 md:bg-transparent md:p-3">
-              <span
-                class="inline-flex h-11 w-11 items-center justify-center rounded-[13px] bg-linear-to-b from-primary-light to-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_14px_rgba(47,111,235,0.22)]"
-                aria-hidden="true"
-              >
-                <AppIcon :name="node.icon" :size="22" />
-              </span>
-
-              <p class="mt-4 text-[0.72rem] font-bold tracking-[0.12em] text-primary uppercase">
-                {{ node.role }}
-              </p>
-              <p class="mt-1 mb-1.5 text-[1.15rem] font-bold tracking-[-0.03em]">{{ node.title }}</p>
-              <p class="text-[0.95rem] leading-[1.6] text-muted">{{ node.description }}</p>
-            </li>
-          </template>
-        </ol>
       </div>
     </section>
 
     <!-- ==================================================================
-         2. Nama dan lambang — satu visual besar dengan cahaya lembut di
-         belakangnya, lalu makna tiap unsurnya dalam tiga kartu ringkas.
+         2. Fitur — enam kemampuan inti platform.
          ================================================================== -->
-    <section class="py-20 md:py-28" aria-labelledby="lambang-heading">
+    <section class="py-18 md:py-22" aria-labelledby="fitur-heading">
       <div class="container-page">
-        <div class="relative flex items-center justify-center py-6 md:py-10">
-          <span
-            class="pointer-events-none absolute h-56 w-56 rounded-full bg-primary/25 blur-[110px] md:h-80 md:w-80"
-            aria-hidden="true"
-          />
-          <img
-            src="/brand/zenko-icon-gradient.png"
-            alt="Lambang Zenko: huruf Z berbentuk wajah rubah"
-            width="174"
-            height="174"
-            class="relative h-28 w-28 object-contain md:h-36 md:w-36"
-          >
-        </div>
-
-        <div class="mx-auto mt-8 max-w-160 text-center">
-          <h2 id="lambang-heading" class="mx-auto max-w-[24ch] text-[clamp(1.9rem,3.4vw,2.9rem)] leading-[1.12] tracking-tighter text-balance">
-            Rubah baik hati di balik <span class="text-accent">nama Zenko</span>
+        <div class="mx-auto mb-11 max-w-160 text-center">
+          <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
+            Yang ada di Zenko
+          </p>
+          <h2 id="fitur-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter text-balance">
+            Dari memilih paket sampai <span class="text-accent">membaca pembahasan</span>
           </h2>
-          <p class="mt-4 text-[1.02rem] leading-[1.7] text-pretty text-muted">
-            Dalam mitologi Jepang, <strong class="font-semibold text-ink">Zenko (善狐)</strong> adalah rubah
-            surgawi yang melambangkan kebaikan, kebijaksanaan, dan perlindungan. Lambang kami
-            menggabungkan huruf “Z” dengan wajah rubah yang tersenyum — persis peran yang kami ambil:
-            menemani persiapan ujianmu, bukan menghakiminya.
+          <p class="mt-3.5 text-[1.02rem] text-pretty text-muted">
+            Semuanya berjalan di satu tempat — tidak ada berkas soal yang perlu
+            diunduh, dan tidak ada penilaian yang perlu dihitung manual.
           </p>
         </div>
 
-        <ul class="mx-auto mt-12 grid w-fit grid-cols-1 gap-5 sm:grid-cols-3 md:mt-16 md:gap-6 lg:gap-10">
+        <ul class="mx-auto grid max-w-300 grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           <li
-            v-for="mark in markMeanings"
-            :key="mark.title"
-            class="w-full max-w-72 rounded-[22px] border border-hairline bg-surface p-6 text-center shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift sm:max-w-64"
+            v-for="feature in features"
+            :key="feature.title"
+            class="flex flex-col rounded-[26px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-7"
           >
             <span
-              class="inline-flex h-13 w-13 items-center justify-center rounded-[16px] bg-primary-soft text-[1.4rem] leading-none font-extrabold text-primary"
+              class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-linear-to-b from-primary-light to-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_14px_rgba(47,111,235,0.22)]"
               aria-hidden="true"
             >
-              <AppIcon v-if="mark.icon" :name="mark.icon" :size="26" />
-              <template v-else>{{ mark.glyph }}</template>
+              <AppIcon :name="feature.icon" :size="24" />
             </span>
-            <h3 class="mt-5 mb-1.5 text-[1.08rem] font-bold tracking-[-0.03em]">{{ mark.title }}</h3>
-            <p class="text-[0.95rem] leading-[1.6] text-muted">{{ mark.meaning }}</p>
+
+            <h3 class="mt-5 mb-2 text-[1.15rem] font-bold tracking-[-0.03em]">{{ feature.title }}</h3>
+            <p class="leading-[1.62] text-muted">{{ feature.description }}</p>
           </li>
         </ul>
       </div>
     </section>
 
     <!-- ==================================================================
-         3. Untuk siapa — tiga peran yang dilayani produk, masing-masing
-         menautkan ke pintu masuknya sendiri.
+         3. Untuk siapa — tiga peran, masing-masing dengan yang didapatnya
+         dan tautan ke pintu masuknya.
          ================================================================== -->
-    <section class="border-t border-hairline py-20 md:py-28" aria-labelledby="untuk-siapa-heading">
-      <div class="container-page">
-        <div class="mx-auto mb-12 max-w-160 text-center md:mb-16">
-          <p class="mb-3 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
+    <section class="dot-grid border-y border-hairline bg-surface-alt py-18 md:py-22" aria-labelledby="untuk-siapa-heading">
+      <div class="container-page relative z-1">
+        <div class="mx-auto mb-11 max-w-160 text-center">
+          <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
             Untuk siapa Zenko
           </p>
-          <h2 id="untuk-siapa-heading" class="text-[clamp(1.9rem,3.4vw,2.9rem)] leading-[1.12] tracking-tighter text-balance">
+          <h2 id="untuk-siapa-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter text-balance">
             Satu platform, <span class="text-accent">tiga sisi</span>
           </h2>
         </div>
@@ -246,7 +240,18 @@ const audiences = [
             <h3 class="mt-1.5 mb-2.5 text-[1.28rem] font-bold tracking-[-0.03em]">{{ audience.title }}</h3>
             <p class="leading-[1.62] text-muted">{{ audience.description }}</p>
 
-            <span class="mt-6 inline-flex items-center gap-2 font-semibold text-primary">
+            <ul class="mt-5 grid gap-2.5 border-t border-hairline pt-5">
+              <li
+                v-for="point in audience.points"
+                :key="point"
+                class="flex items-start gap-2.5 text-[0.95rem] leading-[1.55] text-muted"
+              >
+                <AppIcon name="check-circle" :size="18" class="mt-0.5 text-primary" weight="fill" />
+                {{ point }}
+              </li>
+            </ul>
+
+            <span class="mt-auto inline-flex items-center gap-2 pt-6 font-semibold text-primary">
               {{ audience.cta }}
               <AppIcon
                 name="arrow-right"
@@ -260,11 +265,64 @@ const audiences = [
     </section>
 
     <!-- ==================================================================
-         4. CTA penutup — pita penuh lebar, bukan panel membulat seperti
-         halaman lain, supaya halaman ini punya titik henti yang tegas.
+         4. Nama dan lambang — satu-satunya bagian "tentang kami" yang
+         bicara soal identitas, ditutup tiga kartu makna yang ringkas.
+         ================================================================== -->
+    <section class="py-18 md:py-22" aria-labelledby="lambang-heading">
+      <div class="container-page">
+        <div class="relative flex items-center justify-center py-4">
+          <span
+            class="pointer-events-none absolute h-48 w-48 rounded-full bg-primary/25 blur-[100px] md:h-64 md:w-64"
+            aria-hidden="true"
+          />
+          <img
+            src="/brand/zenko-icon-gradient.png"
+            alt="Lambang Zenko: huruf Z berbentuk wajah rubah"
+            width="174"
+            height="174"
+            class="relative h-24 w-24 object-contain md:h-28 md:w-28"
+          >
+        </div>
+
+        <div class="mx-auto mt-6 max-w-160 text-center">
+          <h2 id="lambang-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter text-balance">
+            Rubah baik hati di balik <span class="text-accent">nama Zenko</span>
+          </h2>
+          <p class="mt-3.5 text-[1.02rem] leading-[1.7] text-pretty text-muted">
+            Dalam mitologi Jepang, <strong class="font-semibold text-ink">Zenko (善狐)</strong> adalah rubah
+            surgawi yang melambangkan kebaikan, kebijaksanaan, dan perlindungan — persis peran yang
+            kami ambil: menemani persiapan ujianmu, bukan menghakiminya.
+          </p>
+        </div>
+
+        <ul class="mx-auto mt-9 grid w-fit grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
+          <li
+            v-for="mark in markMeanings"
+            :key="mark.title"
+            class="flex w-full max-w-72 items-center gap-4 rounded-[20px] border border-hairline bg-surface p-5 shadow-xs sm:max-w-64 sm:flex-col sm:items-center sm:gap-0 sm:text-center"
+          >
+            <span
+              class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-primary-soft text-[1.25rem] leading-none font-extrabold text-primary"
+              aria-hidden="true"
+            >
+              <AppIcon v-if="mark.icon" :name="mark.icon" :size="24" />
+              <template v-else>{{ mark.glyph }}</template>
+            </span>
+            <div class="sm:mt-4">
+              <h3 class="mb-1 text-[1.02rem] font-bold tracking-[-0.03em]">{{ mark.title }}</h3>
+              <p class="text-[0.92rem] leading-[1.55] text-muted">{{ mark.meaning }}</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         5. CTA penutup — pita penuh lebar, jadi halaman ini punya titik
+         henti yang tegas sebelum footer.
          ================================================================== -->
     <section
-      class="dot-grid relative overflow-hidden [--dot-color:rgba(255,255,255,0.14)] bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark py-20 text-center md:py-28"
+      class="dot-grid relative overflow-hidden [--dot-color:rgba(255,255,255,0.14)] bg-linear-160 from-[#4176ee] via-primary via-52% to-primary-dark py-18 text-center md:py-22"
       aria-labelledby="cta-heading"
     >
       <div class="container-page relative z-1">
@@ -279,7 +337,7 @@ const audiences = [
           sendiri sebagai tutor.
         </p>
 
-        <div class="mt-9 flex flex-wrap items-center justify-center gap-4">
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
           <AppButton to="/paket" variant="light" size="lg">Cari paket try out</AppButton>
           <NuxtLink
             to="/jadi-tutor"
@@ -289,7 +347,7 @@ const audiences = [
           </NuxtLink>
         </div>
 
-        <p class="mt-10 text-[0.85rem] text-white/60">
+        <p class="mt-9 text-[0.85rem] text-white/60">
           Zenko dikelola oleh PT Zenko Edukasi Digital.
         </p>
       </div>
