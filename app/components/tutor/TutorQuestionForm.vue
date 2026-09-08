@@ -44,10 +44,14 @@ const props = defineProps<{
    */
   allowedKinds?: QuestionKind[] | null
   /**
-   * Bentuk ketat CAT BKN (produk SKD): pilihan ganda/TKP wajib tepat 5 opsi,
-   * bobot TKP 1–5 — lihat questionDraft.ts.
+   * Batas bentuk opsi yang dibawa template subtes ini, cermin
+   * SectionTemplate di zenko-api. maxOptionWeight adalah bobot tertinggi yang
+   * boleh dipakai soal berbobot — dan yang wajib dicapai minimal satu opsi;
+   * requiredOptionCount memaksa jumlah opsi persis segitu. Keduanya absen
+   * pada subtes yang membebaskan bentuknya.
    */
-  skdStrict?: boolean
+  maxOptionWeight?: number
+  requiredOptionCount?: number
   /** Wacana subtes ini yang bisa ditautkan (fitur TKA); absen = tanpa pemilih wacana. */
   passages?: TutorPassage[] | null
   /**
@@ -76,57 +80,38 @@ const uid = useId()
 const optionFieldRefs = ref<(InstanceType<typeof TutorOptionField> | null)[]>([])
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const
-
-const KIND_OPTIONS: { value: QuestionKind, label: string }[] = [
-  { value: 'single_choice', label: 'Pilihan ganda (A–E, satu benar)' },
-  { value: 'multiple_choice', label: 'Pilihan ganda kompleks (minimal dua benar)' },
-  { value: 'weighted', label: 'Berbobot (semua opsi bernilai, gaya TKP)' },
-  { value: 'true_false', label: 'Benar/Salah (daftar pernyataan)' },
-  { value: 'short_answer', label: 'Isian singkat' },
-  { value: 'assertion_reason', label: 'Sebab-akibat (A–E)' },
-  { value: 'associative_choice', label: 'Asosiatif (1, 2, 3, 4)' },
-  { value: 'matching', label: 'Menjodohkan' },
-  { value: 'ordering', label: 'Mengurutkan langkah' },
-]
+/** Bobot tertinggi yang bisa dipilih; 5 adalah bawaan yang paling lazim. */
+const maximumWeight = computed(() => props.maxOptionWeight || 5)
+const requiredCount = computed(() => props.requiredOptionCount ?? 0)
 
 /**
- * Kunci jenis per subtes (rework SKD/TKA): allowedKinds berisi tepat satu
- * jenis pada subtes SKD — pemilih disembunyikan, jenisnya milik subtes, bukan
- * pilihan tutor. Daftar lebih panjang memfilter opsi pemilih; absen/kosong
- * membuka semuanya (TKA & produk legacy).
+ * Which kinds this subtes accepts, in the editor's own offer order — the
+ * labels and descriptions live in QuestionKindPicker, where they are read.
+ *
+ * A subtes may lock its kind (allowedKinds of exactly one, as every SKD
+ * subtes does): the picker is then not rendered at all, because a control
+ * that cannot be used only lengthens the form. The kind stays legible from
+ * the shape of the editor below it.
  */
+const ALL_KINDS: QuestionKind[] = [
+  'single_choice', 'multiple_choice', 'weighted', 'true_false', 'short_answer',
+  'assertion_reason', 'associative_choice', 'matching', 'ordering',
+]
+
+const allowedKinds = computed(() => {
+  const allowed = props.allowedKinds?.length ? props.allowedKinds : null
+  return allowed ? ALL_KINDS.filter(item => allowed.includes(item)) : ALL_KINDS
+})
+
 const lockedKind = computed<QuestionKind | null>(() =>
-  props.allowedKinds?.length === 1 ? props.allowedKinds[0]! : null,
+  allowedKinds.value.length === 1 ? allowedKinds.value[0]! : null,
 )
 
 const kind = ref<QuestionKind>(lockedKind.value ?? props.initial?.kind ?? props.defaultKind)
 
-/** Opsi pemilih jenis: hanya jenis yang diizinkan subtes yang ditampilkan. */
-const kindOptions = computed(() => {
-  const allowed = props.allowedKinds?.length ? props.allowedKinds : null
-  return KIND_OPTIONS.filter(option => !allowed || allowed.includes(option.value))
-})
-
-/**
- * AppSelect works in plain string|number; narrow its `update:modelValue` back
- * onto the typed field instead of casting (same guard TutorCustomSections.vue
- * uses for the section-level "Tipe soal bawaan" select).
- */
-function isQuestionKind(value: string | number): value is QuestionKind {
-  return kindOptions.value.some(option => option.value === value)
-}
-
-/**
- * Pemilih jenis hanya dirender ketika jenisnya memang bisa diganti. Subtes
- * SKD mengunci jenisnya ke satu (allowedKinds tunggal) — dulu tempat itu diisi
- * kotak baca-saja "Tipe soal", tapi field yang tidak bisa diapa-apakan hanya
- * menambah panjang form: jenisnya sudah tersirat dari bentuk editor di
- * bawahnya (opsi berbobot 1–5 untuk TKP, A–E untuk TWK/TIU).
- */
-const canChooseKind = computed(() => !lockedKind.value && kindOptions.value.length > 1)
+const canChooseKind = computed(() => !lockedKind.value)
 
 const stimulus = ref(props.initial?.stimulus ?? '')
-const stimulusOpen = ref(!!props.initial?.stimulus)
 const prompt = ref(props.initial?.prompt ?? '')
 const explanation = ref(props.initial?.explanation ?? '')
 
@@ -408,7 +393,8 @@ function buildDraft(): QuestionDraft | null {
     explanation: explanation.value,
     stimulus: stimulus.value,
     passageId: passageId.value,
-    skdStrict: props.skdStrict,
+    maxOptionWeight: props.maxOptionWeight,
+    requiredOptionCount: props.requiredOptionCount,
     choiceRows: choiceRows.value,
     correctIndex: correctIndex.value,
     correctIndexes: correctIndexes.value,
@@ -560,7 +546,7 @@ function restoreDraft() {
       matchingPairs?: Record<string, string>
       ordering?: string[]
     }
-    if (!lockedKind.value && snapshot.kind && kindOptions.value.some(option => option.value === snapshot.kind)) {
+    if (!lockedKind.value && snapshot.kind && allowedKinds.value.includes(snapshot.kind)) {
       kind.value = snapshot.kind
     }
     // Wacana yang sudah tidak ada (dihapus sejak draft ditulis) tidak dipulihkan.
@@ -570,7 +556,6 @@ function restoreDraft() {
         : ''
     }
     stimulus.value = snapshot.stimulus ?? ''
-    if (stripHtmlToText(stimulus.value)) stimulusOpen.value = true
     prompt.value = snapshot.prompt ?? ''
     explanation.value = snapshot.explanation ?? ''
     if (snapshot.choiceRows) choiceRows.value = snapshot.choiceRows
@@ -712,73 +697,50 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </span>
     </AppSectionMessage>
 
-    <!-- Tipe soal hanya tampil ketika masih bisa diganti. Subtes yang
-         jenisnya sudah dikunci (SKD) tidak menampilkan apa pun di sini. -->
-    <div v-if="canChooseKind" class="max-w-xl">
-      <!-- Same control and wording as the section-level "Tipe soal bawaan"
-           (TutorCustomSections.vue), so the tutor reads the two as one
-           setting: the subtes sets the default, the soal may override it. -->
-      <AppSelect
-        :options="kindOptions"
-        :model-value="kind"
-        label="Tipe soal"
-        @update:model-value="(value) => { if (isQuestionKind(value)) kind = value }"
-      />
-    </div>
+    <!-- Konteks soal: apa bentuknya, dan bacaan apa yang menopangnya. Satu
+         band di puncak form, bukan tiga blok bertingkat dengan lebar
+         berbeda-beda — semuanya jawaban singkat, dan semuanya dijawab di
+         dialog, jadi tidak ada yang membuka ke bawah saat dipilih. -->
+    <div class="grid gap-3" :class="canChooseKind && hasPassagePicker ? 'md:grid-cols-2' : ''">
+      <!-- Tipe soal hanya tampil ketika masih bisa diganti; subtes yang
+           jenisnya terkunci (SKD) tidak menampilkan apa pun di sini. -->
+      <QuestionKindPicker v-if="canChooseKind" v-model="kind" :options="allowedKinds" />
 
-    <!-- Tautan wacana (grup stimulus, TKA): teks bacaannya dikelola di panel
-         "Wacana subtes" — di sini soal cuma memilih ikut grup yang mana. -->
-    <div v-if="hasPassagePicker" class="max-w-xl">
-      <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <span :class="FIELD_LABEL_CLASS">Wacana subtes (opsional)</span>
-        <button
-          type="button"
-          class="inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2 text-[0.8rem] font-semibold text-primary transition-colors hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-soft"
-          title="Buka pengelola wacana untuk menambah wacana"
-          @click="emit('openPassageManager')"
-        >
-          <AppIcon name="plus" :size="14" aria-hidden="true" />
-          Tambah wacana
-        </button>
-      </div>
-      <AppSelect
-        :options="passageOptions"
-        :model-value="passageId"
-        aria-label="Wacana subtes (opsional)"
-        @update:model-value="selectPassage"
-      />
-      <p class="mt-2 text-[0.78rem] text-faint">
-        Soal-soal dalam satu wacana membaca teks yang sama — maksimal
-        {{ MAX_QUESTIONS_PER_PASSAGE }} soal per wacana.
-      </p>
-    </div>
-
-    <div>
-      <button
-        v-if="!stimulusOpen"
-        type="button"
-        class="text-[0.86rem] font-semibold text-primary hover:underline"
-        @click="stimulusOpen = true"
-      >
-        + Tambah wacana bacaan (opsional)
-      </button>
-      <div v-else>
-        <div class="mb-2 flex items-center justify-between">
-          <span :class="FIELD_LABEL_CLASS">Wacana (opsional)</span>
+      <!-- Tautan wacana subtes (fitur TKA): teks bacaannya dikelola di panel
+           "Wacana subtes" — di sini soal cuma memilih ikut grup yang mana. -->
+      <div v-if="hasPassagePicker" class="rounded-md border border-hairline px-4 py-3">
+        <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <span class="text-[0.72rem] font-bold tracking-[0.1em] text-faint uppercase">
+            Wacana subtes
+          </span>
           <button
             type="button"
-            class="text-[0.82rem] font-semibold text-muted transition-colors hover:text-ink"
-            @click="stimulusOpen = false; stimulus = ''"
+            class="inline-flex items-center gap-1.5 rounded-xs text-[0.8rem] font-semibold text-primary transition-colors hover:underline focus-visible:ring-2 focus-visible:ring-primary-soft focus-visible:outline-none"
+            title="Buka pengelola wacana untuk menambah wacana"
+            @click="emit('openPassageManager')"
           >
-            Hapus wacana
+            <AppIcon name="plus" :size="13" aria-hidden="true" />
+            Kelola
           </button>
         </div>
-        <RichTextEditor
-          v-model="stimulus"
-          aria-label="Wacana"
-          placeholder="Teks bacaan bersama untuk kelompok soal literasi/studi kasus."
+        <AppSelect
+          class="mt-2"
+          :options="passageOptions"
+          :model-value="passageId"
+          aria-label="Wacana subtes (opsional)"
+          @update:model-value="selectPassage"
         />
+        <p class="mt-1.5 text-[0.78rem] leading-[1.5] text-faint">
+          Soal dalam satu wacana membaca teks yang sama — maksimal
+          {{ MAX_QUESTIONS_PER_PASSAGE }} soal per wacana.
+        </p>
       </div>
+
+      <!-- Wacana milik soal ini sendiri. -->
+      <QuestionStimulusField
+        v-model="stimulus"
+        :class="canChooseKind && hasPassagePicker ? 'md:col-span-2' : ''"
+      />
     </div>
 
     <div ref="promptBlockRef" class="scroll-mt-24">
@@ -794,13 +756,12 @@ function jumpBetweenOptions(event: KeyboardEvent) {
     <fieldset v-if="choiceKind(kind)" ref="choicesBlockRef" class="grid scroll-mt-24 gap-3">
       <legend :class="FIELD_LABEL_CLASS">
         {{ kind === 'weighted'
-          ? (skdStrict ? 'Opsi jawaban TKP — bobot 1–5 per opsi, tanpa jawaban benar' : 'Opsi jawaban + bobot (umumnya 1–5)')
+          ? `Opsi jawaban — bobot 1–${maximumWeight} per opsi`
           : kind === 'multiple_choice' ? 'Opsi jawaban — tandai semua kunci yang benar' : kind === 'ordering' ? 'Item yang akan diurutkan' : 'Opsi jawaban — tandai kunci yang benar' }}
       </legend>
-      <p v-if="skdStrict && (kind === 'single_choice' || kind === 'weighted')" class="-mt-1 text-[0.78rem] text-faint">
-        {{ kind === 'weighted'
-          ? 'Semua 5 opsi wajib terisi dan berbobot 1–5 (boleh sama) — setiap jawaban bernilai, tidak ada yang salah.'
-          : 'Format CAT BKN: kelima opsi A–E wajib terisi dengan tepat satu kunci jawaban.' }}
+      <p v-if="requiredCount || kind === 'weighted'" class="-mt-1 text-[0.78rem] text-muted">
+        <template v-if="requiredCount">Isi tepat {{ requiredCount }} opsi. </template>
+        <template v-if="kind === 'weighted' && maxOptionWeight">Minimal satu opsi memiliki bobot {{ maximumWeight }}.</template>
       </p>
 
       <div v-for="(row, index) in choiceRows" :key="row.letter" class="flex items-start gap-2.5">
@@ -840,8 +801,9 @@ function jumpBetweenOptions(event: KeyboardEvent) {
           :letter="row.letter"
           :row-index="index"
           :show-weight="kind === 'weighted'"
-          :weight-as-select="kind === 'weighted' && skdStrict"
-          :placeholder="`Opsi ${row.letter}${index > 1 && !(skdStrict && (kind === 'single_choice' || kind === 'weighted')) ? ' (opsional)' : ''}`"
+          :weight-as-select="kind === 'weighted'"
+          :max-weight="maximumWeight"
+          :placeholder="`Opsi ${row.letter}${index >= Math.max(2, requiredCount) ? ' (opsional)' : ''}`"
           class="flex-1"
         />
       </div>

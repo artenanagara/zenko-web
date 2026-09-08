@@ -22,7 +22,7 @@ import { RichTextEditor } from '#components'
  * `<textarea data-option-row>` — RichTextEditor bukan textarea, lihat
  * jumpBetweenOptions di sana).
  */
-defineProps<{
+const props = withDefaults(defineProps<{
   letter: string
   rowIndex: number
   placeholder?: string
@@ -33,7 +33,8 @@ defineProps<{
    * mustahil salah ketik.
    */
   weightAsSelect?: boolean
-}>()
+  maxWeight?: number
+}>(), { maxWeight: 5 })
 
 const text = defineModel<string>('text', { default: '' })
 const weight = defineModel<number | null>('weight', { default: null })
@@ -56,7 +57,7 @@ defineExpose({
 function onWeightInput(event: Event) {
   const input = event.target as HTMLInputElement
   const digit = Number(input.value.replace(/\D/g, '').slice(0, 1))
-  weight.value = digit >= 1 && digit <= 5 ? digit : null
+  weight.value = digit >= 1 && digit <= props.maxWeight ? digit : null
   input.value = weight.value === null ? '' : String(weight.value)
 }
 </script>
@@ -85,7 +86,7 @@ function onWeightInput(event: Event) {
           @change="weight = Number(($event.target as HTMLSelectElement).value) || null"
         >
           <option value="" disabled>Bobot</option>
-          <option v-for="n in 5" :key="n" :value="n">{{ n }}</option>
+          <option v-for="n in maxWeight" :key="n" :value="n">{{ n }}</option>
         </select>
         <input
           v-else
@@ -93,7 +94,7 @@ function onWeightInput(event: Event) {
           type="text"
           inputmode="numeric"
           :value="weight ?? ''"
-          placeholder="1–5"
+          :placeholder="`1–${maxWeight}`"
           class="mt-0.5 w-20 shrink-0 rounded-sm border border-line bg-surface px-2.5 py-2 text-center text-[0.9rem] tabular-nums"
           @input="onWeightInput"
         >

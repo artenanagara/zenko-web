@@ -47,12 +47,15 @@ export interface QuestionDraftState {
   matchingPairs: Record<string, string>
   ordering: string[]
   /**
-   * Bentuk ketat CAT BKN (produk SKD) — cermin sectionKindIssue di zenko-api:
-   * single_choice wajib tepat 5 opsi; weighted (TKP) wajib tepat 5 opsi
-   * berbobot 1–5 (bobot boleh tidak unik). Divalidasi di sini juga supaya
-   * tutor tahu sebelum request-nya ditolak server.
+   * Batas bentuk opsi dari template subtes — cermin sectionKindIssue di
+   * zenko-api. maxOptionWeight adalah bobot tertinggi yang boleh dipakai, dan
+   * yang wajib dicapai minimal satu opsi supaya skor maksimum subtes benar-benar
+   * terjangkau; requiredOptionCount memaksa jumlah opsi persis segitu (bentuk
+   * baku CAT BKN, A–E). Divalidasi di sini juga supaya tutor tahu sebelum
+   * request-nya ditolak server.
    */
-  skdStrict?: boolean
+  maxOptionWeight?: number
+  requiredOptionCount?: number
 }
 
 export interface DraftValidationError {
@@ -173,8 +176,12 @@ function buildWeightedDraft(
   if (rows.some(row => row.weight === null || !Number.isInteger(row.weight) || row.weight < 0)) {
     return error('Isi bobot (bilangan bulat ≥ 0) untuk tiap opsi yang terisi.', 'choices')
   }
-  if (state.skdStrict && rows.some(row => row.weight! < 1 || row.weight! > 5)) {
-    return error('Bobot tiap opsi TKP harus antara 1 dan 5.', 'choices')
+  const maximum = state.maxOptionWeight ?? 0
+  if (maximum && rows.some(row => row.weight! < 1 || row.weight! > maximum)) {
+    return error(`Bobot tiap opsi harus antara 1 dan ${maximum}.`, 'choices')
+  }
+  if (maximum && !rows.some(row => row.weight === maximum)) {
+    return error(`Isi minimal satu opsi dengan bobot tertinggi (${maximum}).`, 'choices')
   }
 
   return {
@@ -189,11 +196,15 @@ function buildChoiceDraft(base: QuestionDraft, state: QuestionDraftState): Quest
   const rows = filledChoices(state.choiceRows)
   if (rows.length < 2) return error('Isi minimal dua opsi.', 'choices')
 
-  // Bentuk resmi CAT BKN: pilihan ganda dan TKP selalu tepat 5 opsi (A–E) —
-  // cermin sectionKindIssue di zenko-api, supaya kekurangannya ketahuan di
-  // form dan bukan sebagai 400 dari server.
-  if (state.skdStrict && (state.kind === 'single_choice' || state.kind === 'weighted') && rows.length !== 5) {
-    return error('Soal SKD wajib memiliki tepat 5 pilihan jawaban (A–E).', 'choices')
+  // Jumlah opsi yang dipatok template (bentuk baku CAT BKN: A–E) — cermin
+  // optionCountIssue di zenko-api, supaya kekurangannya ketahuan di form dan
+  // bukan sebagai 400 dari server.
+  // `ordering` stores items to arrange rather than answer choices, so a fixed
+  // choice count never applies to it — same exclusion questionHasOptionList
+  // makes server-side.
+  const requiredCount = state.kind === 'ordering' ? 0 : state.requiredOptionCount ?? 0
+  if (requiredCount && rows.length !== requiredCount) {
+    return error(`Soal ini wajib memiliki tepat ${requiredCount} pilihan jawaban.`, 'choices')
   }
 
   switch (state.kind) {

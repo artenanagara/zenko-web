@@ -141,7 +141,7 @@ async function exitSimulation() {
           </h1>
           <p class="mt-2 text-muted">
             {{ section.code }} · {{ section.title }} · {{ totalQuestions }} soal ·
-            {{ formatDuration(section.durationMinutes) }}
+            {{ sectionDurationLabel(section) }}
           </p>
         </div>
 
@@ -279,6 +279,8 @@ async function exitSimulation() {
         <TryoutResult
           :result="session.result.value"
           :theme="blueprint.theme"
+          :score-scale="blueprint.scoreScale"
+          :score-disclaimer="blueprint.scoreDisclaimer"
           :package-title="blueprint.title"
           :package-slug="blueprint.slug"
           :blueprint="blueprint"

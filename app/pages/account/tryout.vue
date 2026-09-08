@@ -38,7 +38,7 @@ const totalQuestions = computed(() => blueprint.value?.sections.reduce((sum, s) 
 // jumlah durasi per subtes); payload lama jatuh ke penjumlahan seperti dulu.
 const totalMinutes = computed(() =>
   blueprint.value?.totalDurationMinutes
-  || (blueprint.value?.sections.reduce((sum, s) => sum + s.durationMinutes, 0) ?? 0),
+  || (blueprint.value?.sections.reduce((sum, section) => sum + sectionDurationSeconds(section) / 60, 0) ?? 0),
 )
 
 const nextSection = computed(() => blueprint.value?.sections[session.sectionIndex.value + 1] ?? null)
@@ -168,7 +168,7 @@ function retry() {
               </span>
             </span>
             <span v-if="!isFlat" class="text-[0.86rem] font-semibold text-muted tabular-nums">
-              {{ section.durationMinutes }} menit
+              {{ sectionDurationLabel(section) }}
             </span>
           </li>
         </ul>
@@ -335,7 +335,7 @@ function retry() {
         <div v-if="nextSection" class="mt-6 rounded-lg border border-hairline bg-surface p-5 shadow-xs">
           <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">Subtes berikutnya</p>
           <p class="mt-1.5 font-bold tracking-[-0.02em]">{{ nextSection.code }} · {{ nextSection.title }}</p>
-          <p class="mt-1 text-[0.86rem] text-muted">{{ nextSection.questions.length }} soal · {{ nextSection.durationMinutes }} menit</p>
+          <p class="mt-1 text-[0.86rem] text-muted">{{ nextSection.questions.length }} soal · {{ sectionDurationLabel(nextSection) }}</p>
         </div>
 
         <AppButton size="lg" class="mt-6" @click="session.startNextSection()">
@@ -349,6 +349,8 @@ function retry() {
       v-else-if="session.phase.value === 'finished' && session.result.value"
       :result="session.result.value"
       :theme="blueprint.theme"
+      :score-scale="blueprint.scoreScale"
+      :score-disclaimer="blueprint.scoreDisclaimer"
       :package-title="blueprint.title"
       :package-slug="slug"
       :blueprint="blueprint"

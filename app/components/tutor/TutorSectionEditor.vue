@@ -179,11 +179,20 @@ const activeTemplate = computed(() =>
 /** Jenis soal yang diizinkan subtes aktif; null = semua jenis boleh. */
 const activeAllowedKinds = computed(() => activeTemplate.value?.allowedKinds ?? null)
 
-/** Bentuk ketat CAT BKN — berlaku untuk semua subtes produk SKD. */
-const skdStrict = computed(() => props.examType?.category === 'SKD')
+/**
+ * Batas bentuk opsi subtes aktif, dibaca dari templatenya — bukan dari nama
+ * kategorinya. Skalanya memang berbeda antar program: TKP berbobot 1–5 dengan
+ * tepat lima opsi, bagian sikap PPPK berbobot 1–4. Server memvalidasi dari
+ * field yang sama, jadi form ini menolak persis apa yang server menolak.
+ */
+const activeMaxOptionWeight = computed(() => activeTemplate.value?.maxOptionWeight)
+const activeRequiredOptionCount = computed(() => activeTemplate.value?.requiredOptionCount)
 
-/** Fitur grup wacana — tersedia untuk semua mapel TKA (spec Q6). */
-const passagesEnabled = computed(() => props.examType?.category === 'TKA')
+/**
+ * Grup wacana tersedia kecuali subtes ini mengunci jumlah opsinya ke bentuk
+ * baku CAT BKN — soal SKD berdiri sendiri, tidak pernah berbagi bacaan.
+ */
+const passagesEnabled = computed(() => !activeRequiredOptionCount.value)
 
 const activePassages = computed(() =>
   passagesEnabled.value ? (activeSection.value?.passages ?? []) : [],
@@ -410,7 +419,8 @@ const activeSectionDotClass = computed(() =>
             :is-custom="isCustom"
             :exam-type-slug="examTypeSlug"
             :allowed-kinds="activeAllowedKinds"
-            :skd-strict="skdStrict"
+            :max-option-weight="activeMaxOptionWeight"
+            :required-option-count="activeRequiredOptionCount"
             :passages="activePassages"
             :passage-usage="activePassageUsage"
             :saving="saving"
