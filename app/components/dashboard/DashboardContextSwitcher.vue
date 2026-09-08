@@ -26,9 +26,10 @@ interface MenuItem {
  * role global, jadi ia butuh pemilihnya sendiri.
  *
  * Yang muncul di sini hanyalah konteks yang benar-benar punya ruang kerja.
- * Keanggotaan sebagai siswa tidak: tujuannya `/akun/paket-bimbel`, bukan
- * dashboard, dan `useDashboardNav` memang mengembalikan nav kosong untuknya.
- * Menampilkannya di sini akan menjanjikan ruang yang tidak ada.
+ * Keanggotaan sebagai siswa tidak: tujuannya `/akun/bimbel` — tempat paket
+ * bimbelnya hidup — bukan dashboard, dan `useDashboardNav` memang mengembalikan
+ * nav kosong untuknya. Menampilkannya di sini akan menjanjikan ruang yang tidak
+ * ada.
  */
 const props = defineProps<{ collapsed?: boolean }>()
 

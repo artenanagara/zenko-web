@@ -1,9 +1,12 @@
 import type { Component } from 'vue'
 import IconBank from '~/components/icons/IconBank.vue'
+import IconCheckCircle from '~/components/icons/IconCheckCircle.vue'
 import IconEye from '~/components/icons/IconEye.vue'
 import IconGrid from '~/components/icons/IconGrid.vue'
+import IconHandshake from '~/components/icons/IconHandshake.vue'
 import IconHome from '~/components/icons/IconHome.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
+import IconRepeat from '~/components/icons/IconRepeat.vue'
 import IconSettings from '~/components/icons/IconSettings.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconUsers from '~/components/icons/IconUsers.vue'
@@ -37,6 +40,21 @@ export interface DashboardNavItem extends DashboardNavChild {
    * top-level tabs.
    */
   children?: DashboardNavChild[]
+  /**
+   * Judul kelompok yang dicetak di atas entri ini. Bukan pengelompokan seperti
+   * `children` — rutenya tetap milik entri masing-masing; ini hanya memberi
+   * tingkat pada daftar yang datar.
+   *
+   * Urutannya adalah kontraknya: entri berurutan dengan `section` yang sama
+   * jadi satu kelompok, dan judulnya dicetak sekali di entri pertamanya. Entri
+   * tanpa `section` berdiri sendiri di puncak, sebelum kelompok mana pun —
+   * tempat "Ringkasan", satu-satunya halaman yang bukan bagian dari alur kerja
+   * tertentu.
+   *
+   * Tingkatnya dibaca dari atas ke bawah: apa yang menahan orang lain lebih
+   * dulu, lalu uang, lalu data yang hanya dibaca, lalu pengaturan.
+   */
+  section?: string
 }
 
 export interface DashboardNav {
@@ -46,58 +64,42 @@ export interface DashboardNav {
 }
 
 /**
- * Sidebar contents per role. Every entry points at a real page; order matches
- * the admin's decision flow (and the Ringkasan queue cards).
+ * Isi sidebar per role.
+ *
+ * Urutannya bertingkat, bukan menurut entitas: Ringkasan di puncak, lalu
+ * antrean yang menahan orang lain, lalu uang, lalu direktori yang hanya
+ * dibaca, dan pengaturan di dasar. Alasannya sederhana — yang paling atas
+ * adalah yang paling mahal kalau terlambat dikerjakan.
+ *
+ * Karena itu "Pengajuan tutor" tidak lagi satu grup dengan "Daftar tutor":
+ * keduanya memang tentang tutor, tetapi yang satu antrean keputusan dan yang
+ * lain daftar bacaan. Menyatukannya berarti mengubur antrean di balik satu
+ * klik ekstra hanya demi kerapian nama.
  */
 const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
   admin: {
     title: 'Dashboard admin',
     items: [
       { label: 'Ringkasan', to: '/dashboard/admin', icon: IconHome, exact: true },
-      {
-        label: 'Tutor',
-        to: '/dashboard/admin/tutors',
-        icon: IconUser,
-        // Two distinct tables (pengajuan vs daftar tutor aktif), so one page
-        // each behind a sub-menu instead of top-level tabs — same shape as
-        // Rekening bank below. The roster child shares its path with the
-        // parent, hence `exact` — prefix matching would light it up on any
-        // future nested tutor route too.
-        children: [
-          { label: 'Pengajuan Tutor', to: '/dashboard/admin/applications' },
-          { label: 'Daftar Tutor', to: '/dashboard/admin/tutors', exact: true },
-        ],
-      },
-      { label: 'Daftar Siswa', to: '/dashboard/admin/students', icon: IconUsers },
-      {
-        label: 'Bimbel',
-        to: '/dashboard/admin/bimbels/applications',
-        icon: IconUsers,
-        children: [
-          { label: 'Pengajuan bimbel', to: '/dashboard/admin/bimbels/applications' },
-          { label: 'Pembayaran bimbel', to: '/dashboard/admin/bimbels/orders' },
-        ],
-      },
-      // Antrean bukti transfer langganan bimbel. Berdiri sendiri di samping
-      // grup Bimbel, bukan sebagai anaknya, supaya ia bisa membawa ikonnya
-      // sendiri: grup itu masih memakai IconUsers yang bertabrakan dengan
-      // "Daftar Siswa" (docs/konsep-bimbel-agency.md §9), dan menambah entri di
-      // dalamnya hanya akan menumpuk pada tabrakan yang sama.
-      //
-      { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye },
-      // Uang masuk sebelum uang keluar: verifikasi pembayaran adalah antrean
-      // yang menahan akses pembeli yang sudah membayar, jadi ia duduk di atas
-      // Pencairan.
-      // Satu pintu untuk dua jenis pembayaran manual: pembelian paket siswa dan
-      // tagihan langganan bimbel. Dulu dua menu terpisah, yang berarti dua
-      // tempat untuk satu kebiasaan — dan satu di antaranya rutin terlupakan,
-      // padahal yang menunggu di sana adalah orang yang sudah membayar.
-      { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt },
-      { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet },
+
+      // Antrean — semuanya menahan orang yang sudah menunggu, diurutkan
+      // menurut siapa yang paling dirugikan oleh keterlambatan: pembeli yang
+      // sudah membayar, lalu tutor yang produknya belum tayang, lalu akun yang
+      // belum bisa mulai bekerja sama sekali.
+      { label: 'Verifikasi pembayaran', to: '/dashboard/admin/payments', icon: IconReceipt, section: 'Antrean' },
+      { label: 'Pembayaran bimbel', to: '/dashboard/admin/bimbels/orders', icon: IconRepeat, section: 'Antrean' },
+      { label: 'Moderasi produk', to: '/dashboard/admin/products', icon: IconEye, section: 'Antrean' },
+      { label: 'Pengajuan tutor', to: '/dashboard/admin/applications', icon: IconCheckCircle, section: 'Antrean' },
+      { label: 'Pengajuan bimbel', to: '/dashboard/admin/bimbels/applications', icon: IconHandshake, section: 'Antrean' },
+
+      // Keuangan — uang keluar. Pencairan lebih dulu karena ia yang ditunggu
+      // tutor; rekening bank adalah syarat yang melayaninya.
+      { label: 'Pencairan', to: '/dashboard/admin/payouts', icon: IconWallet, section: 'Keuangan' },
       {
         label: 'Rekening bank',
         to: '/dashboard/admin/bank-accounts',
         icon: IconBank,
+        section: 'Keuangan',
         // Two distinct tables (verifikasi rekening vs pengajuan perubahan), so
         // one page each behind a sub-menu instead of top-level tabs. The index
         // child shares its path with the parent, hence `exact` — prefix
@@ -107,6 +109,15 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
           { label: 'Perubahan', to: '/dashboard/admin/bank-accounts/changes' },
         ],
       },
+
+      // Direktori — tidak ada yang menunggu di sini; ini tempat mencari orang,
+      // bukan tempat memutuskan sesuatu. Ikon di seluruh sidebar ini sengaja
+      // tidak ada yang kembar: dulu grup Bimbel memakai IconUsers yang sama
+      // dengan "Daftar Siswa", dan pada rail yang diciutkan — ketika label
+      // hilang dan hanya ikon yang tersisa — dua menu itu jadi tidak
+      // terbedakan sama sekali.
+      { label: 'Daftar tutor', to: '/dashboard/admin/tutors', icon: IconUser, section: 'Direktori' },
+      { label: 'Daftar siswa', to: '/dashboard/admin/students', icon: IconUsers, section: 'Direktori' },
     ],
   },
   tutor: {
@@ -114,9 +125,12 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
     items: [
       { label: 'Ringkasan', to: '/dashboard/tutor', icon: IconHome, exact: true },
       { label: 'Produk saya', to: '/dashboard/tutor/products', icon: IconGrid },
-      { label: 'Penjualan', to: '/dashboard/tutor/sales', icon: IconReceipt },
-      { label: 'Pencairan', to: '/dashboard/tutor/payouts', icon: IconWallet },
-      { label: 'Pengaturan', to: '/dashboard/tutor/settings', icon: IconSettings },
+
+      // Uang menyusul produk: tidak ada penjualan sebelum ada yang dijual.
+      { label: 'Penjualan', to: '/dashboard/tutor/sales', icon: IconReceipt, section: 'Pendapatan' },
+      { label: 'Pencairan', to: '/dashboard/tutor/payouts', icon: IconWallet, section: 'Pendapatan' },
+
+      { label: 'Pengaturan', to: '/dashboard/tutor/settings', icon: IconSettings, section: 'Akun' },
     ],
   },
 }
@@ -165,18 +179,30 @@ export function useDashboardNav() {
       if (!membership || membership.role === 'student') return EMPTY_NAV
 
       const base = `/dashboard/bimbel/${bimbelId}`
+      const canManage = membership.role === 'admin' || membership.role === 'owner'
+
+      /*
+       * Tingkatnya sama dengan sidebar Zenko: pekerjaan harian lebih dulu, uang
+       * di tengah, pengaturan di dasar. Sebelumnya "Pengaturan" duduk di tengah
+       * — ia ikut terdorong ke atas karena dipasang bersama "Siswa & tim" dalam
+       * satu blok peran, sehingga entri milik owner (Penjualan, Langganan)
+       * menyusul di bawahnya. Yang paling jarang dibuka jadi bukan yang paling
+       * bawah, dan itu terbaca sebagai daftar yang tidak diurutkan sama sekali.
+       */
       const items: DashboardNavItem[] = [
         { label: 'Ringkasan', to: base, icon: IconHome, exact: true },
-        { label: 'Bank soal', to: `${base}/products`, icon: IconGrid },
-        { label: 'Kelas', to: `${base}/classes`, icon: IconUsers },
+        { label: 'Bank soal', to: `${base}/products`, icon: IconGrid, section: 'Pengajaran' },
+        { label: 'Kelas', to: `${base}/classes`, icon: IconUsers, section: 'Pengajaran' },
       ]
-      if (membership.role === 'admin' || membership.role === 'owner') {
-        items.push({ label: 'Siswa & tim', to: `${base}/members`, icon: IconUser })
-        items.push({ label: 'Pengaturan', to: `${base}/settings`, icon: IconSettings })
+      if (canManage) {
+        items.push({ label: 'Siswa & tim', to: `${base}/members`, icon: IconUser, section: 'Pengajaran' })
       }
       if (membership.role === 'owner') {
-        items.push({ label: 'Penjualan', to: `${base}/sales`, icon: IconWallet })
-        items.push({ label: 'Langganan', to: `${base}/billing`, icon: IconReceipt })
+        items.push({ label: 'Penjualan', to: `${base}/sales`, icon: IconWallet, section: 'Keuangan' })
+        items.push({ label: 'Langganan', to: `${base}/billing`, icon: IconReceipt, section: 'Keuangan' })
+      }
+      if (canManage) {
+        items.push({ label: 'Pengaturan', to: `${base}/settings`, icon: IconSettings, section: 'Pengelolaan' })
       }
       return { title: membership.bimbelName, items }
     }
