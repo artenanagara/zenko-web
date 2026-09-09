@@ -153,15 +153,19 @@ export interface TryoutSessionOptions {
    * Grades the sitting somewhere other than this browser, and becomes the
    * result screen's only source of numbers.
    *
-   * The "coba gratis" sample needs it: its questions arrive with no `correct`,
-   * `points` or `scores`, on purpose — a public endpoint that shipped the
-   * answer key would hand every visitor the keys to five real questions — so
-   * the API grades the submission and returns the tally. Left unset, the
-   * sitting is graded locally from the blueprint, which is what an owned
-   * package does.
+   * Both real sittings use it. Questions arrive with no `correct`, `points`,
+   * `scores` or pembahasan — a payload carrying the answer key is a payload a
+   * student can read the answers out of, whether they paid for the package or
+   * are trying five questions for free — so the API grades the submission and
+   * returns the tally.
    *
-   * A rejection is surfaced as `gradeFailed` rather than swallowed: unlike the
-   * paid sitting, there is no locally computed score to fall back on.
+   * Left unset, the sitting is graded locally from the blueprint. That is now
+   * only the tutor/admin preview, whose blueprint does still carry the key
+   * because the caller wrote it.
+   *
+   * A rejection is surfaced as `gradeFailed` rather than swallowed: there is no
+   * locally computed score to fall back on, and showing a zero would be a lie
+   * about how the participant did.
    */
   grade?: (answers: Record<string, TryoutAnswerState>) => Promise<TryoutSampleScore>
   /**

@@ -7,8 +7,9 @@ import type { TableControlOption } from '~/composables/useTableControls'
  * §4.5). Alur status di server (admin_payouts.go): requested → processing →
  * transferred, dengan reject (wajib alasan) dari kedua status non-terminal.
  * "Proses" satu-satunya keputusan tanpa modal (reversibel — masih bisa
- * ditolak); "Tandai ditransfer" lewat AdminConfirmModal, "Tolak…" lewat
- * AdminReasonModal.
+ * ditolak); "Tandai ditransfer" dan "Tolak…" sama-sama lewat AdminReasonModal
+ * — keduanya menuntut satu kalimat wajib dari admin (nomor referensi transfer
+ * dan alasan penolakan).
  */
 definePageMeta({
   layout: 'dashboard',
@@ -202,14 +203,14 @@ const transferDescription = computed(() => {
   return `${formatRupiah(t.amount)} ke ${t.bankAccount.bankLabel} · ${t.bankAccount.accountNumber} a.n. ${t.bankAccount.holderName}. Pastikan dana sudah berhasil ditransfer. Status ini bersifat final.`
 })
 
-async function confirmTransfer() {
+async function confirmTransfer(reference: string) {
   const target = transferTarget.value
   if (!target) return
 
   transferError.value = ''
   transferBusy.value = true
   try {
-    await decideAdminPayout(target.id, { action: 'transfer' })
+    await decideAdminPayout(target.id, { action: 'transfer', reference })
     transferTarget.value = null
     successMessage.value = `Pencairan ${target.tutor.name} (${formatRupiah(target.amount)}) berhasil ditandai sudah ditransfer.`
     await refreshAll()
@@ -424,12 +425,20 @@ async function confirmReject(reason: string) {
       </div>
     </DashboardPanel>
 
-    <AdminConfirmModal
+    <!--
+      Nomor referensi transfer wajib: server menolak menandai pencairan selesai
+      tanpa itu, karena referensi itulah yang menghubungkan pencairan dengan
+      transaksi bank yang membawanya saat direkonsiliasi berbulan-bulan
+      kemudian.
+    -->
+    <AdminReasonModal
       :open="transferTarget !== null"
       title="Tandai sudah ditransfer?"
       :description="transferDescription"
+      label="Nomor referensi transfer"
+      placeholder="Mis. BCA/20260909/0012345"
+      hint="Nomor transaksi dari mutasi bank."
       confirm-label="Tandai ditransfer"
-      confirm-variant="primary"
       :busy="transferBusy"
       :error="transferError"
       @update:open="value => { if (!value) transferTarget = null }"
