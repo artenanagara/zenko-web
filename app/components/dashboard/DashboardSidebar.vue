@@ -148,6 +148,9 @@ function itemClass(active = false, look: { child?: boolean, within?: boolean } =
 
 // One id per component instance (the rail and the drawer both render this
 // tree), suffixed per group so `aria-controls` never collides.
+/** Sakelar ciutkan: ikon saja, ukuran sentuh tetap 40px di kedua keadaan. */
+const TOGGLE_CLASS = 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-muted transition-colors duration-200 ease-smooth hover:bg-surface-alt hover:text-ink focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none'
+
 const uid = useId()
 function submenuId(item: DashboardNavItem): string {
   return `${uid}-submenu-${item.to.replace(/[^a-z0-9]+/gi, '-')}`
@@ -166,6 +169,21 @@ function submenuId(item: DashboardNavItem): string {
       </NuxtLink>
       <BrandMark v-else img-class="h-9 w-auto object-contain" aria-label="Zenko — beranda" />
 
+      <!-- Ciutkan/bentangkan, di ujung kanan sebaris dengan logo. Ikon saja:
+           tempatnya sudah menjelaskan apa yang diciutkan, dan sebagai baris
+           bertulisan di kaki sidebar ia dulu terbaca seperti tujuan navigasi
+           di antara menu-menu yang lain, bukan sebagai sakelar tampilan. -->
+      <button
+        v-if="variant === 'rail' && !collapsed"
+        type="button"
+        :class="TOGGLE_CLASS"
+        :aria-expanded="true"
+        aria-label="Ciutkan sidebar"
+        @click="emit('toggle')"
+      >
+        <IconSidebar class="h-[1.1rem] w-[1.1rem]" />
+      </button>
+
       <button
         v-if="variant === 'drawer'"
         type="button"
@@ -174,6 +192,23 @@ function submenuId(item: DashboardNavItem): string {
         @click="emit('close')"
       >
         <IconClose class="h-5 w-5" />
+      </button>
+    </div>
+
+    <!-- Rail yang sudah diciutkan hanya selebar 4.5rem, tidak cukup untuk
+         logo dan sakelar berdampingan — jadi di sana sakelarnya turun tepat
+         di bawah logo, tetap sebagai hal pertama yang terlihat dan satu-satunya
+         jalan membentangkannya kembali. -->
+    <div v-if="variant === 'rail' && collapsed" class="flex shrink-0 justify-center border-b border-hairline py-2">
+      <button
+        type="button"
+        :class="TOGGLE_CLASS"
+        :aria-expanded="false"
+        aria-label="Bentangkan sidebar"
+        title="Bentangkan sidebar"
+        @click="emit('toggle')"
+      >
+        <IconSidebar class="h-[1.1rem] w-[1.1rem]" />
       </button>
     </div>
 
@@ -270,7 +305,8 @@ function submenuId(item: DashboardNavItem): string {
       </ClientOnly>
     </nav>
 
-    <!-- Pinned footer: the way back out, plus the collapse toggle on desktop. -->
+    <!-- Pinned footer: the way back out. The collapse toggle used to sit here
+         too; it now lives beside the brand, where a view switch belongs. -->
     <div class="shrink-0 border-t border-hairline p-3">
       <NuxtLink
         to="/"
@@ -280,20 +316,6 @@ function submenuId(item: DashboardNavItem): string {
         <IconArrowLeft class="h-[1.1rem] w-[1.1rem] shrink-0" />
         <span :class="collapsed ? 'sr-only' : 'truncate'">Kembali ke situs</span>
       </NuxtLink>
-
-      <button
-        v-if="variant === 'rail'"
-        type="button"
-        class="mt-1 w-full"
-        :class="itemClass()"
-        :aria-expanded="!collapsed"
-        :aria-label="collapsed ? 'Bentangkan sidebar' : 'Ciutkan sidebar'"
-        :title="collapsed ? 'Bentangkan sidebar' : undefined"
-        @click="emit('toggle')"
-      >
-        <IconSidebar class="h-[1.1rem] w-[1.1rem] shrink-0" />
-        <span :class="collapsed ? 'sr-only' : 'truncate'">Ciutkan sidebar</span>
-      </button>
     </div>
   </div>
 </template>
