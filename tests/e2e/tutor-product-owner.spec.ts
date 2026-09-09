@@ -96,16 +96,29 @@ async function mockWizard(page: Page, memberships: unknown[]): Promise<CreatedPr
   return created
 }
 
-/** AppSelect adalah combobox ARIA (design system AppSelect.vue). */
-async function choose(page: Page, combobox: string, option: string): Promise<void> {
-  await page.getByRole('combobox', { name: combobox, exact: true }).click()
-  await page.getByRole('option', { name: option, exact: false }).first().click()
+/**
+ * Identitas paket dipilih lewat dialog bertahap (ProductIdentityPicker.vue):
+ * tiap langkah satu radiogroup, "Lanjut" di antaranya, dan "Gunakan pilihan"
+ * di langkah terakhir. Helper lama menekan combobox yang sudah tidak ada.
+ */
+async function pickIdentity(page: Page, choices: string[]): Promise<void> {
+  await page.getByRole('button', { name: /^(Pilih|Ubah)$/ }).first().click()
+  // Di-scope ke dialog: footer wizard di halaman punya "Lanjut" sendiri.
+  const dialog = page.getByRole('dialog')
+  for (const [index, choice] of choices.entries()) {
+    await dialog.getByRole('radio', { name: choice, exact: false }).first().click()
+    if (index < choices.length - 1) await dialog.getByRole('button', { name: 'Lanjut' }).click()
+  }
+  await dialog.getByRole('button', { name: 'Gunakan pilihan' }).click()
 }
 
 /** Simulasi SKD CPNS dari langkah 1 sampai draft tersimpan. */
 async function walkToDraft(page: Page, title: string): Promise<void> {
-  await choose(page, 'Kategori ujian', 'SKD')
-  await choose(page, 'Sub-kategori', 'CPNS')
+  // Fixture SKD tidak membawa `family`, jadi examFamilyOf memetakannya dari
+  // category 'SKD' ke rumpun "ASN". Simulasi lengkap tidak punya langkah
+  // "Bagian".
+  await pickIdentity(page, ['Simulasi ujian', 'ASN', 'SKD CPNS', 'Simulasi lengkap'])
+  // Dua langkah halaman: Konfigurasi Ujian, lalu Detail Produk.
   await page.getByRole('button', { name: 'Lanjut' }).click()
   await page.getByRole('button', { name: 'Lanjut' }).click()
 

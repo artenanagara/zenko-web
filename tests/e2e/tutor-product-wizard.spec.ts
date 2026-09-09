@@ -31,6 +31,11 @@ const EXAM_TYPES = [
     theme: 'catbkn',
     cognitiveLevelEnabled: false,
     simulasiTotalMinutes: 100,
+    // "Terkunci" bergantung pada fidelity sejak rework taksonomi
+    // (isConfigLocked), bukan lagi pada kategorinya. Seed aslinya menandai SKD
+    // CPNS sebagai official; tanpa ini fixture-nya diperlakukan sebagai
+    // susunan latihan dan langkah konfigurasinya justru bisa diubah.
+    fidelity: 'official',
     sections: [
       { title: 'Tes Wawasan Kebangsaan', questionTarget: 30, durationMinutes: 30, scoringMode: 'flat', pointsCorrect: 5, passingGrade: 65, defaultKind: 'single_choice', allowedKinds: ['single_choice'] },
       { title: 'Tes Intelegensi Umum', questionTarget: 35, durationMinutes: 35, scoringMode: 'flat', pointsCorrect: 5, passingGrade: 80, defaultKind: 'single_choice', allowedKinds: ['single_choice'] },
@@ -82,10 +87,39 @@ async function mockWizardApi(page: Page): Promise<{ createdBodies: unknown[] }> 
   return { createdBodies }
 }
 
-/** AppSelect adalah combobox ARIA (app/components/core/AppSelect.vue). */
-async function chooseOption(page: Page, comboboxName: string, optionName: string): Promise<void> {
-  await page.getByRole('combobox', { name: comboboxName, exact: true }).click()
-  await page.getByRole('option', { name: optionName, exact: false }).first().click()
+/**
+ * Identitas paket kini dipilih lewat dialog bertahap, bukan deretan dropdown:
+ * tiap langkah adalah radiogroup berisi tombol, dan pindah langkah lewat
+ * "Lanjut" sampai langkah terakhir yang tombolnya "Gunakan pilihan"
+ * (ProductIdentityPicker.vue). Helper lama menekan combobox "Kategori ujian"
+ * yang sudah tidak ada.
+ */
+async function openIdentityDialog(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /^(Pilih|Ubah)$/ }).first().click()
+}
+
+/**
+ * Semua interaksi dialog di-scope ke `role="dialog"`: footer wizard di
+ * halaman punya tombol "Lanjut" sendiri, jadi pencarian tanpa scope cocok ke
+ * dua elemen dan Playwright menolaknya (strict mode).
+ */
+function identityDialog(page: Page) {
+  return page.getByRole('dialog')
+}
+
+/** Pilih satu opsi pada langkah yang sedang tampil. */
+async function chooseStep(page: Page, optionName: string): Promise<void> {
+  await identityDialog(page).getByRole('radio', { name: optionName, exact: false }).first().click()
+}
+
+/** Pilih berurutan, "Lanjut" di antara langkah, lalu terapkan. */
+async function pickIdentity(page: Page, choices: string[]): Promise<void> {
+  await openIdentityDialog(page)
+  for (const [index, choice] of choices.entries()) {
+    await chooseStep(page, choice)
+    if (index < choices.length - 1) await identityDialog(page).getByRole('button', { name: 'Lanjut' }).click()
+  }
+  await identityDialog(page).getByRole('button', { name: 'Gunakan pilihan' }).click()
 }
 
 async function openWizard(page: Page): Promise<void> {
@@ -99,15 +133,15 @@ async function openWizard(page: Page): Promise<void> {
   await page.goto('/dashboard/tutor/products/new', { waitUntil: 'networkidle' })
 }
 
-/** Kelompok 1 untuk mini tryout TKA SMP, lalu Lanjut ke kelompok 2. */
+/**
+ * Identitas untuk mini tryout TKA SMP. Langkahnya: Bentuk paket → Rumpun →
+ * Program → Mode → Bagian. Fixture TKA tidak membawa `family`, jadi
+ * examFamilyOf memetakannya dari category 'TKA' ke rumpun "Sekolah"; yang dulu
+ * dipilih sebagai "Mata pelajaran" kini adalah langkah "Bagian".
+ */
 async function pickTkaMiniAndGoToConfig(page: Page, mapel: string): Promise<void> {
-  // Kategori dan jenjang adalah AppSelect, bukan kartu radio: langkah 1
-  // seluruhnya kolom dropdown. Sub-kategori berlabel "Jenjang" untuk TKA dan
-  // "Sub-kategori" untuk SKD, jadi nama comboboxnya ikut kategori yang dipilih.
-  await chooseOption(page, 'Kategori ujian', 'TKA')
-  await chooseOption(page, 'Jenjang', 'SMP')
-  await chooseOption(page, 'Jenis ujian', 'Mini Try Out')
-  await chooseOption(page, 'Mata pelajaran', mapel)
+  await pickIdentity(page, ['Simulasi ujian', 'Sekolah', 'TKA SMP', 'Mini tryout', mapel])
+  // Identitas selesai; footer wizard di halaman yang membawa ke kelompok 2.
   await page.getByRole('button', { name: 'Lanjut' }).click()
 }
 
@@ -175,15 +209,22 @@ test.describe('wizard berkelompok — simulasi SKD terkunci', () => {
     const { createdBodies } = await mockWizardApi(page)
     await openWizard(page)
 
-    await chooseOption(page, 'Kategori ujian', 'SKD')
-    await chooseOption(page, 'Sub-kategori', 'CPNS')
-    // Jenis ujian default: Simulasi — langkah subtes dilewati, karena ketiga
-    // subtes resmi SKD terpasang otomatis dan tidak boleh dipilih satu per satu.
-    //
-    // Diuji lewat ketiadaan comboboxnya, bukan lewat kalimat penjelas: kalimat
-    // yang dulu diassert di sini sudah lama hilang dari UI dan test-nya ikut
-    // mati diam-diam. Ketiadaan kontrol adalah aturannya; copy hanya menjelaskan.
-    await expect(page.getByRole('combobox', { name: 'Subtes', exact: true })).toHaveCount(0)
+    // Simulasi lengkap SKD: langkah "Bagian" tidak pernah muncul, karena
+    // ketiga subtes resmi terpasang otomatis dan tidak boleh dipilih satu per
+    // satu — jadi "Mode" sudah langkah terakhir dan tombolnya "Gunakan
+    // pilihan". Diuji lewat ketiadaan langkahnya, bukan lewat kalimat
+    // penjelas: kalimat yang dulu diassert di sini sudah lama hilang dari UI
+    // dan test-nya ikut mati diam-diam.
+    await openIdentityDialog(page)
+    await chooseStep(page, 'Simulasi ujian')
+    await identityDialog(page).getByRole('button', { name: 'Lanjut' }).click()
+    await chooseStep(page, 'ASN')
+    await identityDialog(page).getByRole('button', { name: 'Lanjut' }).click()
+    await chooseStep(page, 'SKD CPNS')
+    await identityDialog(page).getByRole('button', { name: 'Lanjut' }).click()
+    await chooseStep(page, 'Simulasi lengkap')
+    await expect(identityDialog(page).getByRole('button', { name: 'Lanjut' })).toHaveCount(0)
+    await identityDialog(page).getByRole('button', { name: 'Gunakan pilihan' }).click()
     await page.getByRole('button', { name: 'Lanjut' }).click()
 
     // Kelompok 2: konfigurasi simulasi terkunci standar resmi, jadi tidak ada
