@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.1](https://github.com/artenanagara/zenko-web/compare/v0.19.0...v0.19.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **tryout:** nilai di server, dan wajibkan referensi transfer pencairan ([76e8da0](https://github.com/artenanagara/zenko-web/commit/76e8da0ae44d080a40759f57f69b66730913f4b0))
+* **tryout:** nilai di server, dan wajibkan referensi transfer pencairan ([754561a](https://github.com/artenanagara/zenko-web/commit/754561ae09f4bdb632f571972c5ae2c4fe96d55e))
+
 ## [0.19.0](https://github.com/artenanagara/zenko-web/compare/v0.18.0...v0.19.0) (2026-09-09)
 
 
