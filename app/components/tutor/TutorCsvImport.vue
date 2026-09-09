@@ -37,7 +37,15 @@ const props = defineProps<{
   workspace?: ProductWorkspace
 }>()
 
-const emit = defineEmits<{ refresh: [] }>()
+const emit = defineEmits<{
+  refresh: []
+  /**
+   * Emitted only when every row landed. A run that skipped rows keeps the
+   * dialog open, because the list of what was skipped is rendered here and
+   * closing over it would throw away the only report of it.
+   */
+  imported: []
+}>()
 
 const uid = useId()
 
@@ -225,12 +233,12 @@ async function importQuestions() {
     }
     reset()
     emit('refresh')
+    const skipped = importProblems.value.length
     toast.success(
       `${imported} soal terimpor.`,
-      importProblems.value.length
-        ? `${importProblems.value.length} baris dilewati — lihat daftarnya di panel impor.`
-        : undefined,
+      skipped ? `${skipped} baris dilewati — lihat daftarnya di panel impor.` : undefined,
     )
+    if (!skipped) emit('imported')
   }
   catch (cause) {
     // Pengiriman soal gagal setelah wacananya persist: hapus lagi wacana

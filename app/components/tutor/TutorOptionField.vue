@@ -28,13 +28,22 @@ const props = withDefaults(defineProps<{
   placeholder?: string
   showWeight?: boolean
   /**
-   * Editor TKP SKD: bobot dipilih dari dropdown 1–5 alih-alih diketik —
-   * bobot resmi TKP memang cuma lima nilai itu, dan dropdown membuatnya
-   * mustahil salah ketik.
+   * Bobot dipilih dari daftar alih-alih diketik — skalanya cuma beberapa
+   * nilai, dan memilih membuatnya mustahil salah ketik.
    */
   weightAsSelect?: boolean
   maxWeight?: number
-}>(), { maxWeight: 5 })
+  /**
+   * Bobot yang sudah dipakai opsi LAIN pada soal yang sama. Nilai-nilai ini
+   * tidak bisa dipilih lagi: satu bobot mewakili satu tingkat kesesuaian
+   * jawaban, jadi dua opsi yang berbagi bobot berarti soalnya tidak
+   * membedakan keduanya.
+   *
+   * Bobot milik baris ini sendiri tidak pernah ikut, sehingga soal lama yang
+   * terlanjur punya bobot kembar tetap bisa dibuka dan disimpan ulang.
+   */
+  takenWeights?: number[]
+}>(), { maxWeight: 5, takenWeights: () => [] })
 
 const text = defineModel<string>('text', { default: '' })
 const weight = defineModel<number | null>('weight', { default: null })
@@ -48,16 +57,30 @@ defineExpose({
 })
 
 /**
- * Bobot hanya 1–5 (gaya TKP) — filter tiap keystroke daripada memvalidasi
+ * Pilihan bobot, dengan yang sudah terpakai opsi lain ditandai tidak bisa
+ * dipilih. Pilihan yang sedang dipegang baris ini sendiri selalu tersedia.
+ */
+const weightOptions = computed(() =>
+  Array.from({ length: props.maxWeight }, (_, index) => index + 1).map(value => ({
+    value,
+    label: String(value),
+    disabled: value !== weight.value && props.takenWeights.includes(value),
+  })),
+)
+
+/**
+ * Bobot hanya 1..maxWeight — filter tiap keystroke daripada memvalidasi
  * belakangan lewat min/max native `type="number"`, yang tetap membiarkan
  * "1e2", "-", atau angka di luar rentang masuk sampai blur. Nilai apa pun di
- * luar 1–5 (termasuk non-digit) balik kosong — placeholder "1–5" muncul lagi
- * daripada menampilkan angka yang tidak valid.
+ * luar rentang (termasuk non-digit) balik kosong — placeholder muncul lagi
+ * daripada menampilkan angka yang tidak valid. Bobot yang sudah dipakai opsi
+ * lain juga ditolak, aturan yang sama dengan daftar pilihannya.
  */
 function onWeightInput(event: Event) {
   const input = event.target as HTMLInputElement
   const digit = Number(input.value.replace(/\D/g, '').slice(0, 1))
-  weight.value = digit >= 1 && digit <= props.maxWeight ? digit : null
+  const usable = digit >= 1 && digit <= props.maxWeight && !props.takenWeights.includes(digit)
+  weight.value = usable ? digit : null
   input.value = weight.value === null ? '' : String(weight.value)
 }
 </script>
@@ -78,16 +101,34 @@ function onWeightInput(event: Event) {
 
       <template v-if="showWeight">
         <label :for="`${uid}-weight`" class="sr-only">Bobot opsi {{ letter }}</label>
-        <select
+        <!-- Baris tombol, bukan dropdown: skalanya paling banyak lima nilai
+             satu digit, jadi seluruhnya muat terbaca sekaligus dan memilih
+             jadi satu klik. Dropdown-nya juga tidak pernah tampil rapi —
+             popup native tidak bisa distyle, dan daftar mengambang akan
+             terpotong tepi dialog di tempat lain. -->
+        <div
           v-if="weightAsSelect"
-          :id="`${uid}-weight`"
-          :value="weight ?? ''"
-          class="mt-0.5 w-24 shrink-0 rounded-sm border border-line bg-surface px-2 py-2 text-center text-[0.9rem] tabular-nums"
-          @change="weight = Number(($event.target as HTMLSelectElement).value) || null"
+          class="mt-0.5 flex shrink-0 gap-1"
+          role="radiogroup"
+          :aria-label="`Bobot opsi ${letter}`"
         >
-          <option value="" disabled>Bobot</option>
-          <option v-for="n in maxWeight" :key="n" :value="n">{{ n }}</option>
-        </select>
+          <button
+            v-for="option in weightOptions"
+            :key="option.value"
+            type="button"
+            role="radio"
+            :aria-checked="weight === option.value"
+            :disabled="option.disabled"
+            :title="option.disabled ? `Bobot ${option.value} sudah dipakai opsi lain` : undefined"
+            class="size-9 rounded-sm border text-[0.86rem] font-bold tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35"
+            :class="weight === option.value
+              ? 'border-primary bg-primary text-white'
+              : 'border-line bg-surface text-muted enabled:hover:border-primary/40 enabled:hover:text-ink'"
+            @click="weight = weight === option.value ? null : option.value"
+          >
+            {{ option.label }}
+          </button>
+        </div>
         <input
           v-else
           :id="`${uid}-weight`"

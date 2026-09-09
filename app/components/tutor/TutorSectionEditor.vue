@@ -89,7 +89,7 @@ const newFormNonce = ref(0)
  */
 type ImportMode = 'section' | 'combined'
 const importMode = ref<ImportMode | null>(null)
-const importPickerOpen = ref(false)
+const importOpen = ref(false)
 
 /**
  * Produk mini_tryout selalu tepat satu subtes, jadi "semua subtes sekaligus"
@@ -98,18 +98,26 @@ const importPickerOpen = ref(false)
  */
 const canImportCombined = computed(() => orderedSections.value.length > 1)
 
+const importTitle = computed(() =>
+  importMode.value === 'combined'
+    ? 'Impor semua subtes sekaligus'
+    : `Impor ke ${activeSection.value?.title ?? 'subtes'}`,
+)
+
 function openImport() {
-  if (!canImportCombined.value) {
-    startImport('section')
-    return
-  }
-  importPickerOpen.value = true
+  // A mini_tryout product is always exactly one subtes, so "all subtests at
+  // once" has nothing to mean there — skip straight to the upload screen.
+  importMode.value = canImportCombined.value ? null : 'section'
+  importOpen.value = true
 }
 
 function startImport(mode: ImportMode) {
   importMode.value = mode
-  importPickerOpen.value = false
-  editorFor.value = ''
+}
+
+function closeImport() {
+  importOpen.value = false
+  importMode.value = null
 }
 
 const formKey = computed(() => editorFor.value === 'new' ? `new-${newFormNonce.value}` : editorFor.value)
@@ -119,7 +127,7 @@ function selectSection(id: string) {
   activeSectionId.value = id
   editorFor.value = ''
   errorMessage.value = ''
-  importMode.value = null
+  closeImport()
 }
 
 function openNewQuestion() {
@@ -135,7 +143,7 @@ function selectQuestion(id: string) {
 /** Return to the passage manager when a tutor needs to add a shared reading. */
 function openPassageManager() {
   editorFor.value = ''
-  importMode.value = null
+  closeImport()
   errorMessage.value = ''
 }
 
@@ -444,7 +452,7 @@ const activeSectionDotClass = computed(() =>
               @refresh="emit('refresh')"
             />
 
-            <div v-if="importMode === null">
+            <div>
               <p v-if="activeSection!.questions.length === 0" class="py-2 text-[0.9rem] text-muted">
                 Belum ada soal di subtes ini.
               </p>
@@ -461,31 +469,6 @@ const activeSectionDotClass = computed(() =>
               </AppInlineMessage>
             </div>
 
-            <div v-else class="grid gap-3">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="text-[0.9rem] font-semibold">
-                  {{ importMode === 'combined' ? 'Impor semua subtes sekaligus' : `Impor ke ${activeSection!.title}` }}
-                </h3>
-                <button
-                  type="button"
-                  class="inline-flex min-h-9 items-center gap-1.5 rounded-xs px-2 text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink"
-                  @click="importMode = null"
-                >
-                  <AppIcon name="x" :size="14" aria-hidden="true" />
-                  Tutup impor
-                </button>
-              </div>
-
-              <TutorCsvImport
-                :product-id="productId"
-                :section="activeSection!"
-                :sections="orderedSections"
-                :mode="importMode"
-                :group-passages="passagesEnabled"
-                :workspace="workspace"
-                @refresh="emit('refresh')"
-              />
-            </div>
           </template>
         </div>
 
@@ -516,15 +499,18 @@ const activeSectionDotClass = computed(() =>
       </div>
     </div>
 
-    <!-- Pemilih mode impor. Ditanyakan sekali di sini, bukan sebagai tab
-         permanen di dalam panel impor: setelah dipilih, panelnya cuma perlu
-         menampilkan satu bentuk saja. -->
+    <!-- Impor berlangsung sepenuhnya di dalam dialog: pemilihan cakupan lalu
+         panel impornya sendiri, satu layar sesudah yang lain. Sebelumnya
+         panelnya terbuka inline tepat di tempat soal ditulis, jadi menekan
+         "Impor soal" mendorong editor ke bawah dan menukar isi kolom yang
+         sedang dibaca. Impor adalah aksi sekali jalan — tempatnya di atas
+         halaman, bukan menggeser halaman. -->
     <AppModal
-      v-model="importPickerOpen"
-      title="Impor soal dari CSV"
-      description="Pilih cakupan file yang akan kamu unggah."
+      v-model="importOpen"
+      :title="importMode ? importTitle : 'Impor soal dari CSV'"
+      :description="importMode ? 'Unggah file, periksa hasil bacanya, lalu impor.' : 'Pilih cakupan file yang akan kamu unggah.'"
     >
-      <div class="grid gap-3">
+      <div v-if="!importMode" class="grid gap-3">
         <button
           type="button"
           class="flex items-start gap-3 rounded-md border border-hairline-strong bg-surface px-4 py-3.5 text-left transition-colors hover:border-primary/40 hover:bg-primary-soft/40"
@@ -549,12 +535,34 @@ const activeSectionDotClass = computed(() =>
           <span>
             <span class="block font-bold tracking-[-0.02em] text-ink">Semua subtes sekaligus</span>
             <span class="mt-1 block text-[0.84rem] leading-[1.6] text-muted">
-              Satu file untuk {{ orderedSections.length }} subtes — kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
-              tiap baris menentukan tujuannya.
+              Satu file dengan kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
+              tambahan; tiap baris dicocokkan ke subtesnya sendiri.
             </span>
           </span>
         </button>
       </div>
+
+      <!-- max-h menahan tinggi dialog saat daftar baris yang dilewati panjang;
+           AppModal sendiri tidak membatasi tinggi body-nya. -->
+      <div v-else class="max-h-[min(30rem,60vh)] overflow-y-auto">
+        <TutorCsvImport
+          :product-id="productId"
+          :section="activeSection!"
+          :sections="orderedSections"
+          :mode="importMode"
+          :group-passages="passagesEnabled"
+          :workspace="workspace"
+          @refresh="emit('refresh')"
+          @imported="closeImport"
+        />
+      </div>
+
+      <template #footer>
+        <AppButton variant="ghost" size="sm" @click="importMode && canImportCombined ? (importMode = null) : closeImport()">
+          {{ importMode && canImportCombined ? 'Kembali' : 'Tutup' }}
+        </AppButton>
+      </template>
     </AppModal>
+
   </DashboardPanel>
 </template>

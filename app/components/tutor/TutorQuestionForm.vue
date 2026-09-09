@@ -82,6 +82,7 @@ const optionFieldRefs = ref<(InstanceType<typeof TutorOptionField> | null)[]>([]
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const
 /** Bobot tertinggi yang bisa dipilih; 5 adalah bawaan yang paling lazim. */
 const maximumWeight = computed(() => props.maxOptionWeight || 5)
+
 const requiredCount = computed(() => props.requiredOptionCount ?? 0)
 
 /**
@@ -239,6 +240,24 @@ const ordering = ref<string[]>(initialOrdering())
  * posisi — yang sebelumnya masing-masing memfilter ulang di template.
  */
 const filledChoiceRows = computed(() => choiceRows.value.filter(row => stripHtmlToText(row.text)))
+
+/**
+ * Bobot yang sudah dipakai, supaya tiap opsi memegang satu tingkat
+ * kesesuaian sendiri — dua opsi berbobot sama berarti soalnya tidak
+ * membedakan keduanya.
+ *
+ * Dilewati saat opsinya lebih banyak daripada nilai bobot yang tersedia:
+ * bobot kembar jadi tak terhindarkan di sana, dan memblokirnya akan membuat
+ * soal itu mustahil diselesaikan. Server sendiri memang mengizinkan kembar,
+ * jadi ini panduan penulisan — bukan aturan yang dipaksakan di belakang.
+ */
+const weightsAreUnique = computed(() => filledChoiceRows.value.length <= maximumWeight.value)
+
+const takenWeights = computed(() =>
+  weightsAreUnique.value
+    ? choiceRows.value.map(row => row.weight).filter((w): w is number => w !== null)
+    : [],
+)
 
 /**
  * Kandidat isi tiap posisi urutan. `value` adalah identitas baris supaya
@@ -697,11 +716,12 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </span>
     </AppSectionMessage>
 
-    <!-- Konteks soal: apa bentuknya, dan bacaan apa yang menopangnya. Satu
-         band di puncak form, bukan tiga blok bertingkat dengan lebar
-         berbeda-beda — semuanya jawaban singkat, dan semuanya dijawab di
-         dialog, jadi tidak ada yang membuka ke bawah saat dipilih. -->
-    <div class="grid gap-3" :class="canChooseKind && hasPassagePicker ? 'md:grid-cols-2' : ''">
+    <!-- Konteks soal: apa bentuknya, dan bacaan apa yang menopangnya.
+         Menurun satu kolom, bukan dua: isinya tidak sama panjang, jadi versi
+         dua kolom menyisakan sel kosong dan membuat tinggi kartunya
+         berbeda-beda. Semuanya jawaban singkat yang dijawab di dialog, jadi
+         tidak ada yang membuka ke bawah saat dipilih. -->
+    <div class="grid gap-3">
       <!-- Tipe soal hanya tampil ketika masih bisa diganti; subtes yang
            jenisnya terkunci (SKD) tidak menampilkan apa pun di sini. -->
       <QuestionKindPicker v-if="canChooseKind" v-model="kind" :options="allowedKinds" />
@@ -737,10 +757,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </div>
 
       <!-- Wacana milik soal ini sendiri. -->
-      <QuestionStimulusField
-        v-model="stimulus"
-        :class="canChooseKind && hasPassagePicker ? 'md:col-span-2' : ''"
-      />
+      <QuestionStimulusField v-model="stimulus" />
     </div>
 
     <div ref="promptBlockRef" class="scroll-mt-24">
@@ -761,7 +778,8 @@ function jumpBetweenOptions(event: KeyboardEvent) {
       </legend>
       <p v-if="requiredCount || kind === 'weighted'" class="-mt-1 text-[0.78rem] text-muted">
         <template v-if="requiredCount">Isi tepat {{ requiredCount }} opsi. </template>
-        <template v-if="kind === 'weighted' && maxOptionWeight">Minimal satu opsi memiliki bobot {{ maximumWeight }}.</template>
+        <template v-if="kind === 'weighted' && maxOptionWeight">Minimal satu opsi memiliki bobot {{ maximumWeight }}. </template>
+        <template v-if="kind === 'weighted' && weightsAreUnique">Tiap opsi memakai bobot yang berbeda.</template>
       </p>
 
       <div v-for="(row, index) in choiceRows" :key="row.letter" class="flex items-start gap-2.5">
@@ -803,6 +821,7 @@ function jumpBetweenOptions(event: KeyboardEvent) {
           :show-weight="kind === 'weighted'"
           :weight-as-select="kind === 'weighted'"
           :max-weight="maximumWeight"
+          :taken-weights="takenWeights"
           :placeholder="`Opsi ${row.letter}${index >= Math.max(2, requiredCount) ? ' (opsional)' : ''}`"
           class="flex-1"
         />

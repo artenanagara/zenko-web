@@ -60,6 +60,7 @@ type PracticeDraft = Required<SchoolPractice>
 
 const PRACTICE_DEFAULT: PracticeDraft = { level: 'SD', grade: 1, subject: '', topic: '' }
 
+const uid = useId()
 const open = ref(false)
 const stepIndex = ref(0)
 const search = ref('')
@@ -225,16 +226,17 @@ function select(value: string) {
   }
 }
 
-function selectLevel(value: string | number) {
-  const level = value as EducationLevel
+function selectLevel(level: EducationLevel) {
   if (level === practice.level) return
   practice.level = level
+  // Kelas 1 does not exist at SMP; move to the first grade this level teaches.
   practice.grade = gradesFor(level)[0] ?? 1
   practice.subject = ''
 }
 
-function selectGrade(value: string | number) {
-  practice.grade = Number(value)
+function selectGrade(grade: number) {
+  if (grade === practice.grade) return
+  practice.grade = grade
   practice.subject = ''
 }
 
@@ -344,21 +346,50 @@ const chosen = computed(() => Boolean(props.identity.examTypeSlug || props.ident
     :description="`Langkah ${stepIndex + 1} dari ${steps.length} · Identitas paket`"
   >
     <div class="grid gap-4">
-      <!-- Jenjang & kelas: two bound dropdowns, not a list — the answer is a
-           pair, and kelas depends on jenjang. -->
+      <!-- Jenjang & kelas: dua baris tombol, bukan dropdown. Pilihannya
+           sedikit dan pendek, jadi seluruhnya muat terbaca sekaligus — dan
+           daftar dropdown yang mengambang akan terpotong tepi dialog, karena
+           panel AppModal meng-clip isinya (`overflow-hidden`). -->
       <template v-if="currentStep === 'Jenjang & kelas'">
-        <AppSelect
-          label="Jenjang"
-          :model-value="practice.level"
-          :options="EDUCATION_LEVELS.map(item => ({ value: item.value, label: item.value }))"
-          @update:model-value="selectLevel"
-        />
-        <AppSelect
-          label="Kelas"
-          :model-value="practice.grade"
-          :options="gradeChoices.map(grade => ({ value: grade, label: `Kelas ${grade}` }))"
-          @update:model-value="selectGrade"
-        />
+        <div>
+          <p :id="`${uid}-level`" class="text-[0.82rem] font-semibold text-ink">Jenjang</p>
+          <div class="mt-2 flex flex-wrap gap-2" role="radiogroup" :aria-labelledby="`${uid}-level`">
+            <button
+              v-for="item in EDUCATION_LEVELS"
+              :key="item.value"
+              type="button"
+              role="radio"
+              :aria-checked="practice.level === item.value"
+              class="min-w-16 rounded-md border px-4 py-2 text-[0.88rem] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              :class="practice.level === item.value
+                ? 'border-primary bg-primary-soft text-primary'
+                : 'border-hairline bg-surface text-muted hover:border-line hover:text-ink'"
+              @click="selectLevel(item.value)"
+            >
+              {{ item.value }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p :id="`${uid}-grade`" class="text-[0.82rem] font-semibold text-ink">Kelas</p>
+          <div class="mt-2 flex flex-wrap gap-2" role="radiogroup" :aria-labelledby="`${uid}-grade`">
+            <button
+              v-for="grade in gradeChoices"
+              :key="grade"
+              type="button"
+              role="radio"
+              :aria-checked="practice.grade === grade"
+              class="min-w-16 rounded-md border px-4 py-2 text-[0.88rem] font-semibold tabular-nums transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              :class="practice.grade === grade
+                ? 'border-primary bg-primary-soft text-primary'
+                : 'border-hairline bg-surface text-muted hover:border-line hover:text-ink'"
+              @click="selectGrade(grade)"
+            >
+              {{ grade }}
+            </button>
+          </div>
+        </div>
       </template>
 
       <!-- Bab: free text on purpose. A picker would need every chapter of
