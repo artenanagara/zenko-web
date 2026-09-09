@@ -82,7 +82,7 @@ async function onSubmit() {
 <template>
   <AuthPanel v-if="status === 'form'" title="Buat kata sandi baru">
     <template #description>
-      Pilih kata sandi yang belum pernah kamu pakai di layanan lain. Sesi di
+      Pilih kata sandi baru. Sesi di
       perangkat lain akan berakhir setelah ini.
     </template>
 
@@ -137,7 +137,7 @@ async function onSubmit() {
 
   <AuthPanel v-else-if="status === 'success'" title="Kata sandi berhasil diubah" tone="success">
     <template #description>
-      Mulai sekarang gunakan kata sandi baru itu untuk masuk ke Zenko.
+      Gunakan kata sandi baru untuk masuk.
     </template>
 
     <AppButton to="/masuk" size="lg" class="w-full">Masuk sekarang</AppButton>

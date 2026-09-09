@@ -79,8 +79,7 @@ function editAddress() {
     title="Lupa kata sandi?"
   >
     <template #description>
-      Masukkan email yang kamu pakai di Zenko. Kami kirimkan tautan untuk
-      menyetel kata sandi baru.
+      Kami kirimkan tautan untuk menyetel kata sandi baru.
     </template>
 
     <form class="grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -111,9 +110,8 @@ function editAddress() {
 
   <AuthPanel v-else title="Cek email kamu" tone="pending">
     <template #description>
-      Kalau <span class="font-semibold text-ink">{{ sentTo }}</span> terdaftar di
-      Zenko, tautan untuk menyetel kata sandi baru sudah dalam perjalanan.
-      Tautannya berlaku 1 jam.
+      Kalau <span class="font-semibold text-ink">{{ sentTo }}</span> terdaftar,
+      tautannya sudah dikirim dan berlaku 1 jam.
     </template>
 
     <div class="grid gap-5">
@@ -122,9 +120,17 @@ function editAddress() {
       <div class="rounded-sm bg-surface-alt px-4 py-4 text-[0.88rem] text-muted">
         <p class="font-semibold text-ink">Belum ada emailnya?</p>
         <ul class="mt-2 grid gap-1.5">
-          <li>• Cek folder spam atau promosi.</li>
-          <li>• Pastikan alamatnya tidak salah ketik.</li>
-          <li>• Email bisa butuh beberapa menit untuk tiba.</li>
+          <li>• Cek folder spam.</li>
+          <li>• Pastikan alamatnya benar.</li>
+          <!-- Butir yang dulu tidak ada, dan justru jawabannya paling sering:
+               alamat yang belum punya akun tidak akan pernah dikirimi apa pun,
+               dan responsnya sengaja sama saja supaya tidak membocorkan akun
+               mana yang terdaftar. Ditampilkan ke semua orang, jadi tidak
+               membocorkan apa-apa. -->
+          <li>
+            • Belum punya akun?
+            <NuxtLink to="/daftar" class="font-semibold text-primary hover:underline">Daftar dulu</NuxtLink>.
+          </li>
         </ul>
       </div>
 
