@@ -299,11 +299,11 @@ const quickLinks = [
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="mailto:support@zenkoedu.id"
+              href="mailto:halo@zenkoedu.id"
               class="inline-flex min-h-13 items-center gap-2 rounded-xs bg-surface px-8 font-bold text-primary shadow-[0_8px_20px_rgba(12,40,100,0.18)] transition-[transform] duration-200 ease-smooth hover:-translate-y-px"
             >
               <IconMail class="h-4.5 w-4.5" aria-hidden="true" />
-              support@zenkoedu.id
+              halo@zenkoedu.id
             </a>
             <a
               href="tel:+6288227663468"

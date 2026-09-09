@@ -211,7 +211,7 @@ const revenueShare = [
     </p>
     <p>
       Permohonan refund harus dikirim ke
-      <a href="mailto:support@zenkoedu.id">support@zenkoedu.id</a> paling
+      <a href="mailto:halo@zenkoedu.id">halo@zenkoedu.id</a> paling
       lambat <strong>7 hari kalender</strong> setelah pembayaran, disertai nomor pesanan,
       alasan, dan bukti pendukung. Refund dapat disetujui apabila:
     </p>
