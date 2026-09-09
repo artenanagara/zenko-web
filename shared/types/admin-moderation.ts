@@ -53,6 +53,12 @@ export type PayoutAction = 'process' | 'transfer' | 'reject'
 export interface PayoutDecisionRequest {
   action: PayoutAction
   reason?: string
+  /**
+   * Nomor transaksi bank yang membawa pencairan ini. Wajib pada aksi
+   * `transfer`: tanpa itu tidak ada yang menghubungkan status "sudah
+   * ditransfer" dengan mutasi bank yang mendukungnya, dan server menolaknya.
+   */
+  reference?: string
 }
 
 /**

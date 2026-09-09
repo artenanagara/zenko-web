@@ -98,19 +98,27 @@ export interface RecordAttemptSection {
 }
 
 /**
- * Body of POST /me/packages/:slug/attempts. `finishedAt` is optional — the
- * server stamps its own clock when it is omitted. `answers` is what feeds
- * "Lihat pembahasan" later: zenko-api judges each one against its own copy
- * of the product (never trusting a client-claimed correctness) and stores
- * the result as the attempt's review snapshot — see TryoutAttemptReview in
- * shared/types/tryout. Optional so a sitting that could not build a full
- * answer map still gets its aggregate score saved. For SKD/TKA products the
- * aggregate numbers here are accepted for wire compatibility but overwritten
- * by the server's own recomputation.
+ * Body of POST /me/packages/:slug/attempts.
+ *
+ * `answers` is the part that matters: zenko-api judges each one against its own
+ * copy of the product (never trusting a client-claimed correctness), stores
+ * that as the attempt's review snapshot — see TryoutAttemptReview in
+ * shared/types/tryout — and computes the score from it.
+ *
+ * `score` and `sections` are wire compatibility only. The server recomputes
+ * both and overwrites whatever arrives here; the room cannot compute them
+ * honestly any more either, since the blueprint it works from carries no
+ * answer key. `finishedAt` is likewise ignored — the server stamps its own
+ * clock, because a submission that could name its own finish time could name
+ * one inside a deadline it had already passed.
+ *
+ * `sittingId` is the handle POST /tryout/start issued. It names the clock this
+ * run was worked under, and it can be spent exactly once.
  */
 export interface RecordAttemptRequest {
   score: number
   sections: RecordAttemptSection[]
+  sittingId?: string
   finishedAt?: number
   answers?: Record<string, RecordAttemptAnswer>
 }
