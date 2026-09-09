@@ -113,11 +113,33 @@ export interface Category {
   subcategories?: CategorySubfacet[]
 }
 
+/** One selectable row in the catalogue sidebar, counted server-side. */
+export interface FacetCount {
+  value: string
+  label: string
+  count: number
+}
+
+export interface PackageFacets {
+  categories: FacetCount[]
+  subcategories: FacetCount[]
+  prices: FacetCount[]
+  ratings: FacetCount[]
+}
+
+/**
+ * GET /catalog/browse — one page of the catalogue plus the facets beside it.
+ *
+ * Distinct from the bare list GET /packages still serves: the catalogue is no
+ * longer guaranteed to fit in one response, and a facet count can only be
+ * computed over the whole matching set, which the client no longer holds.
+ */
 export interface PackagePage {
   items: Package[]
   total: number
   page: number
   perPage: number
+  facets: PackageFacets
 }
 
 export type SortKey = 'featured' | 'bestseller' | 'newest'
