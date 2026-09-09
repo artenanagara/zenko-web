@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.2](https://github.com/artenanagara/zenko-web/compare/v0.19.1...v0.19.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* **wizard:** pertahankan bagian yang dipilih dialog identitas, dan perbaiki E2E katalog ([66ad022](https://github.com/artenanagara/zenko-web/commit/66ad0226bda6372f55e83a36c0c8e7c90648b064))
+* **wizard:** pertahankan bagian yang dipilih dialog identitas, dan perbaiki E2E katalog ([15bfddf](https://github.com/artenanagara/zenko-web/commit/15bfddfe96d9cc9e27934cab3273fadcf2970b17))
+
 ## [0.19.1](https://github.com/artenanagara/zenko-web/compare/v0.19.0...v0.19.1) (2026-09-09)
 
 
