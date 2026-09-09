@@ -96,7 +96,7 @@ async function onSubmit() {
           Masuk ke akunmu
         </h1>
         <p class="mt-2.5 text-muted">
-          Lanjutkan latihan dari paket yang sudah kamu beli.
+          Lanjutkan latihan dari paket yang kamu beli.
         </p>
 
         <form class="mt-8 grid gap-5" novalidate @submit.prevent="onSubmit">

@@ -1,22 +1,22 @@
-import type { Package, SortKey } from '#shared/types/catalog'
+import type { FacetCount, SortKey } from '#shared/types/catalog'
 
 /**
- * Search + facet filtering for the catalogue page.
+ * Search + facet state for the catalogue page.
  *
- * Filtering runs in the browser over the whole package list rather than through
- * the API. zenko-api does support `q` and `category`, but only one category at
- * a time, and neither price nor rating — and the catalogue still fits in a
- * single response, so filtering locally keeps typing instant and lets the
- * sidebar show honest counts. Move this server-side once the catalogue outgrows
- * one response.
+ * This composable owns the selection and keeps it in the URL; the matching,
+ * counting and paging happen in zenko-api (GET /catalog/browse). It used to do
+ * all of that here, over the whole catalogue fetched in one response — fine
+ * while the catalogue was small, and explicitly marked to move server-side
+ * before it outgrew one response. School practice packages are what outgrow
+ * it: they are counted in thousands (docs/riset-latihan-mapel-sekolah.md §5).
+ *
+ * Facet rows now arrive already counted, so the labels and the price/rating
+ * bands live server-side too — the label a reader sees and the range that
+ * filtered them can no longer drift apart.
  */
 
-/** One selectable row in the sidebar. */
-export interface FacetOption {
-  value: string
-  label: string
-  count: number
-}
+/** One selectable row in the sidebar, as the server counted it. */
+export type FacetOption = FacetCount
 
 /** An active selection, plus the callback its chip needs to drop it. */
 export interface ActiveFilter {
@@ -25,41 +25,11 @@ export interface ActiveFilter {
   remove: () => void
 }
 
-interface PriceBand {
-  value: string
-  label: string
-  min: number
-  /** Inclusive. Infinity for the open-ended top band. */
-  max: number
-}
-
-interface RatingBand {
-  value: string
-  label: string
-  min: number
-}
-
-const PRICE_BANDS: PriceBand[] = [
-  { value: 'di-bawah-100', label: 'Di bawah Rp100rb', min: 0, max: 99_999 },
-  { value: '100-150', label: 'Rp100rb – Rp150rb', min: 100_000, max: 150_000 },
-  { value: '150-200', label: 'Rp150rb – Rp200rb', min: 150_001, max: 200_000 },
-  { value: 'di-atas-200', label: 'Di atas Rp200rb', min: 200_001, max: Infinity },
-]
-
-/** Sentinel for "no rating filter", so the radio group always has a selection. */
+/**
+ * Sentinel for "no rating filter", so the radio group always has a selection.
+ * Mirrors service.RatingAny in zenko-api.
+ */
 const RATING_ANY = 'semua'
-
-const RATING_BANDS: RatingBand[] = [
-  { value: RATING_ANY, label: 'Semua rating', min: 0 },
-  { value: '4.7', label: '4,7 ke atas', min: 4.7 },
-  { value: '4.8', label: '4,8 ke atas', min: 4.8 },
-  { value: '4.9', label: '4,9 ke atas', min: 4.9 },
-]
-
-/** Mirrors slugify in zenko-api/internal/store/memory.go. */
-function slugifyCategory(label: string): string {
-  return label.toLowerCase().replace(/[/\s]/g, '-')
-}
 
 function parseSort(raw: unknown): SortKey {
   return raw === 'bestseller' || raw === 'newest' ? raw : 'featured'
@@ -84,7 +54,7 @@ export function useSortQuery(): Ref<SortKey> {
   return ref(parseSort(useRoute().query.urutkan))
 }
 
-export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
+export function usePackageFilters(sort: Ref<SortKey>) {
   const route = useRoute()
   const router = useRouter()
 
@@ -93,254 +63,101 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
   const subcategories = ref(readList(route.query.subkategori))
   const prices = ref(readList(route.query.harga))
   const rating = ref(readText(route.query.rating) || RATING_ANY)
+  const page = ref(Number(readText(route.query.halaman)) || 1)
+
+  /**
+   * Typing is debounced before it reaches the server; every other control is
+   * a single click and refetches at once. Without this, one search term costs
+   * a request per keystroke — the thing the old local filtering never had to
+   * worry about.
+   */
+  const debouncedSearch = ref(search.value)
+  let searchTimer: ReturnType<typeof setTimeout> | undefined
+  watch(search, (value) => {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => { debouncedSearch.value = value }, 300)
+  })
+  onScopeDispose(() => clearTimeout(searchTimer))
 
   /** Only the non-default values, so a plain view keeps a clean URL. */
   function buildQuery(): Record<string, string> {
     const query: Record<string, string> = {}
     const term = search.value.trim()
-
     if (term) query.q = term
-    if (categories.value.length > 0) query.kategori = categories.value.join(',')
-    if (subcategories.value.length > 0) query.subkategori = subcategories.value.join(',')
-    if (prices.value.length > 0) query.harga = prices.value.join(',')
+    if (categories.value.length) query.kategori = categories.value.join(',')
+    if (subcategories.value.length) query.subkategori = subcategories.value.join(',')
+    if (prices.value.length) query.harga = prices.value.join(',')
     if (rating.value !== RATING_ANY) query.rating = rating.value
     if (sort.value !== 'featured') query.urutkan = sort.value
-
+    if (page.value > 1) query.halaman = String(page.value)
     return query
   }
 
-  // State is mirrored into the URL so a filtered view survives a reload and can
-  // be shared. replace(), not push(): Back should leave the page, not walk
-  // backwards through every keystroke.
-  watch([search, categories, subcategories, prices, rating, sort], () => {
+  // Any change to what is being filtered puts you back on page one: staying on
+  // page 4 of a result set that just shrank to one page shows nothing at all.
+  watch([debouncedSearch, categories, subcategories, prices, rating, sort], () => {
+    page.value = 1
+  }, { deep: true })
+
+  watch([search, categories, subcategories, prices, rating, sort, page], () => {
     router.replace({ query: buildQuery() })
+  }, { deep: true })
+
+  const requestQuery = computed<Record<string, string | number>>(() => {
+    const query: Record<string, string | number> = { sort: sort.value, page: page.value }
+    const term = debouncedSearch.value.trim()
+    if (term) query.q = term
+    if (categories.value.length) query.kategori = categories.value.join(',')
+    if (subcategories.value.length) query.subkategori = subcategories.value.join(',')
+    if (prices.value.length) query.harga = prices.value.join(',')
+    if (rating.value !== RATING_ANY) query.rating = rating.value
+    return query
   })
 
-  // Menghapus centang sebuah kategori ikut melepas sub-kategori miliknya —
-  // sub-kategori tanpa induk terpilih akan memfilter diam-diam tanpa ada
-  // chip kategori yang menjelaskannya. Berlaku juga saat kategori TERAKHIR
-  // di-uncheck: semua sub-kategori terpilih ikut dibersihkan, bukan dibiarkan
-  // yatim (watcher lama early-return pada daftar kosong).
-  watch(categories, (selected, previous) => {
-    if (subcategories.value.length === 0) return
-    if (selected.length === 0) {
-      // Hanya saat benar-benar transisi "ada kategori → tidak ada" — memilih
-      // sub-kategori langsung tanpa kategori tetap sah dan tidak lewat sini.
-      if (previous.length > 0) subcategories.value = []
-      return
-    }
-    const allowed = new Set(
-      source.value
-        .filter((pkg) => pkg.subcategory && selected.includes(slugifyCategory(pkg.category)))
-        .map((pkg) => slugifyCategory(pkg.subcategory)),
-    )
-    const kept = subcategories.value.filter((value) => allowed.has(value))
-    if (kept.length !== subcategories.value.length) subcategories.value = kept
-  })
+  const { data, pending, error } = useBrowsePackages(requestQuery)
 
-  /**
-   * Peta kategori induk → sub-kategori miliknya (slug), diturunkan dari
-   * katalog itu sendiri. Ini yang membuat filter sub-kategori berlaku
-   * per-kategori-induk: centang CPNS hanya menyaring paket SKD — paket TKA
-   * tidak punya sub-kategori CPNS untuk dicocokkan, jadi tidak ikut tersaring.
-   */
-  const subcategoriesByCategory = computed(() => {
-    const map = new Map<string, Set<string>>()
-    for (const pkg of source.value) {
-      if (!pkg.subcategory) continue
-      const category = slugifyCategory(pkg.category)
-      const set = map.get(category) ?? new Set<string>()
-      set.add(slugifyCategory(pkg.subcategory))
-      map.set(category, set)
-    }
-    return map
-  })
-
-  function matchesSearch(pkg: Package): boolean {
-    const term = search.value.trim().toLowerCase()
-    if (!term) return true
-
-    return (
-      pkg.title.toLowerCase().includes(term) ||
-      pkg.author.name.toLowerCase().includes(term) ||
-      pkg.category.toLowerCase().includes(term)
-    )
-  }
-
-  function matchesCategory(pkg: Package): boolean {
-    if (categories.value.length === 0) return true
-    return categories.value.includes(slugifyCategory(pkg.category))
-  }
-
-  /**
-   * Filter sub-kategori berlaku PER KATEGORI INDUK: sebuah paket hanya diadu
-   * dengan sub-kategori terpilih yang memang milik kategorinya sendiri. Tidak
-   * ada yang relevan untuk kategori itu → paketnya lolos, bukan tersaring
-   * oleh sub-kategori kategori lain (CPNS terpilih tidak menyembunyikan TKA).
-   */
-  function matchesSubcategory(pkg: Package): boolean {
-    if (subcategories.value.length === 0) return true
-    const own = subcategoriesByCategory.value.get(slugifyCategory(pkg.category))
-    const relevant = own ? subcategories.value.filter((value) => own.has(value)) : []
-    if (relevant.length === 0) return true
-    return !!pkg.subcategory && relevant.includes(slugifyCategory(pkg.subcategory))
-  }
-
-  function matchesPrice(pkg: Package): boolean {
-    if (prices.value.length === 0) return true
-    return PRICE_BANDS.some(
-      (band) => prices.value.includes(band.value) && inBand(pkg.price, band),
-    )
-  }
-
-  function matchesRating(pkg: Package): boolean {
-    const band = RATING_BANDS.find((option) => option.value === rating.value)
-    return !band || pkg.rating >= band.min
-  }
-
-  /**
-   * Every filter except the one in `skip`. Leaving a group out of its own
-   * counts is what makes a number read as "what you get if you tick this row"
-   * rather than "what you have already".
-   */
-  function passes(pkg: Package, skip?: 'category' | 'subcategory' | 'price' | 'rating'): boolean {
-    // Sub-kategori TIDAK ikut di-skip saat menghitung count kategori: dengan
-    // semantik per-kategori-induk di matchesSubcategory, count sebuah
-    // kategori sudah jujur — sub-kategori terpilih milik kategori lain tidak
-    // menyaringnya, sedangkan sub-kategori miliknya sendiri memang akan tetap
-    // berlaku saat baris kategori itu dicentang.
-    return (
-      matchesSearch(pkg) &&
-      (skip === 'category' || matchesCategory(pkg)) &&
-      (skip === 'subcategory' || matchesSubcategory(pkg)) &&
-      (skip === 'price' || matchesPrice(pkg)) &&
-      (skip === 'rating' || matchesRating(pkg))
-    )
-  }
-
-  const filtered = computed(() => source.value.filter((pkg) => passes(pkg)))
-
-  const categoryOptions = computed<FacetOption[]>(() => {
-    // Categories come from the catalogue itself, so a new exam type on the API
-    // shows up here without a frontend change.
-    const labels = [...new Set(source.value.map((pkg) => pkg.category))]
-    const pool = source.value.filter((pkg) => passes(pkg, 'category'))
-
-    return labels.map((label) => ({
-      value: slugifyCategory(label),
-      label,
-      count: pool.filter((pkg) => pkg.category === label).length,
-    }))
-  })
-
-  /**
-   * Facet level kedua (kategori -> sub-kategori). Pilihannya mengikuti
-   * kategori yang sedang dicentang (semua kategori saat belum ada yang
-   * dicentang), dan seperti facet lain, count-nya menghitung "apa yang kamu
-   * dapat kalau baris ini dicentang".
-   */
-  const subcategoryOptions = computed<FacetOption[]>(() => {
-    const inScope = (pkg: Package) =>
-      !!pkg.subcategory &&
-      (categories.value.length === 0 || categories.value.includes(slugifyCategory(pkg.category)))
-
-    const labels: string[] = []
-    for (const pkg of source.value) {
-      if (inScope(pkg) && !labels.includes(pkg.subcategory)) labels.push(pkg.subcategory)
-    }
-    const pool = source.value.filter((pkg) => passes(pkg, 'subcategory'))
-
-    return labels.map((label) => ({
-      value: slugifyCategory(label),
-      label,
-      count: pool.filter((pkg) => pkg.subcategory === label).length,
-    }))
-  })
-
-  const priceOptions = computed<FacetOption[]>(() => {
-    const pool = source.value.filter((pkg) => passes(pkg, 'price'))
-
-    return PRICE_BANDS.map((band) => ({
-      value: band.value,
-      label: band.label,
-      count: pool.filter((pkg) => inBand(pkg.price, band)).length,
-    }))
-  })
-
-  const ratingOptions = computed<FacetOption[]>(() => {
-    const pool = source.value.filter((pkg) => passes(pkg, 'rating'))
-
-    return RATING_BANDS.map((band) => ({
-      value: band.value,
-      label: band.label,
-      count: pool.filter((pkg) => pkg.rating >= band.min).length,
-    }))
-  })
-
+  const facets = computed(() => data.value.facets)
   const activeFilters = computed<ActiveFilter[]>(() => {
     const chips: ActiveFilter[] = []
     const term = search.value.trim()
 
     if (term) {
-      chips.push({
-        key: `q:${term}`,
-        label: `“${term}”`,
-        remove: () => {
-          search.value = ''
-        },
-      })
+      chips.push({ key: `q:${term}`, label: `“${term}”`, remove: () => { search.value = '' } })
     }
-
+    const drop = (list: Ref<string[]>, value: string) => () => {
+      list.value = list.value.filter(item => item !== value)
+    }
     for (const value of categories.value) {
-      chips.push({
-        key: `kategori:${value}`,
-        label: labelFor(categoryOptions.value, value),
-        remove: () => {
-          categories.value = categories.value.filter((item) => item !== value)
-        },
-      })
+      chips.push({ key: `kategori:${value}`, label: labelFor(facets.value.categories, value), remove: drop(categories, value) })
     }
-
     for (const value of subcategories.value) {
-      chips.push({
-        key: `subkategori:${value}`,
-        label: labelFor(subcategoryOptions.value, value),
-        remove: () => {
-          subcategories.value = subcategories.value.filter((item) => item !== value)
-        },
-      })
+      chips.push({ key: `subkategori:${value}`, label: labelFor(facets.value.subcategories, value), remove: drop(subcategories, value) })
     }
-
     for (const value of prices.value) {
-      chips.push({
-        key: `harga:${value}`,
-        label: labelFor(PRICE_BANDS, value),
-        remove: () => {
-          prices.value = prices.value.filter((item) => item !== value)
-        },
-      })
+      chips.push({ key: `harga:${value}`, label: labelFor(facets.value.prices, value), remove: drop(prices, value) })
     }
-
     if (rating.value !== RATING_ANY) {
       chips.push({
         key: `rating:${rating.value}`,
-        label: labelFor(RATING_BANDS, rating.value),
-        remove: () => {
-          rating.value = RATING_ANY
-        },
+        label: labelFor(facets.value.ratings, rating.value),
+        remove: () => { rating.value = RATING_ANY },
       })
     }
-
     return chips
   })
 
   function reset() {
     search.value = ''
+    debouncedSearch.value = ''
     categories.value = []
     subcategories.value = []
     prices.value = []
     rating.value = RATING_ANY
+    page.value = 1
   }
+
+  const perPage = computed(() => data.value.perPage)
+  const total = computed(() => data.value.total)
 
   return {
     search,
@@ -348,21 +165,24 @@ export function usePackageFilters(source: Ref<Package[]>, sort: Ref<SortKey>) {
     subcategories,
     prices,
     rating,
-    filtered,
-    categoryOptions,
-    subcategoryOptions,
-    priceOptions,
-    ratingOptions,
+    page,
+    perPage,
+    total,
+    pageCount: computed(() => Math.max(1, Math.ceil(total.value / Math.max(perPage.value, 1)))),
+    /** The current page of results. Named for the page component it feeds. */
+    filtered: computed(() => data.value.items),
+    pending,
+    error,
+    categoryOptions: computed(() => facets.value.categories),
+    subcategoryOptions: computed(() => facets.value.subcategories),
+    priceOptions: computed(() => facets.value.prices),
+    ratingOptions: computed(() => facets.value.ratings),
     activeFilters,
     activeCount: computed(() => activeFilters.value.length),
     reset,
   }
 }
 
-function inBand(price: number, band: PriceBand): boolean {
-  return price >= band.min && price <= band.max
-}
-
-function labelFor(options: { value: string, label: string }[], value: string): string {
-  return options.find((option) => option.value === value)?.label ?? value
+function labelFor(options: FacetOption[], value: string): string {
+  return options.find(option => option.value === value)?.label ?? value
 }

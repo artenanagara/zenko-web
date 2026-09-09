@@ -374,11 +374,12 @@ export function useTryoutSession(
     // one (SKD simulasi: 100 minutes for all 110 questions under one timer —
     // NOT the 105 the per-section mini-tryout defaults sum to); older
     // payloads and the sample blueprint fall back to summing the sections.
-    const totalMinutes = currentBlueprint.mode === 'flat'
+    const totalSeconds = currentBlueprint.mode === 'flat'
       ? (currentBlueprint.totalDurationMinutes
-        || currentBlueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0))
-      : currentBlueprint.sections[0]!.durationMinutes
-    sectionEndsAt.value = Date.now() + totalMinutes * 60_000
+          ? currentBlueprint.totalDurationMinutes * 60
+          : currentBlueprint.sections.reduce((sum, section) => sum + sectionSeconds(section), 0))
+      : sectionSeconds(currentBlueprint.sections[0]!)
+    sectionEndsAt.value = Date.now() + totalSeconds * 1_000
     result.value = null
     grading.value = false
     gradeFailed.value = false
@@ -455,7 +456,7 @@ export function useTryoutSession(
     const nextSection = currentBlueprint.sections[nextIndex]
     if (!nextSection) return
     currentIndex.value = sectionOffsets.value[nextIndex] ?? currentIndex.value
-    sectionEndsAt.value = Date.now() + nextSection.durationMinutes * 60_000
+    sectionEndsAt.value = Date.now() + sectionSeconds(nextSection) * 1_000
     phase.value = 'running'
     persist()
   }

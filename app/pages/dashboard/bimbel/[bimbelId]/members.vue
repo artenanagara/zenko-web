@@ -23,6 +23,8 @@ const inviting = ref(false)
 const inviteError = ref('')
 const busyId = ref('')
 
+const uid = useId()
+
 const ROLE_OPTIONS: TableControlOption[] = [
   { value: 'student', label: 'Siswa' },
   { value: 'teacher', label: 'Pengajar' },
@@ -360,7 +362,29 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
           :disabled="inviting"
           required
         />
-        <AppSelect v-model="invite.role" label="Peran" :options="ROLE_OPTIONS" :disabled="inviting" />
+        <!-- Baris tombol, bukan dropdown: daftar AppSelect mengambang absolut
+             dan panel AppModal meng-clip isinya, jadi di dalam dialog
+             daftarnya terpotong tepi. Tiga peran juga muat terbaca sekaligus. -->
+        <div>
+          <p :id="`${uid}-invite-role`" class="mb-2 text-[0.82rem] font-semibold text-ink">Peran</p>
+          <div class="flex flex-wrap gap-2" role="radiogroup" :aria-labelledby="`${uid}-invite-role`">
+            <button
+              v-for="option in ROLE_OPTIONS"
+              :key="option.value"
+              type="button"
+              role="radio"
+              :aria-checked="invite.role === option.value"
+              :disabled="inviting"
+              class="rounded-md border px-4 py-2 text-[0.88rem] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              :class="invite.role === option.value
+                ? 'border-primary bg-primary-soft text-primary'
+                : 'border-hairline bg-surface text-muted enabled:hover:border-line enabled:hover:text-ink'"
+              @click="invite.role = String(option.value) as BimbelRole"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
         <AppInlineMessage v-if="inviteError" type="error">{{ inviteError }}</AppInlineMessage>
 
         <!-- Jalan kedua untuk pertanyaan yang sama: siswa yang jumlahnya banyak

@@ -223,7 +223,7 @@ useHead({
           <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
             <AppButton to="/pusat-bantuan" variant="light" size="lg">Pusat Bantuan</AppButton>
             <a
-              href="mailto:support@zenkoedu.id"
+              href="mailto:halo@zenkoedu.id"
               class="inline-flex min-h-13 items-center justify-center rounded-xs border border-white/40 px-8 font-semibold text-white transition-[transform,background] duration-200 ease-smooth hover:-translate-y-px hover:bg-white/10 focus-visible:-translate-y-px"
             >
               Hubungi kami

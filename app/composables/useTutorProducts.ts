@@ -1,6 +1,7 @@
 import type {
   CreateProductRequest,
   ExamType,
+  SchoolSubject,
   PassageDraft,
   ProductMode,
   ProductStatus,
@@ -48,6 +49,15 @@ export function useExamTypes() {
   const sortedData = computed(() => data.value.slice().sort((left, right) => left.label.localeCompare(right.label, 'id')))
 
   return { data: sortedData, pending, error }
+}
+
+/** Curriculum choices are served as data, not duplicated in the wizard. */
+export function useSchoolSubjects() {
+  const { public: config } = useRuntimeConfig()
+  return useFetch<SchoolSubject[]>('/subjects', {
+    baseURL: config.apiBase,
+    default: () => [],
+  })
 }
 
 /** The caller's own products. Call `refresh()` from onMounted. */
@@ -443,6 +453,7 @@ export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
  * tidaknya jumlah soal & durasi, bukan cakupan subtesnya.
  */
 export const PRODUCT_MODE_LABEL: Record<ProductMode, string> = {
-  simulasi: 'Simulasi (standar resmi, terkunci)',
-  mini_tryout: 'Mini Try Out (jumlah soal & durasi bebas diatur)',
+  simulasi: 'Simulasi lengkap',
+  mini_tryout: 'Mini tryout',
+  latihan: 'Latihan mata pelajaran',
 }

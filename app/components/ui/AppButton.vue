@@ -50,8 +50,13 @@ const variants = {
   // gelap kontras putih-di-atas-gelap yang bekerja, pada bidang terang batasnya.
   light:
     'bg-surface border-hairline-strong text-primary font-bold hover:bg-[#f4f7ff] hover:border-primary/40',
+  // Tombol putih berbatas abu. Latarnya solid, bukan transparan: di atas
+  // bidang berwarna — hero bergradien, kartu abu-abu — transparan membuat
+  // latar itu menembus tombolnya, sehingga yang terbaca bukan tombol
+  // melainkan garis kotak di atas gradien. Batas abu sudah memisahkannya dari
+  // bidang putih, dan latar putihnya memisahkannya dari bidang berwarna.
   outline:
-    'bg-transparent border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
+    'bg-surface border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
   ghost:
     'bg-transparent border-transparent text-muted hover:text-ink hover:bg-surface-alt',
   danger:

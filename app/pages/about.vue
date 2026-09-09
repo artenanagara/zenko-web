@@ -120,7 +120,7 @@ const audiences = [
     label: 'Bimbel',
     title: 'Mengelola banyak siswa',
     description:
-      'Punya ruang try out sendiri untuk siswa bimbelmu, terpisah dari katalog publik.',
+      'Punya ruang try out sendiri untuk siswa bimbelmu, terpisah dari katalog publik.</br>',
     points: [
       'Kelas dan roster siswa dalam satu dashboard',
       'Bank soal privat yang hanya untuk siswamu',

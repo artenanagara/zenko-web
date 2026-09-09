@@ -144,7 +144,7 @@ function readQuery(raw: unknown): string {
 <template>
   <AuthPanel v-if="status === 'success'" title="Email kamu terverifikasi" tone="success">
     <template #description>
-      Terima kasih. Akunmu sudah aktif sepenuhnya.
+      Akunmu sudah aktif.
       <template v-if="isGoogleFlow">Lanjutkan masuk dengan Google untuk membuka dashboard Zenko.</template>
       <template v-else>Siap dipakai membeli serta mengerjakan paket try out.</template>
     </template>
@@ -170,14 +170,13 @@ function readQuery(raw: unknown): string {
 
   <AuthPanel v-else-if="status === 'confirming'" title="Memverifikasi kode…" tone="loading">
     <template #description>
-      Sebentar, kami sedang mengonfirmasi kodenya.
+      Sebentar ya.
     </template>
   </AuthPanel>
 
-  <AuthPanel v-else-if="status === 'no-email'" title="Verifikasi belum bisa diproses" tone="danger">
+  <AuthPanel v-else-if="status === 'no-email'" title="Email belum diketahui" tone="danger">
     <template #description>
-      Kami tidak tahu email mana yang perlu diverifikasi. Masuk atau daftar
-      ulang untuk melanjutkan.
+      Masuk atau daftar dulu untuk melanjutkan.
     </template>
 
     <div class="grid gap-5">
@@ -193,9 +192,8 @@ function readQuery(raw: unknown): string {
 
   <AuthPanel v-else title="Satu langkah lagi" tone="pending">
     <template #description>
-      Kami mengirim kode verifikasi 6 digit ke
-      <span class="font-semibold text-ink">{{ address }}</span>. Masukkan
-      kode itu di bawah ini untuk mengaktifkan akunmu.
+      Kode 6 digit sudah dikirim ke
+      <span class="font-semibold text-ink">{{ address }}</span>.
     </template>
 
     <form class="grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -232,9 +230,9 @@ function readQuery(raw: unknown): string {
       <div class="rounded-sm bg-surface-alt px-4 py-4 text-[0.88rem] text-muted">
         <p class="font-semibold text-ink">Belum dapat kodenya?</p>
         <ul class="mt-2 grid gap-1.5">
-          <li>• Cek folder spam atau promosi.</li>
-          <li>• Kode hanya berlaku sebentar dan otomatis mati kalau salah berkali-kali.</li>
-          <li>• Email bisa butuh beberapa menit untuk tiba.</li>
+          <li>• Cek folder spam.</li>
+          <li>• Kode berlaku sebentar dan mati kalau salah berkali-kali.</li>
+          <li>• Kirim ulang kalau lewat beberapa menit.</li>
         </ul>
       </div>
 

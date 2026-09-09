@@ -6,6 +6,7 @@ import type {
   TryoutTheme,
 } from '#shared/types/tryout'
 import type { Attempt } from '#shared/types/account'
+import type { ScoreScale } from '#shared/types/tutor-product'
 
 const props = withDefaults(
   defineProps<{
@@ -13,6 +14,18 @@ const props = withDefaults(
     theme: TryoutTheme
     packageTitle: string
     packageSlug: string
+    /**
+     * Bagaimana skor sesi ini harus dibaca, dari blueprint jenis ujiannya.
+     * Absen pada attempt lama dan produk tanpa jenis ujian — dibaca sebagai
+     * poin mentah, perilaku yang sama seperti sebelum taksonomi 2026.
+     */
+    scoreScale?: ScoreScale
+    /**
+     * Kalimat yang wajib tampil bersama skor: paket yang strukturnya bukan
+     * format resmi, atau yang skornya tidak dapat mereproduksi skor asli
+     * (SNBT memakai IRT), tidak boleh menampilkan angka tanpa keterangan ini.
+     */
+    scoreDisclaimer?: string
     /**
      * Attempt yang baru disimpan zenko-api untuk sesi ini. Sejak rework
      * SKD/TKA server menghitung ulang skor dari snapshot review-nya sendiri —
@@ -88,15 +101,14 @@ const hasPassingGrades = computed(() => rows.value.some(row => row.passingGrade 
  * Varian TKA: skor mapel dinormalisasi 0–100 tanpa ambang dan tanpa verdict —
  * skornya ditampilkan besar, rinciannya benar/salah.
  *
- * Diskriminatornya EKSPLISIT dari identitas ujian, bukan tebakan angka:
- * `theme.seal` di blueprint/snapshot review diturunkan server dari field
- * `theme` exam type-nya ("tka" → seal "TKA", "catbkn" → seal "BKN" — lihat
- * tryoutPresentation di zenko-api). Heuristik numerik yang lama
- * (`maxScore === 100 && satu subtes`) salah mengenali SKD mini custom 20
- * soal (20×5 = 100) sebagai TKA. Tetap digerbangi serverScored: tanpa angka
- * server, hasil lokal TKA adalah poin mentah, bukan skala 0–100.
+ * Diskriminatornya adalah field yang menamai dirinya sendiri. Versi lama
+ * membaca `theme.seal === 'TKA'` — mengganti branding paket ikut mengganti
+ * cara skornya dibaca — dan versi sebelumnya lagi menebak dari angka
+ * (`maxScore === 100 && satu subtes`), yang salah mengenali SKD mini custom
+ * 20 soal (20×5 = 100) sebagai TKA. Tetap digerbangi serverScored: tanpa
+ * angka server, hasil lokalnya poin mentah, bukan skala 0–100.
  */
-const isTkaScale = computed(() => serverScored.value && props.theme.seal === 'TKA')
+const isNormalizedScale = computed(() => serverScored.value && props.scoreScale === 'normalized_100')
 
 const percent = computed(() =>
   displayMaxScore.value === 0 ? 0 : Math.round((displayScore.value / displayMaxScore.value) * 100),
@@ -109,7 +121,7 @@ const correctTotals = computed(() => ({
 
 const stats = computed(() => [
   { label: 'Skor akhir', value: `${displayScore.value}` },
-  isTkaScale.value
+  isNormalizedScale.value
     ? { label: 'Jawaban benar', value: `${correctTotals.value.correct}/${correctTotals.value.total}` }
     : { label: 'Ketepatan', value: `${percent.value}%` },
   { label: 'Subtes diselesaikan', value: `${rows.value.length}` },
@@ -196,14 +208,14 @@ function openReview() {
         <h1 class="mt-2 text-[1.5rem] leading-tight font-extrabold tracking-[-0.03em] md:text-[1.8rem]">
           {{ packageTitle }}
         </h1>
-        <!-- TKA: skor 0–100 tampil besar, tanpa verdict; selain itu skor/poin. -->
+        <!-- Skala 0–100: skor tampil besar, tanpa verdict; selain itu skor/poin. -->
         <p class="mt-4 flex items-baseline gap-2">
-          <span class="leading-none font-extrabold tabular-nums" :class="isTkaScale ? 'text-[3.4rem]' : 'text-[2.6rem]'">{{ displayScore }}</span>
+          <span class="leading-none font-extrabold tabular-nums" :class="isNormalizedScale ? 'text-[3.4rem]' : 'text-[2.6rem]'">{{ displayScore }}</span>
           <span class="text-[1.05rem] text-white/70">
-            {{ isTkaScale ? '/ 100' : `/ ${displayMaxScore} poin · ${percent}%` }}
+            {{ isNormalizedScale ? '/ 100' : `/ ${displayMaxScore} poin · ${percent}%` }}
           </span>
         </p>
-        <p v-if="isTkaScale" class="mt-1.5 text-[0.9rem] text-white/80">
+        <p v-if="isNormalizedScale" class="mt-1.5 text-[0.9rem] text-white/80">
           {{ correctTotals.correct }} benar · {{ correctTotals.total - correctTotals.correct }} salah/kosong
           dari {{ correctTotals.total }} soal
         </p>
@@ -221,6 +233,18 @@ function openReview() {
           </span>
         </p>
       </div>
+
+      <!-- Keterangan skor dari blueprint-nya: paket yang strukturnya bukan
+           format resmi, atau yang skornya tidak dapat mereproduksi skor asli,
+           tidak boleh menampilkan angkanya tanpa kalimat ini. Di dalam kartu
+           skor, bukan di bawahnya — supaya terbaca bersama angkanya. -->
+      <p
+        v-if="scoreDisclaimer"
+        class="flex items-start gap-2.5 border-t border-white/15 bg-black/15 px-6 py-4 text-[0.84rem] leading-[1.6] text-white/85 md:px-8"
+      >
+        <AppIcon name="info" :size="16" class="mt-0.5 shrink-0" aria-hidden="true" />
+        <span>{{ scoreDisclaimer }}</span>
+      </p>
     </div>
 
     <DashboardStats :items="stats" />

@@ -65,7 +65,7 @@ useHead({
     <h2 id="cara-mengajukan">2. Cara Mengajukan Refund</h2>
     <p>
       Kirim permohonan refund ke
-      <a href="mailto:support@zenkoedu.id">support@zenkoedu.id</a>
+      <a href="mailto:halo@zenkoedu.id">halo@zenkoedu.id</a>
       paling lambat <strong>7 hari kalender</strong> setelah pembayaran
       berhasil. Sertakan informasi berikut agar permohonan dapat ditinjau
       lebih cepat:
@@ -124,7 +124,7 @@ useHead({
     <ul>
       <li>
         <strong>Email</strong>:
-        <a href="mailto:support@zenkoedu.id">support@zenkoedu.id</a>
+        <a href="mailto:halo@zenkoedu.id">halo@zenkoedu.id</a>
       </li>
       <li>
         <strong>Telepon/WhatsApp</strong>:

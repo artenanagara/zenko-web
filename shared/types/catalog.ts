@@ -3,6 +3,8 @@
  * zenko-api/internal/model/catalog.go.
  */
 
+import type { ExamFamily, SchoolPractice, ScoreScale } from './tutor-product'
+
 export interface Author {
   name: string
   avatarUrl: string
@@ -36,6 +38,8 @@ export interface Package {
   slug: string
   title: string
   category: string
+  family?: ExamFamily
+  schoolPractice?: SchoolPractice
   /**
    * Level facet kedua di bawah kategori (SKD → CPNS/Kedinasan, TKA → jenjang
    * SD/SMP/SMA/SMK). Kosong untuk kategori tanpa level kedua.
@@ -71,6 +75,8 @@ export interface Topic {
  */
 export interface PackageDetail extends Package {
   description: string
+  scoreScale?: ScoreScale
+  scoreDisclaimer?: string
   questionCount: number
   durationMinutes: number
   reviewCount: number
@@ -105,6 +111,35 @@ export interface Category {
   label: string
   count: number
   subcategories?: CategorySubfacet[]
+}
+
+/** One selectable row in the catalogue sidebar, counted server-side. */
+export interface FacetCount {
+  value: string
+  label: string
+  count: number
+}
+
+export interface PackageFacets {
+  categories: FacetCount[]
+  subcategories: FacetCount[]
+  prices: FacetCount[]
+  ratings: FacetCount[]
+}
+
+/**
+ * GET /catalog/browse — one page of the catalogue plus the facets beside it.
+ *
+ * Distinct from the bare list GET /packages still serves: the catalogue is no
+ * longer guaranteed to fit in one response, and a facet count can only be
+ * computed over the whole matching set, which the client no longer holds.
+ */
+export interface PackagePage {
+  items: Package[]
+  total: number
+  page: number
+  perPage: number
+  facets: PackageFacets
 }
 
 export type SortKey = 'featured' | 'bestseller' | 'newest'

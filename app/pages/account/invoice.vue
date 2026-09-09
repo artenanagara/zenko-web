@@ -115,7 +115,7 @@ function print() {
             <p class="mt-3 text-[0.82rem] leading-[1.6] text-muted">
               Marketplace try out<br>
               Jakarta, Indonesia<br>
-              support@zenkoedu.id
+              halo@zenkoedu.id
             </p>
           </div>
 
@@ -271,7 +271,7 @@ function print() {
           <p>
             Dokumen ini dibuat otomatis dan sah tanpa tanda tangan. Pembayaran
             diproses oleh penyedia pembayaran berlisensi; Zenko tidak menyimpan
-            data kartu kamu. Ada yang tidak cocok? Hubungi support@zenkoedu.id dengan
+            data kartu kamu. Ada yang tidak cocok? Hubungi halo@zenkoedu.id dengan
             menyebut nomor invoice di atas.
           </p>
         </footer>

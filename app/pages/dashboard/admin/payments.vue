@@ -284,6 +284,43 @@ const PROOF_STATUS_TONE: Record<VerificationItem['status'], 'warning' | 'success
   rejected: 'neutral',
 }
 
+type ProofKind = VerificationItem['kind']
+type ProofStatus = VerificationItem['status']
+
+/**
+ * Kolom antrean. Nominal menggabungkan tagihan dan yang diklaim dalam satu
+ * sel karena selisih keduanya adalah keputusan yang sedang diambil; memisah
+ * jadi dua kolom memaksa mata melompat untuk membandingkan angka yang
+ * seharusnya berdampingan.
+ */
+const COLUMNS = [
+  { key: 'invoice', label: 'Invoice' },
+  { key: 'pembayar', label: 'Pembayar' },
+  { key: 'nominal', label: 'Tagihan / diklaim', align: 'right' as const },
+  // Waktu tunggu hanya berguna dibandingkan antarbaris; pada kartu HP ia
+  // cuma menambah keramaian, dan tanggalnya sudah ada di modal keputusan.
+  { key: 'menunggu', label: 'Menunggu', hideOnMobile: true },
+  { key: 'bukti', label: 'Bukti' },
+  { key: 'status', label: 'Status' },
+  { key: 'aksi', label: 'Aksi', align: 'right' as const },
+]
+
+/**
+ * DashboardTable bekerja pada Record<string, any>, jadi tiap baris membawa
+ * proof aslinya apa adanya dan slot sel membacanya dari sana — bukan
+ * meratakan tiap field jadi string lebih dulu, yang akan menghilangkan cabang
+ * union-nya persis di tempat template masih perlu membedakannya.
+ */
+const tableRows = computed(() => rows.value.map(proof => ({
+  invoice: proof.invoice,
+  pembayar: payerName(proof),
+  subject: proof.kind === 'package'
+    ? proof.items[0]?.title ?? 'Paket tidak ditemukan'
+    : `${bimbelPlanLabel(proof.plan)} · ${proof.months} bulan · ${proof.seatQuota} kursi`,
+  payer: payerName(proof),
+  proof,
+})))
+
 /**
  * Sudah berapa lama sejak pembeli checkout, dibulatkan kasar.
  *
@@ -382,158 +419,108 @@ const zoomed = ref<VerificationItem | null>(null)
       {{ isActive ? 'Tidak ada konfirmasi yang cocok dengan filter ini.' : 'Belum ada konfirmasi pembayaran yang menunggu.' }}
     </p>
 
-    <ul v-else class="mt-6 grid gap-4">
-      <li
-        v-for="proof in rows"
-        :key="proof.id"
-        class="rounded-lg border border-hairline bg-surface p-5 shadow-xs"
-      >
-        <div class="flex flex-col gap-5 min-[820px]:flex-row">
-          <!-- Lampiran, kalau ada. Diklik untuk diperbesar, karena nominal di
-               tangkapan layar ponsel sering kecil. Tanpa lampiran bukan
-               masalah: yang membuktikan uangnya masuk adalah mutasi bank, dan
-               kode unik di kolom Tagihan yang menunjuk pesanan mana. -->
-          <button
-            v-if="proof.hasImage"
-            type="button"
-            class="shrink-0 self-start rounded-sm border border-hairline bg-white p-1.5 transition-[border-color] hover:border-primary/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            @click="zoomed = proof"
-          >
-            <img
-              :src="proofImageUrl(proof)"
-              :alt="`Bukti transfer untuk ${proof.invoice}`"
-              loading="lazy"
-              class="h-40 w-40 object-contain"
-            >
-            <span class="mt-1 block text-[0.75rem] text-muted">Klik untuk perbesar</span>
-          </button>
-          <div
-            v-else
-            class="grid h-40 w-40 shrink-0 place-items-center gap-1.5 self-start rounded-sm border border-dashed border-hairline-strong bg-surface-alt px-3 text-center"
-          >
-            <AppIcon name="receipt" :size="22" class="text-faint" aria-hidden="true" />
-            <span class="text-[0.78rem] leading-[1.45] text-muted">
-              Tanpa lampiran — cocokkan lewat mutasi bank
-            </span>
-          </div>
+    <!-- Antrean sebagai tabel: satu baris satu konfirmasi.
+         Sebelumnya tiap konfirmasi adalah kartu setinggi ~340px dengan
+         pratinjau bukti 160px di dalamnya, jadi antrean sepuluh butuh
+         belasan layar untuk dilewati dan tidak ada dua baris pun yang
+         nominalnya bisa dibandingkan berdampingan. Padahal pekerjaannya
+         justru membandingkan: tagihan lawan yang diklaim, satu baris lawan
+         mutasi bank. Buktinya turun jadi tautan kecil yang membuka modal
+         perbesaran yang sudah ada — dibuka saat diperlukan, bukan dimuat
+         untuk semua baris sekaligus. -->
+    <DashboardTable
+      v-else
+      class="mt-6"
+      :columns="COLUMNS"
+      :data="tableRows"
+      primary-key="invoice"
+      action-key="aksi"
+    >
+      <!-- Jenis di atas invoice, bukan di sampingnya: ia yang menentukan
+           bagaimana sisa baris ini dibaca, jadi mata harus menemukannya lebih
+           dulu — dan berdampingan, nomor invoice terpaksa patah dua baris. -->
+      <template #cell(invoice)="{ item }">
+        <span
+          class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.68rem] font-bold tracking-wide uppercase"
+          :class="item.proof.kind === 'package'
+            ? 'bg-primary-soft text-primary'
+            : 'bg-amber-100 text-amber-800'"
+        >{{ KIND_LABEL[item.proof.kind as ProofKind] }}</span>
+        <span class="mt-1 block font-bold tracking-[-0.02em] whitespace-nowrap tabular-nums">
+          {{ item.proof.invoice }}
+        </span>
+        <span class="mt-0.5 block truncate text-[0.84rem] text-muted">{{ item.subject }}</span>
+      </template>
 
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div class="min-w-0">
-                <!-- Jenis di atas invoice, bukan di samping status: ia yang
-                     menentukan bagaimana sisa kartu ini dibaca, jadi mata harus
-                     menemukannya sebelum angka mana pun. -->
-                <p
-                  class="mb-1 inline-flex items-center rounded-full px-2 py-0.5 text-[0.72rem] font-bold tracking-wide uppercase"
-                  :class="proof.kind === 'package'
-                    ? 'bg-primary-soft text-primary'
-                    : 'bg-amber-100 text-amber-800'"
-                >
-                  {{ KIND_LABEL[proof.kind] }}
-                </p>
-                <p class="font-bold tracking-[-0.02em] tabular-nums">{{ proof.invoice }}</p>
-                <p class="mt-0.5 truncate text-[0.86rem] text-muted">
-                  <template v-if="proof.kind === 'package'">
-                    {{ proof.items[0]?.title ?? 'Paket tidak ditemukan' }}
-                  </template>
-                  <template v-else>
-                    {{ bimbelPlanLabel(proof.plan) }} · {{ proof.months }} bulan · {{ proof.seatQuota }} kursi
-                  </template>
-                </p>
-              </div>
-              <DashboardBadge :tone="PROOF_STATUS_TONE[proof.status]">
-                {{ PROOF_STATUS_LABEL[proof.status] }}
-              </DashboardBadge>
-            </div>
+      <template #cell(pembayar)="{ item }">
+        <span class="block truncate">{{ item.payer }}</span>
+        <span class="mt-0.5 block truncate text-[0.84rem] text-muted">
+          a.n. {{ item.proof.senderName }}
+        </span>
+      </template>
 
-            <!-- Yang harus dicocokkan, berdampingan. -->
-            <dl class="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
-              <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Tagihan</dt>
-                <dd class="mt-0.5 font-semibold tabular-nums">
-                  {{ formatRupiah(proof.amountDue) }}
-                  <span
-                    v-if="proof.kind === 'package' && proof.uniqueCode > 0"
-                    class="ml-1 text-[0.8rem] font-normal text-muted"
-                  >
-                    (kode unik {{ proof.uniqueCode }})
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Diklaim ditransfer</dt>
-                <dd
-                  class="mt-0.5 font-semibold tabular-nums"
-                  :class="amountMismatch(proof) ? 'text-danger-ink' : ''"
-                >
-                  {{ formatRupiah(proof.paidAmount) }}
-                  <span v-if="amountMismatch(proof)" class="ml-1 text-[0.8rem] font-normal">
-                    · tidak cocok
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">
-                  {{ proof.kind === 'package' ? 'Pembeli' : 'Bimbel' }}
-                </dt>
-                <dd class="mt-0.5 truncate text-[0.9rem]">
-                  <template v-if="proof.kind === 'package'">
-                    {{ proof.buyerName }}
-                    <span class="text-muted">· {{ proof.buyerEmail }}</span>
-                  </template>
-                  <!-- Server sengaja tidak mengirim identitas pembayar pada
-                       baris langganan, jadi tidak ada email untuk ditampilkan
-                       di sini. -->
-                  <template v-else>{{ proof.bimbelName }}</template>
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Nama pengirim</dt>
-                <dd class="mt-0.5 truncate text-[0.9rem]">{{ proof.senderName }}</dd>
-              </div>
-              <!-- Waktu checkout lebih dulu daripada waktu konfirmasi: itu yang
-                   menentukan sudah berapa lama pembeli menunggu, dan karena
-                   pembeli tidak lagi mengunggah bukti apa pun, lamanya menunggu
-                   adalah satu-satunya hal yang membedakan antrean yang mendesak
-                   dari yang baru masuk. -->
-              <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Waktu checkout</dt>
-                <dd class="mt-0.5 text-[0.9rem]">
-                  {{ formatDateLong(proof.orderDate) }}
-                  <span class="text-muted">· {{ waitedSince(proof.orderDate) }}</span>
-                </dd>
-              </div>
-              <div>
-                <dt class="text-[0.76rem] font-bold tracking-widest text-faint uppercase">Dikonfirmasi pembeli</dt>
-                <dd class="mt-0.5 text-[0.9rem]">{{ formatDateLong(proof.createdAt) }}</dd>
-              </div>
-            </dl>
+      <!-- Tagihan dan yang diklaim dalam satu sel, bertumpuk: selisihnya
+           adalah keputusannya, dan dua kolom terpisah membuat mata harus
+           melompat untuk membandingkan angka yang seharusnya berdampingan. -->
+      <template #cell(nominal)="{ item }">
+        <span class="block font-semibold tabular-nums">{{ formatRupiah(item.proof.amountDue) }}</span>
+        <span
+          class="mt-0.5 block text-[0.84rem] tabular-nums"
+          :class="amountMismatch(item.proof) ? 'font-semibold text-danger-ink' : 'text-muted'"
+        >
+          diklaim {{ formatRupiah(item.proof.paidAmount) }}
+          <template v-if="amountMismatch(item.proof)"> · tidak cocok</template>
+        </span>
+        <span
+          v-if="item.proof.kind === 'package' && item.proof.uniqueCode > 0"
+          class="mt-0.5 block text-[0.78rem] text-faint tabular-nums"
+        >kode unik {{ item.proof.uniqueCode }}</span>
+      </template>
 
-            <p v-if="proof.note" class="mt-3.5 rounded-sm bg-surface-sunken px-3.5 py-2.5 text-[0.86rem] leading-[1.55]">
-              <span class="font-semibold">Catatan pembayar:</span> {{ proof.note }}
-            </p>
+      <template #cell(menunggu)="{ item }">
+        <span class="block whitespace-nowrap">{{ waitedSince(item.proof.orderDate) }}</span>
+        <span class="mt-0.5 block text-[0.84rem] whitespace-nowrap text-muted">
+          {{ formatDateLong(item.proof.orderDate) }}
+        </span>
+      </template>
 
-            <p
-              v-if="proof.status === 'rejected' && proof.rejectReason"
-              class="mt-3.5 rounded-sm border-l-2 border-danger/40 bg-danger-soft px-3.5 py-2.5 text-[0.86rem] leading-[1.55] text-danger-ink"
-            >
-              <span class="font-semibold">Alasan penolakan:</span> {{ proof.rejectReason }}
-            </p>
+      <template #cell(bukti)="{ item }">
+        <button
+          v-if="item.proof.hasImage"
+          type="button"
+          class="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+          @click="zoomed = item.proof"
+        >
+          <AppIcon name="image" :size="15" aria-hidden="true" />
+          Lihat
+        </button>
+        <span v-else class="text-[0.84rem] whitespace-nowrap text-muted">Lewat mutasi</span>
+      </template>
 
-            <div v-if="proof.status === 'submitted'" class="mt-5 flex flex-wrap gap-2.5">
-              <AppButton size="sm" @click="openApprove(proof)">
-                Setujui &amp; lunasi
-              </AppButton>
-              <!-- outline, bukan secondary: dua tombol gelap berdampingan
-                   membuat menolak terbaca sepenting menyetujui. -->
-              <AppButton variant="outline" size="sm" @click="openReject(proof)">
-                Tolak…
-              </AppButton>
-            </div>
-          </div>
+      <template #cell(status)="{ item }">
+        <DashboardBadge :tone="PROOF_STATUS_TONE[item.proof.status as ProofStatus]">
+          {{ PROOF_STATUS_LABEL[item.proof.status as ProofStatus] }}
+        </DashboardBadge>
+        <span
+          v-if="item.proof.status === 'rejected' && item.proof.rejectReason"
+          class="mt-1 block text-[0.8rem] leading-[1.45] text-muted"
+        >{{ item.proof.rejectReason }}</span>
+        <span
+          v-if="item.proof.note"
+          class="mt-1 block text-[0.8rem] leading-[1.45] text-muted"
+        >Catatan: {{ item.proof.note }}</span>
+      </template>
+
+      <template #cell(aksi)="{ item }">
+        <div v-if="item.proof.status === 'submitted'" class="flex flex-wrap gap-2">
+          <AppButton size="sm" @click="openApprove(item.proof)">Setujui</AppButton>
+          <!-- outline, bukan secondary: dua tombol gelap berdampingan
+               membuat menolak terbaca sepenting menyetujui. -->
+          <AppButton variant="outline" size="sm" @click="openReject(item.proof)">Tolak…</AppButton>
         </div>
-      </li>
-    </ul>
+        <span v-else class="text-[0.84rem] text-muted">—</span>
+      </template>
+    </DashboardTable>
 
     <!-- Perbesar bukti. Gambar penuh, tanpa kroping, karena angka kecil di
          pojok tangkapan layar sering justru yang menentukan. -->
