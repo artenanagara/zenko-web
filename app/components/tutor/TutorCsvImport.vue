@@ -66,10 +66,7 @@ const importProblems = ref<string[]>([])
 const toast = useToast()
 
 /** Ganti mode = mulai dari nol; file yang sudah dipilih tidak cocok lagi. */
-watch(mode, () => {
-  reset()
-  importProblems.value = []
-})
+watch(mode, reset)
 
 /** Grup wacana hasil parse (fitur TKA) — dibuat lewat API saat impor. */
 const passageGroups = ref<CsvPassageGroup[]>([])
@@ -231,13 +228,20 @@ async function importQuestions() {
       await createTutorQuestionBatch(props.productId, props.section.id, parsed.value, props.workspace)
       imported = parsed.value.length
     }
-    reset()
+    // Baris yang dilewati dihitung dari KEDUA daftar. Sebagian gugur di
+    // parser sebelum apa pun dikirim (kunci kosong, tipe tak dikenal), dan
+    // sebagian ditolak server per baris — bagi tutor keduanya sama saja:
+    // soalnya tidak masuk, dan dia perlu tahu yang mana.
+    const skipped = parseErrors.value.length + importProblems.value.length
+    clearFileSelection()
     emit('refresh')
-    const skipped = importProblems.value.length
     toast.success(
       `${imported} soal terimpor.`,
       skipped ? `${skipped} baris dilewati — lihat daftarnya di panel impor.` : undefined,
     )
+    // Menutup dialog hanya saat tidak ada yang perlu dibaca lagi. Daftar baris
+    // yang dilewati dirender di panel ini, jadi menutupnya sendiri akan
+    // membuang satu-satunya laporan yang pernah ada.
     if (!skipped) emit('imported')
   }
   catch (cause) {
@@ -255,13 +259,24 @@ async function importQuestions() {
   }
 }
 
-function reset() {
+/**
+ * Melepas berkas dan baris yang sudah terbaca, supaya impor yang berhasil
+ * tidak bisa terkirim dua kali. Diagnostiknya sengaja TIDAK ikut dibersihkan:
+ * daftar baris yang dilewati baru berguna justru setelah impor selesai.
+ */
+function clearFileSelection() {
   parsed.value = []
   combinedParsed.value = []
-  parseErrors.value = []
   passageGroups.value = []
   fileName.value = ''
   if (fileInput.value) fileInput.value.value = ''
+}
+
+/** Kembali ke keadaan awal, termasuk diagnostik — dipakai saat memilih berkas baru. */
+function reset() {
+  clearFileSelection()
+  parseErrors.value = []
+  importProblems.value = []
 }
 </script>
 
