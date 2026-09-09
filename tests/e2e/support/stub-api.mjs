@@ -65,6 +65,105 @@ function parseLimit(raw) {
   return Math.min(limit, MAX_LIMIT)
 }
 
+
+/**
+ * `GET /api/v1/catalog/browse`. The catalogue page stopped fetching the bare
+ * list and started asking for one *page* plus its facet counts once filtering
+ * and counting moved into zenko-api — see service.BrowsePackages. Without this
+ * route the page received nothing usable and rendered an empty catalogue,
+ * which is what every spec in catalog.spec.ts was really failing on.
+ *
+ * Mirrors the real endpoint: filters are OR-ed inside a facet and AND-ed
+ * across facets, then the result is sorted and paged. The one simplification
+ * is facet counting — the API computes each group's counts with that group's
+ * own filter lifted, so a checkbox never zeroes out its own siblings; here the
+ * counts are taken over the fully filtered set. The specs assert on the cards
+ * and the total, not on sidebar counts, and reproducing the skip-own-facet
+ * rule would be a second implementation of it to keep in step.
+ */
+const PRICE_BANDS = [
+  { value: 'di-bawah-100', label: 'Di bawah Rp100rb', min: 0, max: 99_999 },
+  { value: '100-150', label: 'Rp100rb – Rp150rb', min: 100_000, max: 150_000 },
+  { value: '150-200', label: 'Rp150rb – Rp200rb', min: 150_001, max: 200_000 },
+  { value: 'di-atas-200', label: 'Di atas Rp200rb', min: 200_001, max: Number.MAX_SAFE_INTEGER },
+]
+
+const RATING_BANDS = [
+  { value: 'semua', label: 'Semua rating', min: 0 },
+  { value: '4.7', label: '4,7 ke atas', min: 4.7 },
+  { value: '4.8', label: '4,8 ke atas', min: 4.8 },
+  { value: '4.9', label: '4,9 ke atas', min: 4.9 },
+]
+
+const BROWSE_PER_PAGE = 24
+
+/** `service.SlugifyFacet`. */
+function slugifyFacet(label) {
+  return String(label ?? '').toLowerCase().replaceAll(' ', '-').replaceAll('/', '-')
+}
+
+function splitCSV(raw) {
+  return (raw ?? '').split(',').map(value => value.trim()).filter(Boolean)
+}
+
+function browsePackages(query) {
+  const term = (query.get('q') ?? '').toLowerCase()
+  const categories = splitCSV(query.get('kategori'))
+  const subcategories = splitCSV(query.get('subkategori'))
+  const prices = splitCSV(query.get('harga'))
+  const rating = query.get('rating') ?? 'semua'
+  const page = Math.max(Number.parseInt(query.get('page') ?? '', 10) || 1, 1)
+  const perPage = Math.min(Number.parseInt(query.get('perPage') ?? '', 10) || BROWSE_PER_PAGE, 60)
+
+  const all = orderFor(query.get('sort')).map(slug => PACKAGES[slug])
+
+  const bands = PRICE_BANDS.filter(band => prices.includes(band.value))
+  const minRating = RATING_BANDS.find(band => band.value === rating)?.min ?? 0
+
+  const matches = all.filter((pkg) => {
+    if (term && !(pkg.title.toLowerCase().includes(term) || pkg.author.name.toLowerCase().includes(term))) return false
+    if (categories.length && !categories.includes(slugifyFacet(pkg.category))) return false
+    if (subcategories.length && !subcategories.includes(slugifyFacet(pkg.subcategory))) return false
+    if (bands.length && !bands.some(band => pkg.price >= band.min && pkg.price <= band.max)) return false
+    if (pkg.rating < minRating) return false
+    return true
+  })
+
+  const countBy = (keyOf) => {
+    const seen = new Map()
+    for (const pkg of matches) {
+      const key = keyOf(pkg)
+      if (!key.value) continue
+      const row = seen.get(key.value) ?? { value: key.value, label: key.label, count: 0 }
+      row.count += 1
+      seen.set(key.value, row)
+    }
+    return [...seen.values()]
+  }
+
+  const start = (page - 1) * perPage
+  return {
+    items: matches.slice(start, start + perPage),
+    total: matches.length,
+    page,
+    perPage,
+    facets: {
+      categories: countBy(pkg => ({ value: slugifyFacet(pkg.category), label: pkg.category })),
+      subcategories: countBy(pkg => ({ value: slugifyFacet(pkg.subcategory), label: pkg.subcategory })),
+      prices: PRICE_BANDS.map(band => ({
+        value: band.value,
+        label: band.label,
+        count: matches.filter(pkg => pkg.price >= band.min && pkg.price <= band.max).length,
+      })),
+      ratings: RATING_BANDS.map(band => ({
+        value: band.value,
+        label: band.label,
+        count: matches.filter(pkg => pkg.rating >= band.min).length,
+      })),
+    },
+  }
+}
+
 /**
  * `GET /api/v1/packages`. Order of operations matches
  * service.ListPackages: filter by category, then by q, then sort, then
@@ -120,6 +219,7 @@ function route(pathname, query, method, body) {
   if (path === '/auth/csrf') return { status: 200, body: { csrfToken: 'stub-csrf-token' } }
 
   if (path === '/packages') return { status: 200, body: listPackages(query) }
+  if (path === '/catalog/browse') return { status: 200, body: browsePackages(query) }
 
   // Both halves of "coba gratis", and the split between them is the point: the
   // blueprint goes out without an answer key, and the grader — the only thing

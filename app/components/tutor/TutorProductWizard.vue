@@ -325,11 +325,29 @@ const appliedTemplate = reactive({
   durationMinutes: null as number | null,
 })
 
-// A stale subtest choice from a previous exam type (or from switching back to
-// Simulasi) must never leak into a later mini-tryout submission.
+/**
+ * A stale subtest choice from a previous exam type (or from switching back to
+ * Simulasi) must never leak into a later mini-tryout submission.
+ *
+ * "Stale" is decided by whether the title still names a section of the exam
+ * type now selected, and whether this mode asks for one at all — NOT by the
+ * mere fact that the identity changed. Clearing unconditionally was correct
+ * while the three fields were three separate dropdowns changed one at a time;
+ * once they became one dialog that applies all of them together
+ * (ProductIdentityPicker), this watcher fired after applyIdentity had already
+ * written the section and wiped it on the same tick. Every package that needs
+ * a section — every mini tryout, and every blueprint sold one section at a
+ * time — was then stuck on "Pilih satu bagian dulu sebelum lanjut", with the
+ * only control that can choose one handing back an answer this threw away.
+ */
 watch([() => form.examTypeSlug, () => form.mode], () => {
   if (isEdit.value) return
-  form.sectionTitle = ''
+
+  const stillBelongs = form.sectionTitle !== ''
+    && needsSectionChoice(selectedExamType.value, form.mode)
+    && (selectedExamType.value?.sections.some(section => section.title === form.sectionTitle) ?? false)
+  if (!stillBelongs) form.sectionTitle = ''
+
   form.questionTarget = null
   form.durationMinutes = null
   appliedTemplate.questionTarget = null
