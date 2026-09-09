@@ -136,27 +136,50 @@ export function renderInlineMathHtml(html: string): string {
   return renderBareMathSegments(withSpansRendered)
 }
 
-function decodeHtmlEntities(value: string): string {
+/**
+ * Turns the entities the sanitizer emits back into characters.
+ *
+ * Numeric references are covered as well as named ones: the editor stores an
+ * apostrophe as `&#39;`, which no list of named entities would ever catch —
+ * that is how "Letraset&#39;s" reached a wacana preview verbatim.
+ *
+ * `&amp;` is decoded LAST on purpose. Decoding it first would turn text an
+ * author literally typed as "&#39;" (stored as "&amp;#39;") into an
+ * apostrophe on the next pass, silently rewriting what they wrote.
+ */
+export function decodeHtmlEntities(value: string): string {
+  if (!value) return ''
   return value
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, '\'')
+    .replace(/&apos;/g, '\'')
+    .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
+    .replace(/&#(\d+);/g, (whole, code: string) => codePointOr(whole, Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (whole, code: string) => codePointOr(whole, Number.parseInt(code, 16)))
     .replace(/&amp;/g, '&')
+}
+
+/** A reference outside Unicode is left as written rather than throwing. */
+function codePointOr(whole: string, code: number): string {
+  return Number.isInteger(code) && code >= 0 && code <= 0x10FFFF
+    ? String.fromCodePoint(code)
+    : whole
 }
 
 /** Strips tags for plain-text previews (e.g. the question list row) — display only, never used for security. */
 export function stripHtmlToText(html: string): string {
   if (!html) return ''
-  return html
-    .replace(MATH_PATTERN, ' [rumus] ')
-    .replace(IMAGE_PATTERN, ' [gambar] ')
-    .replace(BLOCK_BOUNDARY_PATTERN, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+  // Entities are decoded by the shared helper rather than a second, shorter
+  // list kept here — the two lists drifted, and this one was missing the
+  // apostrophe every editor-typed quote is stored as.
+  return decodeHtmlEntities(
+    html
+      .replace(MATH_PATTERN, ' [rumus] ')
+      .replace(IMAGE_PATTERN, ' [gambar] ')
+      .replace(BLOCK_BOUNDARY_PATTERN, ' ')
+      .replace(/<[^>]+>/g, ''),
+  )
     .replace(/\s+/g, ' ')
     .trim()
 }
