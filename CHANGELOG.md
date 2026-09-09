@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/artenanagara/zenko-web/compare/v0.18.0...v0.19.0) (2026-09-09)
+
+
+### Features
+
+* wizard paket lewat dialog, katalog server-side, dan perapian copy autentikasi ([8dbd171](https://github.com/artenanagara/zenko-web/commit/8dbd171aa135c5d1ef608865544a349c76741e5f))
+
 ## [0.18.0](https://github.com/artenanagara/zenko-web/compare/v0.17.0...v0.18.0) (2026-09-08)
 
 
