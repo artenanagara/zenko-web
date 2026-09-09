@@ -93,9 +93,7 @@ const isLastStep = computed(() => stepIndex.value === steps.value.length - 1)
 
 /* ---------------------------------------------------------------- choices */
 
-const availableFamilies = computed(() =>
-  EXAM_FAMILIES.filter(item => props.examTypes.some(exam => examFamilyOf(exam) === item.value)),
-)
+const availableFamilies = computed(() => familiesOf(props.examTypes))
 
 const gradeChoices = computed(() => gradesFor(practice.level))
 const subjectChoices = computed(() => subjectsFor(subjects.data.value, practice.level, practice.grade))

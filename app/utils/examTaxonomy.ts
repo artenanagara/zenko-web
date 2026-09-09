@@ -13,8 +13,16 @@ import type {
  * the exam — a school leaver looking for work finds "Karier & Kerja" without
  * needing to know the difference between BKN and FHCI.
  *
- * Mirrors the ExamFamily constants in zenko-api. The labels live here because
- * they are display copy; which family an exam belongs to comes from the server.
+ * The split with zenko-api is deliberate and stays: the server owns which
+ * family an exam belongs to (behaviour), this file owns what that family is
+ * called (display copy) — the same split PRODUCT_MODE_LABEL follows. Making
+ * families a seeded table was considered and rejected in
+ * docs/taksonomi-kategori-ujian.md §6: their members are defined in code
+ * regardless, and a fetch would put a spinner and a failure path on the first
+ * step of the identity dialog for a list that changes about once a year.
+ *
+ * The order here is the offer order. A family the server introduces before
+ * this list knows it still appears — see familiesOf — just under its raw name.
  */
 export const EXAM_FAMILIES: { value: ExamFamily, label: string, description: string }[] = [
   { value: 'school', label: 'Sekolah', description: 'Tes Kemampuan Akademik untuk jenjang SD sampai SMK.' },
@@ -40,7 +48,32 @@ export function examFamilyOf(exam: Pick<ExamType, 'family' | 'category'>): ExamF
 }
 
 export function examFamilyLabel(family: ExamFamily | undefined): string {
-  return family ? FAMILY_LABELS.get(family) ?? '' : ''
+  if (!family) return ''
+  // Falls back to the raw key rather than an empty string: a family added
+  // server-side before this file learns its name must still be readable and
+  // selectable, not render as a blank row.
+  return FAMILY_LABELS.get(family) ?? family
+}
+
+/**
+ * The families actually present in a set of exams, in the order this file
+ * lists them, with anything unrecognised appended rather than dropped.
+ *
+ * Filtering the known list alone would make a family the server introduces
+ * invisible in the wizard — every exam under it unreachable, with nothing to
+ * indicate why.
+ */
+export function familiesOf(exams: Pick<ExamType, 'family' | 'category'>[]): { value: ExamFamily, label: string, description: string }[] {
+  const present = new Set<ExamFamily>()
+  for (const exam of exams) {
+    const family = examFamilyOf(exam)
+    if (family) present.add(family)
+  }
+  const known = EXAM_FAMILIES.filter(item => present.has(item.value))
+  const unknown = [...present]
+    .filter(value => !EXAM_FAMILIES.some(item => item.value === value))
+    .map(value => ({ value, label: value, description: '' }))
+  return [...known, ...unknown]
 }
 
 /** Jenjang, and the grades taught at each. */
