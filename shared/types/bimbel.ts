@@ -43,17 +43,16 @@ export interface Bimbel {
   logoUrl?: string
   joinCode?: string
   seatQuota: number
-  /**
-   * Tingkat langganan yang sedang berjalan. Opsional: kontrak yang dikunci
-   * menaruhnya di `BimbelSubscription` dan `BimbelOrder`, jadi profil bimbel
-   * hanya dipakai kalau memang mengirimkannya — kalau tidak, panel status
-   * menampilkan "—" alih-alih menebak.
-   */
-  plan?: BimbelPlan
+  /** Tingkat langganan yang sedang berjalan, selalu dikirim API. */
+  plan: BimbelPlan
   status: BimbelStatus
   activeUntil: number
   createdAt: number
   seatsUsed: number
+  /** Kursi tambahan dari tagihan yang belum diverifikasi; belum menambah kuota. */
+  pendingSeatAddonSeats: number
+  /** Saat ada bukti transfer yang menunggu verifikasi, status tidak boleh turun. */
+  verificationHoldUntil?: number
 }
 
 export interface BimbelMember {
@@ -98,10 +97,14 @@ export interface BimbelApplication {
   bimbelName: string
   contactName: string
   email: string
-  whatsapp: string
+  whatsapp?: string
   city?: string
-  studentCount: number
-  about: string
+  studentCount?: number
+  studentCountBand?: BimbelStudentCountBand
+  about?: string
+  /** Snapshot persetujuan syarat yang disimpan API untuk audit. */
+  termsAcceptedAt?: number
+  termsVersion?: string
   status: 'pending' | 'approved' | 'rejected'
   rejectReason?: string
   bimbelId?: string
@@ -114,6 +117,8 @@ export interface BimbelApplication {
  * tryout (lihat docs/konsep-bimbel-agency.md §1.2).
  */
 export type BimbelPlan = 'dasar' | 'pro' | 'institusi'
+export type BimbelStudentCountBand = '<25' | '25-50' | '51-150' | '>150'
+export type BimbelOrderKind = 'subscription' | 'seat_addon'
 
 /**
  * Satu tingkat seperti dikirim `GET /bimbel/:id/billing/plans`.
@@ -129,6 +134,8 @@ export interface BimbelPlanOption {
   includedSeats: number
   teacherLimit: number
   productLimit: number
+  /** Porsi penjualan marketplace yang menjadi hak bimbel pada tingkat ini. */
+  marketplaceSharePercent: 70 | 75 | 80
 }
 
 /**
@@ -138,7 +145,8 @@ export interface BimbelPlanOption {
  * tidak boleh menurunkan ulang satu pun — termasuk diskon tahunan, yang
  * terbaca dari selisih `months` dan `billedMonths`.
  */
-export interface BimbelQuote {
+export interface BimbelSubscriptionQuote {
+  kind: 'subscription'
   plan: BimbelPlan
   planName: string
   /** Harga tingkat per bulan, sebelum kursi tambahan. */
@@ -168,6 +176,25 @@ export interface BimbelQuote {
   /** Siswa aktif hari ini; kuota tidak boleh turun di bawah angka ini. */
   seatsUsed: number
 }
+
+/** Quote penambahan kursi untuk sisa periode aktif; seluruh harga milik server. */
+export interface BimbelSeatAddonQuote {
+  kind: 'seat_addon'
+  additionalSeats: number
+  currentSeatQuota: number
+  resultingSeatQuota: number
+  remainingMonths: number
+  activeUntil: number
+  extraSeatPrice: number
+  monthlyAmount: number
+  seatQuotaStep: number
+  maxSeatQuota: number
+  amount: number
+  canPurchase: boolean
+  renewalRequired: boolean
+}
+
+export type BimbelQuote = BimbelSubscriptionQuote | BimbelSeatAddonQuote
 
 /**
  * `verifying` punya bukti transfer di antrean admin. `expired` sengaja dipisah
@@ -203,32 +230,30 @@ export interface BimbelPaymentInstructions {
   invoice: string
   amount: number
   status: BimbelOrderStatus
+  kind: BimbelOrderKind
   /** Unix detik tagihan hangus; absen kalau tidak bertenggat. */
   expiresAt?: number
   plan: BimbelPlan
   seatQuota: number
   months: number
+  additionalSeats?: number
   merchantName: string
   nmid: string
   proof?: BimbelProofBrief
 }
 
-export interface BimbelOrder {
+interface BimbelOrderBase {
   id: string
   bimbelId: string
   bimbelName?: string
   invoice: string
-  kind: string
+  kind: BimbelOrderKind
   /**
    * `plan` dan `includedSeats` memotret tingkat yang menjadi dasar harga
    * tagihan ini, jadi perubahan tabel tingkat nanti tidak bisa menulis ulang
    * apa yang sudah disepakati. Sekaligus yang membuat riwayat tagihan bisa
    * menyebut tingkatnya, bukan kursinya saja.
    */
-  plan: BimbelPlan
-  includedSeats: number
-  seatQuota: number
-  months: number
   amount: number
   status: BimbelOrderStatus
   /** Unix detik tagihan hangus; absen pada tagihan tanpa tenggat. */
@@ -259,6 +284,27 @@ export interface BimbelOrder {
    */
   bimbelActiveUntil?: number
 }
+
+export interface BimbelSubscriptionOrder extends BimbelOrderBase {
+  kind: 'subscription'
+  plan: BimbelPlan
+  includedSeats: number
+  /** Kuota yang diteruskan server ke periode berikutnya. */
+  seatQuota?: number
+  months: number
+}
+
+export interface BimbelSeatAddonOrder extends BimbelOrderBase {
+  kind: 'seat_addon'
+  additionalSeats: number
+  /** Snapshot opsional untuk surface admin lama; bukan input transaksi. */
+  plan?: BimbelPlan
+  includedSeats?: number
+  seatQuota?: number
+  months?: number
+}
+
+export type BimbelOrder = BimbelSubscriptionOrder | BimbelSeatAddonOrder
 
 /**
  * Satu baris antrean verifikasi pembayaran langganan bimbel
@@ -291,7 +337,9 @@ export interface AdminBimbelPaymentProof {
   bimbelId: string
   bimbelName: string
   plan: BimbelPlan
+  kind: BimbelOrderKind
   seatQuota: number
+  additionalSeats?: number
   months: number
   /** Nominal yang seharusnya ditransfer. */
   amountDue: number

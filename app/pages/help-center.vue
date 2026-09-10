@@ -71,7 +71,7 @@ const visibleCategories = computed(() =>
 
 // ------------------------------------------------------------------------
 // Bilah pencarian: daftar saran instan sambil mengetik, tanpa panggilan API
-// — seluruh 28 artikel sudah ada di client lewat data/help-center.
+// — seluruh 29 artikel sudah ada di client lewat data/help-center.
 // ------------------------------------------------------------------------
 const searchQuery = ref('')
 const searchFocused = ref(false)
@@ -104,6 +104,7 @@ function onSearchBlur() {
 }
 
 const quickLinks = [
+  { label: 'Untuk Bimbel', to: '/untuk-bimbel' },
   { label: 'FAQ selengkapnya', to: '/faq' },
   { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
   { label: 'Syarat dan Ketentuan Tutor', to: '/syarat-tutor' },

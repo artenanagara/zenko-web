@@ -5,10 +5,10 @@ definePageMeta({ path: '/ketentuan-layanan' })
 useSeoMeta({
   title: 'Ketentuan Layanan | Zenko',
   description:
-    'Ketentuan penggunaan Zenko mengenai akun, paket belajar, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
+    'Ketentuan penggunaan Zenko mengenai akun, paket belajar, portal dan langganan bimbel, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
   ogTitle: 'Ketentuan Layanan | Zenko',
   ogDescription:
-    'Ketentuan penggunaan Zenko mengenai akun, paket belajar, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
+    'Ketentuan penggunaan Zenko mengenai akun, paket belajar, portal dan langganan bimbel, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/ketentuan-layanan',
   twitterCard: 'summary_large_image',
@@ -30,19 +30,26 @@ const revenueShare = [
     note: 'Mencakup biaya payment gateway, infrastruktur, layanan pelanggan, dan operasional Platform',
   },
 ]
+
+const bimbelRevenueShare = [
+  { plan: 'Dasar', bimbel: '70%', zenko: '30%' },
+  { plan: 'Pro', bimbel: '75%', zenko: '25%' },
+  { plan: 'Institusi', bimbel: '80%', zenko: '20%' },
+]
 </script>
 
 <template>
-  <LegalDocument lead="Ketentuan" accent="Layanan" updated="25 Agustus 2026">
+  <LegalDocument lead="Ketentuan" accent="Layanan" updated="10 September 2026">
     <p>
       Ketentuan Layanan ini (&ldquo;Ketentuan&rdquo;) mengatur penggunaan Zenko,
-      platform marketplace pembelajaran yang mempertemukan tutor atau pembuat konten
-      dengan siswa, mahasiswa, dan calon ASN. Zenko dioperasikan oleh
+      platform marketplace dan pengelolaan pembelajaran yang mempertemukan tutor,
+      bimbingan belajar atau institusi pendidikan, dengan siswa, mahasiswa, dan calon ASN. Zenko dioperasikan oleh
       <strong>PT Zenko Edukasi Digital</strong>, sebuah perseroan terbatas yang
       berkedudukan di Klaten, Jawa Tengah, Indonesia (&ldquo;Zenko&rdquo;, &ldquo;kami&rdquo;).
     </p>
     <p>
-      Dengan membuat akun, membeli atau menerbitkan paket, atau menggunakan layanan,
+      Dengan membuat akun, membeli atau menerbitkan paket, mendaftarkan atau mengelola
+      bimbel, atau menggunakan layanan,
       Anda menyatakan telah membaca, memahami, dan menyetujui Ketentuan ini serta
       <NuxtLink to="/kebijakan-privasi">Kebijakan Privasi</NuxtLink>. Jika tidak
       setuju, jangan gunakan layanan Zenko.
@@ -56,6 +63,9 @@ const revenueShare = [
       <li><strong>Pengguna</strong> berarti setiap orang yang mengakses Platform.</li>
       <li><strong>Siswa</strong> berarti Pengguna yang membeli atau mengerjakan Paket.</li>
       <li><strong>Tutor</strong> berarti Pengguna yang disetujui untuk menerbitkan dan menjual Paket.</li>
+      <li><strong>Bimbel</strong> berarti bimbingan belajar, lembaga, atau institusi pendidikan yang ruang kerjanya dikelola melalui Platform.</li>
+      <li><strong>Pengelola Bimbel</strong> berarti pemilik atau anggota Bimbel yang diberi peran untuk mengelola langganan, anggota, kelas, Paket, atau laporan.</li>
+      <li><strong>Anggota Bimbel</strong> berarti Pengguna yang bergabung sebagai siswa, pengajar, admin, atau pemilik pada satu ruang kerja Bimbel.</li>
       <li><strong>Paket</strong> berarti kumpulan soal, pembahasan, materi, atau layanan belajar yang ditawarkan melalui Platform.</li>
       <li><strong>Konten Tutor</strong> berarti seluruh materi yang dibuat atau diunggah Tutor.</li>
       <li><strong>Hari Kerja</strong> berarti Senin sampai Jumat selain hari libur nasional Indonesia.</li>
@@ -81,6 +91,11 @@ const revenueShare = [
     <p>
       Satu akun hanya boleh digunakan oleh satu orang. Anda tidak boleh menjual,
       memindahtangankan, atau membagikan akun kepada pihak lain.
+    </p>
+    <p>
+      Jika Anda membuat atau mengelola ruang kerja atas nama Bimbel, Anda menyatakan
+      memiliki kewenangan yang sah untuk mewakili Bimbel tersebut dan memasukkan data
+      anggota ke Platform. Setiap anggota tetap harus menggunakan akun pribadinya sendiri.
     </p>
 
     <hr>
@@ -338,7 +353,84 @@ const revenueShare = [
 
     <hr>
 
-    <h2 id="hubungi-kami">16. Hubungi Kami</h2>
+    <h2 id="langganan-bimbel">16. Portal dan Langganan Bimbel</h2>
+
+    <h3>a. Pendaftaran dan uji coba</h3>
+    <p>
+      Pengguna dapat mendaftarkan Bimbel dengan memberikan nama Bimbel, perkiraan
+      jumlah siswa, kota jika diisi, dan persetujuan terhadap Ketentuan ini. Ruang kerja
+      dibuat untuk uji coba <strong>7 hari</strong> dengan kapabilitas tingkat Pro dan
+      kuota awal 25 kursi siswa. Informasi harga seluruh tingkat tersedia sebelum
+      pendaftaran; uji coba tidak mewajibkan pembelian setelah berakhir.
+    </p>
+
+    <h3>b. Tingkat, periode, dan kursi</h3>
+    <ul>
+      <li>Harga, kuota, batas pengajar, fitur, periode, dan jumlah akhir yang berlaku ditampilkan pada penawaran dan ringkasan tagihan sebelum pesanan dibuat.</li>
+      <li>Langganan tahunan memberi masa aktif 12 bulan dengan penagihan harga dasar setara 10 bulan. Perpanjangan yang dibayar lebih awal dimulai setelah masa aktif yang sedang berjalan berakhir.</li>
+      <li>Hanya siswa berstatus aktif yang memakai kursi. Pengajar dan pengelola mengikuti batas peran atau pengajar pada tingkat yang dipilih.</li>
+      <li>Kursi tambahan dibeli terpisah dalam kelipatan 5. Tarif saat ini Rp3.000 per kursi per bulan, dikalikan sisa bulan masa aktif yang dibulatkan ke atas, dan tidak memperoleh diskon tahunan.</li>
+      <li>Kuota kursi baru bertambah setelah pembayaran diverifikasi. Kursi tambahan yang masih menunggu pembayaran tidak dapat digunakan dan ditampilkan terpisah dari kuota aktif.</li>
+      <li>Kuota tidak dapat diturunkan sendiri melalui dashboard. Pengelola dapat menghubungi dukungan jika memerlukan penyesuaian khusus.</li>
+    </ul>
+
+    <h3>c. Pembayaran, berakhirnya langganan, dan akses data</h3>
+    <p>
+      Tagihan langganan dan kursi tambahan mengikuti instruksi pembayaran yang
+      ditampilkan. Jika pembayaran memerlukan unggahan bukti dan pemeriksaan manual,
+      perubahan tingkat, masa aktif, atau kuota baru berlaku setelah bukti disetujui.
+      Zenko dapat menahan perubahan status otomatis selama bukti pembayaran yang sah
+      masih dalam proses verifikasi.
+    </p>
+    <ul>
+      <li>Selama status uji coba atau aktif, Bimbel dapat memakai fitur sesuai tingkat dan kuotanya.</li>
+      <li>Setelah masa aktif berakhir, berlaku masa tenggang 3 hari. Selama masa tenggang, pembuatan materi atau aktivitas baru dibatasi, tetapi pengerjaan yang sedang berlangsung dapat diselesaikan.</li>
+      <li>Setelah masa tenggang, ruang kerja ditangguhkan sampai langganan diperpanjang. Data lama, skor, rekap, dan riwayat tetap dapat dibaca sesuai hak akses.</li>
+      <li>Zenko dapat mengirim pengingat menjelang akhir masa aktif melalui email atau pemberitahuan di Platform.</li>
+    </ul>
+
+    <h3>d. Anggota, Paket, dan penjualan marketplace</h3>
+    <p>
+      Pengelola Bimbel bertanggung jawab menetapkan peran, mengundang atau mengaktifkan
+      anggota yang tepat, menjaga kerahasiaan kode bergabung, dan memastikan penggunaan
+      data siswa serta materi pembelajaran memiliki dasar yang sah. Paket privat yang
+      ditayangkan Bimbel dapat diakses seluruh siswa aktif Bimbel dan tidak ditampilkan
+      di marketplace publik.
+    </p>
+    <p>
+      Pemilik atau admin dapat mengajukan salinan Paket Bimbel untuk dijual di
+      marketplace setelah melalui peninjauan Zenko. Bagian pendapatan Bimbel ditentukan
+      oleh tingkat aktif pada saat transaksi dan disimpan sebagai bagian transaksi:
+    </p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Tingkat</th>
+            <th scope="col">Bagian Bimbel</th>
+            <th scope="col">Bagian Zenko</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in bimbelRevenueShare" :key="row.plan">
+            <td>{{ row.plan }}</td>
+            <td>{{ row.bimbel }}</td>
+            <td>{{ row.zenko }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Bagian Bimbel dihitung dari harga Paket yang benar-benar dibayar setelah diskon.
+      Pembagian internal antara Bimbel dan tutor penulis menjadi tanggung jawab Bimbel.
+      Refund, chargeback, dan transaksi tidak sah dapat dikurangkan dari saldo terkait
+      sesuai Bagian 8. Berakhirnya langganan tidak mengubah persentase transaksi yang
+      sudah selesai.
+    </p>
+
+    <hr>
+
+    <h2 id="hubungi-kami">17. Hubungi Kami</h2>
     <p>Pertanyaan, pengaduan, atau pemberitahuan tertulis dapat disampaikan kepada:</p>
     <ul>
       <li><strong>Pengelola</strong>: PT Zenko Edukasi Digital</li>
@@ -354,6 +446,9 @@ const revenueShare = [
     </ul>
 
     <template #related>
+      <NuxtLink to="/untuk-bimbel" class="font-semibold text-primary hover:underline">
+        Untuk Bimbel
+      </NuxtLink>
       <NuxtLink to="/kebijakan-privasi" class="font-semibold text-primary hover:underline">
         Kebijakan Privasi
       </NuxtLink>

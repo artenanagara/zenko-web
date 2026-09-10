@@ -1,163 +1,105 @@
 <script setup lang="ts">
-import type { BimbelOrder, BimbelOrderStatus, BimbelPlan, BimbelPlanOption, BimbelQuote } from '#shared/types/bimbel'
-
-/**
- * Halaman langganan bimbel.
- *
- * Judul dan seluruh istilahnya memakai "Langganan", tidak pernah "Paket": di
- * Zenko "paket" sudah berarti produk tryout yang dijual, jadi "Paket Pro" akan
- * membuat pengelola bimbel tidak tahu apakah itu soal yang ia jual atau
- * langganan yang ia bayar (docs/konsep-bimbel-agency.md §1.2).
- *
- * Tidak ada satu pun angka uang yang dihitung di sini. Tingkat datang dari
- * `/billing/plans`, harga dari `/billing/quote` — termasuk diskon tahunan, yang
- * dibaca dari selisih `months` dan `billedMonths`, bukan dari pengali yang
- * disalin ke klien.
- */
+import type { BimbelOrder, BimbelOrderStatus, BimbelPlan, BimbelPlanOption, BimbelSubscriptionQuote } from '#shared/types/bimbel'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 useHead({ title: 'Langganan Bimbel | Zenko', meta: [{ name: 'robots', content: 'noindex' }] })
 
-const bimbelId = String(useRoute().params.bimbelId)
+const route = useRoute()
+const bimbelId = String(route.params.bimbelId)
 const bimbel = useBimbelDetail(bimbelId)
 const orders = useBimbelOrders(bimbelId)
 const plans = useBimbelPlans(bimbelId)
 const toast = useToast()
+const recommendedPlan = useState<BimbelPlan | null>('bimbel-recommended-plan', () => null)
 
-const period = ref<1 | 12>(1)
+const period = ref<1 | 12>(12)
 const selectedPlan = ref<BimbelPlan | null>(null)
-const seats = ref(0)
+const planPickerOpen = ref(true)
+const seatModalOpen = ref(false)
+const summaryOpen = ref(false)
 const ordering = ref(false)
-
-/**
- * Dua quote sekaligus, bulanan dan tahunan, untuk tiap (tingkat, kursi).
- *
- * Tahunan perlu diketahui bahkan saat yang aktif Bulanan — kalau tidak, tombol
- * "Tahunan" kembali jadi janji tanpa isi, persis keadaan yang halaman ini
- * dibuat untuk mengakhiri. Dengan keduanya di tangan, hematnya bisa ditulis di
- * tombolnya sendiri sebelum ditekan.
- */
-const monthlyQuote = ref<BimbelQuote | null>(null)
-const yearlyQuote = ref<BimbelQuote | null>(null)
+const monthlyQuote = ref<BimbelSubscriptionQuote | null>(null)
+const yearlyQuote = ref<BimbelSubscriptionQuote | null>(null)
 const quotePending = ref(true)
 const quoteError = ref('')
+let quoteToken = 0
 
-const quote = computed(() => (period.value === 1 ? monthlyQuote.value : yearlyQuote.value))
-
-const activePlan = computed(() => plans.data.value.find(item => item.plan === selectedPlan.value) ?? null)
-
-/**
- * Batas kontrol kursi datang dari quote, tidak satu pun dihardcode. Sebelum
- * quote pertama tiba kontrolnya memang belum bisa dipakai, dan itu jujur —
- * menebak batasnya lalu diam-diam dikoreksi server lebih buruk.
- */
-const seatStep = computed(() => quote.value?.seatQuotaStep ?? 1)
-const minSeats = computed(() => quote.value?.minSeatQuota ?? 0)
-const maxSeats = computed(() => quote.value?.maxSeatQuota ?? 0)
-const seatsUsed = computed(() => quote.value?.seatsUsed ?? bimbel.data.value?.seatsUsed ?? 0)
-
-/** Bulan gratis pada langganan tahunan, satu-satunya bentuk diskon yang diakui kontrak. */
-const freeMonths = computed(() => {
-  const yearly = yearlyQuote.value
-  if (!yearly) return 0
-  return Math.max(0, yearly.months - yearly.billedMonths)
-})
-
-/**
- * Syarat periode, ditulis di tiap kartu saat Tahunan aktif.
- *
- * Angkanya milik quote tahunan, bukan hasil kali di sini: harga kartu tetap
- * harga per bulan tingkatnya, dan yang berubah hanyalah keterangan bagaimana ia
- * ditagih. Menghitung "harga efektif per bulan" di klien akan jadi tempat kedua
- * harga bisa berbeda dari invoice.
- */
-const periodFootnote = computed(() => {
-  const yearly = yearlyQuote.value
-  if (period.value !== 12 || !yearly || freeMonths.value <= 0) return ''
-  return `Ditagih ${yearly.billedMonths} bulan untuk ${yearly.months} bulan`
-})
-
-/**
- * Sisa hari uji coba. Ditulis di kartu tingkat yang sedang dijalankan trial —
- * trial berjalan di atas satu tingkat sungguhan, jadi kartunyalah yang bisa
- * menjawab "yang sekarang saya pakai ini sampai kapan".
- */
-const trialDaysLeft = computed(() => {
+const quote = computed(() => period.value === 1 ? monthlyQuote.value : yearlyQuote.value)
+const isPaidCustomer = computed(() => bimbel.data.value?.status === 'active')
+const pendingSeats = computed(() => bimbel.data.value?.pendingSeatAddonSeats ?? 0)
+const usedPercent = computed(() => {
   const detail = bimbel.data.value
-  if (!detail || detail.status !== 'trial' || !detail.activeUntil) return 0
-  const days = Math.ceil((detail.activeUntil - Math.floor(Date.now() / 1000)) / 86400)
-  return Math.max(0, days)
+  return detail?.seatQuota ? Math.min(100, Math.round(detail.seatsUsed / detail.seatQuota * 100)) : 0
 })
+const daysLeft = computed(() => {
+  const until = bimbel.data.value?.activeUntil
+  return until ? Math.max(0, Math.ceil((until - Math.floor(Date.now() / 1000)) / 86400)) : 0
+})
+const expiryWarning = computed(() => {
+  const status = bimbel.data.value?.status
+  if (status === 'trial' && daysLeft.value <= 3) return `Uji coba berakhir ${daysLeft.value} hari lagi.`
+  if (status === 'active' && daysLeft.value <= 14) return `Masa aktif berakhir ${daysLeft.value} hari lagi.`
+  return ''
+})
+const freeMonths = computed(() => yearlyQuote.value ? Math.max(0, yearlyQuote.value.months - yearlyQuote.value.billedMonths) : 0)
+const periodFootnote = computed(() => period.value === 12 && yearlyQuote.value && freeMonths.value > 0
+  ? `Ditagih ${yearlyQuote.value.billedMonths} bulan untuk ${yearlyQuote.value.months} bulan`
+  : '')
+const openOrder = computed(() => orders.data.value.find(item => item.status === 'verifying')
+  ?? orders.data.value.find(item => item.status === 'pending')
+  ?? null)
+const latestOrders = computed(() => orders.data.value.slice(0, 3))
+const paymentPath = (orderId: string) => `/dashboard/bimbel/${bimbelId}/payment/${orderId}`
 
-function planBadge(plan: BimbelPlan): string {
-  if (bimbel.data.value?.plan !== plan) return ''
-  if (trialDaysLeft.value > 0) return `Sisa ${trialDaysLeft.value} hari uji coba`
-  return 'Tingkat saat ini'
+const STATUS_LABEL = { trial: 'Uji coba', active: 'Aktif', grace: 'Masa tenggang', suspended: 'Terkunci' } as const
+const STATUS_DESCRIPTION = {
+  trial: 'Semua fitur Pro tersedia selama masa uji coba.',
+  active: 'Langganan berjalan dan semua fitur dapat digunakan.',
+  grace: 'Pembuatan baru dihentikan. Perpanjang agar aktivitas bimbel kembali normal.',
+  suspended: 'Data lama tetap dapat dibaca, tetapi aktivitas baru terkunci sampai langganan diperpanjang.',
+} as const
+const ORDER_STATUS_LABEL: Record<BimbelOrderStatus, string> = {
+  paid: 'Lunas', pending: 'Menunggu pembayaran', verifying: 'Menunggu verifikasi', expired: 'Kedaluwarsa', cancelled: 'Dibatalkan',
+}
+const ORDER_STATUS_TONE: Record<BimbelOrderStatus, 'success' | 'warning' | 'neutral'> = {
+  paid: 'success', pending: 'warning', verifying: 'warning', expired: 'neutral', cancelled: 'neutral',
 }
 
-/**
- * Isi tingkat. Tiga baris pertama yang membedakan tingkat, lalu yang berlaku
- * sama di semuanya — pembaca membandingkan tiga kolom baris per baris, dan
- * baris identik di ketiganya cuma menahan mata sebelum sampai ke yang berbeda.
- *
- * Harga kursi tambahan diambil dari quote, bukan dikonstankan di sini. Bagi
- * hasil memang satu angka untuk semua tingkat: server memakai satu
- * `tutorSharePercent` untuk setiap penjual, jadi menuliskannya berbeda per
- * tingkat berarti menjual pembeda yang tidak ditegakkan siapa pun.
- */
 function planFeatures(plan: BimbelPlanOption): string[] {
-  const extraSeat = quote.value?.extraSeatPrice
   return [
     `${plan.includedSeats} kursi siswa termasuk`,
     bimbelLimitLabel(plan.teacherLimit, 'pengajar'),
     bimbelLimitLabel(plan.productLimit, 'paket bank soal privat'),
-    ...(extraSeat ? [`Kursi tambahan ${formatRupiah(extraSeat)} / siswa / bulan`] : []),
-    'Kelas, roster siswa, dan rekap hasil per paket',
-    'Bagi hasil 70% dari penjualan paket di marketplace',
   ]
 }
 
-let quoteToken = 0
-let quoteDebounce: ReturnType<typeof setTimeout> | null = null
+function planBadge(plan: BimbelPlan): string {
+  if (bimbel.data.value?.plan === plan) return 'Tingkat saat ini'
+  if (recommendedPlan.value === plan && bimbel.data.value?.status === 'trial') return 'Direkomendasikan'
+  return ''
+}
 
-/**
- * Kursi sedang diketik. Selama benar, kuota hasil normalisasi server tidak
- * disalin balik ke kolomnya — kalau tidak, orang yang menuju "60" akan melihat
- * angkanya melompat ke kuota tingkat begitu ia baru mengetik "6".
- */
-const seatsFocused = ref(false)
+function orderDescription(order: BimbelOrder): string {
+  return order.kind === 'seat_addon'
+    ? `${order.additionalSeats} kursi tambahan`
+    : `${bimbelPlanLabel(order.plan)} · ${order.months} bulan`
+}
 
-/**
- * `plan` dan `seats` sengaja bisa kosong: pada muat pertama halaman ini belum
- * tahu tingkat maupun kuota apa pun, dan quote tanpa query menjawab dengan
- * tingkat bimbel saat ini beserta seluruh aturan bentuk isian.
- *
- * Kuota tidak pernah dinormalkan di klien. Server menaikkan kuota yang di bawah
- * kursi termasuk tingkatnya, jadi nilai kolomnya dikirim apa adanya dan
- * `seatQuota` pada jawabannya yang jadi kebenaran.
- */
 async function refreshQuote() {
-  const plan = selectedPlan.value ?? undefined
-  const asked = seats.value > 0 ? seats.value : undefined
-
+  const token = ++quoteToken
   quotePending.value = true
   quoteError.value = ''
-  const token = ++quoteToken
-
   try {
+    const plan = selectedPlan.value ?? undefined
     const [monthly, yearly] = await Promise.all([
-      getBimbelQuote(bimbelId, plan, asked, 1),
-      getBimbelQuote(bimbelId, plan, asked, 12),
+      getBimbelQuote(bimbelId, { kind: 'subscription', plan, months: 1 }),
+      getBimbelQuote(bimbelId, { kind: 'subscription', plan, months: 12 }),
     ])
-    // Jawaban yang datang terlambat setelah pilihan berubah dibuang, bukan
-    // ditampilkan — kalau tidak, harga tingkat lain bisa mendarat di ringkasan.
     if (token !== quoteToken) return
+    if (monthly.kind !== 'subscription' || yearly.kind !== 'subscription') throw new Error('Jenis harga tidak sesuai.')
     monthlyQuote.value = monthly
     yearlyQuote.value = yearly
-
-    // Muat pertama juga yang menetapkan tingkat dan kuota awalnya.
     selectedPlan.value = monthly.plan
-    if (!seatsFocused.value) seats.value = monthly.seatQuota
   }
   catch (cause) {
     if (token !== quoteToken) return
@@ -165,409 +107,204 @@ async function refreshQuote() {
     yearlyQuote.value = null
     quoteError.value = tutorApiMessage(cause, 'Harga belum bisa dimuat.')
   }
-  finally {
-    if (token === quoteToken) quotePending.value = false
-  }
-}
-
-/** Kursi diketik digit demi digit; tanpa jeda tiap ketukan jadi dua permintaan. */
-function scheduleQuote() {
-  if (quoteDebounce !== null) clearTimeout(quoteDebounce)
-  quoteDebounce = setTimeout(refreshQuote, 300)
-}
-onUnmounted(() => {
-  if (quoteDebounce !== null) clearTimeout(quoteDebounce)
-})
-
-/**
- * Berpindah tingkat mengirimkan kuota yang sekarang apa adanya. Kalau kuota itu
- * lebih kecil dari kursi termasuk tingkat barunya, server yang menaikkannya —
- * dan kolomnya mengikuti jawaban itu, bukan tebakan yang dibuat di sini.
- */
-function choosePlan(plan: BimbelPlan) {
-  if (selectedPlan.value === plan) return
-  selectedPlan.value = plan
-  refreshQuote()
-}
-
-function stepSeats(direction: 1 | -1) {
-  const next = seats.value + direction * seatStep.value
-  seats.value = Math.min(maxSeats.value, Math.max(minSeats.value, next))
-  scheduleQuote()
-}
-
-function onSeatsInput(event: Event) {
-  const raw = Number((event.target as HTMLInputElement).value)
-  if (!Number.isFinite(raw) || raw <= 0) return
-  seats.value = raw
-  scheduleQuote()
-}
-
-/** Fokus lepas: kuota hasil normalisasi server boleh masuk ke kolomnya lagi. */
-function onSeatsBlur() {
-  seatsFocused.value = false
-  const settled = monthlyQuote.value?.seatQuota
-  if (settled && settled !== seats.value) seats.value = settled
+  finally { if (token === quoteToken) quotePending.value = false }
 }
 
 async function load() {
-  // Quote tidak menunggu `plans`: jawabannya tanpa query sudah membawa tingkat
-  // bimbel saat ini beserta batas kursinya, jadi kontrolnya hidup lebih cepat.
-  await Promise.all([bimbel.refresh(), orders.refresh(), plans.refresh(), refreshQuote()])
+  await Promise.all([bimbel.refresh(), orders.refresh(), plans.refresh()])
+  selectedPlan.value = bimbel.data.value?.status === 'trial' && recommendedPlan.value
+    ? recommendedPlan.value
+    : bimbel.data.value?.plan ?? plans.data.value[0]?.plan ?? null
+  planPickerOpen.value = !isPaidCustomer.value
+  await refreshQuote()
+  if (route.query['tambah-kursi'] === '1' && isPaidCustomer.value) seatModalOpen.value = true
 }
 onMounted(load)
 
-// Sengaja tidak ada watch pada `period`: kedua quote sudah dipegang sekaligus,
-// jadi mengganti periode hanya berpindah antara dua angka yang sudah ada.
+/**
+ * "Perpanjang" berarti tingkat yang sedang berjalan, jadi ia membuka ringkasan
+ * tingkat itu langsung. Tanpa ini, satu-satunya jalan memperpanjang adalah
+ * membuka pemilih tingkat dan memilih ulang tingkat yang sudah dipakai — dan
+ * pada langganan yang aktif pemilihnya terlipat, sehingga panel yang berjudul
+ * "Perpanjang Kelas Pro" tidak punya satu pun tombol yang memperpanjangnya.
+ *
+ * Tanpa tingkat terpilih (daftar tingkat gagal dimuat) yang bisa dibuka hanya
+ * pemilihnya, bersama pesan galatnya.
+ */
+function openSummary() {
+  if (!selectedPlan.value) {
+    planPickerOpen.value = true
+    return
+  }
+  summaryOpen.value = true
+}
 
 /**
- * Tagihan yang belum selesai. Panelnya diletakkan di atas pemilih tingkat:
- * kalau ada yang belum dibayar, membayarnya adalah pekerjaan halaman ini —
- * bukan sesuatu yang harus dicari di dasar halaman.
+ * Memilih tingkat membuka ringkasannya, bukan menyalakan panel yang sudah
+ * berdiri sejak halaman dibuka: ringkasan atas tingkat yang belum dipilih tidak
+ * meringkas apa pun. Modalnya juga dibuka ulang untuk tingkat yang memang sudah
+ * terpilih — tombol yang sama harus melakukan hal yang sama.
  */
-const openOrder = computed(() =>
-  orders.data.value.find(item => item.status === 'pending' || item.status === 'verifying') ?? null,
-)
-const paymentPanel = useTemplateRef<HTMLElement>('paymentPanel')
-
-const STATUS_LABEL = {
-  trial: 'Masa uji coba',
-  active: 'Aktif',
-  grace: 'Perlu diperpanjang',
-  suspended: 'Perlu diperpanjang',
-} as const
-
-const ORDER_STATUS_LABEL: Record<BimbelOrderStatus, string> = {
-  paid: 'Lunas',
-  pending: 'Menunggu pembayaran',
-  // Sengaja bukan "Menunggu pembayaran": pembayarnya sudah membayar, dan yang
-  // ditunggu sekarang ada di sisi Zenko.
-  verifying: 'Menunggu verifikasi',
-  // Dipisah dari "Dibatalkan": yang satu lewat waktunya, yang lain
-  // ditinggalkan — dan yang bertanya "kenapa tagihan saya hilang" berhak tahu
-  // yang mana.
-  expired: 'Kedaluwarsa',
-  cancelled: 'Dibatalkan',
+async function choosePlan(plan: BimbelPlan) {
+  summaryOpen.value = true
+  if (selectedPlan.value === plan) return
+  selectedPlan.value = plan
+  await refreshQuote()
 }
 
-const ORDER_STATUS_TONE: Record<BimbelOrderStatus, 'success' | 'warning' | 'neutral'> = {
-  paid: 'success',
-  pending: 'warning',
-  verifying: 'warning',
-  expired: 'neutral',
-  cancelled: 'neutral',
-}
-
-async function order() {
-  const plan = selectedPlan.value
-  if (!plan) return
-
+/**
+ * Tagihan yang baru dibuat langsung dibuka layar bayarnya. Sebelumnya halaman
+ * ini hanya menggulir sendiri ke panel pembayaran di tengah daftar tingkat —
+ * gerakan yang di layar kecil sulit dibedakan dari tidak terjadi apa-apa.
+ */
+async function orderSubscription() {
+  if (!selectedPlan.value || ordering.value) return
   ordering.value = true
   try {
-    await createBimbelOrder(bimbelId, plan, seats.value, period.value)
-    await orders.refresh()
-    toast.success('Tagihan dibuat.', 'Selesaikan pembayaran sesuai instruksi di atas.')
-    // Panel pembayarannya baru muncul setelah daftar tagihan dimuat ulang, dan
-    // letaknya di atas — tanpa ini tombol "Buat tagihan" terasa seperti tidak
-    // melakukan apa-apa.
-    await nextTick()
-    paymentPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const order = await createBimbelOrder(bimbelId, { kind: 'subscription', plan: selectedPlan.value, months: period.value })
+    summaryOpen.value = false
+    toast.success('Tagihan dibuat.', 'Selesaikan pembayaran sesuai instruksi.')
+    await navigateTo(paymentPath(order.id))
   }
-  catch (cause) {
-    toast.error('Gagal membuat tagihan.', tutorApiMessage(cause, 'Coba lagi.'))
-  }
-  finally {
-    ordering.value = false
-  }
+  catch (cause) { toast.error('Gagal membuat tagihan.', tutorApiMessage(cause, 'Coba lagi.')) }
+  finally { ordering.value = false }
 }
 
-/** Bukti terkirim: baris tagihannya diganti salinan terbaru dari server. */
-function onPaymentUpdated(updated: BimbelOrder) {
-  orders.data.value = orders.data.value.map(item => (item.id === updated.id ? updated : item))
+async function onSeatOrderCreated(order: BimbelOrder) {
+  toast.success('Tagihan kursi dibuat.', 'Kuota bertambah setelah pembayaran diverifikasi.')
+  await navigateTo(paymentPath(order.id))
 }
 </script>
 
 <template>
   <div class="grid gap-6">
-    <AppPageHeader
-      title="Langganan"
-      description="Pilih tingkat langganan dan jumlah kursi siswa. Tingkat menentukan batas pengajar dan bank soal privat bimbelmu; kursi ditagih sesuai jumlah siswa aktif."
-    />
+    <AppPageHeader title="Langganan" description="Lihat masa aktif dan kapasitas, perpanjang tingkat, atau tambah kursi saat dibutuhkan." />
 
-    <AppSectionMessage appearance="information" title="Kursi dihitung dari siswa aktif">
-      Pengajar dan admin tidak memakai kursi. Siswa yang ditangguhkan juga tidak dihitung sebagai kursi aktif.
+    <AppSectionMessage v-if="expiryWarning" appearance="warning" title="Perpanjang sebelum masa aktif berakhir">
+      {{ expiryWarning }} Periode baru dimulai setelah periode saat ini, jadi memperpanjang lebih awal tidak menghilangkan hari yang sudah dibayar.
     </AppSectionMessage>
 
-    <!-- Tagihan yang belum selesai, kalau ada. Pembungkus <div> ada demi
-         scrollIntoView: ref pada komponen memberi instance, bukan elemennya. -->
-    <div v-if="openOrder" ref="paymentPanel">
-      <DashboardPanel
-        title="Selesaikan pembayaran"
-        :description="`Invoice ${openOrder.invoice} · ${bimbelPlanLabel(openOrder.plan)}`"
-      >
-        <BimbelOrderPayment :bimbel-id="bimbelId" :order="openOrder" @updated="onPaymentUpdated" />
-      </DashboardPanel>
-    </div>
-
-    <!-- ============================================================
-         Pilih tingkat langganan
-         ============================================================ -->
-    <DashboardPanel title="Tingkat langganan" description="Kursi termasuk sudah masuk harga tingkatnya.">
-      <DashboardSkeleton v-if="plans.pending.value" :count="3" label="Memuat tingkat langganan…" />
-
-      <div v-else-if="plans.error.value" class="py-8 text-center">
-        <AppInlineMessage type="error">{{ plans.error.value }}</AppInlineMessage>
-        <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="load">
-          Coba lagi
-        </button>
-      </div>
-
-      <template v-else-if="plans.data.value.length">
-        <!-- Periode. Hematnya disebut eksplisit, diturunkan dari selisih
-             months dan billedMonths pada quote tahunan — bukan dari pengali
-             yang disalin ke klien. -->
-        <BimbelBillingToggle v-model="period">
-          <template v-if="freeMonths > 0" #note>
-            <AppLozenge appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
-          </template>
-        </BimbelBillingToggle>
-
-        <div class="mt-6 grid gap-5 lg:grid-cols-3" role="group" aria-label="Tingkat langganan">
-          <BimbelPlanCard
-            v-for="plan in plans.data.value"
-            :key="plan.plan"
-            :name="bimbelPlanLabel(plan.plan, plan.name)"
-            price-lead="Mulai dari"
-            :price="formatRupiah(plan.pricePerMonth)"
-            price-note="per bulan"
-            :price-footnote="periodFootnote"
-            :features="planFeatures(plan)"
-            :badge="planBadge(plan.plan)"
-            :selected="selectedPlan === plan.plan"
-            :action-label="selectedPlan === plan.plan ? 'Tingkat dipilih' : 'Pilih tingkat ini'"
-            :action-variant="selectedPlan === plan.plan ? 'primary' : 'light'"
-            @action="choosePlan(plan.plan)"
-          />
-        </div>
-
-        <!-- ============================================================
-             Kursi
-             ============================================================ -->
-        <div class="mt-6 border-t border-hairline pt-5">
-          <label for="seat-quota" class="text-sm font-semibold">Jumlah kursi siswa</label>
-          <!-- Kuota di bawah kursi termasuk tingkatnya dinaikkan server, bukan
-               ditolak, jadi kalimat ini menjelaskan apa yang akan terjadi
-               alih-alih melarang angka yang sebetulnya boleh diketik. -->
-          <p id="seat-quota-hint" class="mt-1 text-sm text-muted">
-            Kelipatan {{ seatStep }}, maksimal {{ maxSeats }} kursi, dan tidak boleh
-            di bawah {{ seatsUsed }} siswa yang aktif sekarang. Kuota di bawah
-            {{ activePlan?.includedSeats ?? 0 }} kursi yang sudah termasuk tingkat ini
-            otomatis dinaikkan; selebihnya ditagih sebagai kursi tambahan.
-          </p>
-
-          <div class="mt-3 flex flex-wrap items-center gap-2">
-            <AppIconButton
-              variant="outline"
-              :ariaLabel="`Kurangi ${seatStep} kursi`"
-              :disabled="seats <= minSeats"
-              @click="stepSeats(-1)"
-            >
-              <AppIcon name="minus" :size="16" aria-hidden="true" />
-            </AppIconButton>
-
-            <input
-              id="seat-quota"
-              type="number"
-              inputmode="numeric"
-              aria-describedby="seat-quota-hint"
-              :min="minSeats"
-              :max="maxSeats"
-              :step="seatStep"
-              :value="seats"
-              class="w-28 rounded-sm border border-hairline-strong bg-surface px-3.5 py-2.5 text-center text-base font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              @focus="seatsFocused = true"
-              @input="onSeatsInput"
-              @blur="onSeatsBlur"
-            >
-
-            <AppIconButton
-              variant="outline"
-              :ariaLabel="`Tambah ${seatStep} kursi`"
-              :disabled="seats >= maxSeats"
-              @click="stepSeats(1)"
-            >
-              <AppIcon name="plus" :size="16" aria-hidden="true" />
-            </AppIconButton>
-
-            <span class="ml-1 text-sm text-muted">{{ seatsUsed }} kursi terpakai saat ini</span>
-          </div>
-        </div>
-      </template>
-
-      <AppEmptyState
-        v-else
-        title="Tingkat langganan belum tersedia"
-        description="Daftar tingkat langganan tidak dikirim server. Muat ulang halaman, atau hubungi tim Zenko kalau tetap kosong."
-        action-label="Muat ulang"
-        @action="load"
-      />
-    </DashboardPanel>
-
-    <!-- ============================================================
-         Ringkasan — seluruh angkanya milik quote, apa adanya
-         ============================================================ -->
-    <!-- Tidak bergantung pada `plans`: quote sudah membawa tingkat bimbel saat
-         ini, jadi daftar tingkat yang gagal dimuat tidak ikut membunuh
-         kemampuan memperpanjang langganan yang sedang berjalan. -->
-    <DashboardPanel title="Ringkasan sebelum membeli">
-      <div v-if="quoteError">
-        <AppInlineMessage type="error">{{ quoteError }}</AppInlineMessage>
-        <AppButton class="mt-3" variant="outline" @click="refreshQuote">Muat ulang harga</AppButton>
-      </div>
-
-      <DashboardSkeleton v-else-if="quotePending" :count="3" label="Menghitung harga…" />
-
-      <div v-else-if="quote" class="grid gap-4">
-        <dl class="grid gap-2.5 text-sm">
-          <div class="flex items-baseline justify-between gap-4">
-            <dt class="text-muted">
-              {{ bimbelPlanLabel(quote.plan, quote.planName) }}
-              <span class="text-faint">· {{ quote.includedSeats }} kursi termasuk</span>
-            </dt>
-            <dd class="font-semibold tabular-nums">{{ formatRupiah(quote.planPrice) }} / bulan</dd>
-          </div>
-
-          <div v-if="quote.extraSeats > 0" class="flex items-baseline justify-between gap-4">
-            <dt class="text-muted">
-              Kursi tambahan
-              <span class="text-faint">
-                · {{ quote.extraSeats }} × {{ formatRupiah(quote.extraSeatPrice) }}
-              </span>
-            </dt>
-            <dd class="font-semibold tabular-nums">{{ formatRupiah(quote.extraSeatsAmount) }} / bulan</dd>
-          </div>
-
-          <!-- Hanya bermakna kalau ada yang dijumlahkan; tanpa kursi tambahan
-               barisnya mengulang harga tingkat persis di atasnya. -->
-          <div v-if="quote.extraSeats > 0" class="flex items-baseline justify-between gap-4 border-t border-hairline pt-2.5">
-            <dt class="text-muted">Per bulan</dt>
-            <dd class="font-semibold tabular-nums">{{ formatRupiah(quote.monthlyAmount) }}</dd>
-          </div>
-
-          <div class="flex items-baseline justify-between gap-4 border-t border-hairline pt-2.5">
-            <dt class="text-muted">
-              Masa aktif
-              <span class="text-faint">· {{ quote.seatQuota }} kursi</span>
-            </dt>
-            <dd class="font-semibold tabular-nums">{{ quote.months }} bulan</dd>
-          </div>
-
-          <!-- Diskon tahunan dinyatakan dalam bulan, bukan rupiah: itu bentuk
-               yang benar-benar dikirim server, dan menghitung rupiahnya sendiri
-               berarti klien ikut menentukan harga. -->
-          <div v-if="quote.months > quote.billedMonths" class="flex items-baseline justify-between gap-4">
-            <dt class="text-muted">Ditagih</dt>
-            <dd class="flex items-center gap-2 font-semibold tabular-nums">
-              {{ quote.billedMonths }} bulan
-              <AppLozenge appearance="success">
-                Bayar {{ quote.billedMonths }} bulan untuk {{ quote.months }}
-              </AppLozenge>
-            </dd>
-          </div>
-        </dl>
-
-        <div class="flex flex-col gap-4 border-t border-hairline pt-4 sm:flex-row sm:items-center">
-          <div class="flex-1">
-            <p class="text-xs text-muted uppercase">Total tagihan</p>
-            <p class="mt-1 text-2xl font-bold tabular-nums">{{ formatRupiah(quote.amount) }}</p>
-          </div>
-          <AppButton :disabled="ordering || quote.amount <= 0" @click="order">
-            {{ ordering ? 'Membuat…' : 'Buat tagihan' }}
-          </AppButton>
-        </div>
-      </div>
-    </DashboardPanel>
-
-    <!-- ============================================================
-         Status
-         ============================================================ -->
-    <DashboardPanel title="Status saat ini">
+    <DashboardPanel>
       <DashboardSkeleton v-if="bimbel.pending.value" :count="3" label="Memuat status langganan…" />
-
       <div v-else-if="bimbel.error.value" class="py-8 text-center">
         <AppInlineMessage type="error">{{ bimbel.error.value }}</AppInlineMessage>
-        <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="bimbel.refresh">
-          Coba lagi
-        </button>
+        <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="bimbel.refresh">Coba lagi</button>
       </div>
-
-      <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <p class="text-xs text-muted uppercase">Status</p>
-          <p class="mt-1 font-semibold">{{ bimbel.data.value ? STATUS_LABEL[bimbel.data.value.status] : '—' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-muted uppercase">Tingkat</p>
-          <p class="mt-1 font-semibold">
-            {{ bimbel.data.value?.plan ? bimbelPlanLabel(bimbel.data.value.plan) : '—' }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-muted uppercase">Kapasitas</p>
-          <p class="mt-1 font-semibold tabular-nums">
-            {{ bimbel.data.value?.seatsUsed ?? 0 }}/{{ bimbel.data.value?.seatQuota ?? 0 }} siswa
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-muted uppercase">Aktif sampai</p>
-          <p class="mt-1 font-semibold">
-            {{ bimbel.data.value?.activeUntil ? formatDate(bimbel.data.value.activeUntil) : '—' }}
-          </p>
-        </div>
-      </div>
-    </DashboardPanel>
-
-    <!-- ============================================================
-         Riwayat tagihan
-         ============================================================ -->
-    <DashboardPanel title="Riwayat tagihan">
-      <DashboardSkeleton v-if="orders.pending.value" :count="3" label="Memuat tagihan…" />
-
-      <div v-else-if="orders.error.value" class="py-8 text-center">
-        <AppInlineMessage type="error">{{ orders.error.value }}</AppInlineMessage>
-        <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="orders.refresh">
-          Coba lagi
-        </button>
-      </div>
-
-      <div v-else-if="orders.data.value.length" class="grid gap-2">
-        <div
-          v-for="item in orders.data.value"
-          :key="item.id"
-          class="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-hairline p-3"
-        >
-          <div class="min-w-0">
-            <strong>{{ item.invoice }}</strong>
-            <p class="text-sm text-muted">
-              {{ bimbelPlanLabel(item.plan) }} · {{ item.seatQuota }} kursi · {{ item.months }} bulan
+      <div v-else-if="bimbel.data.value" class="grid gap-5">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-xl font-bold tracking-tight">{{ bimbel.data.value.plan ? bimbelPlanLabel(bimbel.data.value.plan) : 'Langganan bimbel' }}</h2>
+              <DashboardBadge :tone="bimbel.data.value.status === 'active' ? 'success' : 'warning'">{{ STATUS_LABEL[bimbel.data.value.status] }}</DashboardBadge>
+            </div>
+            <p class="mt-1 text-sm text-muted">{{ STATUS_DESCRIPTION[bimbel.data.value.status] }}</p>
+            <p class="mt-2 font-semibold">
+              Aktif sampai {{ formatDate(bimbel.data.value.activeUntil) }}
+              <span class="font-normal text-muted">· sisa {{ daysLeft }} hari</span>
             </p>
           </div>
-          <div class="text-right">
-            <p class="font-semibold tabular-nums">{{ formatRupiah(item.amount) }}</p>
-            <DashboardBadge :tone="ORDER_STATUS_TONE[item.status]">
-              {{ ORDER_STATUS_LABEL[item.status] }}
-            </DashboardBadge>
+          <div class="flex flex-wrap gap-2">
+            <AppButton v-if="isPaidCustomer" size="sm" variant="outline" @click="seatModalOpen = true">Tambah kursi</AppButton>
+            <AppButton size="sm" @click="openSummary">Perpanjang</AppButton>
+          </div>
+        </div>
+        <div>
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span class="font-semibold tabular-nums">{{ bimbel.data.value.seatsUsed }} / {{ bimbel.data.value.seatQuota }} kursi terpakai</span>
+            <DashboardBadge v-if="pendingSeats" tone="warning">+{{ pendingSeats }} menunggu pembayaran</DashboardBadge>
+          </div>
+          <div class="h-2 overflow-hidden rounded-pill bg-surface-alt" role="progressbar" aria-label="Pemakaian kursi" :aria-valuenow="usedPercent" aria-valuemin="0" aria-valuemax="100">
+            <div class="h-full rounded-pill bg-primary transition-[width]" :style="{ width: `${usedPercent}%` }" />
           </div>
         </div>
       </div>
-
-      <AppEmptyState
-        v-else
-        title="Belum ada tagihan"
-        description="Pilih tingkat langganan dan jumlah kursi di atas, lalu buat tagihan pertama untuk mengaktifkan langganan."
-        action-label="Buat tagihan"
-        @action="order"
-      />
     </DashboardPanel>
+
+    <!-- Layar bayarnya berdiri sebagai halaman sendiri; di sini cukup
+         penunjuknya, supaya tagihan yang belum lunas tidak hilang dari pandangan
+         tanpa ikut menghalangi daftar tingkat. -->
+    <AppSectionMessage
+      v-if="openOrder"
+      :appearance="openOrder.status === 'verifying' ? 'information' : 'warning'"
+      :title="openOrder.status === 'verifying' ? 'Pembayaranmu sedang diperiksa' : 'Ada tagihan yang menunggu pembayaran'"
+    >
+      Invoice {{ openOrder.invoice }} · {{ orderDescription(openOrder) }} · {{ formatRupiah(openOrder.amount) }}
+      <template #actions>
+        <AppButton size="sm" @click="navigateTo(paymentPath(openOrder.id))">
+          {{ openOrder.status === 'verifying' ? 'Lihat status' : 'Selesaikan pembayaran' }}
+        </AppButton>
+      </template>
+    </AppSectionMessage>
+
+    <DashboardPanel title="Perpanjang atau ubah tingkat" description="Kursi bawaan tingkat ditetapkan otomatis. Kursi tambahan dibeli terpisah setelah langganan aktif.">
+      <div v-if="isPaidCustomer && !planPickerOpen" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="font-semibold">Perpanjang {{ bimbel.data.value?.plan ? bimbelPlanLabel(bimbel.data.value.plan) : 'tingkat saat ini' }}</p>
+          <p class="mt-1 text-sm text-muted">Kuota saat ini diteruskan oleh server ke periode berikutnya.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <AppButton size="sm" @click="openSummary">Perpanjang sekarang</AppButton>
+          <AppButton variant="outline" size="sm" @click="planPickerOpen = true">Ubah tingkat</AppButton>
+        </div>
+      </div>
+      <template v-else>
+        <DashboardSkeleton v-if="plans.pending.value" :count="3" label="Memuat tingkat langganan…" />
+        <div v-else-if="plans.error.value" class="py-8 text-center">
+          <AppInlineMessage type="error">{{ plans.error.value }}</AppInlineMessage>
+          <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="plans.refresh">Coba lagi</button>
+        </div>
+        <template v-else-if="plans.data.value.length">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <BimbelBillingToggle v-model="period">
+              <template v-if="freeMonths > 0" #note>
+                <AppLozenge v-if="period === 12" appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
+                <span v-else class="text-[0.82rem] text-muted">Tahunan gratis {{ freeMonths }} bulan</span>
+              </template>
+            </BimbelBillingToggle>
+            <AppButton v-if="isPaidCustomer" variant="light" size="sm" @click="planPickerOpen = false">Tutup pilihan</AppButton>
+          </div>
+          <div class="mt-6 grid gap-5 xl:grid-cols-3" role="radiogroup" aria-label="Tingkat langganan">
+            <BimbelPlanCard
+              v-for="plan in plans.data.value" :key="plan.plan" :name="bimbelPlanLabel(plan.plan, plan.name)"
+              price-lead="Mulai dari" :price="formatRupiah(plan.pricePerMonth)" price-note="per bulan"
+              :price-footnote="periodFootnote" :features="planFeatures(plan)" :badge="planBadge(plan.plan)" badge-tone="brand"
+              :marketplace-share-percent="plan.marketplaceSharePercent"
+              :selected="selectedPlan === plan.plan" :action-label="selectedPlan === plan.plan ? 'Lihat ringkasan' : 'Pilih tingkat ini'"
+              :action-variant="selectedPlan === plan.plan ? 'primary' : 'light'" @action="choosePlan(plan.plan)"
+            />
+          </div>
+          <p class="mt-5 text-sm text-muted">Berlaku untuk semua tingkat: kelas, roster siswa, rekap hasil per paket, dan kursi tambahan melalui tagihan terpisah.</p>
+        </template>
+        <AppEmptyState v-else title="Tingkat langganan belum tersedia" description="Daftar tingkat tidak dikirim server. Muat ulang halaman atau hubungi tim Zenko." action-label="Muat ulang" @action="plans.refresh" />
+      </template>
+    </DashboardPanel>
+
+    <DashboardPanel title="Riwayat tagihan" description="Tiga tagihan terbaru.">
+      <DashboardSkeleton v-if="orders.pending.value" :count="3" label="Memuat tagihan…" />
+      <div v-else-if="orders.error.value" class="py-8 text-center"><AppInlineMessage type="error">{{ orders.error.value }}</AppInlineMessage><button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="orders.refresh">Coba lagi</button></div>
+      <div v-else-if="latestOrders.length" class="grid gap-2">
+        <div v-for="item in latestOrders" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-hairline p-3">
+          <div class="min-w-0"><strong>{{ item.invoice }}</strong><p class="text-sm text-muted">{{ orderDescription(item) }}</p></div>
+          <div class="flex items-center gap-3 text-right">
+            <div>
+              <p class="font-semibold tabular-nums">{{ formatRupiah(item.amount) }}</p>
+              <DashboardBadge :tone="ORDER_STATUS_TONE[item.status]">{{ ORDER_STATUS_LABEL[item.status] }}</DashboardBadge>
+            </div>
+            <NuxtLink v-if="item.status === 'pending' || item.status === 'verifying'" :to="paymentPath(item.id)" class="text-sm font-semibold text-primary hover:underline">
+              Buka
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+      <AppEmptyState v-else title="Belum ada tagihan" description="Tagihan yang kamu buat akan muncul di sini. Pilih tingkat dan periksa ringkasan sebelum membuat tagihan pertama." />
+    </DashboardPanel>
+
+    <BimbelSubscriptionSummaryModal
+      v-model="summaryOpen" v-model:period="period" :quote="quote" :pending="quotePending" :error="quoteError"
+      :free-months="freeMonths" :active-until="bimbel.data.value?.activeUntil" :ordering="ordering"
+      @confirm="orderSubscription" @retry="refreshQuote"
+    />
+
+    <BimbelSeatAddonModal v-model="seatModalOpen" :bimbel-id="bimbelId" :seats-used="bimbel.data.value?.seatsUsed ?? 0" :pending-seats="pendingSeats" @created="onSeatOrderCreated" @renew="planPickerOpen = true" />
   </div>
 </template>

@@ -53,8 +53,12 @@ const amount = computed(() => instructions.value?.amount ?? props.order.amount)
 const expiresAt = computed(() => instructions.value?.expiresAt ?? props.order.expiresAt ?? 0)
 
 const isVerifying = computed(() => status.value === 'verifying')
+const isPaid = computed(() => status.value === 'paid')
 const isClosed = computed(() => status.value === 'expired' || status.value === 'cancelled')
 const payable = computed(() => status.value === 'pending')
+const orderSummary = computed(() => props.order.kind === 'seat_addon'
+  ? `${props.order.additionalSeats} kursi tambahan`
+  : `${bimbelPlanLabel(props.order.plan)} · ${props.order.months} bulan`)
 
 /** Bukti sebelumnya ditolak: alasannya yang pertama dibaca, sebelum QR-nya. */
 const rejection = computed(() => {
@@ -135,7 +139,7 @@ async function onSubmit(payload: PaymentProofPayload) {
         appearance="warning"
         :title="status === 'expired' ? 'Tagihan ini sudah kedaluwarsa' : 'Tagihan ini dibatalkan'"
       >
-        Buat tagihan baru di bawah untuk melanjutkan langganan. Pembayaran ke
+        Buat tagihan baru untuk melanjutkan. Pembayaran ke
         tagihan yang sudah tertutup tidak akan diproses.
       </AppSectionMessage>
 
@@ -148,8 +152,18 @@ async function onSubmit(payload: PaymentProofPayload) {
         diterima — tidak perlu mengirim ulang.
       </AppSectionMessage>
 
+      <AppSectionMessage v-else-if="isPaid" appearance="success" title="Tagihan ini sudah lunas">
+        Pembayaranmu sudah diverifikasi tim Zenko dan masa aktif langganan sudah
+        diperbarui. Tidak ada yang perlu ditransfer lagi untuk tagihan ini.
+      </AppSectionMessage>
+
       <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-        <ManualQrisCode />
+        <!-- QR-nya hanya ditampilkan selama tagihannya masih bisa dibayar.
+             Tagihan yang sudah lunas, sedang diperiksa, hangus, atau dibatalkan
+             tetap perlu menyebut nominalnya sebagai rujukan, tetapi kode yang
+             bisa dipindai di sampingnya adalah undangan mentransfer uang yang
+             tidak akan dicocokkan dengan tagihan mana pun. -->
+        <ManualQrisCode v-if="payable" />
 
         <div class="grid w-full gap-4 text-center sm:text-left">
           <div>
@@ -158,7 +172,7 @@ async function onSubmit(payload: PaymentProofPayload) {
             <p v-if="instructions?.nmid" class="mt-0.5 text-[0.82rem] text-muted tabular-nums">
               NMID {{ instructions.nmid }}
             </p>
-            <p class="mt-2 text-[0.84rem] leading-[1.55] text-muted">
+            <p v-if="payable" class="mt-2 text-[0.84rem] leading-[1.55] text-muted">
               Pastikan nama ini yang muncul di aplikasi pembayaranmu sebelum menekan bayar.
             </p>
           </div>
@@ -167,6 +181,7 @@ async function onSubmit(payload: PaymentProofPayload) {
             <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">Nominal transfer</p>
               <button
+                v-if="payable"
                 type="button"
                 class="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-primary hover:underline"
                 @click="copyAmount"
@@ -179,7 +194,7 @@ async function onSubmit(payload: PaymentProofPayload) {
               {{ formatRupiah(amount) }}
             </p>
             <p class="mt-2 text-[0.82rem] text-muted">
-              {{ bimbelPlanLabel(order.plan) }} · {{ order.seatQuota }} kursi · {{ order.months }} bulan
+              {{ orderSummary }}
             </p>
             <p v-if="expiresAt && payable" class="mt-1 text-[0.82rem] font-semibold text-warning-ink">
               Bayar sebelum {{ formatDate(expiresAt) }}

@@ -18,7 +18,7 @@ definePageMeta({ path: '/untuk-bimbel/daftar' })
 useSeoMeta({
   title: 'Daftarkan Bimbel di Zenko',
   description:
-    'Ajukan bimbelmu untuk memakai Zenko: kelas, bank soal privat, dan rekap hasil siswa dalam satu ruang kerja.',
+    'Mulai uji coba bimbel di Zenko: kelas, bank soal privat, dan rekap hasil siswa dalam satu ruang kerja.',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel/daftar',
 })
 
@@ -33,6 +33,7 @@ const SIGN_IN_PATH = '/masuk?lanjut=/untuk-bimbel/daftar'
 
 const { user, isSignedIn, isLoading: isCheckingSession } = useAuth()
 const application = useMyBimbelApplication()
+const recommendedPlan = useState<'dasar' | 'pro' | 'institusi' | null>('bimbel-recommended-plan', () => null)
 
 /**
  * `GET /bimbel-applications/me` menjawab 404 saat seseorang belum pernah
@@ -50,10 +51,9 @@ watch(isSignedIn, (signedIn) => {
 
 const form = reactive({
   bimbelName: '',
-  whatsapp: '',
   city: '',
-  studentCount: 25,
-  about: '',
+  studentCountBand: '',
+  termsAccepted: false,
 })
 
 type FieldKey = keyof typeof form
@@ -63,13 +63,14 @@ const isSubmitting = ref(false)
 const isSubmitted = ref(false)
 const submitError = ref('')
 
-// Sengaja longgar: 08xx atau 62xx, dengan atau tanpa spasi/strip.
-const PHONE_PATTERN = /^\+?[\d\s-]{9,20}$/
-// Cermin dari batas di zenko-api (internal/handler/bimbel_application.go):
-// nama 3–80 karakter, tentang minimal 20 karakter.
 const MIN_NAME_LENGTH = 3
 const MAX_NAME_LENGTH = 80
-const MIN_ABOUT_LENGTH = 20
+const STUDENT_COUNT_OPTIONS = [
+  { value: '<25', label: 'Kurang dari 25 siswa' },
+  { value: '25-50', label: '25–50 siswa' },
+  { value: '51-150', label: '51–150 siswa' },
+  { value: '>150', label: 'Lebih dari 150 siswa' },
+]
 
 function validate() {
   for (const key of Object.keys(errors) as FieldKey[]) delete errors[key]
@@ -79,20 +80,8 @@ function validate() {
   else if (name.length < MIN_NAME_LENGTH) errors.bimbelName = `Nama bimbel minimal ${MIN_NAME_LENGTH} karakter.`
   else if (name.length > MAX_NAME_LENGTH) errors.bimbelName = `Nama bimbel maksimal ${MAX_NAME_LENGTH} karakter.`
 
-  if (!form.whatsapp.trim()) errors.whatsapp = 'Nomor WhatsApp wajib diisi.'
-  else if (!PHONE_PATTERN.test(form.whatsapp.trim())) {
-    errors.whatsapp = 'Nomor WhatsApp belum benar. Contoh: 081234567890.'
-  }
-
-  if (!Number.isFinite(form.studentCount) || form.studentCount < 1) {
-    errors.studentCount = 'Isi perkiraan jumlah siswa, minimal 1.'
-  }
-
-  const about = form.about.trim()
-  if (!about) errors.about = 'Ceritakan sedikit tentang bimbelmu.'
-  else if (about.length < MIN_ABOUT_LENGTH) {
-    errors.about = 'Tambahkan sedikit detail supaya tim kami bisa menilai pengajuanmu.'
-  }
+  if (!form.studentCountBand) errors.studentCountBand = 'Pilih rentang jumlah siswa.'
+  if (!form.termsAccepted) errors.termsAccepted = 'Kamu perlu menyetujui syarat dan ketentuan bimbel.'
 
   return Object.keys(errors).length === 0
 }
@@ -105,11 +94,15 @@ async function onSubmit() {
   try {
     await applyBimbel({
       bimbelName: form.bimbelName.trim(),
-      whatsapp: form.whatsapp.trim(),
-      city: form.city.trim(),
-      studentCount: form.studentCount,
-      about: form.about.trim(),
+      studentCountBand: form.studentCountBand as '<25' | '25-50' | '51-150' | '>150',
+      ...(form.city.trim() ? { city: form.city.trim() } : {}),
+      termsAccepted: true,
     })
+    recommendedPlan.value = form.studentCountBand === '<25'
+      ? 'dasar'
+      : form.studentCountBand === '25-50'
+        ? 'pro'
+        : 'institusi'
     isSubmitted.value = true
     // Status terbaru dipakai halaman /akun/bimbel juga, jadi diambil ulang
     // supaya keduanya tidak berbeda cerita. Sekaligus yang membawa `bimbelId`
@@ -121,8 +114,8 @@ async function onSubmit() {
     // (sudah mengelola bimbel), jadi pesan server diteruskan.
     const conflict = (cause as { statusCode?: number })?.statusCode === 409
     submitError.value = conflict
-      ? tutorApiMessage(cause, 'Pengajuanmu tidak bisa diproses.')
-      : 'Pengajuanmu belum terkirim. Periksa koneksimu, lalu coba lagi.'
+      ? tutorApiMessage(cause, 'Pendaftaranmu tidak bisa diproses.')
+      : 'Pendaftaranmu belum terkirim. Periksa koneksimu, lalu coba lagi.'
   }
   finally {
     isSubmitting.value = false
@@ -161,7 +154,7 @@ const formState = computed<FormState>(() => {
 
       <div class="mb-9 text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
-          Pengajuan bimbel
+          Bimbel di Zenko
         </p>
         <!-- Netral terhadap apa pun yang dirender kartu di bawahnya: judul
              "isi datamu" akan bertabrakan dengan panel belum-masuk dan panel
@@ -262,28 +255,12 @@ const formState = computed<FormState>(() => {
             </span>
           </div>
 
-          <BimbelApplicationStatus
-            v-if="myApplication?.status === 'rejected'"
-            :application="myApplication"
-          />
-
           <AppInput
             id="bimbel-name"
             v-model="form.bimbelName"
             label="Nama bimbel"
             placeholder="Contoh: Bimbel Cendekia"
             :error="errors.bimbelName"
-            required
-          />
-
-          <AppInput
-            id="bimbel-whatsapp"
-            v-model="form.whatsapp"
-            type="tel"
-            label="Nomor WhatsApp pengelola"
-            autocomplete="tel"
-            placeholder="081234567890"
-            :error="errors.whatsapp"
             required
           />
 
@@ -295,30 +272,41 @@ const formState = computed<FormState>(() => {
             hint="Opsional."
           />
 
-          <AppInput
-            id="bimbel-student-count"
-            v-model.number="form.studentCount"
-            type="number"
-            min="1"
-            label="Perkiraan jumlah siswa"
-            hint="Perkiraan saja. Kuota kursi berlangganan dipilih belakangan, minimum 25 kursi."
-            :error="errors.studentCount"
-            required
-          />
+          <div>
+            <AppSelect
+              :model-value="form.studentCountBand"
+              :options="STUDENT_COUNT_OPTIONS"
+              label="Perkiraan jumlah siswa"
+              placeholder="Pilih rentang siswa"
+              @update:model-value="form.studentCountBand = String($event)"
+            />
+            <p class="mt-1.5 text-xs text-muted">Dipakai untuk merekomendasikan tingkat setelah uji coba dimulai.</p>
+            <p v-if="errors.studentCountBand" id="bimbel-student-count-error" class="mt-1.5 text-xs text-danger" role="alert">{{ errors.studentCountBand }}</p>
+          </div>
 
-          <AppTextarea
-            id="bimbel-about"
-            v-model="form.about"
-            label="Tentang bimbel"
-            placeholder="Jenjang yang diajar, program yang dijalankan, dan cara belajar di bimbelmu."
-            :error="errors.about"
-            required
-          />
+          <div>
+            <label class="flex cursor-pointer items-start gap-2.5 text-[0.88rem] text-muted">
+              <input
+                v-model="form.termsAccepted"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 shrink-0 rounded-[4px] accent-primary"
+                :aria-invalid="Boolean(errors.termsAccepted)"
+                :aria-describedby="errors.termsAccepted ? 'bimbel-terms-error' : undefined"
+                required
+              >
+              <span>
+                Saya menyetujui
+                <NuxtLink to="/ketentuan-layanan" class="font-semibold text-primary hover:underline">Syarat dan Ketentuan Zenko</NuxtLink>,
+                termasuk porsi hasil marketplace sesuai tingkat langganan.
+              </span>
+            </label>
+            <p v-if="errors.termsAccepted" id="bimbel-terms-error" class="mt-2 text-xs text-danger" role="alert">{{ errors.termsAccepted }}</p>
+          </div>
 
           <AppInlineMessage v-if="submitError" type="error">{{ submitError }}</AppInlineMessage>
 
           <AppButton type="submit" size="lg" class="w-full" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Mengirim...' : 'Kirim pengajuan' }}
+            {{ isSubmitting ? 'Menyiapkan ruang…' : 'Mulai uji coba 7 hari' }}
           </AppButton>
         </form>
       </div>

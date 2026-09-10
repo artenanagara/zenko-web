@@ -5,10 +5,10 @@ definePageMeta({ path: '/kebijakan-privasi' })
 useSeoMeta({
   title: 'Kebijakan Privasi | Zenko',
   description:
-    'Kebijakan Privasi Zenko mengenai pengumpulan, penggunaan, penyimpanan, pembagian, dan pelindungan data pribadi pengguna.',
+    'Kebijakan Privasi Zenko mengenai data akun, pembelajaran, transaksi, serta pengelolaan siswa dan anggota bimbel.',
   ogTitle: 'Kebijakan Privasi | Zenko',
   ogDescription:
-    'Kebijakan Privasi Zenko mengenai pengumpulan, penggunaan, penyimpanan, pembagian, dan pelindungan data pribadi pengguna.',
+    'Kebijakan Privasi Zenko mengenai data akun, pembelajaran, transaksi, serta pengelolaan siswa dan anggota bimbel.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/kebijakan-privasi',
   twitterCard: 'summary_large_image',
@@ -45,6 +45,11 @@ const sharing = [
     purpose: 'Melakukan penilaian manual dan memberikan layanan paket yang dibeli siswa',
   },
   {
+    party: 'Pengelola bimbel yang berwenang',
+    data: 'Nama, email, peran dan status anggota, kelas, paket, aktivitas pengerjaan, skor, serta hasil siswa yang relevan',
+    purpose: 'Mengelola keanggotaan dan kelas, menyediakan pembelajaran, serta memantau hasil siswa dalam ruang kerja bimbel',
+  },
+  {
     party: 'Penasihat profesional dan otoritas yang berwenang',
     data: 'Data yang secara wajar diperlukan untuk tujuan terkait',
     purpose: 'Memenuhi kewajiban hukum, menyelesaikan sengketa, dan melindungi hak atau keamanan pihak terkait',
@@ -68,6 +73,11 @@ const retention = [
       'Selama akun aktif dan diperlukan untuk memberikan akses paket. Data akan dihapus atau dianonimkan setelah akun ditutup, kecuali perlu dipertahankan untuk hak pengguna lain atau kewajiban hukum.',
   },
   {
+    category: 'Data ruang kerja, keanggotaan, dan kelas bimbel',
+    period:
+      'Selama ruang kerja atau keanggotaan terkait aktif dan selama diperlukan untuk menyediakan riwayat kelas, hasil, transaksi, serta memenuhi kewajiban hukum. Setelah tidak lagi diperlukan, data dihapus atau dianonimkan sesuai jenis data dan hak pihak yang terkait.',
+  },
+  {
     category: 'Tiket dukungan dan log keamanan',
     period:
       'Umumnya sampai 2 tahun sejak komunikasi atau kejadian terakhir, kecuali diperlukan lebih lama untuk investigasi, keamanan, atau sengketa.',
@@ -81,7 +91,7 @@ const retention = [
 </script>
 
 <template>
-  <LegalDocument lead="Kebijakan" accent="Privasi" updated="25 Agustus 2026">
+  <LegalDocument lead="Kebijakan" accent="Privasi" updated="10 September 2026">
     <p>
       Kebijakan Privasi ini menjelaskan cara Zenko mengumpulkan, menggunakan,
       menyimpan, membagikan, dan melindungi data pribadi ketika Anda menggunakan
@@ -133,14 +143,23 @@ const retention = [
       <li>Paket soal, pembahasan, materi, dan konten lain yang diunggah tutor.</li>
     </ul>
 
-    <h3>c. Data pembelajaran dan interaksi</h3>
+    <h3>c. Data bimbel dan organisasi</h3>
+    <ul>
+      <li>Nama Bimbel, kota, perkiraan jumlah siswa, waktu persetujuan ketentuan, deskripsi, logo, dan pengenal ruang kerja;</li>
+      <li>Nama dan email anggota yang diundang atau bergabung, peran, status keanggotaan, kode bergabung, serta pengelompokan kelas;</li>
+      <li>Tingkat dan status langganan, masa aktif, kuota dan penggunaan kursi, kursi tambahan, tagihan, bukti pembayaran, serta status verifikasi;</li>
+      <li>Paket privat atau publik yang dibuat Bimbel, penjualan marketplace, saldo, rekening pencairan, dan riwayat payout;</li>
+      <li>Aktivitas belajar, jawaban, skor, dan rekap hasil siswa yang ditampilkan kepada Pengelola Bimbel sesuai perannya.</li>
+    </ul>
+
+    <h3>d. Data pembelajaran dan interaksi</h3>
     <ul>
       <li>Paket yang dilihat, dibeli, dan diakses;</li>
       <li>Jawaban, unggahan gambar, waktu pengerjaan, skor, dan riwayat hasil;</li>
       <li>Ulasan, rating, serta komunikasi dengan tutor atau tim dukungan.</li>
     </ul>
 
-    <h3>d. Data transaksi</h3>
+    <h3>e. Data transaksi</h3>
     <ul>
       <li>
         Nomor pesanan, paket yang dibeli, nilai transaksi, metode pembayaran, status,
@@ -153,7 +172,7 @@ const retention = [
       </li>
     </ul>
 
-    <h3>e. Data teknis</h3>
+    <h3>f. Data teknis</h3>
     <ul>
       <li>Alamat IP, jenis browser dan perangkat, sistem operasi, serta waktu akses;</li>
       <li>Cookie sesi, log autentikasi, log permintaan, dan catatan kesalahan;</li>
@@ -166,6 +185,7 @@ const retention = [
     <p>Kami memperoleh data pribadi:</p>
     <ul>
       <li>Langsung dari Anda ketika mendaftar, mengisi profil, membeli, belajar, atau menghubungi kami;</li>
+      <li>Dari pemilik atau Pengelola Bimbel ketika mereka mengundang anggota, menetapkan peran, membuat kelas, atau mengelola pembelajaran;</li>
       <li>Dari Google apabila Anda memilih autentikasi Google;</li>
       <li>Dari DOKU dan kanal pembayaran terkait ketika Anda melakukan transaksi;</li>
       <li>Secara otomatis dari perangkat dan penggunaan layanan melalui cookie yang diperlukan dan log sistem.</li>
@@ -179,7 +199,8 @@ const retention = [
       <li>
         <strong>Menjalankan kontrak</strong>: membuat akun, menyediakan autentikasi,
         memproses pesanan, memberi akses paket, menyimpan hasil belajar, menilai
-        jawaban, dan mencairkan pendapatan tutor;
+        jawaban, mengelola ruang kerja, anggota, kelas, langganan dan laporan Bimbel,
+        serta mencairkan pendapatan Tutor atau Bimbel;
       </li>
       <li>
         <strong>Memenuhi kewajiban hukum</strong>: menyimpan catatan transaksi,
@@ -228,8 +249,10 @@ const retention = [
 
     <p>
       Antar pengguna, informasi yang ditampilkan dibatasi pada data yang diperlukan
-      untuk fungsi marketplace dan pembelajaran. Kami tidak menampilkan email, nomor
-      telepon, atau data rekening secara publik.
+      untuk fungsi marketplace, pembelajaran, dan pengelolaan Bimbel. Pengelola Bimbel
+      hanya menerima data anggota dan hasil yang relevan dengan ruang kerja serta
+      kewenangan perannya. Kami tidak menampilkan email, nomor telepon, atau data
+      rekening secara publik.
     </p>
 
     <hr>
@@ -322,6 +345,13 @@ const retention = [
       penghapusan data anak yang berada di bawah tanggung jawabnya. Jika kami mengetahui
       data anak diproses tanpa persetujuan yang sah, kami akan mengambil langkah wajar
       untuk membatasi dan menghapusnya, kecuali penyimpanan diwajibkan oleh hukum.
+    </p>
+    <p>
+      Jika Bimbel mengundang atau mengelola siswa berusia di bawah 18 tahun, Bimbel
+      wajib memastikan memiliki kewenangan dan persetujuan orang tua atau wali yang
+      diperlukan sebelum memasukkan atau menggunakan data siswa tersebut. Kewajiban
+      ini tidak mengurangi tanggung jawab Zenko untuk memproses data anak secara sah,
+      terbatas, aman, dan transparan.
     </p>
 
     <hr>
