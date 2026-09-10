@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SUPPORT_CONTACT } from '~/data/support-contact'
+
 withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 
 type FooterLink = {
@@ -58,12 +60,38 @@ const year = new Date().getFullYear()
   >
     <!-- Account pages keep a compact brand row; public pages show the complete
          menu requested for the marketplace. -->
-    <div v-if="compact" class="container-page py-8">
+    <div v-if="compact" class="container-page flex flex-wrap items-center justify-between gap-x-8 gap-y-5 py-8">
       <BrandMark
         theme="dark"
         img-class="h-9 w-auto object-contain"
         aria-label="Zenko"
       />
+      <!-- Halaman akun tidak memuat menu lengkap, tapi jalan ke bantuan
+           tetap harus ada di sini: di sinilah pesanan dan ujian dikerjakan. -->
+      <nav aria-label="Bantuan">
+        <ul class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.88rem]">
+          <li>
+            <NuxtLink to="/pusat-bantuan" class="text-white/68 transition-colors duration-200 hover:text-white">
+              Pusat Bantuan
+            </NuxtLink>
+          </li>
+          <li>
+            <NuxtLink to="/faq" class="text-white/68 transition-colors duration-200 hover:text-white">
+              FAQ
+            </NuxtLink>
+          </li>
+          <li>
+            <a
+              :href="SUPPORT_CONTACT.whatsappUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-white/68 transition-colors duration-200 hover:text-white"
+            >
+              WhatsApp {{ SUPPORT_CONTACT.phoneDisplay }}
+            </a>
+          </li>
+        </ul>
+      </nav>
     </div>
 
     <div v-else class="container-page pb-8 md:pb-10">

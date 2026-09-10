@@ -1,15 +1,26 @@
 /**
- * Konten Pusat Bantuan. Sumber perencanaan: docs/pusat-bantuan-brainstorm-guide.md
- * (di root monorepo). Beberapa artikel di sana menjelaskan fitur yang belum
- * dibangun di produk (lihat flag `comingSoon` dan `note.appearance === 'discovery'`
- * di bawah) — artikel itu tetap diterbitkan sesuai permintaan, tapi ditandai
- * jelas "Segera Hadir" supaya tidak menyesatkan pengguna nyata.
+ * Konten Pusat Bantuan.
+ *
+ * Setiap langkah, label tombol, dan angka di sini harus cocok dengan perilaku
+ * aplikasi yang sebenarnya — artikel yang salah lebih merugikan daripada
+ * artikel yang tidak ada. Karena itu:
+ * - label tombol dikutip persis seperti di UI ("Mulai try out", "Tarik Saldo");
+ * - fitur yang belum dibangun tidak diterbitkan sebagai artikel;
+ * - tidak ada placeholder tangkapan layar — gambar hanya ditambahkan kalau
+ *   gambarnya benar-benar ada.
+ *
+ * Kalau alur, label, atau angka di produk berubah (masa tahan saldo, minimal
+ * pencairan, masa berlaku kode, batas waktu ujian), perbarui artikel di sini
+ * pada perubahan yang sama. Kanal kontak ada di `data/support-contact.ts`.
+ *
+ * Slug yang dipensiunkan dialihkan lewat `routeRules` di nuxt.config.ts.
  */
+import { SUPPORT_CONTACT } from './support-contact'
 
 export type HelpRole = 'siswa' | 'tutor' | 'bimbel'
 
 export interface HelpNote {
-  appearance: 'warning' | 'discovery'
+  appearance: 'warning' | 'information'
   title?: string
   body: string
 }
@@ -17,7 +28,6 @@ export interface HelpNote {
 export interface HelpStep {
   title: string
   body: string
-  screenshot?: string
   note?: HelpNote
 }
 
@@ -38,8 +48,6 @@ export interface HelpArticle {
   steps: HelpStep[]
   troubleshooting: HelpTroubleshootingItem[]
   keywords?: string[]
-  /** Artikel menjelaskan alur yang belum tersedia di produk. */
-  comingSoon?: boolean
 }
 
 export type HelpCategoryIcon = 'user' | 'wallet' | 'target' | 'handshake' | 'users' | 'settings'
@@ -60,26 +68,26 @@ export const helpCategories: HelpCategory[] = [
   },
   {
     slug: 'pembayaran-kode-akses',
-    title: 'Pembelian, Pembayaran, dan Kode Akses',
-    description: 'Coba gratis, bayar via QRIS, kode akses bimbel, dan riwayat transaksi.',
+    title: 'Pembelian dan Pembayaran',
+    description: 'Coba gratis, mengambil paket, status pesanan, dan invoice.',
     icon: 'wallet',
   },
   {
     slug: 'ujian-cbt-pembahasan',
     title: 'Ujian CBT dan Analisis Pembahasan',
-    description: 'Mengerjakan try out, navigasi soal, mode waktu, skor, dan pembahasan.',
+    description: 'Mengerjakan try out, navigasi soal, aturan waktu, skor, dan pembahasan.',
     icon: 'target',
   },
   {
     slug: 'portal-tutor',
     title: 'Portal Tutor: Pembuatan Soal dan Penjualan',
-    description: 'Ajukan akun tutor, buat paket, input soal, impor CSV, rekening, dan payout.',
+    description: 'Ajukan akun tutor, buat paket, input soal, impor CSV, rekening, dan pencairan.',
     icon: 'handshake',
   },
   {
     slug: 'bimbel-institusi',
     title: 'Portal Bimbel, Langganan, dan Kelas',
-    description: 'Mulai uji coba, pilih langganan, tambah kursi, kelola siswa dan kelas, serta jual paket.',
+    description: 'Gabung ke bimbel, mulai uji coba, pilih langganan, tambah kursi, kelola siswa dan kelas, serta jual paket.',
     icon: 'users',
   },
   {
@@ -99,276 +107,260 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'akun-keamanan',
     title: 'Mendaftar Akun Baru',
     roles: ['siswa', 'tutor', 'bimbel'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Buat akun Zenko lewat Google satu klik, atau email dan kata sandi.',
-    prerequisites: [
-      'Punya alamat email aktif, atau akun Google yang bisa diakses.',
-      'Menggunakan browser Google Chrome atau Safari versi terbaru.',
-    ],
+    summary: 'Buat akun Zenko lewat Google atau email, lalu aktifkan dengan kode verifikasi 6 digit.',
+    prerequisites: ['Punya alamat email aktif, atau akun Google yang bisa diakses.'],
     steps: [
       {
         title: 'Buka halaman pendaftaran',
-        body: 'Buka halaman /daftar dari tombol "Daftar" di bilah navigasi Zenko.',
-        screenshot: 'Tampilan halaman /daftar dengan tombol "Daftar dengan Google" dan form Nama, Email, Kata Sandi.',
+        body: 'Klik tombol "Daftar" di bilah navigasi Zenko untuk membuka halaman /daftar.',
       },
       {
-        title: 'Pilih metode pendaftaran',
+        title: 'Pilih cara mendaftar',
         body:
-          'Klik "Daftar dengan Google" untuk mendaftar satu klik memakai akun Google, atau lengkapi form Nama Lengkap, Email, dan Kata Sandi untuk mendaftar manual.',
+          'Klik "Daftar dengan Google" untuk memakai akun Google, atau isi nama lengkap, email, dan kata sandi untuk mendaftar dengan email.',
       },
       {
-        title: 'Verifikasi email (khusus pendaftaran manual)',
+        title: 'Masukkan kode verifikasi',
         body:
-          'Kalau mendaftar lewat email, kamu akan diarahkan ke halaman /verifikasi-email. Buka kotak masuk emailmu dan masukkan 6 digit kode OTP yang dikirim Zenko.',
-        screenshot: 'Tampilan input 6 digit kode verifikasi di halaman /verifikasi-email.',
+          'Apa pun cara yang kamu pilih, Zenko mengirim 6 digit kode ke emailmu dan membawamu ke halaman /verifikasi-email. Masukkan kode itu untuk mengaktifkan akun.',
         note: {
           appearance: 'warning',
-          body: 'Pendaftaran lewat Google tidak memerlukan langkah verifikasi ini — akun langsung aktif.',
+          body: 'Kode berlaku 10 menit dan tidak bisa dipakai lagi setelah 5 kali salah ketik. Kalau sudah tidak berlaku, minta kode baru lewat tombol "Kirim ulang" di halaman yang sama.',
         },
       },
       {
-        title: 'Masuk ke akun',
-        body: 'Setelah verifikasi berhasil (atau langsung setelah masuk dengan Google), kamu otomatis masuk ke halaman akun Zenko.',
+        title: 'Lanjut masuk',
+        body:
+          'Setelah muncul "Email kamu terverifikasi", klik "Lanjut masuk" (atau "Lanjut masuk dengan Google" kalau kamu mendaftar dengan Google). Akunmu siap dipakai.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Kode OTP tidak masuk ke email, apa yang harus dilakukan?',
+        question: 'Kode verifikasi tidak masuk ke email, apa yang harus dilakukan?',
         answer:
-          'Periksa folder Spam/Promosi, tunggu 1–2 menit, lalu gunakan tombol kirim ulang kode di halaman /verifikasi-email. Pastikan alamat email yang didaftarkan sudah benar.',
+          'Periksa folder Spam atau Promosi dan tunggu 1–2 menit. Kalau belum ada juga, gunakan tombol "Kirim ulang" di halaman /verifikasi-email, lalu pastikan alamat email yang kamu daftarkan sudah benar.',
+      },
+      {
+        question: 'Saya mendaftar dengan Google, kenapa tetap diminta kode?',
+        answer:
+          'Semua akun baru diverifikasi sekali lewat kode di email, termasuk yang mendaftar dengan Google. Langkah ini hanya dilakukan sekali, saat pertama masuk.',
       },
       {
         question: 'Email yang saya pakai sudah pernah terdaftar, apa solusinya?',
         answer:
-          'Gunakan halaman /masuk dan coba masuk dengan email tersebut, atau reset kata sandi lewat /lupa-password kalau lupa kata sandinya.',
+          'Masuk lewat halaman /masuk dengan email tersebut. Kalau lupa kata sandinya, reset lewat /lupa-password.',
       },
     ],
-    keywords: ['daftar', 'registrasi', 'buat akun', 'google', 'otp', 'verifikasi email'],
+    keywords: ['daftar', 'registrasi', 'buat akun', 'google', 'otp', 'kode verifikasi', 'verifikasi email'],
   },
   {
     slug: 'reset-kata-sandi',
     categorySlug: 'akun-keamanan',
     title: 'Reset Kata Sandi',
     roles: ['siswa', 'tutor', 'bimbel'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Pulihkan akses akun lewat tautan reset yang dikirim ke email.',
-    prerequisites: ['Akun terdaftar menggunakan email dan kata sandi (bukan hanya lewat Google).', 'Bisa mengakses email yang didaftarkan.'],
+    summary: 'Pulihkan akses akun, atau buat kata sandi untuk akun Google, lewat tautan yang dikirim ke email.',
+    prerequisites: ['Bisa membuka email yang terdaftar di Zenko.'],
     steps: [
       {
-        title: 'Buka tautan lupa kata sandi',
-        body: 'Di halaman /masuk, klik tautan "Lupa kata sandi" untuk menuju halaman /lupa-password.',
-        screenshot: 'Halaman /masuk dengan tautan "Lupa kata sandi" disorot.',
+        title: 'Buka halaman lupa kata sandi',
+        body: 'Di halaman /masuk, klik "Lupa kata sandi" untuk menuju halaman /lupa-password.',
       },
       {
         title: 'Kirim permintaan reset',
-        body: 'Masukkan alamat email yang terdaftar di Zenko, lalu kirim permintaan reset kata sandi.',
+        body: 'Masukkan alamat email yang terdaftar di Zenko, lalu kirim permintaannya.',
       },
       {
-        title: 'Buka email dan klik tautan reset',
-        body: 'Buka pesan dari Zenko di kotak masukmu dan klik tautan reset yang akan membawamu ke halaman /password-baru.',
-        screenshot: 'Contoh email berisi tautan reset kata sandi dari Zenko.',
+        title: 'Buka tautan di email',
+        body: 'Buka email dari Zenko dan klik tautan reset. Tautan ini membawamu ke halaman /password-baru.',
+        note: {
+          appearance: 'warning',
+          body: 'Tautan berlaku 24 jam. Permintaan ulang untuk email yang sama dalam 60 detik tidak mengirim email baru, jadi tunggu sebentar sebelum mencoba lagi.',
+        },
       },
       {
         title: 'Buat kata sandi baru',
-        body: 'Masukkan kata sandi baru beserta konfirmasinya, lalu simpan. Kamu bisa langsung masuk memakai kata sandi baru itu.',
-        screenshot: 'Form input kata sandi baru dan konfirmasi di halaman /password-baru.',
-        note: {
-          appearance: 'warning',
-          body: 'Tautan reset punya batas waktu berlaku. Kalau sudah kedaluwarsa, ulangi dari langkah pertama untuk mendapat tautan baru.',
-        },
+        body: 'Masukkan kata sandi baru (minimal 8 karakter) beserta konfirmasinya, lalu simpan. Setelah itu kamu bisa masuk dengan kata sandi tersebut.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Akun saya dibuat lewat Google, kenapa tidak ada opsi reset kata sandi?',
-        answer: 'Akun yang dibuat lewat Google tidak punya kata sandi Zenko — masuk langsung dengan tombol "Masuk dengan Google" di halaman /masuk.',
+        question: 'Akun saya dibuat lewat Google. Bisakah saya punya kata sandi?',
+        answer:
+          'Bisa. Ikuti langkah di atas dengan email akun Googlemu untuk membuat kata sandi. Setelah itu kamu bisa masuk dengan Google maupun dengan email dan kata sandi.',
       },
       {
         question: 'Email reset tidak kunjung datang?',
-        answer: 'Periksa folder Spam, pastikan email yang dimasukkan sama persis dengan email pendaftaran, lalu coba kirim ulang setelah beberapa menit.',
+        answer:
+          'Periksa folder Spam dan pastikan email yang dimasukkan sama persis dengan email pendaftaran. Tunggu sekitar satu menit sebelum mengirim ulang permintaan.',
       },
     ],
-    keywords: ['lupa password', 'lupa kata sandi', 'reset password', 'ganti sandi'],
+    keywords: ['lupa password', 'lupa kata sandi', 'reset password', 'ganti sandi', 'kata sandi google'],
   },
   {
     slug: 'perbarui-profil-dan-kata-sandi',
     categorySlug: 'akun-keamanan',
     title: 'Ubah Profil dan Kata Sandi',
     roles: ['siswa', 'tutor', 'bimbel'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Ganti nama, foto profil, dan kata sandi akun yang sudah aktif.',
+    summary: 'Ganti nama, foto profil, dan kata sandi, atau keluar dari semua perangkat.',
     prerequisites: ['Sudah masuk ke akun Zenko.'],
     steps: [
       {
-        title: 'Buka menu profil',
-        body: 'Klik dropdown akun di navigasi kanan atas, lalu pilih "Profil Saya" untuk membuka halaman /akun/profil.',
-        screenshot: 'Dropdown navigasi akun di bilah navigasi dengan opsi "Profil Saya" disorot.',
+        title: 'Buka Akun saya',
+        body: 'Klik foto atau namamu di kanan atas, lalu pilih "Akun saya" untuk membuka halaman /akun/profil.',
       },
       {
         title: 'Ubah data profil',
-        body: 'Perbarui nama lengkap atau foto profil pada bagian Profil, lalu simpan perubahan.',
-        screenshot: 'Halaman /akun/profil dengan bagian data profil disorot.',
+        body: 'Di tab "Profil", perbarui nama lengkap atau foto profil, lalu simpan perubahan.',
       },
       {
         title: 'Ganti kata sandi',
-        body: 'Pada bagian Keamanan di halaman yang sama, masukkan kata sandi lama lalu kata sandi baru, dan simpan.',
-        screenshot: 'Bagian Keamanan di /akun/profil dengan form ganti kata sandi.',
+        body:
+          'Buka tab "Kata sandi", isi kata sandi saat ini dan kata sandi baru (minimal 8 karakter dan harus berbeda dari yang lama), lalu klik "Simpan kata sandi".',
       },
     ],
     troubleshooting: [
       {
-        question: 'Tidak ada form ganti kata sandi di halaman profil saya, kenapa?',
-        answer: 'Akun yang masuk lewat Google tidak memiliki kata sandi Zenko sehingga bagian ini tidak muncul.',
+        question: 'Saya selalu masuk dengan Google dan tidak tahu kata sandi saat ini. Bagaimana?',
+        answer:
+          'Buat kata sandi dulu lewat /lupa-password (lihat panduan Reset Kata Sandi). Setelah itu kamu bisa menggantinya kapan saja dari tab "Kata sandi".',
+      },
+      {
+        question: 'HP saya hilang atau akun saya pernah dibuka di perangkat orang lain.',
+        answer:
+          'Di halaman /akun/profil ada pilihan "Keluar dari semua perangkat". Semua sesi yang sedang aktif akan berakhir, dan kamu perlu masuk lagi di perangkatmu sendiri.',
       },
     ],
-    keywords: ['ubah profil', 'ganti nama', 'foto profil', 'ganti kata sandi akun'],
+    keywords: ['ubah profil', 'ganti nama', 'foto profil', 'ganti kata sandi akun', 'keluar semua perangkat'],
   },
 
   // ======================================================================
-  // Kategori 2: Pembelian, Pembayaran, dan Kode Akses
+  // Kategori 2: Pembelian dan Pembayaran
   // ======================================================================
   {
     slug: 'coba-gratis-5-soal',
     categorySlug: 'pembayaran-kode-akses',
     title: 'Coba Gratis 5 Soal',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Cicipi lima soal asli sebuah paket, gratis, tanpa perlu membayar.',
-    prerequisites: ['Tidak perlu punya akun untuk mencoba — cukup buka katalog paket.'],
+    summary: 'Cicipi lima soal asli dari sebuah paket tunggal, gratis dan tanpa perlu akun.',
+    prerequisites: ['Tidak perlu punya akun. Cukup buka katalog paket.'],
     steps: [
       {
         title: 'Buka katalog paket',
-        body: 'Kunjungi halaman /paket dan telusuri paket try out yang ingin dicoba.',
+        body: 'Kunjungi halaman /paket dan pilih paket try out yang ingin dicoba.',
       },
       {
-        title: 'Buka halaman detail paket',
-        body: 'Klik paket yang dituju untuk membuka halaman /paket/[slug] miliknya.',
+        title: 'Klik "Coba Gratis 5 Soal"',
+        body: 'Di halaman detail paket, klik "Coba Gratis 5 Soal" untuk membuka /paket/[slug]/coba.',
       },
       {
-        title: 'Klik "Coba Gratis"',
-        body: 'Pada halaman detail paket, klik tombol coba gratis untuk membuka /paket/[slug]/coba.',
-        screenshot: 'Tombol "Coba Gratis" pada halaman detail paket.',
-      },
-      {
-        title: 'Kerjakan simulasi 5 soal',
-        body: 'Kerjakan lima soal asli dari paket tersebut untuk merasakan langsung format dan tingkat kesulitannya sebelum membeli.',
-        screenshot: 'Tampilan antarmuka simulasi 5 soal.',
+        title: 'Kerjakan lima soalnya',
+        body: 'Kerjakan lima soal asli dari paket tersebut untuk merasakan format dan tingkat kesulitannya. Jawabanmu dinilai oleh server Zenko.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Apakah hasil simulasi coba gratis ini disimpan atau memengaruhi skor?',
-        answer: 'Tidak. Simulasi ini hanya untuk pratinjau soal, hasilnya tidak masuk ke riwayat nilai resmi paket.',
+        question: 'Apakah hasil coba gratis disimpan atau memengaruhi skor?',
+        answer: 'Tidak. Coba gratis hanya untuk pratinjau. Hasilnya tidak masuk ke riwayat percobaan paket.',
+      },
+      {
+        question: 'Kenapa paket bundel tidak punya tombol coba gratis?',
+        answer: 'Coba gratis hanya tersedia untuk paket tunggal.',
       },
     ],
-    keywords: ['coba gratis', 'trial', '5 soal', 'preview soal'],
+    keywords: ['coba gratis', 'trial', '5 soal', 'preview soal', 'sampel'],
   },
   {
     slug: 'beli-dan-bayar-via-qris',
     categorySlug: 'pembayaran-kode-akses',
-    title: 'Beli dan Bayar via QRIS',
+    title: 'Mengambil dan Membeli Paket',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Beli paket try out dan selesaikan pembayaran lewat QRIS.',
-    prerequisites: ['Sudah masuk ke akun Zenko.', 'Punya aplikasi m-Banking atau e-Wallet yang mendukung QRIS.'],
+    summary: 'Cara mengambil paket lewat checkout, termasuk selama pembayaran QRIS belum aktif.',
+    prerequisites: ['Sudah masuk ke akun Zenko.'],
     steps: [
       {
         title: 'Klik "Beli Sekarang"',
-        body: 'Dari halaman detail paket (/paket/[slug]), klik tombol "Beli Sekarang".',
+        body: 'Di halaman detail paket (/paket/[slug]), klik "Beli Sekarang".',
       },
       {
         title: 'Tinjau ringkasan checkout',
-        body: 'Periksa rincian biaya di halaman /checkout/[slug] sebelum melanjutkan pembayaran.',
-        screenshot: 'Rincian tagihan di halaman checkout.',
+        body: 'Periksa nama paket dan totalnya di halaman /checkout/[slug] sebelum melanjutkan.',
       },
       {
-        title: 'Bayar dengan QRIS',
-        body: 'Klik "Bayar Sekarang" untuk memunculkan kode QRIS, lalu scan menggunakan aplikasi m-Banking atau e-Wallet yang mendukung QRIS (pembayaran diproses lewat DOKU).',
-        screenshot: 'Jendela pop-up kode QRIS beserta batas waktu pembayaran.',
+        title: 'Paket gratis langsung aktif',
+        body:
+          'Untuk paket seharga Rp0, pesanan langsung berstatus Lunas dan paketnya muncul di "Paket saya" (/akun/paket) tanpa langkah pembayaran.',
       },
       {
-        title: 'Tunggu konfirmasi otomatis',
-        body: 'Setelah pembayaran berhasil, status akan terkonfirmasi otomatis dan paket muncul di halaman /akun/paket.',
-        screenshot: 'Notifikasi transaksi berhasil dengan tautan menuju "Paket Saya".',
-      },
-    ],
-    troubleshooting: [
-      {
-        question: 'Pembayaran sudah berhasil tapi paket belum muncul, harus bagaimana?',
-        answer:
-          'Lihat panduan "Panduan jika Pembayaran QRIS Berhasil tetapi Paket Belum Aktif" di kategori Kendala Teknis untuk langkah lengkapnya.',
-      },
-    ],
-    keywords: ['beli paket', 'bayar qris', 'checkout', 'doku'],
-  },
-  {
-    slug: 'aktivasi-kode-akses-bimbel',
-    categorySlug: 'pembayaran-kode-akses',
-    title: 'Aktivasi Kode Akses Bimbel',
-    roles: ['siswa'],
-    updated: '25 Agustus 2026',
-    readMinutes: 2,
-    summary: 'Rencana klaim kode dari bimbel agar paket aktif tanpa biaya tambahan.',
-    prerequisites: ['Sudah masuk ke akun Zenko.', 'Sudah menerima kode akses resmi dari bimbel atau institusi.'],
-    comingSoon: true,
-    steps: [
-      {
-        title: 'Buka menu klaim kode akses',
-        body: 'Fitur klaim kode akses lewat menu profil sedang dalam pengembangan dan belum tersedia di akun Zenko saat ini.',
+        title: 'Paket berbayar',
+        body:
+          'Pembayaran QRIS saat ini masih dalam proses aktivasi. Selama belum aktif, checkout paket berbayar menampilkan "Pembayaran belum aktif": pesanan tidak dibuat dan kamu tidak ditagih apa pun.',
         note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Rencananya kamu akan bisa memasukkan kode dari dropdown menu profil, lalu paket otomatis terdaftar tanpa biaya tambahan.',
+          appearance: 'information',
+          title: 'Setelah pembayaran aktif',
+          body: 'Paket berbayar dibayar dengan QRIS dari aplikasi m-banking atau e-wallet apa pun. Panduan ini akan diperbarui begitu pembayarannya aktif.',
         },
       },
     ],
     troubleshooting: [
       {
-        question: 'Bimbel saya sudah punya kode akses, tapi saya tidak menemukan menunya di akun. Kenapa?',
+        question: 'Kenapa checkout paket berbayar tidak membuat pesanan?',
         answer:
-          'Fitur ini belum diluncurkan. Sambil menunggu, hubungi tim bimbel atau tim dukungan Zenko untuk cara aktivasi sementara yang berlaku.',
+          'Karena pembayaran belum aktif. Zenko sengaja tidak membuat pesanan yang belum bisa dibayar, jadi tidak ada tagihan yang menggantung di akunmu.',
+      },
+      {
+        question: 'Paket gratis sudah saya ambil, tapi tidak muncul di Paket saya.',
+        answer:
+          'Muat ulang /akun/paket, lalu cek pesanannya di Riwayat pembelian (/akun/pembelian). Kalau statusnya Lunas tapi paketnya tetap tidak muncul, hubungi kami dengan menyertakan nomor invoice.',
       },
     ],
-    keywords: ['kode akses', 'klaim kode', 'voucher bimbel'],
+    keywords: ['beli paket', 'checkout', 'paket gratis', 'rp0', 'pembayaran belum aktif', 'bayar qris', 'qris', 'doku'],
   },
   {
     slug: 'riwayat-transaksi-dan-invoice',
     categorySlug: 'pembayaran-kode-akses',
-    title: 'Riwayat Transaksi dan Invoice',
+    title: 'Riwayat Pembelian dan Invoice',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Temukan transaksi lama dan unduh bukti pembayaran resmi.',
-    prerequisites: ['Sudah masuk ke akun Zenko dan pernah melakukan pembelian.'],
+    summary: 'Lihat status setiap pesanan dan simpan invoicenya sebagai bukti.',
+    prerequisites: ['Sudah masuk ke akun Zenko dan pernah mengambil atau membeli paket.'],
     steps: [
       {
-        title: 'Buka riwayat pembelian',
-        body: 'Buka menu akun dan pilih "Riwayat Pembelian" untuk menuju halaman /akun/pembelian.',
+        title: 'Buka Riwayat pembelian',
+        body: 'Dari halaman akun, pilih "Riwayat pembelian" untuk membuka /akun/pembelian.',
       },
       {
-        title: 'Cari transaksi yang dituju',
-        body: 'Telusuri daftar transaksi berdasarkan nama paket atau tanggal pembelian.',
-        screenshot: 'Tabel daftar transaksi di /akun/pembelian.',
+        title: 'Baca status pesanan',
+        body: 'Setiap pesanan menampilkan salah satu status: Menunggu pembayaran, Menunggu verifikasi, Lunas, atau Kedaluwarsa.',
       },
       {
-        title: 'Buka nota atau bukti bayar',
-        body: 'Klik nomor invoice pada transaksi untuk melihat rincian nota dan mengunduh atau mencetak bukti bayar resmi.',
-        screenshot: 'Lembar faktur (invoice) digital berstatus Lunas.',
+        title: 'Buka dan simpan invoice',
+        body: 'Buka pesanan untuk melihat invoicenya, lalu klik "Cetak / simpan PDF" untuk menyimpan bukti.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Statusnya masih "Menunggu Pembayaran" padahal saya sudah bayar, apa yang harus saya lakukan?',
+        question: 'Apa arti "Menunggu verifikasi"?',
         answer:
-          'Tunggu beberapa menit untuk konfirmasi otomatis. Kalau masih belum berubah, lihat panduan pembayaran QRIS tertunda di kategori Kendala Teknis.',
+          'Kamu sudah mengonfirmasi pembayaran dan tim Zenko sedang mengeceknya, paling lama 1×24 jam. Paket terbuka begitu pembayarannya disetujui, dan kamu mendapat email saat keputusan dibuat.',
+      },
+      {
+        question: 'Pesanan saya berstatus Kedaluwarsa.',
+        answer:
+          'Batas waktu pembayarannya sudah lewat. Jangan membayar pesanan yang sudah kedaluwarsa. Buat pesanan baru dari halaman paket.',
       },
     ],
-    keywords: ['invoice', 'riwayat transaksi', 'bukti pembayaran', 'nota'],
+    keywords: ['invoice', 'riwayat transaksi', 'riwayat pembelian', 'bukti pembayaran', 'nota', 'status pesanan', 'kedaluwarsa'],
   },
 
   // ======================================================================
@@ -379,205 +371,219 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'ujian-cbt-pembahasan',
     title: 'Memulai Try Out CBT',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Buka paket dan mulai pengerjaan try out CBT langkah demi langkah.',
-    prerequisites: ['Sudah masuk ke akun Zenko.', 'Memiliki paket aktif di menu Paket Saya.'],
+    summary: 'Buka paket dan mulai mengerjakan try out langkah demi langkah.',
+    prerequisites: ['Sudah masuk ke akun Zenko.', 'Paketnya sudah ada di "Paket saya".'],
     steps: [
       {
-        title: 'Buka Paket Saya',
-        body: 'Buka menu /akun/paket dan pilih try out yang ingin dikerjakan.',
+        title: 'Buka Paket saya',
+        body: 'Buka /akun/paket dan pilih try out yang ingin dikerjakan.',
       },
       {
-        title: 'Baca petunjuk teknis',
-        body: 'Baca petunjuk pengerjaan pada halaman detail paket (/akun/paket/[slug]) sebelum memulai.',
-        screenshot: 'Halaman detail paket berisi daftar subtes dan tombol pengerjaan.',
+        title: 'Klik "Mulai try out"',
+        body: 'Di halaman detail paket, klik "Mulai try out". Kalau kamu pernah mengerjakan paket ini, tombolnya bertuliskan "Kerjakan lagi".',
       },
       {
-        title: 'Klik "Mulai Kerjakan"',
-        body: 'Klik tombol "Mulai Kerjakan" untuk masuk ke ruang ujian di /akun/paket/[slug]/kerjakan.',
-        screenshot: 'Tampilan ruang ujian CBT setelah try out dimulai.',
+        title: 'Baca aturan, lalu klik "Mulai Ujian"',
+        body: 'Layar pembuka menampilkan "Aturan pengerjaan" untuk paket ini, termasuk cara kerja waktunya. Waktu mulai berjalan begitu kamu klik "Mulai Ujian".',
         note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Mode layar penuh (fullscreen lockdown) otomatis saat mulai ujian sedang direncanakan dan belum aktif di produk saat ini.',
+          appearance: 'warning',
+          body: 'Kerjakan di satu tab dan jangan tutup tab itu sampai selesai. Jawabanmu tersimpan di tab tersebut, dan waktu tetap berjalan meskipun kamu berpindah tab.',
         },
       },
     ],
     troubleshooting: [
       {
-        question: 'Tombol "Mulai Kerjakan" tidak muncul, kenapa?',
-        answer: 'Pastikan paket masih dalam masa akses dan kamu masuk dengan akun yang sama saat membeli atau mengaktifkan paket.',
+        question: 'Paket saya tidak muncul di Paket saya, kenapa?',
+        answer:
+          'Pastikan kamu masuk dengan akun yang sama seperti saat mengambil paket, lalu cek status pesanannya di Riwayat pembelian. Paket baru muncul setelah pesanannya Lunas.',
+      },
+      {
+        question: 'Apakah paket punya masa akses?',
+        answer: 'Tidak. Paket yang sudah kamu miliki bisa dikerjakan selama akunmu aktif.',
       },
     ],
-    keywords: ['mulai try out', 'kerjakan ujian', 'cbt', 'fullscreen'],
+    keywords: ['mulai try out', 'kerjakan ujian', 'cbt', 'mulai ujian', 'kerjakan lagi'],
   },
   {
     slug: 'navigasi-ujian-dan-tanda-ragu-ragu',
     categorySlug: 'ujian-cbt-pembahasan',
     title: 'Navigasi Ujian dan Ragu-Ragu',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
-    readMinutes: 3,
+    updated: '11 September 2026',
+    readMinutes: 2,
     summary: 'Berpindah nomor soal dan menandai jawaban yang masih ragu-ragu.',
     prerequisites: ['Sedang berada di dalam ruang ujian CBT.'],
     steps: [
       {
         title: 'Pilih jawaban',
-        body: 'Klik salah satu opsi jawaban pada soal yang sedang ditampilkan.',
+        body: 'Klik opsi jawaban pada soal yang sedang ditampilkan. Kamu bisa menggantinya kapan saja sebelum subtesnya berakhir.',
       },
       {
         title: 'Berpindah nomor soal',
-        body: 'Gunakan tombol navigasi "Sebelumnya" dan "Berikutnya", atau klik langsung nomor soal pada panel navigasi untuk melompat ke soal tertentu.',
-        screenshot: 'Panel navigasi nomor soal beserta legenda status warna.',
+        body: 'Gunakan tombol "Sebelumnya" dan "Selanjutnya" (di HP berupa tombol panah), atau klik nomor soal di panel navigasi untuk melompat langsung.',
       },
       {
-        title: 'Tandai status ragu-ragu',
-        body: 'Gunakan tombol tanda ragu-ragu pada soal yang masih ingin ditinjau ulang sebelum waktu habis.',
+        title: 'Tandai ragu-ragu',
+        body: 'Klik "Ragu-ragu" pada soal yang ingin kamu periksa lagi. Klik "Batalkan ragu-ragu" untuk menghapus tandanya.',
       },
       {
-        title: 'Baca kode warna grid navigasi',
-        body: 'Perhatikan warna pada grid navigasi nomor: menandakan status Terjawab, Ragu-ragu, atau Belum Dijawab, supaya kamu tahu soal mana yang masih perlu dikerjakan.',
-        note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Pintasan keyboard (A–E untuk memilih jawaban, panah untuk berpindah nomor) dan tampilan split-screen untuk wacana panjang sedang direncanakan dan belum tersedia saat ini.',
-        },
+        title: 'Baca warna panel navigasi',
+        body: 'Warna nomor soal menunjukkan mana yang sudah dijawab, mana yang ditandai ragu-ragu, dan mana yang belum dijawab.',
       },
     ],
     troubleshooting: [
       {
         question: 'Saya salah pilih jawaban, bisakah diubah?',
-        answer: 'Bisa, selama subtes yang bersangkutan belum dikumpulkan atau waktunya belum habis, jawaban bisa diganti kapan saja.',
+        answer: 'Bisa, selama waktunya belum habis dan subtesnya belum kamu akhiri.',
       },
     ],
-    keywords: ['navigasi soal', 'ragu-ragu', 'grid nomor soal', 'pintasan keyboard'],
+    keywords: ['navigasi soal', 'ragu-ragu', 'panel nomor soal', 'pindah soal'],
   },
   {
     slug: 'mode-waktu-flat-vs-sequential',
     categorySlug: 'ujian-cbt-pembahasan',
-    title: 'Mode Waktu: Flat vs Sequential',
+    title: 'Aturan Waktu: Satu Timer atau per Subtes',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Pahami dua mode waktu try out biar tidak kehabisan waktu.',
-    prerequisites: ['Mengetahui mode waktu paket yang akan dikerjakan (biasanya tertera di halaman detail paket).'],
+    summary: 'Pahami dua cara kerja waktu try out supaya tidak kehabisan waktu.',
+    prerequisites: [],
     steps: [
       {
-        title: 'Mode Flat',
-        body: 'Satu timer global berlaku untuk seluruh ujian. Kamu bebas berpindah antar subtes kapan saja selama waktu total belum habis.',
-        screenshot: 'Indikator timer global tunggal pada mode Flat.',
+        title: 'Satu timer untuk seluruh ujian',
+        body:
+          'Semua soal dari seluruh subtes terbuka sejak awal dan kamu bebas memilih urutan pengerjaan. Hanya ada satu batas waktu. Saat waktu habis, ujian berakhir otomatis dan nilainya dihitung.',
       },
       {
-        title: 'Mode Sequential',
-        body: 'Setiap subtes punya timer terpisah. Begitu waktu subtes habis atau kamu klik "Selesaikan Subtes", subtes tersebut terkunci permanen dan tidak bisa diubah lagi.',
-        screenshot: 'Indikator timer per subtes dan tombol konfirmasi penguncian subtes pada mode Sequential.',
+        title: 'Timer per subtes',
+        body:
+          'Setiap subtes punya waktunya sendiri. Kalau kamu klik "Akhiri Subtes" lalu "Ya, lanjutkan", atau waktunya habis, kamu pindah ke subtes berikutnya dan subtes sebelumnya terkunci.',
         note: {
           appearance: 'warning',
-          body: 'Pastikan benar-benar yakin dengan seluruh jawaban di subtes sebelum mengklik "Selesaikan Subtes" pada mode Sequential — tindakan ini tidak bisa dibatalkan.',
+          body: 'Subtes yang sudah ditinggalkan tidak bisa dibuka lagi. Periksa jawabanmu sebelum mengakhiri subtes.',
         },
       },
       {
-        title: 'Pantau sisa waktu',
-        body: 'Perhatikan bilah timer di bagian atas layar ruang ujian sepanjang pengerjaan.',
+        title: 'Cek aturan sebelum mulai',
+        body: 'Layar pembuka setiap try out mencantumkan "Aturan pengerjaan" yang berlaku untuk paket itu. Sisa waktu terlihat di bagian atas ruang ujian.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Bagaimana cara tahu paket yang saya kerjakan memakai mode Flat atau Sequential?',
-        answer: 'Perhatikan tampilan timer begitu ujian dimulai — timer tunggal berarti Flat, timer per subtes berarti Sequential.',
+        question: 'Bagaimana cara tahu paket saya memakai satu timer atau timer per subtes?',
+        answer: 'Baca bagian "Aturan pengerjaan" di layar pembuka sebelum kamu klik "Mulai Ujian".',
       },
     ],
-    keywords: ['mode waktu', 'flat', 'sequential', 'timer ujian'],
+    keywords: ['mode waktu', 'flat', 'sequential', 'timer ujian', 'subtes terkunci', 'akhiri subtes'],
   },
   {
-    slug: 'peringatan-anti-kecurangan',
+    slug: 'tampilan-soal-disembunyikan',
     categorySlug: 'ujian-cbt-pembahasan',
-    title: 'Anti-Kecurangan dan Watermark',
+    title: 'Kenapa Soal Tiba-tiba Tertutup?',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Rencana deteksi pindah tab dan watermark identitas saat ujian.',
+    summary: 'Soal ditutup saat kamu meninggalkan tab ujian, sementara waktunya tetap berjalan.',
     prerequisites: [],
-    comingSoon: true,
     steps: [
       {
-        title: 'Deteksi perpindahan tab atau jendela',
-        body: 'Belum tersedia. Rencananya sistem akan mendeteksi saat kamu berpindah tab atau aplikasi lain selama ujian berlangsung.',
+        title: 'Soal ditutup saat tab tidak aktif',
+        body:
+          'Kalau kamu pindah tab, membuka aplikasi lain, atau jendela browser tidak aktif, soal ditutup dan muncul pesan "Tampilan soal disembunyikan".',
+      },
+      {
+        title: 'Kembali ke tab ujian',
+        body: 'Kembali ke tab ujian untuk membuka soalnya lagi. Jawabanmu tidak hilang.',
         note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Fitur ini, termasuk batas toleransi jumlah teguran sebelum ujian diselesaikan otomatis, masih dalam tahap perencanaan.',
+          appearance: 'warning',
+          body: 'Waktu ujian tetap berjalan selama soal tertutup.',
         },
       },
       {
-        title: 'Watermark identitas',
-        body: 'Belum tersedia. Rencananya latar belakang ruang ujian akan menampilkan watermark berisi nama, email, dan waktu sesi untuk perlindungan kerahasiaan soal.',
+        title: 'Salin dan cetak tidak berfungsi',
+        body:
+          'Selama ujian, menyalin, memotong, klik kanan, menyeret teks, dan pintasan Ctrl/Cmd + A, C, X, P, S, atau U tidak berfungsi. Ini untuk melindungi isi soal milik tutor.',
       },
     ],
-    troubleshooting: [],
-    keywords: ['anti kecurangan', 'pindah tab', 'watermark'],
+    troubleshooting: [
+      {
+        question: 'Apakah ujian saya dibatalkan kalau pindah tab?',
+        answer:
+          'Tidak. Zenko tidak memberi teguran dan tidak mengakhiri ujian karena kamu pindah tab. Satu-satunya akibatnya adalah waktu yang terus berjalan.',
+      },
+    ],
+    keywords: ['soal tertutup', 'soal disembunyikan', 'pindah tab', 'anti kecurangan', 'tidak bisa copy', 'salin'],
   },
   {
     slug: 'selesaikan-ujian-dan-baca-skor',
     categorySlug: 'ujian-cbt-pembahasan',
     title: 'Selesaikan Ujian dan Baca Skor',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Kumpulkan try out lalu baca skor dan ringkasan performa.',
-    prerequisites: ['Sedang mengerjakan try out hingga soal terakhir, atau waktu pengerjaan sudah habis.'],
+    summary: 'Akhiri try out, lalu baca skor yang dihitung server Zenko.',
+    prerequisites: ['Sedang mengerjakan try out.'],
     steps: [
       {
-        title: 'Kumpulkan ujian',
-        body: 'Klik tombol "Kumpulkan Ujian" setelah selesai mengerjakan seluruh soal (atau tunggu waktu habis untuk pengumpulan otomatis).',
+        title: 'Klik "Selesaikan Ujian"',
+        body: 'Di subtes terakhir, klik "Selesaikan Ujian". Kalau waktu habis, ujian berakhir otomatis.',
       },
       {
-        title: 'Periksa rekapitulasi jawaban',
-        body: 'Tinjau modal rekapitulasi yang menampilkan jumlah soal terjawab, ragu-ragu, dan kosong sebelum konfirmasi akhir.',
-        screenshot: 'Modal konfirmasi pengumpulan ujian beserta rekap sisa soal.',
+        title: 'Periksa jendela konfirmasi',
+        body:
+          'Jendela konfirmasi menunjukkan berapa soal yang belum dijawab dan berapa yang masih ditandai ragu-ragu. Klik "Ya, selesaikan" kalau sudah yakin. Setelah itu jawaban tidak bisa diubah.',
       },
       {
-        title: 'Lihat hasil skor',
-        body: 'Setelah dikonfirmasi, tinjau nilai total, perbandingan dengan passing grade per subtes, dan ringkasan performa keseluruhan.',
-        screenshot: 'Lembar rekapitulasi skor total dan indikator ambang batas kelulusan.',
+        title: 'Baca hasilnya',
+        body:
+          'Skor dihitung oleh server Zenko. Untuk SKD, kamu melihat skor per subtes, ambang batasnya, dan keterangan LULUS atau TIDAK LULUS. Untuk TKA, skor ditampilkan dalam skala 0–100 tanpa ambang kelulusan.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Bisakah try out yang sudah dikumpulkan dikerjakan ulang?',
-        answer: 'Tergantung pengaturan paketnya — sebagian paket bisa dikerjakan lebih dari satu kali, cek keterangan di halaman detail paket sebelum membeli.',
+        question: 'Bisakah try out yang sudah selesai dikerjakan ulang?',
+        answer: 'Bisa, tanpa batas. Buka paketnya lagi dan klik "Kerjakan lagi". Setiap percobaan tercatat di riwayat paket.',
+      },
+      {
+        question: 'Muncul "Nilai belum bisa dihitung". Apa yang harus saya lakukan?',
+        answer:
+          'Jawabanmu belum berhasil dinilai, biasanya karena koneksi. Klik "Nilai ulang". Hasil yang dikirim lebih dari sekitar 2 menit setelah waktu habis ditolak server. Kalau itu yang terjadi, kerjakan ulang paketnya.',
       },
     ],
-    keywords: ['kumpulkan ujian', 'skor', 'nilai', 'passing grade'],
+    keywords: ['selesaikan ujian', 'kumpulkan ujian', 'skor', 'nilai', 'passing grade', 'lulus', 'nilai ulang', 'kerjakan ulang'],
   },
   {
     slug: 'membuka-lembar-pembahasan',
     categorySlug: 'ujian-cbt-pembahasan',
     title: 'Membuka Lembar Pembahasan',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Akses pembahasan lengkap dan kunci jawaban dari tutor.',
-    prerequisites: ['Sudah menyelesaikan dan mengumpulkan try out.'],
+    summary: 'Buka kunci jawaban dan pembahasan dari tutor untuk setiap percobaan.',
+    prerequisites: ['Sudah menyelesaikan try out.'],
     steps: [
       {
-        title: 'Buka halaman hasil',
-        body: 'Dari halaman riwayat nilai paket, klik tombol untuk melihat pembahasan lengkap menuju halaman pembahasan try out tersebut.',
+        title: 'Buka pembahasan percobaan',
+        body: 'Dari halaman hasil, atau dari riwayat percobaan di halaman detail paket, buka pembahasan percobaan yang ingin kamu pelajari.',
       },
       {
         title: 'Pelajari kunci jawaban dan pembahasan',
-        body: 'Baca kunci jawaban resmi, rincian perolehan poin per soal, dan uraian langkah penyelesaian yang ditulis tutor.',
-        screenshot: 'Kotak pembahasan langkah demi langkah dari tutor beserta formula matematika.',
+        body: 'Bandingkan jawabanmu dengan kunci jawaban, lalu baca uraian penyelesaian yang ditulis tutor.',
       },
     ],
     troubleshooting: [
       {
+        question: 'Apakah pembahasan berubah kalau tutor memperbarui paketnya?',
+        answer: 'Tidak. Pembahasan disimpan per percobaan, jadi yang kamu baca tetap sesuai soal saat kamu mengerjakannya.',
+      },
+      {
         question: 'Rumus matematika di pembahasan tidak tampil rapi, kenapa?',
-        answer: 'Lihat panduan "Panduan jika Rumus Matematika (KaTeX) atau Gambar Tidak Muncul" di kategori Kendala Teknis.',
+        answer: 'Lihat panduan "Rumus atau Gambar Tidak Muncul" di kategori Kendala Teknis.',
       },
     ],
-    keywords: ['pembahasan', 'kunci jawaban', 'lihat pembahasan'],
+    keywords: ['pembahasan', 'kunci jawaban', 'lihat pembahasan', 'riwayat percobaan'],
   },
 
   // ======================================================================
@@ -588,30 +594,31 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'portal-tutor',
     title: 'Mendaftar Akun Tutor',
     roles: ['tutor'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Ajukan diri jadi tutor Zenko dan pantau status pengajuan.',
-    prerequisites: ['Sudah punya akun Zenko (siswa/umum).', 'Punya latar belakang atau portofolio yang relevan untuk menyusun soal.'],
+    summary: 'Ajukan diri jadi tutor Zenko dan pantau status pengajuanmu.',
+    prerequisites: ['Sudah punya akun Zenko dan sudah masuk.'],
     steps: [
       {
         title: 'Buka halaman Jadi Tutor',
-        body: 'Kunjungi halaman /jadi-tutor untuk membaca ketentuan dan mulai pengajuan.',
+        body: 'Kunjungi /jadi-tutor untuk membaca ketentuan dan mulai mengajukan diri.',
       },
       {
         title: 'Lengkapi formulir pengajuan',
-        body: 'Isi data diri, latar belakang atau institusi, dan tautan portofolio soal atau materi yang relevan.',
-        screenshot: 'Formulir data kualifikasi pengajar dan portofolio.',
+        body:
+          'Isi nomor WhatsApp, bidang keahlian, dan pengalamanmu mengajar atau menyusun soal. Tautan portofolio boleh dikosongkan. Nama dan email diambil otomatis dari akunmu.',
       },
       {
         title: 'Kirim dan pantau status',
-        body: 'Kirim pengajuan untuk ditinjau tim kurasi Zenko, lalu pantau statusnya hingga disetujui (biasanya 1–3 hari kerja).',
-        screenshot: 'Indikator status pengajuan dalam tahap peninjauan.',
+        body:
+          'Tim Zenko meninjau pengajuanmu, biasanya dalam 1–3 hari kerja. Kalau disetujui, kamu mendapat email dan akunmu langsung bisa membuka Dashboard Tutor.',
       },
     ],
     troubleshooting: [
       {
         question: 'Pengajuan saya ditolak, bisakah mengajukan ulang?',
-        answer: 'Bisa. Lengkapi kembali portofolio atau data yang kurang, lalu ajukan ulang melalui halaman /jadi-tutor.',
+        answer:
+          'Bisa. Lengkapi pengalaman atau portofoliomu, lalu ajukan lagi lewat /jadi-tutor. Pengajuan baru hanya tidak bisa dikirim selama pengajuan sebelumnya masih ditinjau.',
       },
     ],
     keywords: ['jadi tutor', 'daftar tutor', 'pengajuan tutor'],
@@ -619,86 +626,95 @@ export const helpArticles: HelpArticle[] = [
   {
     slug: 'wizard-buat-paket-tryout',
     categorySlug: 'portal-tutor',
-    title: 'Wizard Buat Paket Try Out',
+    title: 'Membuat Paket Try Out: 5 Langkah',
     roles: ['tutor'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 4,
-    summary: 'Empat tahap membuat paket baru, dari jenis ujian sampai tayang.',
-    prerequisites: ['Akun tutor sudah disetujui dan aktif.'],
+    summary: 'Lima langkah membuat paket, dari identitas paket sampai diajukan untuk ditinjau.',
+    prerequisites: ['Akun tutor sudah disetujui.'],
     steps: [
       {
-        title: 'Buka wizard pembuatan paket',
-        body: 'Buka /dashboard/tutor/products/new untuk memulai wizard 4 tahap.',
+        title: 'Mulai paket baru',
+        body: 'Dari "Produk saya" di Dashboard Tutor, mulai paket baru di /dashboard/tutor/products/new. Perubahanmu tersimpan otomatis.',
       },
       {
-        title: 'Tahap 1 — Tipe & Kategori',
-        body: 'Tentukan apakah paket berupa Single atau Bundle, pilih kategori dan sub-kategori ujian (SKD CPNS/Kedinasan, atau TKA per jenjang), lalu jenis ujian (Simulasi atau Mini Tryout).',
-        screenshot: 'Antarmuka Tahap 1 wizard berisi pilihan jenis ujian dan mode.',
+        title: 'Langkah 1: Identitas Paket',
+        body:
+          'Pilih tipe paket (tunggal atau bundel) dan identitas ujiannya: kategori, jenis ujian, serta mode simulasi (semua subtes) atau mini try out (satu subtes).',
       },
       {
-        title: 'Tahap 2 — Info Produk',
-        body: 'Lengkapi judul, deskripsi, unggah gambar sampul, kategori, dan opsi acak urutan soal.',
-        screenshot: 'Antarmuka Tahap 2 wizard berisi form info produk dan unggah gambar.',
+        title: 'Langkah 2: Konfigurasi Ujian',
+        body:
+          'Atur jumlah soal dan durasi kalau paketnya boleh diatur (maksimal 200 soal dan 300 menit). Untuk jenis ujian dengan susunan baku, langkah ini menampilkan susunan subtes, durasi, dan penilaian yang berlaku.',
       },
       {
-        title: 'Tahap 3 — Isi',
-        body: 'Susun butir soal per subtes: pertanyaan, stimulus wacana (jika ada), kunci jawaban, dan pembahasan. Lihat panduan editor soal untuk detailnya.',
-      },
-      {
-        title: 'Tahap 4 — Review & Ajukan',
-        body: 'Periksa kelengkapan kuota soal dan ambang lulus, atur harga jual (dan harga coret bila ada), lalu ajukan paket untuk ditinjau sebelum tayang.',
-        screenshot: 'Antarmuka Tahap 4 wizard berisi kartu validasi kesiapan dan tombol pengajuan.',
+        title: 'Langkah 3: Detail Produk',
+        body: 'Isi judul, deskripsi, "Yang kamu dapatkan", harga, harga coret, dan sampul produk.',
         note: {
-          appearance: 'warning',
-          body: 'Paket baru bisa diajukan setelah semua syarat validasi (kuota soal, kunci jawaban, pembahasan) terpenuhi — kartu validasi akan menandai bagian yang masih kurang.',
+          appearance: 'information',
+          body: 'Selama pembayaran belum aktif, isian harga dikunci dan paketmu tayang gratis (Rp0).',
         },
+      },
+      {
+        title: 'Langkah 4: Soal',
+        body:
+          'Tulis soal satu per satu atau impor lewat CSV. Setiap soal wajib punya kunci jawaban dan pembahasan. Untuk paket bundel, langkah ini dipakai untuk memilih paket anggotanya.',
+      },
+      {
+        title: 'Langkah 5: Review & ajukan',
+        body:
+          'Periksa daftar "Kelengkapan sebelum diajukan", lalu ajukan paketmu. Server memeriksa ulang seluruh paket dan menampilkan semua hal yang masih kurang sekaligus.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Tombol "Ajukan" tidak bisa diklik, kenapa?',
-        answer: 'Periksa kartu validasi kesiapan di Tahap 4 — biasanya ada soal, subtes, atau field wajib yang belum lengkap.',
+        question: 'Paket saya tidak bisa diajukan, kenapa?',
+        answer:
+          'Buka langkah Review & ajukan dan periksa "Kelengkapan sebelum diajukan". Biasanya masih ada soal, kunci jawaban, atau pembahasan yang belum lengkap.',
+      },
+      {
+        question: 'Paket saya ditolak. Di mana alasannya?',
+        answer:
+          'Buka "Produk saya". Alasan penolakan tampil sebagai "Catatan revisi" di paket tersebut. Perbaiki paketnya, lalu ajukan ulang. Keputusan moderasi belum dikirim lewat email, jadi pantau statusnya di halaman ini.',
       },
     ],
-    keywords: ['buat paket', 'wizard tryout', 'produk baru tutor'],
+    keywords: ['buat paket', 'wizard tryout', 'produk baru tutor', 'ajukan paket', 'paket ditolak', 'catatan revisi', 'harga paket'],
   },
   {
     slug: 'input-soal-manual-katex-gambar',
     categorySlug: 'portal-tutor',
     title: 'Input Soal, KaTeX, dan Gambar',
     roles: ['tutor'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 4,
     summary: 'Tulis soal lengkap dengan rumus matematika dan gambar.',
-    prerequisites: ['Sedang berada di Tahap 3 (Isi) pada wizard pembuatan paket.'],
+    prerequisites: ['Sedang berada di langkah Soal pada pembuatan paket.'],
     steps: [
       {
         title: 'Tulis pertanyaan',
-        body: 'Ketik teks pertanyaan pada editor rich-text yang tersedia di setiap butir soal.',
+        body: 'Ketik teks pertanyaan di editor yang tersedia pada setiap butir soal.',
       },
       {
         title: 'Sisipkan rumus matematika',
-        body: 'Gunakan ikon simbol matematika pada toolbar editor untuk membuka pemilih formula KaTeX (pecahan, akar, eksponen, matriks, dan lainnya).',
-        screenshot: 'Toolbar editor rich-text menyorot tombol formula KaTeX dan gambar.',
+        body: 'Gunakan tombol rumus di toolbar editor untuk membuka pemilih formula KaTeX (pecahan, akar, eksponen, matriks, dan lainnya).',
       },
       {
         title: 'Unggah gambar',
-        body: 'Unggah gambar wacana atau gambar opsi jawaban untuk soal bertipe figural atau grafik.',
-        screenshot: 'Form konfigurasi opsi jawaban dan tombol unggah gambar.',
+        body: 'Unggah gambar untuk wacana atau opsi jawaban, misalnya untuk soal figural atau grafik.',
       },
       {
         title: 'Tentukan kunci jawaban',
-        body: 'Untuk soal pilihan ganda biasa, tentukan opsi jawaban yang benar. Untuk soal bertipe berbobot (gaya TKP), atur bobot nilai pada setiap opsi.',
+        body: 'Untuk soal pilihan ganda biasa, tentukan opsi yang benar. Untuk soal berbobot (gaya TKP), atur bobot nilai pada setiap opsi.',
       },
       {
         title: 'Tulis pembahasan',
-        body: 'Lengkapi teks pembahasan — bagian ini wajib diisi sebelum paket bisa diajukan.',
+        body: 'Lengkapi pembahasan. Bagian ini wajib diisi sebelum paket bisa diajukan.',
       },
     ],
     troubleshooting: [
       {
         question: 'Rumus KaTeX yang saya tulis tidak tampil sesuai harapan, kenapa?',
-        answer: 'Periksa kembali notasi yang dipilih dari pemilih formula. Kalau masalah berlanjut, lihat panduan troubleshooting KaTeX/gambar di kategori Kendala Teknis.',
+        answer: 'Periksa kembali notasi yang dipilih dari pemilih formula. Kalau masalahnya berlanjut, lihat panduan "Rumus atau Gambar Tidak Muncul" di kategori Kendala Teknis.',
       },
     ],
     keywords: ['editor soal', 'katex', 'rumus matematika', 'gambar soal', 'tkp berbobot'],
@@ -708,125 +724,164 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'portal-tutor',
     title: 'Impor Soal Massal via CSV',
     roles: ['tutor'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Unggah banyak soal sekaligus lewat file CSV, lebih cepat.',
-    prerequisites: ['Sedang membuat atau mengedit subtes pada paket try out.', 'Punya aplikasi spreadsheet seperti Excel atau Google Sheets.'],
+    summary: 'Unggah banyak soal sekaligus lewat file CSV.',
+    prerequisites: ['Sedang berada di langkah Soal pada pembuatan paket.', 'Punya aplikasi spreadsheet seperti Excel atau Google Sheets.'],
     steps: [
       {
-        title: 'Buka tab impor CSV',
-        body: 'Buka tab "Impor File CSV" pada editor subtes.',
+        title: 'Buka impor soal',
+        body: 'Di editor subtes, klik "Impor soal", lalu pilih impor untuk subtes ini saja atau impor gabungan untuk beberapa subtes sekaligus.',
       },
       {
-        title: 'Unduh template resmi',
-        body: 'Klik "Unduh Template CSV" untuk mendapat berkas contoh dengan kolom yang sesuai format Zenko.',
-        screenshot: 'Tab impor CSV dan tombol unduh template resmi.',
+        title: 'Unduh template',
+        body: 'Klik "Unduh Template CSV" untuk mendapatkan berkas contoh dengan kolom yang sesuai. Template gabungan punya kolom tambahan untuk nama subtes.',
       },
       {
         title: 'Lengkapi dan simpan',
-        body: 'Buka template di Excel atau Google Sheets, lengkapi kolom sesuai panduan format, lalu simpan dalam format .csv (UTF-8).',
-        screenshot: 'Contoh susunan kolom template CSV di spreadsheet.',
+        body: 'Buka template di Excel atau Google Sheets, lengkapi kolomnya, lalu simpan sebagai .csv (UTF-8).',
       },
       {
-        title: 'Unggah dan tinjau hasil',
-        body: 'Unggah berkas CSV yang sudah dilengkapi, lalu tinjau laporan baris yang berhasil maupun yang perlu diperbaiki.',
-        screenshot: 'Laporan hasil impor baris soal.',
+        title: 'Unggah dan periksa laporan',
+        body: 'Unggah berkas CSV-nya. Zenko menampilkan jumlah soal yang berhasil diimpor.',
         note: {
           appearance: 'warning',
-          body: 'Baris dengan kolom tidak lengkap atau format salah akan dilewati dan ditandai di laporan hasil — perbaiki lalu unggah ulang khusus baris tersebut.',
+          body: 'Baris dengan kolom tidak lengkap atau format yang salah dilewati. Daftar baris yang dilewati tampil di panel impor. Perbaiki baris tersebut lalu unggah ulang.',
         },
       },
     ],
     troubleshooting: [
       {
         question: 'Sebagian baris gagal diimpor, apa penyebab paling umum?',
-        answer: 'Biasanya karena kolom wajib kosong, format kunci jawaban tidak sesuai template, atau file tidak disimpan sebagai CSV UTF-8.',
+        answer: 'Biasanya kolom wajib kosong, format kunci jawaban tidak sesuai template, atau file tidak disimpan sebagai CSV UTF-8.',
       },
     ],
-    keywords: ['impor csv', 'upload soal', 'template csv', 'soal massal'],
+    keywords: ['impor csv', 'upload soal', 'template csv', 'soal massal', 'excel'],
   },
   {
     slug: 'rekening-bank-tutor',
     categorySlug: 'portal-tutor',
     title: 'Rekening Bank Tutor',
     roles: ['tutor'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
     summary: 'Simpan rekening pencairan dan ajukan perubahan bila perlu.',
     prerequisites: ['Akun tutor sudah aktif.', 'Rekening bank atas nama sendiri.'],
     steps: [
       {
-        title: 'Buka pengaturan rekening',
-        body: 'Buka menu /dashboard/tutor/settings.',
+        title: 'Buka tab Rekening bank',
+        body: 'Buka "Pengaturan" di Dashboard Tutor (/dashboard/tutor/settings), lalu pilih tab "Rekening bank".',
       },
       {
         title: 'Isi data rekening pertama kali',
-        body: 'Pilih bank, ketik nomor rekening, dan nama lengkap pemilik buku tabungan, lalu simpan.',
-        screenshot: 'Form input data rekening bank pertama kali.',
+        body: 'Pilih bank, ketik nomor rekening dan nama pemilik rekening, lalu simpan.',
         note: {
           appearance: 'warning',
-          body: 'Rekening akan terkunci permanen setelah disimpan pertama kali — pastikan datanya benar sebelum menyimpan.',
+          body: 'Setelah disimpan pertama kali, rekening tidak bisa diubah sendiri. Pastikan datanya benar sebelum menyimpan.',
         },
       },
       {
         title: 'Ajukan perubahan rekening',
-        body: 'Kalau perlu mengganti rekening, klik "Ajukan Perubahan Rekening" dan tunggu verifikasi manual dari admin sebelum rekening baru aktif.',
-        screenshot: 'Formulir pengajuan perubahan rekening bank baru.',
+        body:
+          'Kalau perlu mengganti rekening, klik "Ajukan perubahan rekening". Rekening baru berlaku setelah disetujui admin, dan hanya satu pengajuan yang bisa menunggu pada satu waktu.',
       },
     ],
     troubleshooting: [
       {
         question: 'Berapa lama proses verifikasi perubahan rekening?',
-        answer: 'Verifikasi dilakukan manual oleh tim admin Zenko. Kalau sudah lebih dari beberapa hari kerja belum ada kabar, hubungi tim dukungan.',
+        answer: 'Perubahan diverifikasi manual oleh admin Zenko. Kalau belum ada kabar, hubungi kami lewat email atau WhatsApp.',
       },
     ],
-    keywords: ['rekening bank', 'ganti rekening', 'ubah rekening tutor'],
+    keywords: ['rekening bank', 'ganti rekening', 'ubah rekening tutor', 'no rek'],
   },
   {
     slug: 'payout-dan-bagi-hasil',
     categorySlug: 'portal-tutor',
-    title: 'Payout dan Bagi Hasil',
+    title: 'Pencairan Dana dan Bagi Hasil',
     roles: ['tutor'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Pahami saldo penghasilan dan ajukan pencairan dana.',
+    summary: 'Pahami saldo penghasilanmu dan ajukan pencairan dana.',
     prerequisites: ['Akun tutor aktif dan rekening bank sudah tersimpan.'],
     steps: [
       {
-        title: 'Buka halaman payout',
-        body: 'Buka menu /dashboard/tutor/payouts.',
+        title: 'Buka Pencairan',
+        body: 'Buka menu "Pencairan" di Dashboard Tutor (/dashboard/tutor/payouts).',
       },
       {
-        title: 'Pahami Saldo Tersedia vs Saldo Tertahan',
-        body: 'Saldo Tersedia bisa langsung dicairkan. Saldo Tertahan adalah penghasilan dari transaksi yang masih dalam masa penahanan 7 hari sejak pembayaran siswa terverifikasi.',
-        screenshot: 'Rincian tanggal pelepasan saldo tertahan (held balance).',
+        title: 'Saldo siap dicairkan dan saldo tertahan',
+        body: 'Setiap penjualan ditahan 7 hari sejak pesanannya lunas sebelum masuk ke "Saldo siap dicairkan". Selama masa itu, jumlahnya tampil sebagai "Saldo tertahan".',
       },
       {
-        title: 'Ajukan pencairan',
-        body: 'Masukkan jumlah penarikan (minimal Rp100.000, maksimal senilai Saldo Tersedia), lalu klik "Ajukan Pencairan Dana".',
-        screenshot: 'Formulir penarikan dana dan tabel riwayat status payout.',
+        title: 'Klik "Tarik Saldo"',
+        body: 'Masukkan jumlah penarikan (minimal Rp100.000 dan paling banyak sebesar saldo siap dicairkan), lalu klik "Ajukan pencairan".',
       },
       {
-        title: 'Pantau status transfer',
-        body: 'Pantau status pencairan pada tabel riwayat payout hingga dana diterima.',
+        title: 'Pantau status pencairan',
+        body:
+          'Status pencairan berjalan dari Diajukan, Diproses, lalu Ditransfer. Kalau Ditolak, alasannya ditampilkan dan jumlahnya kembali ke saldomu.',
       },
     ],
     troubleshooting: [
       {
         question: 'Berapa pembagian hasil penjualan untuk tutor?',
-        answer: 'Zenko menerapkan skema bagi hasil 70:30 sesuai Syarat dan Ketentuan Tutor — lihat halaman /syarat-tutor untuk detailnya.',
+        answer: 'Tutor menerima 70% dari harga yang dibayar pembeli, sesuai Syarat dan Ketentuan Tutor di /syarat-tutor.',
       },
       {
-        question: 'Kenapa sebagian saldo saya masih "Tertahan"?',
-        answer: 'Setiap transaksi punya masa penahanan 7 hari sejak pembayaran siswa terverifikasi, sebagai perlindungan terhadap pembatalan atau refund.',
+        question: 'Kenapa sebagian saldo saya masih tertahan?',
+        answer: 'Setiap penjualan ditahan 7 hari sejak lunas sebagai perlindungan terhadap pembatalan atau refund.',
       },
     ],
-    keywords: ['payout', 'pencairan dana', 'saldo tertahan', 'bagi hasil'],
+    keywords: ['payout', 'pencairan dana', 'tarik saldo', 'withdraw', 'saldo tertahan', 'bagi hasil', '70%'],
   },
 
   // ======================================================================
   // Kategori 5: Portal Bimbel, Langganan, dan Kelas
   // ======================================================================
+  {
+    slug: 'gabung-bimbel-dengan-kode',
+    categorySlug: 'bimbel-institusi',
+    title: 'Bergabung ke Bimbel dengan Kode atau Undangan',
+    roles: ['siswa'],
+    updated: '11 September 2026',
+    readMinutes: 2,
+    summary: 'Masuk ke bimbelmu lewat kode dari pengelola atau lewat undangan, lalu buka paket privatnya.',
+    prerequisites: ['Sudah masuk ke akun Zenko.', 'Mendapat kode bimbel dari pengelola, atau diundang lewat email akunmu.'],
+    steps: [
+      {
+        title: 'Buka Bimbel saya',
+        body: 'Klik foto atau namamu di kanan atas, lalu pilih "Bimbel saya" (/akun/bimbel).',
+      },
+      {
+        title: 'Masukkan kode bimbel',
+        body: 'Klik "Gabung bimbel", isi "Kode bimbel" yang diberikan pengelola, lalu kirim permintaanmu.',
+      },
+      {
+        title: 'Tunggu persetujuan',
+        body: 'Permintaanmu masuk ke pengelola bimbel. Selama menunggu, statusnya tampil di halaman Bimbel saya.',
+      },
+      {
+        title: 'Atau jawab undangan',
+        body: 'Kalau pengelola mengundangmu lewat email akun, undangannya muncul di Bimbel saya. Terima atau tolak undangan tersebut.',
+      },
+      {
+        title: 'Buka paket bimbel',
+        body: 'Setelah keanggotaanmu aktif, bank soal bimbel muncul di halaman Bimbel saya.',
+      },
+    ],
+    troubleshooting: [
+      {
+        question: 'Kode saya ditolak, kenapa?',
+        answer: 'Periksa kembali kodenya. Kode bimbel diberikan oleh pengelola bimbelmu, bukan oleh Zenko.',
+      },
+      {
+        question: 'Paket bimbel tidak bisa dibuka, kenapa?',
+        answer:
+          'Keanggotaanmu mungkin masih menunggu persetujuan atau sedang ditangguhkan. Hubungi pengelola bimbelmu, karena hanya mereka yang bisa mengaktifkannya.',
+      },
+    ],
+    keywords: ['gabung bimbel', 'kode bimbel', 'kode akses', 'kode bergabung', 'undangan bimbel', 'join bimbel', 'les'],
+  },
   {
     slug: 'daftar-bimbel-dan-mulai-uji-coba',
     categorySlug: 'bimbel-institusi',
@@ -867,7 +922,7 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'bimbel-institusi',
     title: 'Pilih dan Perpanjang Langganan Bimbel',
     roles: ['bimbel'],
-    updated: '10 September 2026',
+    updated: '11 September 2026',
     readMinutes: 4,
     summary: 'Bandingkan tingkat, buat tagihan bulanan atau tahunan, lalu aktifkan langganan setelah pembayaran diverifikasi.',
     prerequisites: ['Sudah mengelola ruang kerja Bimbel.', 'Memiliki akses sebagai pemilik atau admin Bimbel.'],
@@ -886,11 +941,11 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Buat dan bayar tagihan',
-        body: 'Klik "Buat tagihan", ikuti instruksi pembayaran, lalu unggah bukti jika diminta. Status langganan berubah setelah tim Zenko memverifikasi pembayaran.',
+        body: 'Klik "Buat tagihan" dan ikuti instruksi pembayarannya. Setelah membayar, isi nama pengirim (wajib) dan lampirkan bukti transfer bila ada. Status langganan berubah setelah tim Zenko memverifikasi pembayaran.',
         note: {
           appearance: 'warning',
           title: 'Jangan membuat tagihan berulang',
-          body: 'Jika bukti sudah diunggah, tunggu verifikasi pada tagihan yang sama. Bukti yang sedang diperiksa juga mencegah ruang kerja terkunci hanya karena antrean verifikasi.',
+          body: 'Jika pembayaran sudah dikonfirmasi, tunggu verifikasi pada tagihan yang sama. Tagihan yang sedang diperiksa juga mencegah ruang kerja terkunci hanya karena antrean verifikasi.',
         },
       },
     ],
@@ -911,7 +966,7 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'bimbel-institusi',
     title: 'Tambah Kursi Siswa Bimbel',
     roles: ['bimbel'],
-    updated: '10 September 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
     summary: 'Tambah kapasitas siswa dalam kelipatan 5 dan pahami kapan kuota baru dapat digunakan.',
     prerequisites: ['Langganan Bimbel sedang aktif.', 'Masa aktif tersisa sekurang-kurangnya satu bulan.'],
@@ -930,7 +985,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Bayar dan tunggu verifikasi',
-        body: 'Buat tagihan, selesaikan pembayaran, dan unggah bukti jika diminta. Kursi ditandai "menunggu pembayaran" dan baru masuk ke kuota aktif setelah pembayaran disetujui.',
+        body: 'Buat tagihan, selesaikan pembayaran, lalu isi nama pengirim dan lampirkan bukti bila ada. Kursi ditandai "menunggu pembayaran" dan baru masuk ke kuota aktif setelah pembayaran disetujui.',
       },
     ],
     troubleshooting: [
@@ -940,7 +995,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         question: 'Pembayaran sudah dikirim, tetapi siswa baru belum bisa diaktifkan.',
-        answer: 'Kuota tidak bertambah sebelum bukti diverifikasi. Lihat jumlah kursi yang menunggu pembayaran pada halaman Langganan atau Siswa, lalu hubungi dukungan jika verifikasi melewati waktu layanan.',
+        answer: 'Kuota tidak bertambah sebelum pembayaran diverifikasi. Lihat jumlah kursi yang menunggu pembayaran pada halaman Langganan atau Siswa, lalu hubungi kami kalau verifikasinya melewati 1×24 jam.',
       },
     ],
     keywords: ['tambah kursi', 'kuota siswa', 'kursi penuh', 'seat addon', 'menunggu pembayaran'],
@@ -1035,82 +1090,83 @@ export const helpArticles: HelpArticle[] = [
   {
     slug: 'qris-berhasil-paket-belum-aktif',
     categorySlug: 'kendala-teknis-kebijakan',
-    title: 'QRIS Berhasil, Paket Belum Aktif',
+    title: 'Sudah Bayar, Paket Belum Muncul',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Langkah kalau pembayaran sukses tapi paket belum muncul.',
-    prerequisites: ['Sudah menyelesaikan pembayaran QRIS untuk sebuah paket.'],
+    summary: 'Langkah kalau pembayaranmu sudah berhasil tapi paketnya belum muncul.',
+    prerequisites: ['Berlaku untuk paket berbayar yang sudah kamu bayar.'],
     steps: [
       {
-        title: 'Muat ulang halaman',
-        body: 'Tunggu 1–3 menit, lalu muat ulang (refresh) halaman /akun/paket.',
+        title: 'Muat ulang Paket saya',
+        body: 'Tunggu sebentar, lalu muat ulang halaman /akun/paket.',
       },
       {
-        title: 'Periksa status order',
-        body: 'Buka /akun/pembelian untuk memeriksa status transaksi.',
-        screenshot: 'Letak Nomor Invoice pada tabel /akun/pembelian.',
+        title: 'Cek status di Riwayat pembelian',
+        body:
+          'Buka /akun/pembelian. Status "Menunggu verifikasi" berarti pembayaranmu sedang dicek tim Zenko, paling lama 1×24 jam. Kamu mendapat email saat keputusannya dibuat.',
       },
       {
-        title: 'Siapkan bukti transaksi',
-        body: 'Kalau status masih tertunda, catat Nomor Invoice dan simpan tangkapan layar bukti pembayaran dari aplikasi m-Banking atau e-Wallet.',
+        title: 'Siapkan data pembayaran',
+        body:
+          'Kalau sudah lewat 1×24 jam, atau statusnya masih "Menunggu pembayaran" padahal saldomu sudah terpotong, catat nomor invoice dan simpan bukti pembayaran dari aplikasi bank atau e-wallet.',
       },
       {
-        title: 'Hubungi bantuan',
-        body: 'Klik tombol "Hubungi Bantuan" pada rincian transaksi, atau kirim email ke tim dukungan untuk verifikasi manual.',
-        screenshot: 'Tombol bantuan langsung pada rincian transaksi.',
+        title: 'Hubungi kami',
+        body: `Kirim nomor invoice dan bukti bayar lewat WhatsApp ke ${SUPPORT_CONTACT.phoneDisplay} atau email ke ${SUPPORT_CONTACT.email}.`,
       },
     ],
     troubleshooting: [
       {
-        question: 'Berapa lama biasanya proses verifikasi manual ini?',
-        answer: 'Tim dukungan Zenko biasanya membalas dalam 1–2 hari kerja pada jam operasional Senin–Jumat, 09.00–17.00 WIB.',
+        question: 'Kapan pesan saya dibalas?',
+        answer: `Tim Zenko membalas pada jam layanan ${SUPPORT_CONTACT.hours}.`,
       },
     ],
-    keywords: ['qris tertunda', 'pembayaran belum aktif', 'paket tidak muncul'],
+    keywords: ['qris tertunda', 'sudah bayar', 'paket belum aktif', 'paket tidak muncul', 'menunggu verifikasi', 'nyangkut'],
   },
   {
     slug: 'koneksi-terputus-saat-ujian',
     categorySlug: 'kendala-teknis-kebijakan',
-    title: 'Koneksi Terputus saat Ujian',
+    title: 'Koneksi Putus atau Halaman Tertutup saat Ujian',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Lanjutkan try out yang sempat terputus, jawaban tetap aman.',
-    prerequisites: ['Sedang atau baru saja mengerjakan try out yang terputus di tengah jalan.'],
+    summary: 'Apa yang tersimpan, apa yang hilang, dan cara melanjutkan try out yang terputus.',
+    prerequisites: [],
     steps: [
       {
-        title: 'Tetap tenang',
-        body: 'Zenko memiliki fitur Penyelamat Sesi yang otomatis menyimpan jawaban dan sisa waktu di browser selama ujian berlangsung.',
+        title: 'Jangan tutup tab ujian',
+        body:
+          'Jawaban dan posisi soalmu disimpan di tab browser tempat kamu mengerjakan. Selama tab itu tetap terbuka, menunggu koneksi kembali atau memuat ulang halaman tidak menghapus jawabanmu.',
       },
       {
-        title: 'Sambungkan kembali',
-        body: 'Pastikan koneksi internet kembali stabil, lalu buka ulang browser yang sama yang digunakan saat mengerjakan.',
-      },
-      {
-        title: 'Lanjutkan ujian',
-        body: 'Buka kembali halaman detail paket dan klik tombol untuk melanjutkan pengerjaan. Sesi akan melanjutkan dari nomor soal dan sisa waktu terakhir sebelum terputus.',
-        screenshot: 'Tombol lanjutkan ujian pada halaman paket yang sedang dikerjakan.',
+        title: 'Muat ulang setelah koneksi kembali',
+        body: 'Begitu internet tersambung lagi, muat ulang halaman ujian di tab yang sama untuk melanjutkan dari soal terakhir.',
         note: {
           appearance: 'warning',
-          body: 'Gunakan browser dan perangkat yang sama saat melanjutkan — penyimpanan sesi tersimpan secara lokal di browser tersebut.',
+          body: 'Waktu terus berjalan selama koneksi putus. Hasil yang dikirim lebih dari sekitar 2 menit setelah waktu habis ditolak server.',
         },
+      },
+      {
+        title: 'Kalau tab sudah tertutup',
+        body:
+          'Menutup tab atau browser menghapus jawaban yang belum dikirim. Buka paketnya lagi dan klik "Mulai try out" atau "Kerjakan lagi" untuk memulai percobaan baru.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Saya membuka dari perangkat lain, apakah jawaban saya tetap tersimpan?',
-        answer: 'Penyimpanan sesi tersimpan di browser tempat kamu mengerjakan. Gunakan perangkat dan browser yang sama untuk melanjutkan.',
+        question: 'Bisakah saya melanjutkan dari perangkat lain?',
+        answer: 'Tidak. Jawaban yang belum dikirim hanya tersimpan di tab tempat kamu mengerjakan.',
       },
     ],
-    keywords: ['koneksi terputus', 'browser tertutup', 'lanjutkan ujian', 'sesi ujian'],
+    keywords: ['koneksi terputus', 'internet putus', 'browser tertutup', 'refresh', 'lanjutkan ujian', 'sesi ujian'],
   },
   {
     slug: 'rumus-katex-atau-gambar-tidak-muncul',
     categorySlug: 'kendala-teknis-kebijakan',
     title: 'Rumus atau Gambar Tidak Muncul',
     roles: ['siswa', 'tutor', 'bimbel'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 2,
     summary: 'Langkah dasar memperbaiki tampilan rumus dan gambar soal.',
     prerequisites: [],
@@ -1120,19 +1176,18 @@ export const helpArticles: HelpArticle[] = [
         body: 'Periksa pengaturan browser untuk memastikan JavaScript tidak dinonaktifkan.',
       },
       {
-        title: 'Lakukan hard refresh',
-        body: 'Muat ulang halaman secara penuh dengan Ctrl+F5 (Windows) atau Cmd+Shift+R (Mac).',
-        screenshot: 'Contoh tampilan formula matematika normal versus formula yang tidak termuat.',
+        title: 'Muat ulang halaman sepenuhnya',
+        body: 'Muat ulang halaman dengan Ctrl+F5 (Windows) atau Cmd+Shift+R (Mac).',
       },
       {
         title: 'Nonaktifkan ad-blocker sementara',
-        body: 'Ekstensi ad-blocker pihak ketiga terkadang memblokir skrip atau font yang dibutuhkan untuk menampilkan rumus. Nonaktifkan sementara lalu muat ulang halaman.',
+        body: 'Ekstensi ad-blocker terkadang memblokir skrip atau font yang dibutuhkan untuk menampilkan rumus. Nonaktifkan sementara, lalu muat ulang halaman.',
       },
     ],
     troubleshooting: [
       {
         question: 'Masalah masih berlanjut setelah semua langkah di atas?',
-        answer: 'Coba buka di browser lain atau perangkat lain. Kalau tetap bermasalah, hubungi tim dukungan Zenko dengan menyertakan tangkapan layar.',
+        answer: 'Coba buka di browser atau perangkat lain. Kalau tetap bermasalah, hubungi kami dengan menyertakan tangkapan layar.',
       },
     ],
     keywords: ['katex tidak muncul', 'rumus error', 'gambar tidak muncul'],
@@ -1142,37 +1197,42 @@ export const helpArticles: HelpArticle[] = [
     categorySlug: 'kendala-teknis-kebijakan',
     title: 'Prosedur Pengajuan Refund',
     roles: ['siswa'],
-    updated: '25 Agustus 2026',
+    updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Syarat dan cara mengajukan pengembalian dana ke Zenko.',
-    prerequisites: ['Transaksi memenuhi kriteria eligibilitas refund (lihat Kebijakan Refund).'],
+    summary: 'Syarat, batas waktu, dan cara mengajukan pengembalian dana.',
+    prerequisites: ['Pembayaranmu berhasil tidak lebih dari 7 hari kalender yang lalu.'],
     steps: [
       {
-        title: 'Periksa kriteria eligibilitas',
-        body: 'Baca syarat lengkap di halaman /kebijakan-refund — misalnya pembayaran terpotong ganda untuk pesanan yang sama, atau kendala server total.',
-        screenshot: 'Ringkasan poin penting pada halaman /kebijakan-refund.',
+        title: 'Periksa syaratnya',
+        body:
+          'Refund hanya dipertimbangkan untuk pembayaran ganda pada paket dan akun yang sama, kegagalan teknis di sisi Zenko yang membuat paket sama sekali tidak bisa diakses, atau isi paket yang berbeda secara material dari deskripsinya. Rincian lengkapnya ada di /kebijakan-refund.',
       },
       {
-        title: 'Siapkan dokumen pendukung',
-        body: 'Siapkan Nomor Invoice, bukti mutasi rekening, dan nomor rekening tujuan pengembalian.',
+        title: 'Siapkan data pendukung',
+        body: 'Siapkan nomor invoice, email akun yang dipakai membeli, alasan pengajuan, dan bukti pendukung seperti tangkapan layar.',
       },
       {
         title: 'Kirim pengajuan',
-        body: 'Kirim email resmi ke tim dukungan Zenko dengan subjek pengajuan refund, lampirkan seluruh dokumen pendukung.',
-        screenshot: 'Format baku draf email pengajuan refund resmi.',
+        body: `Kirim pengajuan ke ${SUPPORT_CONTACT.email} paling lambat 7 hari kalender setelah pembayaran berhasil.`,
       },
       {
-        title: 'Tunggu proses verifikasi',
-        body: 'Tim keuangan akan memverifikasi dan memproses transfer dana dalam 1–3 hari kerja setelah pengajuan lengkap diterima.',
+        title: 'Tunggu peninjauan',
+        body:
+          'Untuk laporan kegagalan akses, tim Zenko lebih dulu berupaya memperbaikinya dalam 3 hari kerja. Refund yang disetujui diproses dalam 5–14 hari kerja.',
+      },
+      {
+        title: 'Terima pengembalian dana',
+        body:
+          'Refund yang disetujui dikirim lewat transfer manual ke rekening atas nama pembeli. Siapkan nama bank, nomor rekening, dan nama pemilik rekening saat diminta.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Transaksi saya tidak memenuhi kriteria refund, apa opsi lain?',
-        answer: 'Hubungi tim dukungan Zenko untuk berdiskusi lebih lanjut mengenai kendala yang dialami — setiap kasus akan ditinjau berdasarkan situasinya.',
+        question: 'Transaksi saya tidak memenuhi syarat refund, apa opsi lain?',
+        answer: 'Hubungi kami untuk menceritakan kendalanya. Setiap kasus ditinjau berdasarkan situasinya.',
       },
     ],
-    keywords: ['refund', 'pengembalian dana', 'kebijakan refund'],
+    keywords: ['refund', 'pengembalian dana', 'uang kembali', 'kebijakan refund', 'batal'],
   },
 ]
 

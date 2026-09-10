@@ -10,9 +10,10 @@ import {
   IconArrowRight,
   IconLink,
   IconMail,
-  IconRocket,
+  IconWhatsapp,
 } from '#components'
 import { helpArticles, helpCategories, type HelpArticle, type HelpCategoryIcon, type HelpRole } from '~/data/help-center'
+import { SUPPORT_CONTACT } from '~/data/support-contact'
 
 // English file name, Indonesian URL.
 definePageMeta({ path: '/pusat-bantuan' })
@@ -71,7 +72,7 @@ const visibleCategories = computed(() =>
 
 // ------------------------------------------------------------------------
 // Bilah pencarian: daftar saran instan sambil mengetik, tanpa panggilan API
-// — seluruh 29 artikel sudah ada di client lewat data/help-center.
+// — seluruh artikel sudah ada di client lewat data/help-center.
 // ------------------------------------------------------------------------
 const searchQuery = ref('')
 const searchFocused = ref(false)
@@ -141,7 +142,7 @@ const quickLinks = [
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari, misalnya “ganti rekening” atau “qris tertunda”"
+              placeholder="Cari, misalnya “koneksi terputus” atau “tarik saldo”"
               class="h-13 w-full rounded-xl border border-hairline bg-surface pr-4.5 pl-12 text-[0.95rem] text-ink shadow-xs transition-[box-shadow,border-color] duration-200 ease-smooth placeholder:text-muted focus:border-primary/50 focus:ring-4 focus:ring-primary/10 focus:outline-none"
               @focus="searchFocused = true"
               @blur="onSearchBlur"
@@ -163,28 +164,23 @@ const quickLinks = [
                     <span class="block truncate font-semibold text-ink">{{ result.title }}</span>
                     <span class="mt-0.5 block text-[0.8rem] text-muted">{{ categoryTitleFor(result) }}</span>
                   </span>
-                  <span
-                    v-if="result.comingSoon"
-                    class="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-pill bg-purple-50 px-2 py-0.5 text-[0.68rem] font-bold text-purple-700"
-                  >
-                    Segera Hadir
-                  </span>
                 </NuxtLink>
               </template>
               <p v-else class="px-3 py-2.5 text-[0.9rem] text-muted">
-                Tidak ada panduan yang cocok. Coba kata kunci lain.
+                Belum ada panduan yang cocok. Coba kata yang lebih umum seperti “bayar”, “ujian”, atau “saldo”,
+                atau <a href="#kontak-heading" class="font-semibold text-primary hover:underline">hubungi tim Zenko</a>.
               </p>
             </div>
           </div>
 
-          <!-- Filter peran -->
-          <div class="mt-6 flex flex-wrap items-center justify-center gap-2" role="tablist" aria-label="Filter berdasarkan peran">
+          <!-- Filter peran. Tombol filter biasa (aria-pressed), bukan tab:
+               tidak ada panel yang berganti, daftar di bawahnya hanya disaring. -->
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="Saring panduan berdasarkan peran">
             <button
               v-for="tab in roleTabs"
               :key="tab.value"
               type="button"
-              role="tab"
-              :aria-selected="activeRole === tab.value"
+              :aria-pressed="activeRole === tab.value"
               class="rounded-pill px-4 py-2 text-[0.86rem] font-semibold transition-colors duration-200 ease-smooth"
               :class="
                 activeRole === tab.value
@@ -234,18 +230,9 @@ const quickLinks = [
               :to="`/pusat-bantuan/${article.slug}`"
               class="group flex flex-col rounded-2xl border border-hairline bg-surface p-7 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift"
             >
-              <div class="mb-2.5 flex items-start justify-between gap-3">
-                <h3 class="leading-[1.4] font-bold tracking-[-0.02em]">
-                  {{ article.title }}
-                </h3>
-                <span
-                  v-if="article.comingSoon"
-                  class="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-pill bg-purple-50 px-2.5 py-1 text-[0.68rem] font-bold text-purple-700"
-                >
-                  <IconRocket class="h-3 w-3" />
-                  Segera Hadir
-                </span>
-              </div>
+              <h3 class="mb-2.5 leading-[1.4] font-bold tracking-[-0.02em]">
+                {{ article.title }}
+              </h3>
               <p class="grow text-[0.9rem] leading-[1.7] text-muted">{{ article.summary }}</p>
               <span class="mt-5 inline-flex items-center gap-1.5 text-[0.85rem] font-semibold text-primary">
                 Baca panduan
@@ -293,24 +280,27 @@ const quickLinks = [
             Belum ketemu jawabannya?
           </h2>
           <p class="mx-auto mt-4 max-w-[52ch] text-[1.02rem] text-white/80">
-            Kirim email atau hubungi WhatsApp tim Zenko. Kami melayani
-            Senin&ndash;Jumat, 09.00&ndash;17.00 WIB, dan biasanya membalas dalam
-            1&ndash;2 hari kerja.
+            Kirim pesan WhatsApp atau email ke tim Zenko. Jam layanan kami
+            {{ SUPPORT_CONTACT.hours }}. Untuk urusan pembayaran, sertakan
+            nomor invoice supaya bisa langsung kami cek.
           </p>
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="mailto:halo@zenkoedu.id"
+              :href="SUPPORT_CONTACT.whatsappUrl"
+              target="_blank"
+              rel="noopener noreferrer"
               class="inline-flex min-h-13 items-center gap-2 rounded-xs bg-surface px-8 font-bold text-primary shadow-[0_8px_20px_rgba(12,40,100,0.18)] transition-[transform] duration-200 ease-smooth hover:-translate-y-px"
             >
-              <IconMail class="h-4.5 w-4.5" aria-hidden="true" />
-              halo@zenkoedu.id
+              <IconWhatsapp class="h-4.5 w-4.5" aria-hidden="true" />
+              WhatsApp {{ SUPPORT_CONTACT.phoneDisplay }}
             </a>
             <a
-              href="tel:+6288227663468"
-              class="inline-flex min-h-13 items-center justify-center rounded-xs border border-white/40 px-8 font-semibold text-white transition-[transform,background] duration-200 ease-smooth hover:-translate-y-px hover:bg-white/10 focus-visible:-translate-y-px"
+              :href="`mailto:${SUPPORT_CONTACT.email}`"
+              class="inline-flex min-h-13 items-center justify-center gap-2 rounded-xs border border-white/40 px-8 font-semibold text-white transition-[transform,background] duration-200 ease-smooth hover:-translate-y-px hover:bg-white/10 focus-visible:-translate-y-px"
             >
-              0882-2766-3468
+              <IconMail class="h-4.5 w-4.5" aria-hidden="true" />
+              {{ SUPPORT_CONTACT.email }}
             </a>
           </div>
 
@@ -319,9 +309,10 @@ const quickLinks = [
                harus bisa memastikan siapa yang mereka hubungi. -->
           <p class="mx-auto mt-8 max-w-[60ch] border-t border-white/15 pt-6 text-[0.88rem] leading-[1.7] text-white/70">
             Zenko diselenggarakan oleh <strong class="font-semibold text-white">PT Zenko Edukasi Digital</strong>,
-            Klaten, Jawa Tengah, Indonesia. Pembayaran diproses melalui QRIS oleh
-            <strong class="font-semibold text-white">DOKU</strong>. Zenko tidak pernah
-            meminta PIN, OTP, atau kata sandi lewat email maupun telepon.
+            Klaten, Jawa Tengah, Indonesia. Pembayaran QRIS Zenko diproses melalui
+            <strong class="font-semibold text-white">DOKU</strong> dan saat ini masih dalam
+            proses aktivasi. Zenko tidak pernah meminta PIN, OTP, atau kata sandi lewat
+            email, telepon, maupun WhatsApp.
           </p>
         </div>
       </div>

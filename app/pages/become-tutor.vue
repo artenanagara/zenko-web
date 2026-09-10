@@ -62,7 +62,7 @@ const faqs = [
   {
     question: 'Siapa yang menentukan harga paket soal?',
     answer:
-      'Kamu memiliki kebebasan penuh untuk menentukan harga setiap paket try out, dan kamu bisa menyesuaikannya kapan saja melalui dashboard tutor.',
+      'Kamu yang menentukan harga setiap paket try out: gratis (Rp0) atau minimal Rp1.000, dan harganya tetap bisa kamu sesuaikan setelah paket tayang. Selama pembayaran di Zenko masih dalam proses aktivasi, isian harga dikunci dan semua paket tayang gratis.',
   },
   {
     question: 'Kategori paket apa saja yang bisa saya buat?',

@@ -97,6 +97,11 @@ function retry() {
             Kembali ke beranda
           </AppButton>
         </div>
+
+        <p class="text-[0.9rem] text-muted">
+          Masih bermasalah?
+          <NuxtLink to="/pusat-bantuan" class="font-semibold text-primary hover:underline">Buka Pusat Bantuan</NuxtLink>
+        </p>
       </div>
     </main>
   </NuxtLayout>

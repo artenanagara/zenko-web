@@ -8,13 +8,13 @@ import {
   IconSettings,
   IconArrowLeft,
   IconCheckCircle,
-  IconImage,
   IconMail,
-  IconRocket,
+  IconWhatsapp,
   IconCheck,
   IconClose,
 } from '#components'
 import { getHelpArticle, getHelpCategory, type HelpCategoryIcon } from '~/data/help-center'
+import { SUPPORT_CONTACT, supportMailto } from '~/data/support-contact'
 
 // English file name, Indonesian URL. Kept as a flat file (not
 // pages/help-center/[slug].vue) so it doesn't nest under help-center.vue,
@@ -52,14 +52,17 @@ useSeoMeta({
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: pageUrl,
   twitterCard: 'summary_large_image',
-  robots: current.comingSoon ? 'noindex' : undefined,
 })
 
 useHead({
   link: [{ rel: 'canonical', href: pageUrl }],
 })
 
+// Belum dikirim ke mana pun — belum ada endpoint feedback. Karena itu balasan
+// di bawah tidak boleh mengklaim masukannya "dicatat".
 const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
+
+const contactMailto = supportMailto(`Bantuan: ${current.title}`)
 </script>
 
 <template>
@@ -89,13 +92,6 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
                 <component :is="categoryIcons[category!.icon]" class="h-3.5 w-3.5" />
                 {{ category?.title }}
               </span>
-              <span
-                v-if="article.comingSoon"
-                class="inline-flex items-center gap-1.5 rounded-pill bg-purple-50 px-3 py-1 text-[0.76rem] font-bold text-purple-700"
-              >
-                <IconRocket class="h-3.5 w-3.5" />
-                Segera Hadir
-              </span>
             </div>
 
             <h1 class="text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.15] tracking-[-0.03em]">
@@ -106,12 +102,6 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
               Diperbarui: {{ article.updated }} &middot; Estimasi baca: {{ article.readMinutes }} menit
             </p>
           </header>
-
-          <AppSectionMessage v-if="article.comingSoon" appearance="discovery" title="Panduan ini menjelaskan fitur yang belum tersedia" class="mb-8">
-            Kami tetap menerbitkan gambarannya supaya kamu tahu apa yang sedang kami siapkan, tapi langkah di
-            bawah ini <strong>belum bisa dikerjakan di produk Zenko saat ini</strong>. Butuh bantuan terkait ini
-            sekarang? Hubungi tim kami lewat kanal di bagian bawah halaman.
-          </AppSectionMessage>
 
           <!-- Ringkasan -->
           <section class="mb-8">
@@ -151,20 +141,10 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
                     <h3 class="mb-1.5 font-bold tracking-[-0.02em]">{{ step.title }}</h3>
                     <p class="leading-[1.7] text-muted">{{ step.body }}</p>
 
-                    <div
-                      v-if="step.screenshot"
-                      class="mt-4 flex items-center gap-3 rounded-xl border border-dashed border-line bg-surface-alt px-4 py-3.5"
-                    >
-                      <IconImage class="h-5 w-5 shrink-0 text-muted" aria-hidden="true" />
-                      <p class="text-[0.83rem] leading-[1.5] text-muted">
-                        <span class="font-semibold text-ink">Tangkapan layar:</span> {{ step.screenshot }}
-                      </p>
-                    </div>
-
                     <AppSectionMessage
                       v-if="step.note"
                       :appearance="step.note.appearance"
-                      :title="step.note.title ?? (step.note.appearance === 'discovery' ? 'Segera hadir' : 'Catatan penting')"
+                      :title="step.note.title ?? 'Catatan penting'"
                       class="mt-4"
                     >
                       {{ step.note.body }}
@@ -224,8 +204,8 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
             <p v-else class="mt-3 text-[0.9rem] text-muted">
               {{
                 feedbackGiven === 'ya'
-                  ? 'Terima kasih atas masukanmu!'
-                  : 'Terima kasih, masukanmu membantu kami memperbaiki panduan ini. Kalau masih butuh bantuan, hubungi tim kami di bawah.'
+                  ? 'Terima kasih!'
+                  : 'Terima kasih. Kalau masih butuh bantuan, hubungi tim Zenko lewat email atau WhatsApp di halaman ini.'
               }}
             </p>
           </section>
@@ -239,10 +219,13 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
 
         <!-- Daftar isi + kanal eskalasi: satu wrapper sticky, supaya
              keduanya tetap menempel bersamaan saat discroll (bukan cuma
-             kotak pertama yang nempel lalu kotak kedua tertinggal). -->
-        <aside class="hidden lg:block">
-          <div class="sticky top-24 space-y-4">
-            <div class="rounded-2xl border border-line bg-surface-alt p-8 shadow-lift">
+             kotak pertama yang nempel lalu kotak kedua tertinggal).
+             Di HP hanya daftar isinya yang disembunyikan: kanal kontak tetap
+             tampil di bawah artikel, karena di situlah pembaca yang belum
+             terbantu mencarinya. -->
+        <aside>
+          <div class="space-y-4 lg:sticky lg:top-24">
+            <div class="hidden rounded-2xl border border-line bg-surface-alt p-8 shadow-lift lg:block">
               <p class="mb-5 text-[0.76rem] font-bold tracking-widest text-muted uppercase">Di halaman ini</p>
               <ul class="space-y-4 text-[0.86rem]">
                 <li v-if="article.prerequisites.length">
@@ -260,20 +243,26 @@ const feedbackGiven = ref<'ya' | 'tidak' | null>(null)
             </div>
 
             <!-- Kanal eskalasi -->
-            <div class="rounded-2xl bg-ink p-8 text-white shadow-lift">
+            <div class="rounded-2xl bg-ink p-6 text-white shadow-lift md:p-8">
               <p class="font-bold tracking-[-0.02em]">Butuh bantuan lebih lanjut?</p>
               <p class="mt-1.5 text-[0.83rem] leading-[1.6] text-white/70">
-                Tim Zenko siap membantu, Senin&ndash;Jumat 09.00&ndash;17.00 WIB.
+                Jam layanan tim Zenko: {{ SUPPORT_CONTACT.hours }}.
               </p>
               <a
-                href="mailto:halo@zenkoedu.id"
-                class="mt-3.5 flex items-center gap-2 text-[0.86rem] font-semibold text-white hover:underline"
+                :href="SUPPORT_CONTACT.whatsappUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-3.5 flex min-h-11 items-center gap-2 text-[0.86rem] font-semibold text-white hover:underline"
+              >
+                <IconWhatsapp class="h-4 w-4 shrink-0" />
+                WhatsApp {{ SUPPORT_CONTACT.phoneDisplay }}
+              </a>
+              <a
+                :href="contactMailto"
+                class="flex min-h-11 items-center gap-2 text-[0.86rem] font-semibold text-white hover:underline"
               >
                 <IconMail class="h-4 w-4 shrink-0" />
-                halo@zenkoedu.id
-              </a>
-              <a href="tel:+6288227663468" class="mt-2 block text-[0.86rem] font-semibold text-white hover:underline">
-                0882-2766-3468
+                {{ SUPPORT_CONTACT.email }}
               </a>
             </div>
           </div>

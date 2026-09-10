@@ -63,6 +63,14 @@ export default defineNuxtConfig({
     '/dashboard/**': { ssr: false },
     '/pembayaran': { ssr: false },
     '/pembayaran/**': { ssr: false },
+    // Artikel Pusat Bantuan yang dipensiunkan; tautan lama (mesin pencari,
+    // pesan yang pernah dibagikan) tetap mendarat di penggantinya.
+    '/pusat-bantuan/aktivasi-kode-akses-bimbel': {
+      redirect: { to: '/pusat-bantuan/gabung-bimbel-dengan-kode', statusCode: 301 },
+    },
+    '/pusat-bantuan/peringatan-anti-kecurangan': {
+      redirect: { to: '/pusat-bantuan/tampilan-soal-disembunyikan', statusCode: 301 },
+    },
   },
 
   css: ['~/assets/css/main.css'],
