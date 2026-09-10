@@ -271,14 +271,14 @@ server {
 # --- Staging-2 (reuses this VPS: zenko-api-staging2 on 8082, zenko-web-staging2
 # on 3003 — see deploy/zenko-api-staging2.service and
 # deploy/zenko-web-staging2.service). Get the cert once with:
-#   certbot certonly --nginx -d staging-2.zenkoedu.id
-# after staging-2.zenkoedu.id's DNS A/AAAA record points at this host.
+#   certbot certonly --nginx -d demo.zenkoedu.id
+# after demo.zenkoedu.id's DNS A/AAAA record points at this host.
 
 server {
     listen 80;
     listen [::]:80;
 
-    server_name staging-2.zenkoedu.id;
+    server_name demo.zenkoedu.id;
 
     location ^~ /.well-known/acme-challenge/ {
         root /var/www/letsencrypt;
@@ -289,7 +289,7 @@ server {
     location / {
         # Staging is intentionally public so remote testers and Duitku
         # sandbox callbacks can reach the application.
-        return 308 https://staging-2.zenkoedu.id$request_uri;
+        return 308 https://demo.zenkoedu.id$request_uri;
     }
 }
 
@@ -297,11 +297,11 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
 
-    server_name staging-2.zenkoedu.id;
+    server_name demo.zenkoedu.id;
     client_max_body_size 2m;
 
-    ssl_certificate /etc/letsencrypt/live/staging-2.zenkoedu.id/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/staging-2.zenkoedu.id/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/demo.zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/demo.zenkoedu.id/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 1d;

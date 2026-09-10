@@ -9,7 +9,7 @@ environment stays stable while that work is validated.
 
 | | Production | Staging | Staging-2 |
 |---|---|---|---|
-| Domain | `zenkoedu.id` | `staging.zenkoedu.id` | `staging-2.zenkoedu.id` |
+| Domain | `zenkoedu.id` | `staging.zenkoedu.id` | `demo.zenkoedu.id` |
 | API port | 8080 | 8081 | 8082 |
 | Web port | 3000 | 3001 | 3003 |
 | API env file | `/etc/zenko/api.env` | `/etc/zenko/api-staging.env` | `/etc/zenko/api-staging2.env` |
@@ -38,7 +38,7 @@ for the manual setup steps.
    challenge, which needs to reach the VPS directly.
 4. Wait for propagation, then confirm from your local machine:
    ```
-   dig +short staging-2.zenkoedu.id
+   dig +short demo.zenkoedu.id
    ```
    Proceed once that prints `103.89.5.73`.
 
@@ -51,7 +51,7 @@ SSH in with your own admin account: `ssh <you>@103.89.5.73`.
 for any hostname pointed at this server, so the cert can be issued before
 any staging-2-specific Nginx config exists:
 ```
-sudo certbot certonly --webroot -w /var/www/letsencrypt -d staging-2.zenkoedu.id
+sudo certbot certonly --webroot -w /var/www/letsencrypt -d demo.zenkoedu.id
 ```
 
 **2b. Create the staging-2 database** (separate from production and from
@@ -121,7 +121,7 @@ an error: the API still runs, `POST /orders` creates pending orders with no
 QR attached, and checkout says the payment is not connected instead of
 pretending a charge exists.
 
-Also set `API_PUBLIC_URL=https://staging-2.zenkoedu.id`. Duitku takes a
+Also set `API_PUBLIC_URL=https://demo.zenkoedu.id`. Duitku takes a
 `callbackUrl` on every charge request rather than reading one URL configured
 on its dashboard, so the API builds its own callback from this value — point
 it at localhost (or at staging's URL) and Duitku can never deliver a
@@ -172,12 +172,12 @@ certificate path from skipping 2a, or an incomplete file copy from 2c).
    ```
    sudo systemctl status zenko-api-staging2 zenko-web-staging2
    ```
-   should show both `active (running)`, and `https://staging-2.zenkoedu.id`
+   should show both `active (running)`, and `https://demo.zenkoedu.id`
    should serve the app.
 
 ## Testing a payment
 
-1. Open `https://staging-2.zenkoedu.id`, sign in, and go through checkout
+1. Open `https://demo.zenkoedu.id`, sign in, and go through checkout
    for any product — this hits `POST /orders`, which charges QRIS through
    Duitku sandbox and returns a QR payload. Unlike Midtrans, Duitku returns
    the raw QRIS string rather than a hosted image; `/pembayaran/:invoice`
