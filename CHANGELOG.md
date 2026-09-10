@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.0](https://github.com/artenanagara/zenko-web/compare/v0.19.2...v0.20.0) (2026-09-10)
+
+
+### Features
+
+* **bimbel:** rapikan paket, kelas, pengaturan, dan pencairan ([60a0d7f](https://github.com/artenanagara/zenko-web/commit/60a0d7fbbd0faa15e8476ab4530b9b7f87cf9288))
+* **bimbel:** rapikan paket, kelas, pengaturan, dan pencairan ([7d35327](https://github.com/artenanagara/zenko-web/commit/7d353279c5ae184336ff058c2495d4b4e2048c48))
+
 ## [0.19.2](https://github.com/artenanagara/zenko-web/compare/v0.19.1...v0.19.2) (2026-09-09)
 
 
