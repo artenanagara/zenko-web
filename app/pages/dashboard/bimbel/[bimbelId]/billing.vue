@@ -122,6 +122,24 @@ async function load() {
 onMounted(load)
 
 /**
+ * "Perpanjang" berarti tingkat yang sedang berjalan, jadi ia membuka ringkasan
+ * tingkat itu langsung. Tanpa ini, satu-satunya jalan memperpanjang adalah
+ * membuka pemilih tingkat dan memilih ulang tingkat yang sudah dipakai — dan
+ * pada langganan yang aktif pemilihnya terlipat, sehingga panel yang berjudul
+ * "Perpanjang Kelas Pro" tidak punya satu pun tombol yang memperpanjangnya.
+ *
+ * Tanpa tingkat terpilih (daftar tingkat gagal dimuat) yang bisa dibuka hanya
+ * pemilihnya, bersama pesan galatnya.
+ */
+function openSummary() {
+  if (!selectedPlan.value) {
+    planPickerOpen.value = true
+    return
+  }
+  summaryOpen.value = true
+}
+
+/**
  * Memilih tingkat membuka ringkasannya, bukan menyalakan panel yang sudah
  * berdiri sejak halaman dibuka: ringkasan atas tingkat yang belum dipilih tidak
  * meringkas apa pun. Modalnya juga dibuka ulang untuk tingkat yang memang sudah
@@ -187,7 +205,7 @@ async function onSeatOrderCreated(order: BimbelOrder) {
           </div>
           <div class="flex flex-wrap gap-2">
             <AppButton v-if="isPaidCustomer" size="sm" variant="outline" @click="seatModalOpen = true">Tambah kursi</AppButton>
-            <AppButton size="sm" @click="planPickerOpen = true">Perpanjang</AppButton>
+            <AppButton size="sm" @click="openSummary">Perpanjang</AppButton>
           </div>
         </div>
         <div>
@@ -224,7 +242,10 @@ async function onSeatOrderCreated(order: BimbelOrder) {
           <p class="font-semibold">Perpanjang {{ bimbel.data.value?.plan ? bimbelPlanLabel(bimbel.data.value.plan) : 'tingkat saat ini' }}</p>
           <p class="mt-1 text-sm text-muted">Kuota saat ini diteruskan oleh server ke periode berikutnya.</p>
         </div>
-        <AppButton variant="outline" size="sm" @click="planPickerOpen = true">Ubah tingkat</AppButton>
+        <div class="flex flex-wrap gap-2">
+          <AppButton size="sm" @click="openSummary">Perpanjang sekarang</AppButton>
+          <AppButton variant="outline" size="sm" @click="planPickerOpen = true">Ubah tingkat</AppButton>
+        </div>
       </div>
       <template v-else>
         <DashboardSkeleton v-if="plans.pending.value" :count="3" label="Memuat tingkat langganan…" />
