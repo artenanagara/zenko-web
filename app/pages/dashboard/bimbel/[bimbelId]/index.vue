@@ -6,11 +6,12 @@ const bimbelId = String(useRoute().params.bimbelId)
 const bimbel = useBimbelDetail(bimbelId)
 const classes = useBimbelClasses(bimbelId)
 const products = useTutorProducts({ bimbelId })
+const plans = useBimbelPlans(bimbelId)
 
 // Client-only fetch: session cookie milik origin API, tidak pernah sampai ke
 // server Nuxt, jadi semuanya baru resolve setelah hydration.
 function load() {
-  return Promise.all([bimbel.refresh(), classes.refresh(), products.refresh()])
+  return Promise.all([bimbel.refresh(), classes.refresh(), products.refresh(), plans.refresh()])
 }
 onMounted(load)
 
@@ -22,7 +23,7 @@ const privateProducts = computed(() => products.data.value.filter(item => item.v
 const openProducts = computed(() => privateProducts.value.filter(item => item.status === 'live').length)
 
 const pending = computed(() =>
-  bimbel.pending.value || classes.pending.value || products.pending.value,
+  bimbel.pending.value || classes.pending.value || products.pending.value || plans.pending.value,
 )
 
 /**
@@ -31,8 +32,32 @@ const pending = computed(() =>
  * karena "0 kelas" terlihat persis sama dengan "kelas gagal dimuat".
  */
 const loadError = computed(() =>
-  bimbel.error.value || classes.error.value || products.error.value,
+  bimbel.error.value || classes.error.value || products.error.value || plans.error.value,
 )
+
+const daysLeft = computed(() => {
+  const until = bimbel.data.value?.activeUntil ?? 0
+  return until ? Math.max(0, Math.ceil((until - Date.now() / 1000) / 86400)) : 0
+})
+const currentPlan = computed(() => plans.data.value.find(plan => plan.plan === bimbel.data.value?.plan))
+const expiryNotice = computed(() => {
+  const detail = bimbel.data.value
+  if (!detail) return null
+  if (detail.status === 'trial') {
+    const price = currentPlan.value ? ` Mulai ${formatRupiah(currentPlan.value.pricePerMonth)} per bulan setelahnya.` : ''
+    return {
+      title: daysLeft.value <= 3 ? `Uji coba berakhir ${daysLeft.value} hari lagi` : 'Uji coba 7 hari sedang berjalan',
+      body: `Semua fitur ${bimbelPlanLabel(detail.plan)} aktif sampai ${formatDate(detail.activeUntil)}.${price}`,
+    }
+  }
+  if (detail.status === 'active' && daysLeft.value <= 14) {
+    return {
+      title: `Masa aktif tersisa ${daysLeft.value} hari`,
+      body: 'Perpanjang sekarang; periode baru tetap dimulai setelah masa aktif saat ini berakhir.',
+    }
+  }
+  return null
+})
 
 const stats = computed(() => [
   { label: 'Siswa aktif', value: String(bimbel.data.value?.seatsUsed ?? 0) },
@@ -56,6 +81,11 @@ const seatPercent = computed(() => Math.min(100, (seatsUsed.value / Math.max(1, 
         <AppButton :to="`/dashboard/bimbel/${bimbelId}/products/new`" size="sm">Buat paket</AppButton>
       </template>
     </AppPageHeader>
+
+    <AppSectionMessage v-if="expiryNotice" appearance="warning" :title="expiryNotice.title">
+      {{ expiryNotice.body }}
+      <NuxtLink :to="`/dashboard/bimbel/${bimbelId}/billing`" class="ml-1 font-semibold text-primary underline">Lihat langganan</NuxtLink>
+    </AppSectionMessage>
 
     <AppSectionMessage
       v-if="bimbel.data.value?.status === 'grace' || bimbel.data.value?.status === 'suspended'"

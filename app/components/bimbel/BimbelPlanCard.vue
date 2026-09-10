@@ -25,6 +25,8 @@ withDefaults(defineProps<{
   priceNote?: string
   /** Satu baris di bawah harga untuk syarat periodenya. */
   priceFootnote?: string
+  /** Porsi hasil marketplace yang diterima bimbel pada tingkat ini. */
+  marketplaceSharePercent?: 70 | 75 | 80
   features: string[]
   /**
    * Pita di atas nama tingkat, mis. "Paling dipilih" atau "Sisa 2 hari uji
@@ -55,6 +57,7 @@ withDefaults(defineProps<{
   priceLead: '',
   priceNote: '',
   priceFootnote: '',
+  marketplaceSharePercent: undefined,
   badge: '',
   badgeTone: 'warning',
   selected: false,
@@ -113,6 +116,11 @@ defineEmits<{ action: [] }>()
         <span class="leading-[1.5]">{{ feature }}</span>
       </li>
     </ul>
+
+    <div v-if="marketplaceSharePercent" class="mx-4 mt-5 rounded-sm border border-hairline bg-surface-alt px-3.5 py-3 text-sm">
+      <span class="block text-xs font-semibold text-muted">Porsi hasil marketplace</span>
+      <strong class="mt-0.5 block text-base text-ink">{{ marketplaceSharePercent }}% untuk bimbel</strong>
+    </div>
 
     <!-- Aksi di kaki kartu, dan `mt-auto` supaya ia sejajar antarkartu meski
          daftar isinya berbeda panjang — tiga tombol yang tidak sebaris membuat

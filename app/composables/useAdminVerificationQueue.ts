@@ -25,7 +25,11 @@ export function useAdminVerificationQueue() {
 
   const items = computed<VerificationItem[]>(() => [
     ...packages.data.value.map(proof => ({ kind: 'package' as const, ...proof })),
-    ...subscriptions.data.value.map(proof => ({ kind: 'subscription' as const, ...proof })),
+    ...subscriptions.data.value.map(proof => ({
+      ...proof,
+      orderKind: proof.kind,
+      kind: 'subscription' as const,
+    })),
   ])
 
   const pending = computed(() => packages.pending.value || subscriptions.pending.value)

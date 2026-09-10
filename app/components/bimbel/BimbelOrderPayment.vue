@@ -55,6 +55,9 @@ const expiresAt = computed(() => instructions.value?.expiresAt ?? props.order.ex
 const isVerifying = computed(() => status.value === 'verifying')
 const isClosed = computed(() => status.value === 'expired' || status.value === 'cancelled')
 const payable = computed(() => status.value === 'pending')
+const orderSummary = computed(() => props.order.kind === 'seat_addon'
+  ? `${props.order.additionalSeats} kursi tambahan`
+  : `${bimbelPlanLabel(props.order.plan)} · ${props.order.months} bulan`)
 
 /** Bukti sebelumnya ditolak: alasannya yang pertama dibaca, sebelum QR-nya. */
 const rejection = computed(() => {
@@ -135,7 +138,7 @@ async function onSubmit(payload: PaymentProofPayload) {
         appearance="warning"
         :title="status === 'expired' ? 'Tagihan ini sudah kedaluwarsa' : 'Tagihan ini dibatalkan'"
       >
-        Buat tagihan baru di bawah untuk melanjutkan langganan. Pembayaran ke
+        Buat tagihan baru untuk melanjutkan. Pembayaran ke
         tagihan yang sudah tertutup tidak akan diproses.
       </AppSectionMessage>
 
@@ -179,7 +182,7 @@ async function onSubmit(payload: PaymentProofPayload) {
               {{ formatRupiah(amount) }}
             </p>
             <p class="mt-2 text-[0.82rem] text-muted">
-              {{ bimbelPlanLabel(order.plan) }} · {{ order.seatQuota }} kursi · {{ order.months }} bulan
+              {{ orderSummary }}
             </p>
             <p v-if="expiresAt && payable" class="mt-1 text-[0.82rem] font-semibold text-warning-ink">
               Bayar sebelum {{ formatDate(expiresAt) }}

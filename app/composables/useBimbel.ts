@@ -12,6 +12,7 @@ import type {
   BimbelProductResults,
   BimbelProofDecisionRequest,
   BimbelQuote,
+  BimbelStudentCountBand,
   BimbelStudentPackage,
   InvitationAnswer,
   OwnershipTransfer,
@@ -122,7 +123,12 @@ export const declineBimbelInvitation = (bimbelId: string) => bimbelRequest<Invit
 /** Keluar dari bimbel. Owner ditolak server — ia harus transfer kepemilikan dulu. */
 export const leaveBimbel = (id: string) => bimbelRequest<void>(bimbelPath(id, '/members/me'), { method: 'DELETE' })
 export const transferBimbelOwnership = (id: string, accountId: string) => bimbelRequest<OwnershipTransfer>(bimbelPath(id, '/transfer-ownership'), { method: 'POST', body: { accountId } })
-export const applyBimbel = (body: { bimbelName: string, whatsapp: string, city: string, studentCount: number, about: string }) => bimbelRequest<BimbelApplication>('/bimbel-applications', { method: 'POST', body })
+export const applyBimbel = (body: {
+  bimbelName: string
+  studentCountBand: BimbelStudentCountBand
+  city?: string
+  termsAccepted: true
+}) => bimbelRequest<BimbelApplication>('/bimbel-applications', { method: 'POST', body })
 export const updateBimbel = (id: string, body: Partial<Pick<Bimbel, 'name' | 'city' | 'description' | 'logoUrl'>>) => bimbelRequest<Bimbel>(bimbelPath(id), { method: 'PATCH', body })
 export const rotateBimbelJoinCode = (id: string) => bimbelRequest<Bimbel>(bimbelPath(id, '/join-code/rotate'), { method: 'POST' })
 export const inviteBimbelMember = (id: string, email: string, role: string) => bimbelRequest<BimbelMember>(bimbelPath(id, '/members'), { method: 'POST', body: { email, role } })
@@ -143,15 +149,20 @@ export const getBimbelProductResults = (id: string, productId: string) => bimbel
  * jadi nilai kontrol kursi dikirim apa adanya dan `seatQuota` pada jawaban yang
  * jadi kebenarannya. Jangan menormalkan sendiri di klien.
  */
-export const getBimbelQuote = (id: string, plan?: BimbelPlan, seats?: number, months?: number) =>
+export type BimbelQuoteRequest =
+  | { kind: 'subscription', plan?: BimbelPlan, months?: number }
+  | { kind: 'seat_addon', additionalSeats: number }
+
+export type BimbelOrderRequest =
+  | { kind: 'subscription', plan: BimbelPlan, months: number }
+  | { kind: 'seat_addon', additionalSeats: number }
+
+export const getBimbelQuote = (id: string, request: BimbelQuoteRequest) =>
   bimbelRequest<BimbelQuote>(bimbelPath(id, '/billing/quote'), {
-    query: {
-      ...(plan ? { plan } : {}),
-      ...(seats ? { seats } : {}),
-      ...(months ? { months } : {}),
-    },
+    query: request,
   })
-export const createBimbelOrder = (id: string, plan: BimbelPlan, seatQuota: number, months: number) => bimbelRequest<BimbelOrder>(bimbelPath(id, '/billing/orders'), { method: 'POST', body: { plan, seatQuota, months } })
+export const createBimbelOrder = (id: string, body: BimbelOrderRequest) =>
+  bimbelRequest<BimbelOrder>(bimbelPath(id, '/billing/orders'), { method: 'POST', body })
 /** Instruksi bayar satu tagihan: merchant, nominal, tenggat, dan bukti terakhir. */
 export const getBimbelPaymentInstructions = (id: string, orderId: string) =>
   bimbelRequest<BimbelPaymentInstructions>(bimbelPath(id, `/billing/orders/${orderId}/payment`))
