@@ -9,9 +9,26 @@ const { isVisible, accept, rejectOptional } = useCookieConsent()
     leave-active-class="transition-[opacity,transform] duration-150 ease-smooth"
     leave-to-class="translate-y-3 opacity-0"
   >
+    <!--
+      z-30 menaruhnya di atas isi halaman biasa tetapi di bawah setiap
+      permukaan yang menuntut perhatian penuh: backdrop dan laci di z-40,
+      modal di z-50, toast di z-60.
+
+      Dulu ia di z-[70], lapisan tertinggi di seluruh aplikasi. Di layar
+      ponsel banner ini menempati sepertiga bawah layar, tepat di tempat
+      modal menaruh tombolnya — sehingga "Buat tagihan" pada ringkasan
+      langganan dan "Kirim konfirmasi" pada bukti transfer masih terlihat
+      dan tampak aktif, tetapi setiap ketukan di atasnya ditangkap banner
+      yang menutupinya. Pengunjung baru dari HP tidak bisa menyelesaikan
+      alurnya sampai ia menjawab cookies lebih dulu, tanpa satu pun petunjuk
+      bahwa itulah yang menghalangi.
+
+      Persetujuan cookies tidak kehilangan apa pun karena mengalah: ia tetap
+      menunggu di sana setelah modalnya ditutup.
+    -->
     <aside
       v-if="isVisible"
-      class="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-3xl rounded-md border border-hairline bg-surface p-4 shadow-float sm:inset-x-5 sm:p-5"
+      class="fixed inset-x-3 bottom-3 z-30 mx-auto max-w-3xl rounded-md border border-hairline bg-surface p-4 shadow-float sm:inset-x-5 sm:p-5"
       role="dialog"
       aria-modal="false"
       aria-labelledby="cookie-consent-title"

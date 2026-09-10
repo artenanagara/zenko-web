@@ -204,15 +204,15 @@ export function useDashboardNav() {
        */
       const items: DashboardNavItem[] = [
         { label: 'Ringkasan', to: base, icon: IconHome, exact: true },
-        { label: 'Bank soal', to: `${base}/products`, icon: IconGrid, section: 'Pengajaran' },
+        { label: 'Paket', to: `${base}/products`, icon: IconGrid, section: 'Pengajaran' },
         { label: 'Kelas', to: `${base}/classes`, icon: IconUsers, section: 'Pengajaran' },
       ]
       if (canManage) {
-        items.push({ label: 'Siswa & tim', to: `${base}/members`, icon: IconUser, section: 'Pengajaran' })
+        items.push({ label: 'Siswa', to: `${base}/members`, icon: IconUser, section: 'Pengajaran' })
       }
       if (membership.role === 'owner') {
-        items.push({ label: 'Penjualan', to: `${base}/sales`, icon: IconWallet, section: 'Keuangan' })
-        items.push({ label: 'Langganan', to: `${base}/billing`, icon: IconReceipt, section: 'Keuangan' })
+        items.push({ label: 'Penjualan', to: `${base}/sales`, icon: IconReceipt, section: 'Keuangan' })
+        items.push({ label: 'Pencairan', to: `${base}/payouts`, icon: IconWallet, section: 'Keuangan' })
       }
       if (canManage) {
         items.push({ label: 'Pengaturan', to: `${base}/settings`, icon: IconSettings, section: 'Pengelolaan' })

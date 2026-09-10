@@ -1,23 +1,132 @@
 <script setup lang="ts">
 import type { TutorProductSummary } from '#shared/types/tutor-product'
+import type { TableControlOption } from '~/composables/useTableControls'
+
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
-useHead({ title: 'Bank Soal Bimbel | Zenko', meta: [{ name: 'robots', content: 'noindex' }] })
-const route = useRoute()
-const bimbelId = String(route.params.bimbelId)
+useHead({ title: 'Paket Bimbel | Zenko', meta: [{ name: 'robots', content: 'noindex' }] })
+
+const bimbelId = String(useRoute().params.bimbelId)
 const workspace = { bimbelId }
 const { data: products, pending, error, refresh } = useTutorProducts(workspace)
 const { data: memberships, refresh: refreshMemberships } = useBimbelMemberships()
 const toast = useToast()
 const { confirm } = useConfirm()
-const busyId = ref('')
-const problems = ref<string[]>([])
+
+onMounted(() => Promise.all([refresh(), refreshMemberships()]))
+
 const membership = computed(() => memberships.value.find(item => item.bimbelId === bimbelId))
 const canManageMarketplace = computed(() => membership.value?.role === 'owner' || membership.value?.role === 'admin')
-onMounted(() => Promise.all([refresh(), refreshMemberships()]))
+
+const FILTER_OPTIONS: TableControlOption[] = [
+  { value: 'all', label: 'Semua status' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'review', label: 'Ditinjau' },
+  { value: 'live', label: 'Tayang' },
+  { value: 'rejected', label: 'Ditolak' },
+  { value: 'archived', label: 'Diarsipkan' },
+]
+
+const SORT_OPTIONS: TableControlOption[] = [
+  { value: 'newest', label: 'Terbaru diperbarui' },
+  { value: 'oldest', label: 'Terlama diperbarui' },
+  { value: 'title', label: 'Judul A–Z' },
+]
+
+const {
+  search,
+  filter: statusFilter,
+  sort: sortOrder,
+  rows,
+  total,
+  isActive,
+  reset,
+} = useTableControls<TutorProductSummary>(() => products.value, {
+  searchFields: product => [
+    product.title,
+    product.category,
+    product.subcategory,
+    PRODUCT_TYPE_LABEL[product.type],
+    product.visibility === 'public' ? 'Marketplace' : 'Privat',
+  ],
+  filters: {
+    all: () => true,
+    draft: product => product.status === 'draft',
+    review: product => product.status === 'review',
+    live: product => product.status === 'live',
+    rejected: product => product.status === 'rejected',
+    archived: product => product.status === 'archived',
+  },
+  sorts: {
+    newest: (a, b) => b.updatedAt - a.updatedAt,
+    oldest: (a, b) => a.updatedAt - b.updatedAt,
+    title: (a, b) => a.title.localeCompare(b.title, 'id'),
+  },
+  defaultFilter: 'all',
+  defaultSort: 'newest',
+})
+
+const actionableCount = computed(() =>
+  products.value.filter(product => product.status === 'draft' || product.status === 'rejected').length,
+)
+
+const productColumns = [
+  { key: 'title', label: 'Paket' },
+  { key: 'visibility', label: 'Akses' },
+  { key: 'category', label: 'Kategori' },
+  { key: 'questionCount', label: 'Soal' },
+  { key: 'status', label: 'Status' },
+  { key: 'aksi', label: 'Aksi', align: 'right' as const },
+]
+
+function productStatusTone(status: TutorProductSummary['status']) {
+  return PRODUCT_STATUS_TONE[status]
+}
+
+function productStatusLabel(status: TutorProductSummary['status']): string {
+  return PRODUCT_STATUS_LABEL[status]
+}
+
+function findProduct(id: string): TutorProductSummary | undefined {
+  return rows.value.find(product => product.id === id)
+}
+
+const busyId = ref('')
+const problems = ref<string[]>([])
+
+const canEdit = (product: TutorProductSummary) =>
+  product.status === 'draft' || product.status === 'rejected' || product.status === 'live'
+
+const canPublish = (product: TutorProductSummary) =>
+  product.visibility === 'bimbel'
+  && (product.status === 'draft' || product.status === 'rejected')
+  && (product.type === 'bundle' || product.questionCount >= product.questionTarget)
+
+const canDelete = (product: TutorProductSummary) =>
+  product.status !== 'live' && product.status !== 'review'
 
 async function run(product: TutorProductSummary, action: 'publish' | 'marketplace' | 'archive' | 'delete') {
   problems.value = []
-  if (action === 'delete' && !await confirm({ title: `Hapus "${product.title}"?`, description: 'Soal dan konfigurasi paket akan dihapus permanen.', confirmLabel: 'Hapus permanen' })) return
+
+  if (action === 'delete') {
+    const approved = await confirm({
+      title: `Hapus "${product.title}" permanen?`,
+      description: 'Seluruh soal dan konfigurasi paket akan dihapus permanen dan tidak dapat dikembalikan.',
+      confirmLabel: 'Hapus permanen',
+    })
+    if (!approved) return
+  }
+
+  if (action === 'archive') {
+    const approved = await confirm({
+      title: `Arsipkan "${product.title}"?`,
+      description: product.visibility === 'bimbel'
+        ? 'Paket tidak akan tersedia lagi untuk siswa bimbel.'
+        : 'Paket tidak akan tampil lagi di marketplace Zenko.',
+      confirmLabel: 'Arsipkan',
+    })
+    if (!approved) return
+  }
+
   busyId.value = product.id
   try {
     if (action === 'publish') await submitTutorProduct(product.id, workspace, 'bimbel')
@@ -25,47 +134,135 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
     if (action === 'archive') await archiveTutorProduct(product.id, workspace)
     if (action === 'delete') await deleteTutorProduct(product.id, workspace)
     await refresh()
-    toast.success(action === 'marketplace' ? 'Salinan marketplace diajukan.' : action === 'publish' ? 'Paket tayang untuk siswa bimbel.' : action === 'archive' ? 'Paket diarsipkan.' : 'Paket dihapus.')
+    toast.success(
+      action === 'marketplace'
+        ? 'Salinan marketplace diajukan.'
+        : action === 'publish'
+          ? 'Paket tayang untuk siswa bimbel.'
+          : action === 'archive'
+            ? 'Paket diarsipkan.'
+            : 'Paket dihapus.',
+    )
   }
   catch (cause) {
     problems.value = tutorSubmitProblems(cause)
     toast.error('Tindakan belum berhasil.', tutorApiMessage(cause, 'Periksa paket lalu coba lagi.'))
   }
-  finally { busyId.value = '' }
+  finally {
+    busyId.value = ''
+  }
 }
 </script>
 
 <template>
   <div class="grid gap-6">
-    <AppPageHeader title="Bank soal" description="Materi privat bimbel dan salinan yang diajukan ke marketplace Zenko.">
-      <template #actions><AppButton :to="`/dashboard/bimbel/${bimbelId}/products/new`" size="sm">Buat paket</AppButton></template>
+    <AppPageHeader
+      title="Paket"
+      description="Kelola paket privat untuk siswa bimbel dan salinan yang diajukan ke marketplace Zenko."
+    >
+      <template #actions>
+        <AppButton :to="`/dashboard/bimbel/${bimbelId}/products/new`" size="sm">Buat paket baru</AppButton>
+      </template>
     </AppPageHeader>
-    <AppSectionMessage v-if="problems.length" appearance="error" title="Paket belum siap"><ul class="list-disc pl-5"><li v-for="item in problems" :key="item">{{ item }}</li></ul></AppSectionMessage>
+
+    <AppSectionMessage v-if="problems.length" appearance="error" title="Paket belum siap">
+      <ul class="grid list-disc gap-1 pl-5">
+        <li v-for="item in problems" :key="item">{{ item }}</li>
+      </ul>
+    </AppSectionMessage>
+
     <DashboardPanel>
-      <DashboardSkeleton v-if="pending" :count="5" label="Memuat bank soal…" />
-      <AppInlineMessage v-else-if="error" type="error">{{ error }}</AppInlineMessage>
-      <div v-else-if="products.length" class="grid gap-3">
-        <article v-for="product in products" :key="product.id" class="flex flex-col gap-4 rounded-md border border-hairline p-4 lg:flex-row lg:items-center">
-          <div class="min-w-0 flex-1">
-            <div class="flex flex-wrap items-center gap-2"><h2 class="font-semibold">{{ product.title }}</h2><DashboardBadge :tone="product.visibility === 'public' ? 'brand' : 'neutral'">{{ product.visibility === 'public' ? 'Marketplace' : 'Privat' }}</DashboardBadge><DashboardBadge :tone="PRODUCT_STATUS_TONE[product.status]">{{ PRODUCT_STATUS_LABEL[product.status] }}</DashboardBadge></div>
-            <p class="mt-1 text-sm text-muted">{{ product.category }} · {{ product.questionCount }}/{{ product.questionTarget }} soal</p>
-            <p v-if="product.rejectReason" class="mt-2 text-sm text-danger">{{ product.rejectReason }}</p>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <AppButton v-if="product.status === 'draft' || product.status === 'rejected' || product.status === 'live'" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/edit`" size="sm" variant="secondary">Edit</AppButton>
-            <AppButton v-if="product.visibility === 'bimbel' && (product.status === 'draft' || product.status === 'rejected')" size="sm" :loading="busyId === product.id" @click="run(product, 'publish')">Tayangkan</AppButton>
-            <!-- Rekap hasil jadi route sendiri, menggantikan panel Hasil kelompok
-                 yang dulu menempel pada penugasan. Hanya paket privat yang pernah
-                 tayang yang bisa punya percobaan untuk direkap. -->
-            <AppButton v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" size="sm" variant="secondary">Lihat hasil</AppButton>
-            <AppButton v-if="product.visibility === 'bimbel' && product.status === 'live' && canManageMarketplace" size="sm" variant="secondary" :loading="busyId === product.id" @click="run(product, 'marketplace')">Jual di marketplace</AppButton>
-            <AppButton v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" size="sm" :loading="busyId === product.id" @click="run(product, 'marketplace')">Ajukan ulang</AppButton>
-            <AppButton v-if="product.status === 'live'" size="sm" variant="ghost" :loading="busyId === product.id" @click="run(product, 'archive')">Arsipkan</AppButton>
-            <AppButton v-if="product.status !== 'live' && product.status !== 'review'" size="sm" variant="ghost" :loading="busyId === product.id" @click="run(product, 'delete')">Hapus</AppButton>
-          </div>
-        </article>
+      <DashboardSkeleton v-if="pending" :count="5" label="Memuat paket…" />
+
+      <div v-else-if="error" class="py-8 text-center">
+        <AppInlineMessage type="error">{{ error }}</AppInlineMessage>
+        <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="refresh">
+          Coba lagi
+        </button>
       </div>
-      <AppEmptyState v-else title="Bank soal masih kosong" description="Buat paket pertama, isi soalnya, lalu bagikan ke siswa bimbel." action-label="Buat paket" @action="navigateTo(`/dashboard/bimbel/${bimbelId}/products/new`)" />
+
+      <AppEmptyState
+        v-else-if="products.length === 0"
+        title="Belum ada paket"
+        description="Buat paket pertama, isi soalnya, lalu tayangkan untuk seluruh siswa bimbel."
+        action-label="Buat paket baru"
+        @action="navigateTo(`/dashboard/bimbel/${bimbelId}/products/new`)"
+      />
+
+      <div v-else class="grid gap-4">
+        <DashboardTableToolbar
+          v-model:search="search"
+          v-model:filter="statusFilter"
+          v-model:sort="sortOrder"
+          search-id="bimbel-products-search"
+          search-label="Cari paket"
+          search-placeholder="Cari judul, kategori, akses, atau tipe…"
+          :filter-options="FILTER_OPTIONS"
+          :sort-options="SORT_OPTIONS"
+          :result-count="rows.length"
+          :total-count="total"
+          item-noun="paket"
+          :actionable-count="actionableCount"
+          actionable-label="perlu tindakan"
+          :active="isActive"
+          @reset="reset"
+        />
+
+        <AppEmptyState
+          v-if="rows.length === 0"
+          title="Tidak ada hasil"
+          description="Tidak ada paket yang sesuai dengan kata kunci atau filter status yang dipilih."
+          action-label="Reset pencarian"
+          @action="reset"
+        />
+
+        <DashboardTable v-else :columns="productColumns" :data="rows" primary-key="title" action-key="aksi">
+          <template #cell(title)="{ item }">
+            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
+            <span v-if="item.type === 'bundle'" class="mt-1 block text-[0.82rem] text-muted">Paket gabungan</span>
+            <span v-if="item.status === 'rejected' && item.rejectReason" class="mt-1 block text-[0.82rem] text-danger-ink">
+              Catatan revisi: {{ item.rejectReason }}
+            </span>
+          </template>
+
+          <template #cell(visibility)="{ value }">
+            <DashboardBadge :tone="value === 'public' ? 'brand' : 'neutral'">
+              {{ value === 'public' ? 'Marketplace' : 'Privat' }}
+            </DashboardBadge>
+          </template>
+
+          <template #cell(category)="{ value, item }">
+            {{ item.subcategory ? `${value} · ${item.subcategory}` : (value || 'Umum') }}
+          </template>
+
+          <template #cell(questionCount)="{ item }">
+            <span v-if="item.type === 'single'" class="tabular-nums">{{ item.questionCount }}/{{ item.questionTarget }} soal</span>
+            <span v-else class="text-muted">Paket gabungan</span>
+          </template>
+
+          <template #cell(status)="{ item }">
+            <DashboardBadge :tone="productStatusTone(item.status)">{{ productStatusLabel(item.status) }}</DashboardBadge>
+          </template>
+
+          <template #cell(aksi)="{ item }">
+            <template v-for="product in [findProduct(item.id)]" :key="item.id">
+              <span v-if="product" class="inline-flex flex-wrap items-center justify-end gap-x-3 gap-y-2 whitespace-nowrap">
+                <NuxtLink v-if="canEdit(product)" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/edit`" class="text-[0.86rem] font-semibold text-primary hover:underline">Edit</NuxtLink>
+                <button v-if="canPublish(product)" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'publish')">
+                  {{ busyId === product.id ? 'Menayangkan…' : 'Tayangkan' }}
+                </button>
+                <NuxtLink v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" class="text-[0.86rem] font-semibold text-primary hover:underline">Lihat hasil</NuxtLink>
+                <button v-if="product.visibility === 'bimbel' && product.status === 'live' && canManageMarketplace" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'marketplace')">Jual di marketplace</button>
+                <button v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'marketplace')">Ajukan ulang</button>
+                <button v-if="product.status === 'live'" type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'archive')">Arsipkan</button>
+                <button v-if="canDelete(product)" type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'delete')">
+                  {{ busyId === product.id ? 'Menghapus…' : 'Hapus' }}
+                </button>
+              </span>
+            </template>
+          </template>
+        </DashboardTable>
+      </div>
     </DashboardPanel>
   </div>
 </template>

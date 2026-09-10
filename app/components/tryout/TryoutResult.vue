@@ -56,10 +56,23 @@ const props = withDefaults(
      * TryoutSimulation.vue) — the inline panel is what simulate keeps using.
      */
     attemptId?: string | null
+    /** Tujuan kembali setelah sesi; paket Bimbel tidak punya halaman detail pembelian. */
+    returnTo?: string
+    returnLabel?: string
+    fromBimbel?: boolean
     /** Simulasi tutor/admin: sembunyikan tautan progres paket milik siswa. */
     simulate?: boolean
   }>(),
-  { blueprint: null, answers: () => ({}), attempt: null, attemptId: null, simulate: false },
+  {
+    blueprint: null,
+    answers: () => ({}),
+    attempt: null,
+    attemptId: null,
+    simulate: false,
+    returnTo: '',
+    returnLabel: 'Kembali ke paket',
+    fromBimbel: false,
+  },
 )
 
 const emit = defineEmits<{ retry: [] }>()
@@ -185,7 +198,10 @@ const showReview = ref(false)
 
 function openReview() {
   if (props.attemptId) {
-    void navigateTo(`/akun/paket/${props.packageSlug}/kerjakan/pembahasan/${props.attemptId}`)
+    void navigateTo({
+      path: `/akun/paket/${props.packageSlug}/kerjakan/pembahasan/${props.attemptId}`,
+      query: props.fromBimbel ? { dari: 'bimbel' } : undefined,
+    })
     return
   }
   showReview.value = !showReview.value
@@ -195,8 +211,8 @@ function openReview() {
 <template>
   <div class="container-page grid max-w-4xl gap-6 py-10 md:py-14">
     <nav v-if="!simulate" class="text-[0.85rem] text-muted">
-      <NuxtLink :to="`/akun/paket/${packageSlug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
-        <IconArrowLeft class="h-3.5 w-3.5" /> Kembali ke paket
+      <NuxtLink :to="returnTo || `/akun/paket/${packageSlug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
+        <IconArrowLeft class="h-3.5 w-3.5" /> {{ returnLabel }}
       </NuxtLink>
     </nav>
 
@@ -342,12 +358,12 @@ function openReview() {
            instead of every later visit to the page. -->
       <AppButton
         v-if="!simulate"
-        :to="`/akun/paket/${packageSlug}?selesai=1`"
+        :to="fromBimbel ? '/akun/bimbel' : `/akun/paket/${packageSlug}?selesai=1`"
         variant="light"
         size="lg"
         class="border border-hairline-strong shadow-none"
       >
-        Lihat progres paket
+        {{ fromBimbel ? 'Kembali ke Bimbel saya' : 'Lihat progres paket' }}
       </AppButton>
     </div>
   </div>

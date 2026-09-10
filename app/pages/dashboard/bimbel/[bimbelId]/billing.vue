@@ -16,6 +16,7 @@ const period = ref<1 | 12>(12)
 const selectedPlan = ref<BimbelPlan | null>(null)
 const planPickerOpen = ref(true)
 const seatModalOpen = ref(false)
+const summaryOpen = ref(false)
 const ordering = ref(false)
 const monthlyQuote = ref<BimbelSubscriptionQuote | null>(null)
 const yearlyQuote = ref<BimbelSubscriptionQuote | null>(null)
@@ -48,7 +49,7 @@ const openOrder = computed(() => orders.data.value.find(item => item.status === 
   ?? orders.data.value.find(item => item.status === 'pending')
   ?? null)
 const latestOrders = computed(() => orders.data.value.slice(0, 3))
-const paymentPanel = useTemplateRef<HTMLElement>('paymentPanel')
+const paymentPath = (orderId: string) => `/dashboard/bimbel/${bimbelId}/payment/${orderId}`
 
 const STATUS_LABEL = { trial: 'Uji coba', active: 'Aktif', grace: 'Masa tenggang', suspended: 'Terkunci' } as const
 const STATUS_DESCRIPTION = {
@@ -120,36 +121,58 @@ async function load() {
 }
 onMounted(load)
 
+/**
+ * "Perpanjang" berarti tingkat yang sedang berjalan, jadi ia membuka ringkasan
+ * tingkat itu langsung. Tanpa ini, satu-satunya jalan memperpanjang adalah
+ * membuka pemilih tingkat dan memilih ulang tingkat yang sudah dipakai — dan
+ * pada langganan yang aktif pemilihnya terlipat, sehingga panel yang berjudul
+ * "Perpanjang Kelas Pro" tidak punya satu pun tombol yang memperpanjangnya.
+ *
+ * Tanpa tingkat terpilih (daftar tingkat gagal dimuat) yang bisa dibuka hanya
+ * pemilihnya, bersama pesan galatnya.
+ */
+function openSummary() {
+  if (!selectedPlan.value) {
+    planPickerOpen.value = true
+    return
+  }
+  summaryOpen.value = true
+}
+
+/**
+ * Memilih tingkat membuka ringkasannya, bukan menyalakan panel yang sudah
+ * berdiri sejak halaman dibuka: ringkasan atas tingkat yang belum dipilih tidak
+ * meringkas apa pun. Modalnya juga dibuka ulang untuk tingkat yang memang sudah
+ * terpilih — tombol yang sama harus melakukan hal yang sama.
+ */
 async function choosePlan(plan: BimbelPlan) {
+  summaryOpen.value = true
   if (selectedPlan.value === plan) return
   selectedPlan.value = plan
   await refreshQuote()
 }
 
+/**
+ * Tagihan yang baru dibuat langsung dibuka layar bayarnya. Sebelumnya halaman
+ * ini hanya menggulir sendiri ke panel pembayaran di tengah daftar tingkat —
+ * gerakan yang di layar kecil sulit dibedakan dari tidak terjadi apa-apa.
+ */
 async function orderSubscription() {
   if (!selectedPlan.value || ordering.value) return
   ordering.value = true
   try {
-    await createBimbelOrder(bimbelId, { kind: 'subscription', plan: selectedPlan.value, months: period.value })
-    await orders.refresh()
+    const order = await createBimbelOrder(bimbelId, { kind: 'subscription', plan: selectedPlan.value, months: period.value })
+    summaryOpen.value = false
     toast.success('Tagihan dibuat.', 'Selesaikan pembayaran sesuai instruksi.')
-    await nextTick()
-    paymentPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    await navigateTo(paymentPath(order.id))
   }
   catch (cause) { toast.error('Gagal membuat tagihan.', tutorApiMessage(cause, 'Coba lagi.')) }
   finally { ordering.value = false }
 }
 
-async function onSeatOrderCreated() {
-  await Promise.all([orders.refresh(), bimbel.refresh()])
+async function onSeatOrderCreated(order: BimbelOrder) {
   toast.success('Tagihan kursi dibuat.', 'Kuota bertambah setelah pembayaran diverifikasi.')
-  await nextTick()
-  paymentPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-function onPaymentUpdated(updated: BimbelOrder) {
-  orders.data.value = orders.data.value.map(item => item.id === updated.id ? updated : item)
-  bimbel.refresh()
+  await navigateTo(paymentPath(order.id))
 }
 </script>
 
@@ -182,7 +205,7 @@ function onPaymentUpdated(updated: BimbelOrder) {
           </div>
           <div class="flex flex-wrap gap-2">
             <AppButton v-if="isPaidCustomer" size="sm" variant="outline" @click="seatModalOpen = true">Tambah kursi</AppButton>
-            <AppButton size="sm" @click="planPickerOpen = true">Perpanjang</AppButton>
+            <AppButton size="sm" @click="openSummary">Perpanjang</AppButton>
           </div>
         </div>
         <div>
@@ -197,71 +220,64 @@ function onPaymentUpdated(updated: BimbelOrder) {
       </div>
     </DashboardPanel>
 
-    <div v-if="openOrder" ref="paymentPanel">
-      <DashboardPanel title="Selesaikan pembayaran" :description="`Invoice ${openOrder.invoice} · ${orderDescription(openOrder)}`">
-        <BimbelOrderPayment :bimbel-id="bimbelId" :order="openOrder" @updated="onPaymentUpdated" />
-      </DashboardPanel>
-    </div>
+    <!-- Layar bayarnya berdiri sebagai halaman sendiri; di sini cukup
+         penunjuknya, supaya tagihan yang belum lunas tidak hilang dari pandangan
+         tanpa ikut menghalangi daftar tingkat. -->
+    <AppSectionMessage
+      v-if="openOrder"
+      :appearance="openOrder.status === 'verifying' ? 'information' : 'warning'"
+      :title="openOrder.status === 'verifying' ? 'Pembayaranmu sedang diperiksa' : 'Ada tagihan yang menunggu pembayaran'"
+    >
+      Invoice {{ openOrder.invoice }} · {{ orderDescription(openOrder) }} · {{ formatRupiah(openOrder.amount) }}
+      <template #actions>
+        <AppButton size="sm" @click="navigateTo(paymentPath(openOrder.id))">
+          {{ openOrder.status === 'verifying' ? 'Lihat status' : 'Selesaikan pembayaran' }}
+        </AppButton>
+      </template>
+    </AppSectionMessage>
 
-    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <DashboardPanel title="Perpanjang atau ubah tingkat" description="Kursi bawaan tingkat ditetapkan otomatis. Kursi tambahan dibeli terpisah setelah langganan aktif.">
-        <div v-if="isPaidCustomer && !planPickerOpen" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="font-semibold">Perpanjang {{ bimbel.data.value?.plan ? bimbelPlanLabel(bimbel.data.value.plan) : 'tingkat saat ini' }}</p>
-            <p class="mt-1 text-sm text-muted">Kuota saat ini diteruskan oleh server ke periode berikutnya.</p>
-          </div>
+    <DashboardPanel title="Perpanjang atau ubah tingkat" description="Kursi bawaan tingkat ditetapkan otomatis. Kursi tambahan dibeli terpisah setelah langganan aktif.">
+      <div v-if="isPaidCustomer && !planPickerOpen" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="font-semibold">Perpanjang {{ bimbel.data.value?.plan ? bimbelPlanLabel(bimbel.data.value.plan) : 'tingkat saat ini' }}</p>
+          <p class="mt-1 text-sm text-muted">Kuota saat ini diteruskan oleh server ke periode berikutnya.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <AppButton size="sm" @click="openSummary">Perpanjang sekarang</AppButton>
           <AppButton variant="outline" size="sm" @click="planPickerOpen = true">Ubah tingkat</AppButton>
         </div>
-        <template v-else>
-          <DashboardSkeleton v-if="plans.pending.value" :count="3" label="Memuat tingkat langganan…" />
-          <div v-else-if="plans.error.value" class="py-8 text-center">
-            <AppInlineMessage type="error">{{ plans.error.value }}</AppInlineMessage>
-            <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="plans.refresh">Coba lagi</button>
-          </div>
-          <template v-else-if="plans.data.value.length">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <BimbelBillingToggle v-model="period"><template v-if="freeMonths > 0" #note><AppLozenge appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge></template></BimbelBillingToggle>
-              <AppButton v-if="isPaidCustomer" variant="light" size="sm" @click="planPickerOpen = false">Tutup pilihan</AppButton>
-            </div>
-            <div class="mt-6 grid gap-5 xl:grid-cols-3" role="radiogroup" aria-label="Tingkat langganan">
-              <BimbelPlanCard
-                v-for="plan in plans.data.value" :key="plan.plan" :name="bimbelPlanLabel(plan.plan, plan.name)"
-                price-lead="Mulai dari" :price="formatRupiah(plan.pricePerMonth)" price-note="per bulan"
-                :price-footnote="periodFootnote" :features="planFeatures(plan)" :badge="planBadge(plan.plan)" badge-tone="brand"
-                :marketplace-share-percent="plan.marketplaceSharePercent"
-                :selected="selectedPlan === plan.plan" :action-label="selectedPlan === plan.plan ? 'Tingkat dipilih' : 'Pilih tingkat ini'"
-                :action-variant="selectedPlan === plan.plan ? 'primary' : 'light'" @action="choosePlan(plan.plan)"
-              />
-            </div>
-            <p class="mt-5 text-sm text-muted">Berlaku untuk semua tingkat: kelas, roster siswa, rekap hasil per paket, dan kursi tambahan melalui tagihan terpisah.</p>
-          </template>
-          <AppEmptyState v-else title="Tingkat langganan belum tersedia" description="Daftar tingkat tidak dikirim server. Muat ulang halaman atau hubungi tim Zenko." action-label="Muat ulang" @action="plans.refresh" />
-        </template>
-      </DashboardPanel>
-
-      <div class="lg:sticky lg:top-24">
-        <DashboardPanel title="Ringkasan">
-          <AppInlineMessage v-if="quoteError" type="error">{{ quoteError }} <button type="button" class="ml-1 font-semibold underline" @click="refreshQuote">Muat ulang</button></AppInlineMessage>
-          <DashboardSkeleton v-else-if="quotePending" :count="3" label="Menghitung harga…" />
-          <div v-else-if="quote" class="grid gap-4">
-            <dl class="grid gap-3 text-sm">
-              <div class="flex items-start justify-between gap-4"><dt class="text-muted">Tingkat</dt><dd class="text-right font-semibold">{{ bimbelPlanLabel(quote.plan, quote.planName) }}</dd></div>
-              <div class="flex items-start justify-between gap-4"><dt class="text-muted">Kursi termasuk</dt><dd class="font-semibold tabular-nums">{{ quote.includedSeats }}</dd></div>
-              <div class="flex items-start justify-between gap-4"><dt class="text-muted">Harga tingkat</dt><dd class="text-right font-semibold tabular-nums">{{ formatRupiah(quote.planPrice) }} / bulan</dd></div>
-              <div v-if="quote.extraSeats > 0" class="flex items-start justify-between gap-4"><dt class="text-muted">{{ quote.extraSeats }} kursi diteruskan</dt><dd class="text-right font-semibold tabular-nums">{{ formatRupiah(quote.extraSeatsAmount) }} / bulan</dd></div>
-              <div class="flex items-start justify-between gap-4 border-t border-hairline pt-3"><dt class="text-muted">Masa aktif</dt><dd class="font-semibold">{{ quote.months }} bulan</dd></div>
-              <div v-if="quote.months > quote.billedMonths" class="flex items-start justify-between gap-4"><dt class="text-muted">Ditagih</dt><dd class="font-semibold">{{ quote.billedMonths }} bulan</dd></div>
-            </dl>
-            <div class="border-t border-hairline pt-4">
-              <p class="text-xs font-semibold tracking-wide text-muted uppercase">Total tagihan</p>
-              <p class="mt-1 text-2xl font-bold tabular-nums">{{ formatRupiah(quote.amount) }}</p>
-              <AppButton class="mt-4 w-full" :loading="ordering" :disabled="ordering || quote.amount <= 0" @click="orderSubscription">Buat tagihan</AppButton>
-              <p v-if="bimbel.data.value?.activeUntil" class="mt-3 text-xs leading-relaxed text-muted">Perpanjangan dimulai setelah masa aktif saat ini berakhir, jadi hari yang sudah dibayar tidak hilang.</p>
-            </div>
-          </div>
-        </DashboardPanel>
       </div>
-    </div>
+      <template v-else>
+        <DashboardSkeleton v-if="plans.pending.value" :count="3" label="Memuat tingkat langganan…" />
+        <div v-else-if="plans.error.value" class="py-8 text-center">
+          <AppInlineMessage type="error">{{ plans.error.value }}</AppInlineMessage>
+          <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="plans.refresh">Coba lagi</button>
+        </div>
+        <template v-else-if="plans.data.value.length">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <BimbelBillingToggle v-model="period">
+              <template v-if="freeMonths > 0" #note>
+                <AppLozenge v-if="period === 12" appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
+                <span v-else class="text-[0.82rem] text-muted">Tahunan gratis {{ freeMonths }} bulan</span>
+              </template>
+            </BimbelBillingToggle>
+            <AppButton v-if="isPaidCustomer" variant="light" size="sm" @click="planPickerOpen = false">Tutup pilihan</AppButton>
+          </div>
+          <div class="mt-6 grid gap-5 xl:grid-cols-3" role="radiogroup" aria-label="Tingkat langganan">
+            <BimbelPlanCard
+              v-for="plan in plans.data.value" :key="plan.plan" :name="bimbelPlanLabel(plan.plan, plan.name)"
+              price-lead="Mulai dari" :price="formatRupiah(plan.pricePerMonth)" price-note="per bulan"
+              :price-footnote="periodFootnote" :features="planFeatures(plan)" :badge="planBadge(plan.plan)" badge-tone="brand"
+              :marketplace-share-percent="plan.marketplaceSharePercent"
+              :selected="selectedPlan === plan.plan" :action-label="selectedPlan === plan.plan ? 'Lihat ringkasan' : 'Pilih tingkat ini'"
+              :action-variant="selectedPlan === plan.plan ? 'primary' : 'light'" @action="choosePlan(plan.plan)"
+            />
+          </div>
+          <p class="mt-5 text-sm text-muted">Berlaku untuk semua tingkat: kelas, roster siswa, rekap hasil per paket, dan kursi tambahan melalui tagihan terpisah.</p>
+        </template>
+        <AppEmptyState v-else title="Tingkat langganan belum tersedia" description="Daftar tingkat tidak dikirim server. Muat ulang halaman atau hubungi tim Zenko." action-label="Muat ulang" @action="plans.refresh" />
+      </template>
+    </DashboardPanel>
 
     <DashboardPanel title="Riwayat tagihan" description="Tiga tagihan terbaru.">
       <DashboardSkeleton v-if="orders.pending.value" :count="3" label="Memuat tagihan…" />
@@ -269,11 +285,25 @@ function onPaymentUpdated(updated: BimbelOrder) {
       <div v-else-if="latestOrders.length" class="grid gap-2">
         <div v-for="item in latestOrders" :key="item.id" class="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-hairline p-3">
           <div class="min-w-0"><strong>{{ item.invoice }}</strong><p class="text-sm text-muted">{{ orderDescription(item) }}</p></div>
-          <div class="text-right"><p class="font-semibold tabular-nums">{{ formatRupiah(item.amount) }}</p><DashboardBadge :tone="ORDER_STATUS_TONE[item.status]">{{ ORDER_STATUS_LABEL[item.status] }}</DashboardBadge></div>
+          <div class="flex items-center gap-3 text-right">
+            <div>
+              <p class="font-semibold tabular-nums">{{ formatRupiah(item.amount) }}</p>
+              <DashboardBadge :tone="ORDER_STATUS_TONE[item.status]">{{ ORDER_STATUS_LABEL[item.status] }}</DashboardBadge>
+            </div>
+            <NuxtLink v-if="item.status === 'pending' || item.status === 'verifying'" :to="paymentPath(item.id)" class="text-sm font-semibold text-primary hover:underline">
+              Buka
+            </NuxtLink>
+          </div>
         </div>
       </div>
       <AppEmptyState v-else title="Belum ada tagihan" description="Tagihan yang kamu buat akan muncul di sini. Pilih tingkat dan periksa ringkasan sebelum membuat tagihan pertama." />
     </DashboardPanel>
+
+    <BimbelSubscriptionSummaryModal
+      v-model="summaryOpen" v-model:period="period" :quote="quote" :pending="quotePending" :error="quoteError"
+      :free-months="freeMonths" :active-until="bimbel.data.value?.activeUntil" :ordering="ordering"
+      @confirm="orderSubscription" @retry="refreshQuote"
+    />
 
     <BimbelSeatAddonModal v-model="seatModalOpen" :bimbel-id="bimbelId" :seats-used="bimbel.data.value?.seatsUsed ?? 0" :pending-seats="pendingSeats" @created="onSeatOrderCreated" @renew="planPickerOpen = true" />
   </div>

@@ -78,8 +78,8 @@ export const helpCategories: HelpCategory[] = [
   },
   {
     slug: 'bimbel-institusi',
-    title: 'Portal Bimbel dan Manajemen Kelas Kolektif',
-    description: 'Kode akses batch untuk kelas, distribusi ke siswa, dan rekap nilai.',
+    title: 'Portal Bimbel, Langganan, dan Kelas',
+    description: 'Mulai uji coba, pilih langganan, tambah kursi, kelola siswa dan kelas, serta jual paket.',
     icon: 'users',
   },
   {
@@ -825,107 +825,208 @@ export const helpArticles: HelpArticle[] = [
   },
 
   // ======================================================================
-  // Kategori 5: Portal Bimbel dan Manajemen Kelas Kolektif
+  // Kategori 5: Portal Bimbel, Langganan, dan Kelas
   // ======================================================================
   {
-    slug: 'paket-privat-bimbel',
+    slug: 'daftar-bimbel-dan-mulai-uji-coba',
     categorySlug: 'bimbel-institusi',
-    title: 'Paket Try Out Privat Bimbel',
+    title: 'Daftarkan Bimbel dan Mulai Uji Coba',
     roles: ['bimbel'],
-    updated: '25 Agustus 2026',
-    readMinutes: 2,
-    summary: 'Rencana paket khusus siswa internal lewat kode akses resmi.',
-    prerequisites: [],
-    comingSoon: true,
-    steps: [
-      {
-        title: 'Atur visibilitas paket menjadi Privat',
-        body: 'Belum tersedia. Rencananya, saat membuat paket lewat dashboard tutor, akan ada opsi visibilitas "Private (Eksklusif Bimbel)".',
-        note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Paket privat nantinya tidak muncul di katalog publik dan hanya bisa diakses lewat kode akses resmi dari bimbel.',
-        },
-      },
-    ],
-    troubleshooting: [],
-    keywords: ['paket privat', 'eksklusif bimbel', 'visibilitas paket'],
-  },
-  {
-    slug: 'batch-kode-akses',
-    categorySlug: 'bimbel-institusi',
-    title: 'Batch Kode Akses',
-    roles: ['bimbel'],
-    updated: '25 Agustus 2026',
+    updated: '10 September 2026',
     readMinutes: 3,
-    summary: 'Rencana penerbitan kode akses massal untuk satu kelas.',
-    prerequisites: [],
-    comingSoon: true,
+    summary: 'Buat ruang kerja Bimbel dan mulai uji coba Pro selama 7 hari dengan 25 kursi siswa.',
+    prerequisites: ['Sudah memiliki akun Zenko yang aktif.', 'Memiliki kewenangan untuk mendaftarkan Bimbel atau institusi.'],
     steps: [
       {
-        title: 'Buat batch kode akses',
-        body: 'Belum tersedia. Rencananya bimbel bisa membuat batch kode dari menu khusus di dashboard tutor, memilih paket tujuan, jenis kode (Kolektif atau Voucher Unik per siswa), kuota, dan tanggal kedaluwarsa.',
-        note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Untuk paket privat, rencananya akan ada biaya sewa batch berjenjang yang dibayar via Midtrans sebelum kode aktif.',
-        },
+        title: 'Pelajari tingkat dan harga',
+        body: 'Buka /untuk-bimbel untuk membandingkan tingkat Dasar, Pro, dan Institusi sebelum mendaftar. Kamu belum perlu memilih atau membayar tingkat pada tahap ini.',
+      },
+      {
+        title: 'Lengkapi formulir Bimbel',
+        body: 'Buka /untuk-bimbel/daftar, lalu isi nama Bimbel, rentang jumlah siswa, dan kota bila diperlukan. Baca serta setujui Ketentuan Layanan dan Kebijakan Privasi sebelum melanjutkan.',
+      },
+      {
+        title: 'Mulai uji coba',
+        body: 'Klik "Mulai uji coba 7 hari". Ruang kerja langsung dibuat dengan kapabilitas Pro, kuota 25 siswa aktif, dan tanpa tagihan di muka.',
+      },
+      {
+        title: 'Masuk ke dashboard Bimbel',
+        body: 'Gunakan dashboard untuk membuat paket privat, menambahkan siswa, membentuk kelas, dan memantau masa uji coba. Banner sejak hari pertama menunjukkan tanggal berakhir dan harga langganan setelah uji coba.',
       },
     ],
-    troubleshooting: [],
-    keywords: ['batch kode akses', 'kode kolektif', 'voucher unik'],
+    troubleshooting: [
+      {
+        question: 'Kenapa saya tidak diminta memilih tingkat saat mendaftar?',
+        answer: 'Uji coba selalu memakai kapabilitas Pro dengan 25 kursi. Pilih tingkat setelah mencoba dan mengetahui kebutuhan siswa, pengajar, serta bank soal Bimbel.',
+      },
+    ],
+    keywords: ['daftar bimbel', 'uji coba bimbel', 'trial pro', '25 kursi'],
   },
   {
-    slug: 'bagikan-instruksi-whatsapp',
+    slug: 'pilih-dan-perpanjang-langganan-bimbel',
     categorySlug: 'bimbel-institusi',
-    title: 'Bagikan Instruksi via WhatsApp',
+    title: 'Pilih dan Perpanjang Langganan Bimbel',
     roles: ['bimbel'],
-    updated: '25 Agustus 2026',
-    readMinutes: 2,
-    summary: 'Rencana format pesan siap kirim ke grup kelas siswa.',
-    prerequisites: [],
-    comingSoon: true,
+    updated: '10 September 2026',
+    readMinutes: 4,
+    summary: 'Bandingkan tingkat, buat tagihan bulanan atau tahunan, lalu aktifkan langganan setelah pembayaran diverifikasi.',
+    prerequisites: ['Sudah mengelola ruang kerja Bimbel.', 'Memiliki akses sebagai pemilik atau admin Bimbel.'],
     steps: [
       {
-        title: 'Salin format WhatsApp',
-        body: 'Belum tersedia. Rencananya akan ada tombol "Salin Format WhatsApp" pada setiap batch kode akses yang bisa langsung ditempel ke grup kelas.',
+        title: 'Buka menu Langganan',
+        body: 'Dari dashboard Bimbel, buka menu Langganan. Bagian teratas menunjukkan tingkat, status, tanggal berakhir, serta pemakaian kursi saat ini.',
+      },
+      {
+        title: 'Pilih periode dan tingkat',
+        body: 'Pilih tagihan bulanan atau tahunan, lalu bandingkan Dasar, Pro, dan Institusi. Paket tahunan memberi masa aktif 12 bulan dengan harga dasar setara 10 bulan. Porsi penjualan marketplace adalah 70% untuk Dasar, 75% untuk Pro, dan 80% untuk Institusi.',
+      },
+      {
+        title: 'Periksa ringkasan dan tanggal akhir',
+        body: 'Ringkasan menampilkan tingkat, kuota yang termasuk, periode, tanggal aktif sampai, dan total. Perpanjangan lebih awal menyambung dari tanggal berakhir saat ini sehingga hari yang sudah dibayar tidak hilang.',
+      },
+      {
+        title: 'Buat dan bayar tagihan',
+        body: 'Klik "Buat tagihan", ikuti instruksi pembayaran, lalu unggah bukti jika diminta. Status langganan berubah setelah tim Zenko memverifikasi pembayaran.',
         note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Fitur ini bergantung pada fitur batch kode akses yang juga masih dalam pengembangan.',
+          appearance: 'warning',
+          title: 'Jangan membuat tagihan berulang',
+          body: 'Jika bukti sudah diunggah, tunggu verifikasi pada tagihan yang sama. Bukti yang sedang diperiksa juga mencegah ruang kerja terkunci hanya karena antrean verifikasi.',
         },
       },
     ],
-    troubleshooting: [],
-    keywords: ['format whatsapp', 'bagikan kode', 'instruksi siswa'],
+    troubleshooting: [
+      {
+        question: 'Apa yang terjadi ketika masa aktif habis?',
+        answer: 'Bimbel mendapat masa tenggang 3 hari. Pembuatan aktivitas baru dibatasi, tetapi data lama tetap dapat dibaca. Setelah masa tenggang, ruang kerja ditangguhkan sampai langganan diperpanjang.',
+      },
+      {
+        question: 'Apakah saya kehilangan sisa hari jika memperpanjang lebih awal?',
+        answer: 'Tidak. Periode baru dimulai setelah masa aktif saat ini berakhir.',
+      },
+    ],
+    keywords: ['langganan bimbel', 'paket dasar', 'paket pro', 'institusi', 'perpanjang', 'masa tenggang'],
   },
   {
-    slug: 'leaderboard-dan-rekap-nilai',
+    slug: 'tambah-kursi-siswa-bimbel',
     categorySlug: 'bimbel-institusi',
-    title: 'Leaderboard dan Rekap Nilai',
+    title: 'Tambah Kursi Siswa Bimbel',
     roles: ['bimbel'],
-    updated: '25 Agustus 2026',
-    readMinutes: 2,
-    summary: 'Rencana pemantauan performa kelas dan ekspor rekap nilai.',
-    prerequisites: [],
-    comingSoon: true,
+    updated: '10 September 2026',
+    readMinutes: 3,
+    summary: 'Tambah kapasitas siswa dalam kelipatan 5 dan pahami kapan kuota baru dapat digunakan.',
+    prerequisites: ['Langganan Bimbel sedang aktif.', 'Masa aktif tersisa sekurang-kurangnya satu bulan.'],
     steps: [
       {
-        title: 'Pantau leaderboard kelas',
-        body: 'Belum tersedia. Rencananya bimbel bisa memantau daftar siswa yang sudah mengklaim kode, rata-rata skor kelas, dan skor per subtes dari halaman batch kode akses.',
+        title: 'Buka tindakan Tambah kursi',
+        body: 'Buka menu Langganan lalu klik "Tambah kursi". Peringatan yang sama muncul di halaman Siswa ketika pemakaian sudah mencapai 80% kuota.',
       },
       {
-        title: 'Ekspor rekap nilai',
-        body: 'Belum tersedia. Rencananya tersedia tombol ekspor data (CSV/Excel) untuk mengunduh rekap nilai lengkap sebagai arsip evaluasi.',
+        title: 'Pilih jumlah kursi',
+        body: 'Tambah kursi dalam kelipatan 5. Penawaran menghitung Rp3.000 per kursi dikalikan sisa bulan masa aktif yang dibulatkan ke atas dan menampilkan kuota baru sebelum tagihan dibuat.',
+      },
+      {
+        title: 'Periksa saran perubahan tingkat',
+        body: 'Jika tingkat yang lebih tinggi lebih hemat daripada menumpuk kursi tambahan, Zenko menampilkan perbandingan agar kamu dapat memilih opsi yang lebih sesuai.',
+      },
+      {
+        title: 'Bayar dan tunggu verifikasi',
+        body: 'Buat tagihan, selesaikan pembayaran, dan unggah bukti jika diminta. Kursi ditandai "menunggu pembayaran" dan baru masuk ke kuota aktif setelah pembayaran disetujui.',
+      },
+    ],
+    troubleshooting: [
+      {
+        question: 'Kenapa tombol Tambah kursi tidak tersedia menjelang masa berakhir?',
+        answer: 'Jika sisa masa aktif kurang dari satu bulan, sistem mengarahkan ke perpanjangan agar kamu tidak membayar satu bulan penuh untuk kursi yang hanya berlaku beberapa hari.',
+      },
+      {
+        question: 'Pembayaran sudah dikirim, tetapi siswa baru belum bisa diaktifkan.',
+        answer: 'Kuota tidak bertambah sebelum bukti diverifikasi. Lihat jumlah kursi yang menunggu pembayaran pada halaman Langganan atau Siswa, lalu hubungi dukungan jika verifikasi melewati waktu layanan.',
+      },
+    ],
+    keywords: ['tambah kursi', 'kuota siswa', 'kursi penuh', 'seat addon', 'menunggu pembayaran'],
+  },
+  {
+    slug: 'kelola-siswa-dan-kelas-bimbel',
+    categorySlug: 'bimbel-institusi',
+    title: 'Kelola Siswa dan Kelas Bimbel',
+    roles: ['bimbel'],
+    updated: '10 September 2026',
+    readMinutes: 4,
+    summary: 'Undang siswa, aktifkan keanggotaan, dan kelompokkan siswa ke kelas tanpa mengubah akses paket.',
+    prerequisites: ['Sudah masuk ke dashboard Bimbel.', 'Siswa sudah memiliki akun Zenko untuk undangan melalui email.'],
+    steps: [
+      {
+        title: 'Tambahkan siswa',
+        body: 'Buka menu Siswa, klik "Tambah siswa", lalu masukkan email akun Zenko. Kamu juga dapat membagikan kode bergabung; permintaan melalui kode tetap perlu disetujui pengelola.',
+      },
+      {
+        title: 'Aktifkan keanggotaan',
+        body: 'Temukan siswa berstatus menunggu lalu klik "Aktifkan". Hanya siswa aktif yang memakai kursi; siswa yang ditangguhkan tidak memakai kapasitas aktif.',
+      },
+      {
+        title: 'Buat kelas',
+        body: 'Buka menu Kelas, klik "Buat kelas", dan beri nama sesuai rombel atau program. Dari daftar kelas, pilih "Atur siswa" untuk mengelompokkan anggota.',
+      },
+      {
+        title: 'Pahami fungsi kelas',
+        body: 'Kelas membantu administrasi dan pembacaan daftar. Kelas tidak membatasi akses bank soal: seluruh siswa aktif Bimbel tetap dapat membuka paket privat yang sedang tayang.',
+      },
+    ],
+    troubleshooting: [
+      {
+        question: 'Kenapa siswa tidak dapat diaktifkan?',
+        answer: 'Periksa apakah kuota sudah penuh. Jika penuh, buat tagihan kursi tambahan atau perpanjang langganan, lalu tunggu pembayaran diverifikasi sebelum mencoba lagi.',
+      },
+      {
+        question: 'Apa yang terjadi jika kelas dihapus?',
+        answer: 'Siswa tidak dihapus dari Bimbel dan tetap dapat mengakses bank soal privat. Hanya pengelompokan kelasnya yang hilang.',
+      },
+    ],
+    keywords: ['anggota bimbel', 'tambah siswa', 'kode bergabung', 'kelas', 'rombel', 'aktivasi siswa'],
+  },
+  {
+    slug: 'paket-privat-dan-marketplace-bimbel',
+    categorySlug: 'bimbel-institusi',
+    title: 'Paket Privat dan Penjualan Marketplace Bimbel',
+    roles: ['bimbel'],
+    updated: '10 September 2026',
+    readMinutes: 4,
+    summary: 'Tayangkan paket untuk siswa internal atau ajukan salinannya ke marketplace dengan bagi hasil sesuai tingkat.',
+    prerequisites: ['Langganan atau uji coba Bimbel masih dapat digunakan.', 'Memiliki akses untuk membuat paket; penjualan marketplace memerlukan peran pemilik atau admin.'],
+    steps: [
+      {
+        title: 'Buat paket Bimbel',
+        body: 'Buka menu Paket dan klik "Buat paket baru". Susun identitas paket, soal, kunci, pembahasan, serta aturan pengerjaan sampai indikator kelengkapan terpenuhi.',
+      },
+      {
+        title: 'Tayangkan sebagai paket privat',
+        body: 'Pilih tindakan "Tayangkan" untuk membuka paket kepada seluruh siswa aktif Bimbel. Paket privat tidak muncul di katalog marketplace publik.',
+      },
+      {
+        title: 'Ajukan ke marketplace',
+        body: 'Pada paket privat yang sudah tayang, pemilik atau admin dapat memilih "Jual di marketplace". Zenko membuat salinan publik untuk ditinjau tanpa mengubah paket privat sumbernya.',
+      },
+      {
+        title: 'Pantau penjualan dan hasil',
+        body: 'Gunakan menu Penjualan untuk melihat transaksi marketplace dan menu hasil paket untuk membaca performa siswa internal. Bagian Bimbel adalah 70% pada Dasar, 75% pada Pro, atau 80% pada Institusi.',
         note: {
-          appearance: 'discovery',
-          title: 'Segera hadir',
-          body: 'Fitur ini bergantung pada fitur batch kode akses yang juga masih dalam pengembangan.',
+          appearance: 'warning',
+          title: 'Persentase disimpan saat transaksi',
+          body: 'Perubahan tingkat setelah penjualan tidak mengubah pembagian transaksi lama. Pembagian internal dengan tutor penulis dikelola oleh Bimbel.',
         },
       },
     ],
-    troubleshooting: [],
-    keywords: ['leaderboard kelas', 'rekap nilai', 'ekspor excel'],
+    troubleshooting: [
+      {
+        question: 'Kenapa tombol Jual di marketplace tidak muncul?',
+        answer: 'Pastikan paket privat sudah berstatus tayang dan akunmu berperan sebagai pemilik atau admin Bimbel.',
+      },
+      {
+        question: 'Apakah mengarsipkan salinan marketplace menutup paket privat?',
+        answer: 'Tidak. Paket privat dan salinan marketplace memiliki status terpisah sehingga akses siswa internal dapat dikelola tanpa bergantung pada katalog publik.',
+      },
+    ],
+    keywords: ['paket privat', 'marketplace bimbel', 'jual paket', 'bagi hasil bimbel', '70%', '75%', '80%'],
   },
 
   // ======================================================================

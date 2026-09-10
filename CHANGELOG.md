@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.21.0](https://github.com/artenanagara/zenko-web/compare/v0.20.0...v0.21.0) (2026-09-10)
+
+
+### Features
+
+* **bimbel:** move billing summary into a modal and payment onto its own page ([359823e](https://github.com/artenanagara/zenko-web/commit/359823eed550f3276e2db624d3c0f03b40dd0a34))
+* **bimbel:** subscription billing with its own payment screen ([d73c790](https://github.com/artenanagara/zenko-web/commit/d73c79001d9f505195f25632c006b7751e780c8b))
+* **bimbel:** update subscription billing experience ([5b7eaec](https://github.com/artenanagara/zenko-web/commit/5b7eaec6d832d9492ebc4c7300a45e9f6e5ea4b8))
+
+
+### Bug Fixes
+
+* **bimbel:** keep a renew action once the summary moved into a modal ([f7eea4f](https://github.com/artenanagara/zenko-web/commit/f7eea4f2a50350f9966ac537bdc7d7d972b73bf9))
+* **bimbel:** stop offering a payable QR on an invoice nobody will credit ([78a80fb](https://github.com/artenanagara/zenko-web/commit/78a80fb41ca1c9ce398c0c2e9f4b1dd9e70001c3))
+* **privacy:** let modals sit above the cookie banner ([b593248](https://github.com/artenanagara/zenko-web/commit/b5932480cbdc3feba17b5c34bce678afa5b0d590))
+
+## [0.20.0](https://github.com/artenanagara/zenko-web/compare/v0.19.2...v0.20.0) (2026-09-10)
+
+
+### Features
+
+* **bimbel:** rapikan paket, kelas, pengaturan, dan pencairan ([60a0d7f](https://github.com/artenanagara/zenko-web/commit/60a0d7fbbd0faa15e8476ab4530b9b7f87cf9288))
+* **bimbel:** rapikan paket, kelas, pengaturan, dan pencairan ([7d35327](https://github.com/artenanagara/zenko-web/commit/7d353279c5ae184336ff058c2495d4b4e2048c48))
+
 ## [0.19.2](https://github.com/artenanagara/zenko-web/compare/v0.19.1...v0.19.2) (2026-09-09)
 
 

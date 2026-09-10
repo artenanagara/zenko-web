@@ -107,13 +107,13 @@ const seatPercent = computed(() => Math.min(100, (seatsUsed.value / Math.max(1, 
     <DashboardStats v-else :items="stats" :columns="4" />
 
     <div class="grid gap-6 lg:grid-cols-2">
-      <DashboardPanel title="Mulai dari bank soal" description="Susun soal sekali, lalu biarkan terbuka untuk seluruh siswa bimbel.">
+      <DashboardPanel title="Mulai dari paket" description="Susun soal sekali, lalu biarkan terbuka untuk seluruh siswa bimbel.">
         <p class="text-sm leading-relaxed text-muted">
           Buat paket dari template SKD, SNBT, TKA, TOEFL, mapel sekolah, atau format kustom.
           Paket privat tidak muncul di marketplace, dan setiap siswa aktif dapat mengerjakannya kapan saja.
         </p>
         <AppButton :to="`/dashboard/bimbel/${bimbelId}/products`" class="mt-5" size="sm" variant="secondary">
-          Buka bank soal
+          Buka paket
         </AppButton>
       </DashboardPanel>
 

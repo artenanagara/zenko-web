@@ -10,6 +10,9 @@ definePageMeta({
 
 const route = useRoute()
 const slug = route.params.slug as string
+const fromBimbel = computed(() => route.query.dari === 'bimbel')
+const packageHome = computed(() => fromBimbel.value ? '/akun/bimbel' : `/akun/paket/${slug}`)
+const packageHomeLabel = computed(() => fromBimbel.value ? 'Kembali ke Bimbel saya' : 'Kembali ke paket')
 
 // The endpoint returns the real tutor-authored questions only after confirming
 // this account owns the package. Keeping that check and the blueprint in one
@@ -169,8 +172,8 @@ function retry() {
     <!-- Pra-ujian: tata tertib dan komposisi subtes, sebelum timer berjalan. -->
     <div v-if="session.phase.value === 'intro'" class="container-page grid max-w-3xl gap-6 py-10 md:py-14">
       <nav class="text-[0.85rem] text-muted">
-        <NuxtLink :to="`/akun/paket/${slug}`" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
-          <IconArrowLeft class="h-3.5 w-3.5" /> Kembali ke paket
+        <NuxtLink :to="packageHome" class="inline-flex items-center gap-1 transition-colors hover:text-ink">
+          <IconArrowLeft class="h-3.5 w-3.5" /> {{ packageHomeLabel }}
         </NuxtLink>
       </nav>
 
@@ -408,12 +411,12 @@ function retry() {
         <div class="mt-5 flex flex-wrap justify-center gap-2.5">
           <AppButton size="sm" @click="session.retryGrade()">Nilai ulang</AppButton>
           <AppButton
-            :to="`/akun/paket/${slug}`"
+            :to="packageHome"
             variant="light"
             size="sm"
             class="border border-hairline-strong shadow-none"
           >
-            Kembali ke paket
+            {{ packageHomeLabel }}
           </AppButton>
         </div>
       </div>
@@ -432,6 +435,9 @@ function retry() {
       :answers="session.answers.value"
       :attempt="recordedAttempt"
       :attempt-id="recordedAttemptId"
+      :return-to="packageHome"
+      :return-label="packageHomeLabel"
+      :from-bimbel="fromBimbel"
       @retry="retry"
     />
     </template>
