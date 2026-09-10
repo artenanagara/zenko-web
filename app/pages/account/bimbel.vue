@@ -23,7 +23,7 @@ import type { BimbelMembership, BimbelRole } from '#shared/types/bimbel'
 definePageMeta({ path: '/akun/bimbel', layout: 'account', middleware: 'auth' })
 useHead({ title: 'Bimbel Saya | Zenko', meta: [{ name: 'robots', content: 'noindex' }] })
 
-const { data: memberships, refresh } = useBimbelMemberships()
+const { data: memberships, pending: membershipsPending, error: membershipsError, refresh } = useBimbelMemberships()
 const packages = useMyBimbelPackages()
 const invitations = useBimbelInvitations()
 const application = useMyBimbelApplication()
@@ -68,6 +68,12 @@ const ROLE_LABEL: Record<BimbelRole, string> = {
  */
 const waiting = computed(() =>
   memberships.value.filter(item => item.status === 'pending' || item.status === 'suspended'),
+)
+
+/** Keanggotaan aktif menggantikan ajakan bergabung: sesudah masuk, yang perlu
+ * dilihat siswa adalah bimbel mana yang sedang membuka paketnya. */
+const activeMemberships = computed(() =>
+  memberships.value.filter(item => item.status === 'active'),
 )
 
 function waitingNote(item: BimbelMembership): string {
@@ -149,7 +155,17 @@ async function answer(item: BimbelMembership, accept: boolean) {
       description="Paket dari bimbel tempatmu tergabung, undangan yang menunggu jawaban, dan cara bergabung dengan yang baru."
     >
       <template #actions>
-        <AppButton size="sm" @click="openJoin()">Gabung bimbel</AppButton>
+        <div
+          v-if="activeMemberships.length"
+          class="inline-flex max-w-full items-center gap-2 rounded-md border border-hairline bg-surface px-3 py-2 text-sm"
+        >
+          <AppIcon name="buildings" :size="17" class="shrink-0 text-primary" aria-hidden="true" />
+          <span class="truncate font-semibold">{{ activeMemberships[0]!.bimbelName }}</span>
+          <span v-if="activeMemberships.length > 1" class="shrink-0 text-muted">
+            +{{ activeMemberships.length - 1 }}
+          </span>
+        </div>
+        <AppButton v-else-if="!membershipsPending" size="sm" @click="openJoin()">Gabung bimbel</AppButton>
       </template>
     </AppPageHeader>
 
@@ -174,6 +190,34 @@ async function answer(item: BimbelMembership, accept: boolean) {
     >
       {{ waitingNote(item) }}
     </AppSectionMessage>
+
+    <AccountError v-if="membershipsError" @retry="refresh">
+      Informasi keanggotaan bimbel belum berhasil dimuat.
+    </AccountError>
+
+    <section v-if="activeMemberships.length" aria-labelledby="bimbel-terhubung-title">
+      <h2 id="bimbel-terhubung-title" class="text-[1.05rem] font-bold tracking-[-0.025em]">
+        Bimbel terhubung
+      </h2>
+      <div class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <article
+          v-for="item in activeMemberships"
+          :key="item.bimbelId"
+          class="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-4 shadow-xs"
+        >
+          <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-soft text-primary">
+            <img v-if="item.logoUrl" :src="item.logoUrl" :alt="`Logo ${item.bimbelName}`" class="h-full w-full object-cover">
+            <AppIcon v-else name="buildings" :size="21" aria-hidden="true" />
+          </span>
+          <div class="min-w-0">
+            <h3 class="truncate font-bold">{{ item.bimbelName }}</h3>
+            <p class="mt-0.5 text-[0.82rem] text-muted">
+              {{ ROLE_LABEL[item.role] }} · Keanggotaan aktif
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
 
     <!--
       Undangan diletakkan paling atas karena ia satu-satunya bagian halaman ini
@@ -225,32 +269,25 @@ async function answer(item: BimbelMembership, accept: boolean) {
         {{ packages.error.value }}
       </AccountError>
 
-      <div v-else-if="packages.data.value.length" class="grid gap-3">
-        <article
+      <div
+        v-else-if="packages.data.value.length"
+        class="@container"
+      >
+        <div class="grid gap-5 @min-[520px]:grid-cols-2 @min-[900px]:grid-cols-3">
+          <BimbelPackageCard
           v-for="item in packages.data.value"
           :key="`${item.bimbelId}-${item.productId}`"
-          class="flex flex-col gap-4 rounded-md border border-hairline p-4 sm:flex-row sm:items-center"
-        >
-          <div class="min-w-0 flex-1">
-            <h2 class="font-semibold">{{ item.title }}</h2>
-            <p class="mt-1 text-sm text-muted">{{ item.bimbelName }} · {{ item.category }}</p>
-            <p class="mt-1 text-xs text-muted">
-              {{ item.attemptsUsed }}× dikerjakan
-              <template v-if="item.bestScore >= 0"> · Skor terbaik {{ item.bestScore }}</template>
-              <template v-else> · Belum pernah dikerjakan</template>
-            </p>
-          </div>
-
-          <AppButton :to="`/akun/paket/${item.packageSlug}`" size="sm" class="shrink-0">Kerjakan</AppButton>
-        </article>
+          :item="item"
+          />
+        </div>
       </div>
 
       <AppEmptyState
         v-else
         title="Belum ada paket bimbel"
         description="Bank soal bimbel muncul di sini setelah keanggotaanmu aktif. Gabung dengan kode dari pengelola bimbelmu."
-        action-label="Gabung bimbel"
-        @action="openJoin()"
+        :action-label="activeMemberships.length ? undefined : 'Gabung bimbel'"
+        @action="activeMemberships.length ? undefined : openJoin()"
       />
     </DashboardPanel>
 

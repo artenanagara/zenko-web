@@ -34,7 +34,7 @@ useHead({
 })
 
 const breadcrumbs = computed(() => [
-  { label: 'Bank soal', to: listPath },
+  { label: 'Paket', to: listPath },
   { label: product.value?.title ?? 'Hasil paket', truncate: true },
 ])
 
@@ -97,7 +97,7 @@ onMounted(() => Promise.all([load(), products.refresh()]))
       <div class="mt-3 flex flex-wrap items-center justify-center gap-4">
         <button type="button" class="font-semibold text-primary hover:underline" @click="load">Coba lagi</button>
         <NuxtLink :to="listPath" class="text-[0.86rem] font-semibold text-primary hover:underline">
-          Kembali ke Bank soal
+          Kembali ke Paket
         </NuxtLink>
       </div>
     </div>

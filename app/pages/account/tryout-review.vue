@@ -25,6 +25,8 @@ definePageMeta({
 const route = useRoute()
 const slug = route.params.slug as string
 const attemptId = route.params.attemptId as string
+const fromBimbel = computed(() => route.query.dari === 'bimbel')
+const returnTo = computed(() => fromBimbel.value ? '/akun/bimbel' : `/akun/paket/${slug}#riwayat`)
 
 const { data: review, pending, error, refresh } = useAttemptReview(attemptId)
 
@@ -178,10 +180,11 @@ const unansweredCount = computed(() => allQuestions.value.filter(entry => !entry
         <div class="container-page flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3.5">
           <nav class="min-w-0 text-[0.85rem] text-muted">
             <NuxtLink
-              :to="`/akun/paket/${slug}#riwayat`"
+              :to="returnTo"
               class="inline-flex items-center gap-1 transition-colors hover:text-ink"
             >
-              <IconArrowLeft class="h-3.5 w-3.5 shrink-0" /> Kembali ke paket
+              <IconArrowLeft class="h-3.5 w-3.5 shrink-0" />
+              {{ fromBimbel ? 'Kembali ke Bimbel saya' : 'Kembali ke paket' }}
             </NuxtLink>
           </nav>
           <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.84rem] font-semibold text-muted">

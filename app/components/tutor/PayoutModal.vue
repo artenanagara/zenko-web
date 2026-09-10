@@ -13,6 +13,7 @@ const props = defineProps<{
   amountError: string
   submitting: boolean
   canSubmit: boolean
+  settingsPath?: string
 }>()
 
 const emit = defineEmits<{ submit: [] }>()
@@ -30,7 +31,7 @@ const modalDescription = computed(() =>
     <!-- No bank account yet: point at Settings instead of a dead form. -->
     <AppSectionMessage v-if="!hasBankAccount" appearance="warning">
       Simpan rekening bank terlebih dahulu agar dana pencairan bisa ditransfer ke rekeningmu.
-      <NuxtLink to="/dashboard/tutor/settings#rekening" class="font-semibold underline hover:no-underline">
+      <NuxtLink :to="settingsPath || '/dashboard/tutor/settings#rekening'" class="font-semibold underline hover:no-underline">
         Buka Pengaturan
       </NuxtLink>
     </AppSectionMessage>

@@ -22,6 +22,15 @@ const creating = ref(false)
 const createError = ref('')
 const membership = computed(() => memberships.data.value.find(item => item.bimbelId === bimbelId))
 const canManage = computed(() => membership.value?.role === 'owner' || membership.value?.role === 'admin')
+const classColumns = [
+  { key: 'name', label: 'Kelas' },
+  { key: 'memberCount', label: 'Jumlah siswa' },
+  { key: 'createdAt', label: 'Dibuat', hideOnMobile: true },
+  { key: 'aksi', label: 'Aksi', align: 'right' as const },
+]
+function findClass(id: string): BimbelClass | undefined {
+  return classes.data.value.find(item => item.id === id)
+}
 
 onMounted(async () => {
   await memberships.refresh()
@@ -100,20 +109,39 @@ async function remove(item: BimbelClass) {
         </button>
       </div>
 
-      <div v-else-if="classes.data.value.length" class="grid gap-3 sm:grid-cols-2">
-        <article v-for="item in classes.data.value" :key="item.id" class="rounded-md border border-hairline p-4">
-          <h2 class="font-semibold">{{ item.name }}</h2>
-          <p class="mt-1 text-sm text-muted">{{ item.memberCount }} siswa</p>
-          <div v-if="canManage" class="mt-4 flex flex-wrap gap-2">
-            <!-- Editor anggota punya route sendiri: bisa di-bookmark, dibagikan
-                 ke sesama pengelola, dan tombol back-nya benar. -->
-            <AppButton :to="`/dashboard/bimbel/${bimbelId}/classes/${item.id}`" size="sm" variant="secondary">
-              Atur anggota
-            </AppButton>
-            <AppButton size="sm" variant="ghost" @click="remove(item)">Hapus</AppButton>
-          </div>
-        </article>
-      </div>
+      <DashboardTable
+        v-else-if="classes.data.value.length"
+        :columns="classColumns"
+        :data="classes.data.value"
+        primary-key="name"
+        action-key="aksi"
+      >
+        <template #cell(name)="{ item }">
+          <span class="font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span>
+        </template>
+        <template #cell(memberCount)="{ value }">
+          <span class="tabular-nums">{{ value }} siswa</span>
+        </template>
+        <template #cell(createdAt)="{ value }">
+          <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
+        </template>
+        <template #cell(aksi)="{ item }">
+          <template v-for="classItem in [findClass(item.id)]" :key="item.id">
+            <span v-if="canManage && classItem" class="inline-flex items-center gap-3 whitespace-nowrap">
+              <NuxtLink
+                :to="`/dashboard/bimbel/${bimbelId}/classes/${classItem.id}`"
+                class="text-[0.86rem] font-semibold text-primary hover:underline"
+              >
+                Atur siswa
+              </NuxtLink>
+              <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="remove(classItem)">
+                Hapus
+              </button>
+            </span>
+            <span v-else class="text-muted">—</span>
+          </template>
+        </template>
+      </DashboardTable>
 
       <AppEmptyState
         v-else
