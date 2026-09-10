@@ -255,7 +255,12 @@ async function onSeatOrderCreated(order: BimbelOrder) {
         </div>
         <template v-else-if="plans.data.value.length">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <BimbelBillingToggle v-model="period"><template v-if="freeMonths > 0" #note><AppLozenge appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge></template></BimbelBillingToggle>
+            <BimbelBillingToggle v-model="period">
+              <template v-if="freeMonths > 0" #note>
+                <AppLozenge v-if="period === 12" appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
+                <span v-else class="text-[0.82rem] text-muted">Tahunan gratis {{ freeMonths }} bulan</span>
+              </template>
+            </BimbelBillingToggle>
             <AppButton v-if="isPaidCustomer" variant="light" size="sm" @click="planPickerOpen = false">Tutup pilihan</AppButton>
           </div>
           <div class="mt-6 grid gap-5 xl:grid-cols-3" role="radiogroup" aria-label="Tingkat langganan">

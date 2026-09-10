@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BimbelOrder } from '#shared/types/bimbel'
+import type { BimbelOrder, BimbelOrderStatus } from '#shared/types/bimbel'
 
 /**
  * Layar pembayaran satu tagihan langganan bimbel.
@@ -26,7 +26,21 @@ const billingPath = `/dashboard/bimbel/${bimbelId}/billing`
 const orders = useBimbelOrders(bimbelId)
 
 const order = computed(() => orders.data.value.find(item => item.id === orderId) ?? null)
-const isPaid = computed(() => order.value?.status === 'paid')
+
+/**
+ * Judul mengikuti status tagihannya. "Selesaikan pembayaran" di atas tagihan
+ * yang sudah lunas menyuruh orang mengerjakan sesuatu yang sudah selesai;
+ * status di daftar tagihan cukup untuk judul, sementara kebenaran yang dipakai
+ * badan halaman tetap datang dari instruksi milik server.
+ */
+const HEADING: Record<BimbelOrderStatus, string> = {
+  pending: 'Selesaikan pembayaran',
+  verifying: 'Pembayaran sedang diperiksa',
+  paid: 'Tagihan lunas',
+  expired: 'Tagihan kedaluwarsa',
+  cancelled: 'Tagihan dibatalkan',
+}
+const heading = computed(() => order.value ? HEADING[order.value.status] : 'Selesaikan pembayaran')
 
 const breadcrumbs = computed(() => [
   { label: 'Langganan', to: billingPath },
@@ -56,7 +70,7 @@ function onPaymentUpdated(updated: BimbelOrder) {
 <template>
   <div class="grid gap-6">
     <AppPageHeader
-      title="Selesaikan pembayaran"
+      :title="heading"
       :description="order ? `Invoice ${order.invoice} · ${orderDescription(order)}` : 'Instruksi pembayaran tagihan langganan.'"
     >
       <template #breadcrumbs>
@@ -80,15 +94,10 @@ function onPaymentUpdated(updated: BimbelOrder) {
         @action="navigateTo(billingPath)"
       />
 
-      <div v-else-if="isPaid" class="grid gap-4">
-        <AppSectionMessage appearance="success" title="Tagihan ini sudah lunas">
-          Pembayaranmu sudah diverifikasi tim Zenko dan masa aktif langganan sudah diperbarui.
-        </AppSectionMessage>
-        <div>
-          <AppButton size="sm" variant="outline" @click="navigateTo(billingPath)">Kembali ke Langganan</AppButton>
-        </div>
-      </div>
-
+      <!-- Termasuk tagihan yang sudah lunas: statusnya dibacakan oleh komponen
+           pembayaran dari instruksi milik server, bukan dari daftar tagihan yang
+           dimuat halaman ini — daftar itu bisa saja ditulis sebelum admin
+           menyetujui bukti transfernya semenit yang lalu. -->
       <BimbelOrderPayment v-else :bimbel-id="bimbelId" :order="order" @updated="onPaymentUpdated" />
     </DashboardPanel>
   </div>

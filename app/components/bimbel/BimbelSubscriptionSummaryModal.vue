@@ -44,9 +44,14 @@ const canOrder = computed(() => !props.pending && !!props.quote && props.quote.a
     description="Periksa tingkat, masa aktif, dan totalnya sebelum tagihan dibuat."
   >
     <div class="grid gap-5">
+      <!-- Pita hijau hanya untuk periode yang benar-benar mendapat bulan
+           gratisnya. Berdiri di samping total bulanan, "Gratis 2 bulan" terbaca
+           sebagai janji atas angka yang sedang dilihat, padahal ia menjelaskan
+           pilihan yang satunya — dan itu ditulis sebagai ajakan, bukan pita. -->
       <BimbelBillingToggle v-model="period">
         <template v-if="freeMonths" #note>
-          <AppLozenge appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
+          <AppLozenge v-if="period === 12" appearance="success">Gratis {{ freeMonths }} bulan</AppLozenge>
+          <span v-else class="text-[0.82rem] text-muted">Tahunan gratis {{ freeMonths }} bulan</span>
         </template>
       </BimbelBillingToggle>
 
