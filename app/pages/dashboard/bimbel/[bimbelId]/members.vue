@@ -15,6 +15,22 @@ const inviteEmail = ref('')
 const inviting = ref(false)
 const inviteError = ref('')
 const busyId = ref('')
+const quotaFullError = ref(false)
+
+const pendingSeats = computed(() => bimbel.data.value?.pendingSeatAddonSeats ?? 0)
+const seatUsagePercent = computed(() => {
+  const detail = bimbel.data.value
+  return detail?.seatQuota ? detail.seatsUsed / detail.seatQuota * 100 : 0
+})
+const seatsNearlyFull = computed(() => seatUsagePercent.value >= 80)
+const hasAtLeastOneMonth = computed(() => {
+  const until = bimbel.data.value?.activeUntil ?? 0
+  return until - Math.floor(Date.now() / 1000) >= 30 * 86400
+})
+const seatActionTo = computed(() => hasAtLeastOneMonth.value
+  ? `/dashboard/bimbel/${bimbelId}/billing?tambah-kursi=1`
+  : `/dashboard/bimbel/${bimbelId}/billing`)
+const seatActionLabel = computed(() => hasAtLeastOneMonth.value ? 'Tambah kursi' : 'Perpanjang langganan')
 
 const STATUS_LABEL: Record<BimbelMemberStatus, string> = {
   active: 'Aktif', pending: 'Perlu disetujui', invited: 'Undangan terkirim', suspended: 'Ditangguhkan', left: 'Keluar',
@@ -72,21 +88,50 @@ async function sendInvite() {
 
 async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
   busyId.value = member.accountId
+  quotaFullError.value = false
   try {
     await updateBimbelMember(bimbelId, member.accountId, { status })
     await load()
     toast.success('Status siswa diperbarui.')
   }
-  catch (cause) { toast.error('Perubahan gagal.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.')) }
+  catch (cause) {
+    const message = tutorApiMessage(cause, 'Coba lagi sebentar lagi.')
+    const statusCode = (cause as { statusCode?: number, status?: number })?.statusCode
+      ?? (cause as { status?: number })?.status
+    quotaFullError.value = status === 'active'
+      && (statusCode === 422 || /kuota|kursi penuh/i.test(message))
+    if (!quotaFullError.value) toast.error('Perubahan gagal.', message)
+  }
   finally { busyId.value = '' }
 }
 </script>
 
 <template>
   <div class="grid gap-6">
-    <AppPageHeader title="Siswa" :description="`${bimbel.data.value?.seatsUsed ?? 0} dari ${bimbel.data.value?.seatQuota ?? 0} kursi siswa aktif terpakai.`">
+    <AppPageHeader title="Siswa" :description="`${bimbel.data.value?.seatsUsed ?? 0} dari ${bimbel.data.value?.seatQuota ?? 0} kursi siswa aktif terpakai${pendingSeats ? ` · +${pendingSeats} menunggu pembayaran` : ''}.`">
       <template #actions><AppButton size="sm" @click="openInvite">Tambah siswa</AppButton></template>
     </AppPageHeader>
+
+    <AppSectionMessage
+      v-if="quotaFullError"
+      appearance="error"
+      title="Kursi siswa sudah penuh"
+    >
+      Aktivasi siswa belum dilakukan. Tagihan kursi perlu diverifikasi sebelum kuota bertambah.
+      <NuxtLink :to="seatActionTo" class="ml-1 font-semibold text-primary underline">{{ seatActionLabel }}</NuxtLink>
+    </AppSectionMessage>
+
+    <AppSectionMessage
+      v-else-if="seatsNearlyFull"
+      appearance="warning"
+      title="Kursi hampir penuh"
+    >
+      {{ bimbel.data.value?.seatsUsed ?? 0 }}/{{ bimbel.data.value?.seatQuota ?? 0 }} kursi terpakai.
+      <span v-if="pendingSeats">{{ pendingSeats }} kursi tambahan sedang menunggu pembayaran.</span>
+      <span v-else>Tambah sebelum pendaftaran siswa terhenti karena pembayaran perlu diverifikasi.</span>
+      <NuxtLink :to="seatActionTo" class="ml-1 font-semibold text-primary underline">{{ seatActionLabel }}</NuxtLink>
+    </AppSectionMessage>
+
     <DashboardPanel title="Daftar siswa">
       <DashboardSkeleton v-if="pending" :count="5" label="Memuat siswa…" />
       <div v-else-if="error" class="py-8 text-center">

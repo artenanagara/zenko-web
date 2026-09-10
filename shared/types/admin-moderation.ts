@@ -214,4 +214,8 @@ export type VerificationKind = 'package' | 'subscription'
 
 export type VerificationItem =
   | ({ kind: 'package' } & AdminPaymentProof)
-  | ({ kind: 'subscription' } & AdminBimbelPaymentProof)
+  | ({
+      kind: 'subscription'
+      /** Jenis tagihan bimbel dari API; dipisah dari discriminator antrean. */
+      orderKind: AdminBimbelPaymentProof['kind']
+    } & Omit<AdminBimbelPaymentProof, 'kind'>)

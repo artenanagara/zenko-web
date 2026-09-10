@@ -38,12 +38,6 @@
 const SHARED_FEATURES = [
   'Kursi tambahan Rp3.000 / siswa / bulan',
   'Kelas, roster siswa, dan rekap hasil per paket',
-  // Bagi hasil TIDAK berbeda per tingkat. Sempat dirancang begitu, tapi server
-  // memakai satu angka untuk semua penjual (tutorSharePercent = 70), jadi
-  // menuliskannya berbeda per tingkat berarti menjual pembeda yang tidak
-  // ditegakkan siapa pun. Kalau suatu hari ia benar-benar bertingkat, baris ini
-  // pindah ke masing-masing TIERS di bawah.
-  'Bagi hasil 70% dari penjualan paket di marketplace',
 ] as const
 
 const TIERS = [
@@ -53,6 +47,7 @@ const TIERS = [
     yearly: 'Rp750.000',
     features: ['25 kursi siswa termasuk', '3 pengajar', '10 paket bank soal privat'],
     badge: '',
+    marketplaceSharePercent: 70,
   },
   {
     plan: 'Kelas Pro',
@@ -60,6 +55,7 @@ const TIERS = [
     yearly: 'Rp1.350.000',
     features: ['50 kursi siswa termasuk', '10 pengajar', 'Bank soal privat tak terbatas'],
     badge: 'Paling dipilih',
+    marketplaceSharePercent: 75,
   },
   {
     plan: 'Kelas Institusi',
@@ -67,6 +63,7 @@ const TIERS = [
     yearly: 'Rp3.750.000',
     features: ['150 kursi siswa termasuk', 'Pengajar tak terbatas', 'Bank soal privat tak terbatas'],
     badge: '',
+    marketplaceSharePercent: 80,
   },
 ] as const
 
@@ -118,11 +115,12 @@ const priceFootnote = computed(() => (period.value === 12 ? 'Ditagih 10 bulan un
         :price="period === 12 ? tier.yearly : tier.monthly"
         :price-note="priceNote"
         :price-footnote="priceFootnote"
+        :marketplace-share-percent="tier.marketplaceSharePercent"
         :features="featuresFor(tier)"
         :badge="tier.badge"
         badge-tone="brand"
         action-to="/untuk-bimbel/daftar"
-        action-label="Daftarkan bimbel"
+        action-label="Mulai uji coba 7 hari"
         :action-variant="tier.badge ? 'primary' : 'light'"
       />
     </div>

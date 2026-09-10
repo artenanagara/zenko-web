@@ -51,9 +51,9 @@ function proofImageUrl(proof: VerificationItem): string {
     : `${runtimeConfig.apiBase}/admin/bimbel-payment-proofs/${proof.id}/image`
 }
 
-const KIND_LABEL: Record<VerificationItem['kind'], string> = {
-  package: 'Pembelian paket',
-  subscription: 'Langganan bimbel',
+function proofKindLabel(proof: VerificationItem): string {
+  if (proof.kind === 'package') return 'Pembelian paket'
+  return proof.orderKind === 'seat_addon' ? 'Tambah kursi bimbel' : 'Langganan bimbel'
 }
 
 /** Siapa yang membayar, dibaca dari cabang union masing-masing. */
@@ -182,8 +182,11 @@ const approveDescription = computed(() => {
   const consequence = target.kind === 'package'
     ? `Pesanan ${target.invoice} akan langsung lunas dan paketnya jadi milik ${target.buyerName}. `
       + 'Bagi hasil tutor ikut dicatat. '
-    : `Tagihan ${target.invoice} akan langsung lunas dan ${bimbelPlanLabel(target.plan)} `
-      + `${target.bimbelName} berjalan ${target.months} bulan dengan kuota ${target.seatQuota} kursi. `
+    : target.orderKind === 'seat_addon'
+      ? `Tagihan ${target.invoice} akan langsung lunas dan menambah ${target.additionalSeats} kursi `
+        + `${target.bimbelName}, sehingga kuotanya menjadi ${target.seatQuota} kursi. Masa aktif tidak berubah. `
+      : `Tagihan ${target.invoice} akan langsung lunas dan ${bimbelPlanLabel(target.plan)} `
+        + `${target.bimbelName} berjalan ${target.months} bulan dengan kuota ${target.seatQuota} kursi. `
   return `${consequence}Pastikan mutasi ${formatRupiah(target.amountDue)} benar-benar masuk.${mismatch}`
 })
 
@@ -204,7 +207,9 @@ async function confirmApprove() {
     approveTarget.value = null
     successMessage.value = target.kind === 'package'
       ? `Pembayaran ${target.invoice} disetujui. Paketnya sudah aktif untuk ${target.buyerName}.`
-      : `Tagihan ${target.invoice} disetujui. Langganan ${target.bimbelName} sudah berjalan.`
+      : target.orderKind === 'seat_addon'
+        ? `Tagihan ${target.invoice} disetujui. ${target.additionalSeats} kursi ditambahkan untuk ${target.bimbelName}.`
+        : `Tagihan ${target.invoice} disetujui. Langganan ${target.bimbelName} sudah berjalan.`
     await refreshAll()
   }
   catch (cause) {
@@ -284,7 +289,6 @@ const PROOF_STATUS_TONE: Record<VerificationItem['status'], 'warning' | 'success
   rejected: 'neutral',
 }
 
-type ProofKind = VerificationItem['kind']
 type ProofStatus = VerificationItem['status']
 
 /**
@@ -316,7 +320,9 @@ const tableRows = computed(() => rows.value.map(proof => ({
   pembayar: payerName(proof),
   subject: proof.kind === 'package'
     ? proof.items[0]?.title ?? 'Paket tidak ditemukan'
-    : `${bimbelPlanLabel(proof.plan)} · ${proof.months} bulan · ${proof.seatQuota} kursi`,
+    : proof.orderKind === 'seat_addon'
+      ? `+${proof.additionalSeats} kursi · kuota menjadi ${proof.seatQuota}`
+      : `${bimbelPlanLabel(proof.plan)} · ${proof.months} bulan · ${proof.seatQuota} kursi`,
   payer: payerName(proof),
   proof,
 })))
@@ -445,7 +451,7 @@ const zoomed = ref<VerificationItem | null>(null)
           :class="item.proof.kind === 'package'
             ? 'bg-primary-soft text-primary'
             : 'bg-amber-100 text-amber-800'"
-        >{{ KIND_LABEL[item.proof.kind as ProofKind] }}</span>
+        >{{ proofKindLabel(item.proof) }}</span>
         <span class="mt-1 block font-bold tracking-[-0.02em] whitespace-nowrap tabular-nums">
           {{ item.proof.invoice }}
         </span>
@@ -528,7 +534,7 @@ const zoomed = ref<VerificationItem | null>(null)
       v-if="zoomed"
       :model-value="Boolean(zoomed)"
       title="Bukti transfer"
-      :description="`${KIND_LABEL[zoomed.kind]} · ${zoomed.invoice} · tagihan ${formatRupiah(zoomed.amountDue)}`"
+      :description="`${proofKindLabel(zoomed)} · ${zoomed.invoice} · tagihan ${formatRupiah(zoomed.amountDue)}`"
       @update:model-value="zoomed = null"
     >
       <img

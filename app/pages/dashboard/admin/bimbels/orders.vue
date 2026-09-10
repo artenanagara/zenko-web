@@ -188,6 +188,22 @@ function findOrder(id: string): BimbelOrder | undefined {
   return rows.value.find(order => order.id === id)
 }
 
+function orderTitle(order: BimbelOrder): string {
+  return order.kind === 'seat_addon' ? 'Tambah kursi' : bimbelPlanLabel(order.plan)
+}
+
+function orderDetail(order: BimbelOrder): string {
+  return order.kind === 'seat_addon'
+    ? `${order.additionalSeats} kursi tambahan`
+    : `${order.seatQuota ?? order.includedSeats} kursi · ${order.months} bulan`
+}
+
+function activationConsequence(order: BimbelOrder): string {
+  return order.kind === 'seat_addon'
+    ? `kuota bertambah ${order.additionalSeats} kursi tanpa mengubah masa aktif`
+    : `${order.seatQuota ?? order.includedSeats} kursi selama ${order.months} bulan`
+}
+
 /* --------------------------------------------------------------------------
  * Aksi
  * ------------------------------------------------------------------------ */
@@ -300,11 +316,9 @@ async function confirmActivate() {
 
           <template #cell(paket)="{ item }">
             <template v-for="order in [findOrder(item.id)]" :key="item.id">
-              <span v-if="order" class="block text-[0.86rem]">
-                {{ bimbelPlanLabel(order.plan) }}
-              </span>
-              <span class="block text-[0.82rem] text-muted">
-                {{ item.seatQuota }} kursi · {{ item.months }} bulan
+              <span v-if="order" class="block">
+                <span class="block text-[0.86rem]">{{ orderTitle(order) }}</span>
+                <span class="block text-[0.82rem] text-muted">{{ orderDetail(order) }}</span>
               </span>
             </template>
           </template>
@@ -406,7 +420,7 @@ async function confirmActivate() {
              tentang apa yang sedang diberikan. -->
         <AppSectionMessage appearance="warning" title="Yang diberikan oleh tombol ini">
           {{ activating.bimbelName || activating.bimbelId }} mendapat
-          <b>{{ activating.seatQuota }} kursi selama {{ activating.months }} bulan</b>
+          <b>{{ activationConsequence(activating) }}</b>
           ({{ formatRupiah(activating.amount) }}, invoice {{ activating.invoice }}),
           tanpa satu pun bukti transfer tersimpan di sistem.
         </AppSectionMessage>
