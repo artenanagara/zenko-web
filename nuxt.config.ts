@@ -182,6 +182,13 @@ export default defineNuxtConfig({
       // and an emailed reset are different endpoints, and may land apart.
       // Turn on with NUXT_PUBLIC_PASSWORD_CHANGE_ENABLED=true.
 		passwordChangeEnabled: true,
+      // Demo mode: demo.zenkoedu.id, where zenko-api hands every browser its
+      // own seeded copy of the platform. It only changes what the web app
+      // shows — the banner and the /demo credentials page — since the sandbox
+      // itself is entirely the API's doing. Off everywhere else, so staging
+      // and production never advertise demo logins.
+      // Turn on with NUXT_PUBLIC_DEMO_MODE=true.
+      demoMode: false,
     },
   },
 
