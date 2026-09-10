@@ -17,7 +17,7 @@ const { data: items, pending, error, refresh } = useOwnedPackages()
  * activating), then whichever was worked on most recently.
  */
 const orderedItems = computed(() =>
-  [...items.value].sort((a, b) => {
+  items.value.filter(matches).sort((a, b) => {
     const sa = packageStats(a)
     const sb = packageStats(b)
     if ((sa.attemptCount === 0) !== (sb.attemptCount === 0)) {
@@ -27,18 +27,26 @@ const orderedItems = computed(() =>
   }),
 )
 
-const summary = computed(() => {
-  const all = items.value.map(packageStats)
-  // Accuracy (%) is the only measure comparable across exam types; raw best
-  // score is a per-package number and lives on each card, not in this total.
-  const accuracies = all.map(s => s.accuracy?.percent).filter((x): x is number => x !== undefined)
+/**
+ * Pencarian menggantikan tiga kartu angka yang dulu berdiri di sini — jumlah
+ * paket, jumlah pengerjaan, akurasi terbaik.
+ *
+ * Ketiganya benar tapi tidak dipakai: yang membuka halaman ini datang untuk
+ * membuka satu paket, bukan untuk membaca totalnya, dan angka-angka itu
+ * mendorong paketnya sendiri turun satu layar penuh. Ringkasan progres punya
+ * tempatnya sendiri di /akun. Yang benar-benar berguna di sini adalah cara
+ * menemukan satu paket ketika daftarnya sudah panjang.
+ */
+const search = ref('')
+const term = computed(() => search.value.trim().toLowerCase())
 
-  return {
-    packages: items.value.length,
-    attempts: all.reduce((sum, s) => sum + s.attemptCount, 0),
-    bestAccuracy: accuracies.length === 0 ? null : Math.max(...accuracies),
-  }
-})
+function matches(item: typeof items.value[number]): boolean {
+  if (!term.value) return true
+  // Judul, kategori, dan nama tutor: tiga hal yang diingat orang tentang paket
+  // yang pernah dibelinya, dan satu-satunya yang tercetak di kartunya.
+  return [item.title, item.category, item.tutorName]
+    .some(field => field.toLowerCase().includes(term.value))
+}
 </script>
 
 <template>
@@ -51,9 +59,7 @@ const summary = computed(() => {
     <!-- Memuat: kerangka statistik dan kartu, bukan halaman kosong. -->
     <div v-if="pending" class="grid gap-6" aria-busy="true">
       <p class="sr-only" role="status">Memuat paket…</p>
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-hidden="true">
-        <div v-for="n in 3" :key="n" class="h-28 animate-pulse rounded-lg bg-surface-sunken" />
-      </div>
+      <div class="h-11 max-w-100 animate-pulse rounded-sm bg-surface-sunken" aria-hidden="true" />
       <div class="@container" aria-hidden="true">
         <div class="grid gap-5 @min-[520px]:grid-cols-2 @min-[900px]:grid-cols-3">
           <div v-for="n in 3" :key="n" class="h-85 animate-pulse rounded-lg bg-surface-sunken" />
@@ -66,24 +72,24 @@ const summary = computed(() => {
     </AccountError>
 
     <template v-else>
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <AccountStat tone="primary" label="Paket dimiliki" :value="String(summary.packages)">
-          <template #icon><IconGrid class="h-[1.15rem] w-[1.15rem]" /></template>
-        </AccountStat>
-        <AccountStat
-          tone="success"
-          label="Try out dikerjakan"
-          :value="String(summary.attempts)"
+      <!-- Kolom pencarian hanya dirender kalau memang ada yang bisa dicari:
+           pada akun tanpa paket ia cuma menambah satu kontrol yang menjawab
+           "tidak ada" apa pun yang diketik. -->
+      <!-- AppTextField hardcoded w-full, jadi lebarnya dibatasi pembungkus ini
+           dan bukan lewat utility yang saling menimpa — pola yang sama dengan
+           DashboardTableToolbar. -->
+      <div v-if="items.length" class="max-w-100">
+        <AppTextField
+          id="owned-packages-search"
+          v-model="search"
+          label="Cari paket"
+          placeholder="Cari judul, kategori, atau nama tutor…"
+          clearable
         >
-          <template #icon><IconRepeat class="h-[1.15rem] w-[1.15rem]" /></template>
-        </AccountStat>
-        <AccountStat
-          tone="star"
-          label="Akurasi terbaik"
-          :value="summary.bestAccuracy === null ? '-' : `${summary.bestAccuracy}%`"
-        >
-          <template #icon><IconTrophy class="h-[1.15rem] w-[1.15rem]" /></template>
-        </AccountStat>
+          <template #leading-icon>
+            <AppIcon name="magnifying-glass" :size="16" />
+          </template>
+        </AppTextField>
       </div>
 
       <!-- Columns follow the content column's width, not the viewport, so the
@@ -93,6 +99,16 @@ const summary = computed(() => {
           <OwnedPackageCard v-for="item in orderedItems" :key="item.slug" :item="item" />
         </div>
       </section>
+
+      <!-- Paketnya ada, cuma tidak ada yang cocok: yang dibutuhkan jalan keluar
+           dari pencariannya, bukan jalan ke katalog. -->
+      <AppEmptyState
+        v-else-if="items.length"
+        title="Tidak ada paket yang cocok"
+        :description="`Tidak ada paket yang cocok dengan &quot;${search.trim()}&quot;. Coba kata kunci lain.`"
+        action-label="Hapus pencarian"
+        @action="search = ''"
+      />
 
       <!-- An empty state is not an empty page: there is one way out of it. -->
       <DashboardPanel v-else title="Belum ada paket" description="Kamu belum membeli paket apa pun.">
@@ -109,7 +125,7 @@ const summary = computed(() => {
         </div>
       </DashboardPanel>
 
-      <p v-if="orderedItems.length" class="text-[0.86rem] text-muted">
+      <p v-if="items.length" class="text-[0.86rem] text-muted">
         Mencari paket lain?
         <NuxtLink to="/paket" class="font-semibold text-primary transition-colors hover:text-primary-light">
           Lihat katalog

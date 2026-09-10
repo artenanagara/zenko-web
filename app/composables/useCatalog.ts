@@ -1,4 +1,4 @@
-import type { Package, PackageDetail, SortKey, Testimonial } from '#shared/types/catalog'
+import type { Package, PackageDetail, PackagePage, SortKey, Testimonial } from '#shared/types/catalog'
 import type { TryoutAnswerState, TryoutBlueprint, TryoutSampleScore } from '#shared/types/tryout'
 
 /**
@@ -23,6 +23,33 @@ export function usePackages(sort: Ref<SortKey>): CatalogSource<Package[]> {
   })
 
   return { data, pending, error }
+}
+
+/**
+ * One page of the catalogue plus its facet counts, filtered server-side.
+ *
+ * `query` is reactive, so every filter change refetches. The catalogue used to
+ * be fetched whole and filtered in the browser; that stops working once school
+ * practice packages arrive in the thousands, and the facet counts can only be
+ * computed over the whole matching set, which the client no longer holds.
+ */
+export function useBrowsePackages(query: Ref<Record<string, string | number>>) {
+  const { public: config } = useRuntimeConfig()
+
+  return useFetch<PackagePage>('/catalog/browse', {
+    baseURL: config.apiBase,
+    query,
+    default: () => EMPTY_PAGE,
+  })
+}
+
+/** Served while the first request is in flight, and after a failed one. */
+const EMPTY_PAGE: PackagePage = {
+  items: [],
+  total: 0,
+  page: 1,
+  perPage: 24,
+  facets: { categories: [], subcategories: [], prices: [], ratings: [] },
 }
 
 export function useTestimonials(): CatalogSource<Testimonial[]> {

@@ -20,9 +20,9 @@ const APPEARANCE = {
 } as const
 
 const TITLE = {
-  pending: 'Pengajuan sedang ditinjau',
-  approved: 'Pengajuan disetujui',
-  rejected: 'Pengajuan perlu diperbaiki',
+  pending: 'Pendaftaran belum selesai',
+  approved: 'Ruang bimbel aktif',
+  rejected: 'Pendaftaran perlu diperbaiki',
 } as const
 
 const appearance = computed(() => APPEARANCE[props.application.status])
@@ -40,11 +40,12 @@ const workspacePath = computed(() =>
   <AppSectionMessage :appearance="appearance" :title="title">
     <template v-if="application.status === 'approved'">
       Ruang bimbel <b>{{ application.bimbelName }}</b> sudah aktif dengan masa uji
-      coba 14 hari untuk 50 siswa.
+      coba 7 hari untuk 25 siswa.
     </template>
     <template v-else-if="application.status === 'pending'">
-      Tim Zenko sedang memeriksa data <b>{{ application.bimbelName }}</b>. Kami
-      mengabari lewat WhatsApp atau email setelah peninjauan selesai.
+      Pendaftaran <b>{{ application.bimbelName }}</b> dikirim sebelum
+      persetujuan admin dihapus, jadi ia berhenti menunggu keputusan yang kini
+      tidak ada lagi. Ruang bimbelnya tinggal diaktifkan.
     </template>
     <template v-else>
       {{ application.rejectReason || 'Data yang kamu kirim belum cukup untuk kami tinjau. Lengkapi lalu ajukan ulang.' }}

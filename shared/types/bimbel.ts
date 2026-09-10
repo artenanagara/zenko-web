@@ -237,6 +237,27 @@ export interface BimbelOrder {
   paidAt?: number
   /** Bukti transfer terbaru pada tagihan ini; absen kalau belum pernah diunggah. */
   proof?: BimbelProofBrief
+  /**
+   * Alasan tagihan ini diaktifkan tanpa bukti transfer di sistem, dan sekaligus
+   * penandanya: tagihan yang lewat antrean verifikasi selalu mengosongkannya.
+   * Ada isinya berarti periode berbayar diberikan atas keterangan admin, bukan
+   * atas transfer yang terekam — itulah baris yang perlu ditemukan lagi saat
+   * ada yang mempertanyakan langganan.
+   */
+  activationNote?: string
+  /** Admin yang mengaktifkannya, untuk jejak yang sama. */
+  activatedByName?: string
+  /** Kapan terakhir ditagih, dan sudah berapa kali. Nol berarti belum pernah. */
+  remindedAt?: number
+  reminderCount?: number
+  /**
+   * Masa aktif organisasinya, ikut dikirim supaya daftar tagihan bisa
+   * mengurutkan menurut yang benar-benar dipertaruhkan: tagihan menunggu dari
+   * bimbel yang aksesnya sudah berhenti berbeda persoalan dari tagihan seumur
+   * sama dari bimbel yang masih punya dua bulan. Dikirim sebagai waktu, bukan
+   * status, karena status diturunkan malas dan bisa tertinggal satu pembacaan.
+   */
+  bimbelActiveUntil?: number
 }
 
 /**

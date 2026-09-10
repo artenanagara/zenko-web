@@ -23,20 +23,42 @@ withDefaults(
   { variant: 'primary', size: 'md', type: 'button' },
 )
 
+// Lebar batas ada di sini, warnanya tidak. `border-transparent` dulu ikut di
+// baris ini, dan itu diam-diam melumpuhkan setiap variant yang mencoba memberi
+// warna: keduanya menulis `border-color`, dan yang menang ditentukan urutan
+// aturan di stylesheet hasil Tailwind — bukan urutan kelas di sini. Yang menang
+// ternyata `border-transparent`, jadi `outline` dan `light` sama-sama tampil
+// tanpa batas sama sekali dan terbaca sebagai teks biasa.
+//
+// Sekarang tiap variant menyebut warnanya sendiri, tepat satu kali, termasuk
+// `ghost` yang memang transparan.
 const base =
-  'inline-flex items-center justify-center gap-2 border border-transparent font-semibold transition-[transform,box-shadow,background] duration-200 ease-smooth hover:-translate-y-px focus-visible:-translate-y-px cursor-pointer'
+  'inline-flex items-center justify-center gap-2 border font-semibold transition-[transform,box-shadow,background] duration-200 ease-smooth hover:-translate-y-px focus-visible:-translate-y-px cursor-pointer'
 
 const variants = {
   primary:
     'bg-linear-to-b from-primary-light to-primary border-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_1px_2px_rgba(47,111,235,0.25)] hover:from-[#5c93f5] hover:to-[#3878f0] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_rgba(47,111,235,0.18)]',
   secondary:
     'bg-ink border-ink text-white shadow-xs hover:bg-[#27272e] hover:border-[#27272e]',
+  // Tombol putih. Batasnya yang memisahkannya dari latar, bukan bayangan.
+  //
+  // Bayangan sebesar itu hanya masuk akal di atas satu jenis latar — bidang
+  // gelap, tempat variant ini lahir. Di atas panel abu-abu terang seperti kartu
+  // harga, ia terbaca sebagai kartu yang mengambang alih-alih tombol, dan
+  // pemakainya mulai menambal sendiri (`class="... shadow-none"` di
+  // TryoutSimulation). Batas sudah cukup memisahkan di kedua latar: pada bidang
+  // gelap kontras putih-di-atas-gelap yang bekerja, pada bidang terang batasnya.
   light:
-    'bg-surface text-primary font-bold shadow-[0_8px_20px_rgba(12,40,100,0.18)] hover:bg-[#f4f7ff]',
+    'bg-surface border-hairline-strong text-primary font-bold hover:bg-[#f4f7ff] hover:border-primary/40',
+  // Tombol putih berbatas abu. Latarnya solid, bukan transparan: di atas
+  // bidang berwarna — hero bergradien, kartu abu-abu — transparan membuat
+  // latar itu menembus tombolnya, sehingga yang terbaca bukan tombol
+  // melainkan garis kotak di atas gradien. Batas abu sudah memisahkannya dari
+  // bidang putih, dan latar putihnya memisahkannya dari bidang berwarna.
   outline:
-    'bg-transparent border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
+    'bg-surface border-line text-ink hover:bg-surface-alt hover:border-primary/40 hover:text-primary',
   ghost:
-    'bg-transparent text-muted hover:text-ink hover:bg-surface-alt',
+    'bg-transparent border-transparent text-muted hover:text-ink hover:bg-surface-alt',
   danger:
     'bg-danger border-danger text-white shadow-xs hover:bg-danger-ink',
 }

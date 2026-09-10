@@ -5,6 +5,8 @@
  * the only source for these shapes.
  */
 
+import type { ScoreScale } from './tutor-product'
+
 export type OptionLabel = string
 
 export type TryoutAnswerValue = string | string[] | Record<string, string | boolean> | null
@@ -141,6 +143,7 @@ export interface TryoutSection {
   code: string
   title: string
   durationMinutes: number
+  durationSeconds?: number
   /**
    * "flat" (poin per jawaban benar) atau "weighted" (jumlah bobot opsi — gaya
    * TKP, tanpa jawaban salah). Absen pada payload lama.
@@ -177,6 +180,8 @@ export interface TryoutBlueprint {
   title: string
   theme: TryoutTheme
   mode: TryoutMode
+  scoreScale?: ScoreScale
+  scoreDisclaimer?: string
   /**
    * Yang dihitung mundur klien mode flat: total resmi simulasi jenis ujiannya
    * saat ada (SKD: 100 menit), selain itu jumlah durasi subtes. Mode
@@ -269,5 +274,7 @@ export interface TryoutAttemptReview {
   title: string
   theme: TryoutTheme
   mode: TryoutMode
+  scoreScale?: ScoreScale
+  scoreDisclaimer?: string
   sections: TryoutReviewSection[]
 }

@@ -45,6 +45,37 @@ const dashboardLabel = computed(() =>
 )
 
 /**
+ * Pintu ke ruang kerja bimbel.
+ *
+ * Keanggotaan bimbel adalah dimensi terpisah dari role global, dan
+ * `homePathFor` di atas hanya mengenal student/tutor/admin — jadi pemilik
+ * bimbel yang role globalnya masih `student` tidak punya satu pun tautan ke
+ * `/dashboard/bimbel/*` di seluruh aplikasi tanpa entri ini. Pemilih konteks di
+ * puncak sidebar dashboard tidak bisa menolongnya: ia sudah harus berada di
+ * dalam dashboard untuk melihatnya.
+ *
+ * Yang muncul di sini satu entri, bukan daftar, betapapun banyak bimbelnya.
+ * Daftarnya hidup di pemilih konteks itu — satu tempat untuk memilih, dan menu
+ * ini cukup jadi pintunya. Kalau ruang kerjanya cuma satu, entrinya menyebut
+ * namanya, karena pada titik itu ia memang bukan pilihan melainkan tujuan.
+ */
+const { data: memberships, ensure: ensureMemberships } = useBimbelMemberships()
+
+const bimbelWorkspaces = computed(() =>
+  memberships.value.filter(item => item.status === 'active' && item.role !== 'student'),
+)
+
+const bimbelPath = computed(() =>
+  bimbelWorkspaces.value[0] ? `/dashboard/bimbel/${bimbelWorkspaces.value[0].bimbelId}` : null,
+)
+
+const bimbelLabel = computed(() =>
+  bimbelWorkspaces.value.length === 1
+    ? `Dashboard ${bimbelWorkspaces.value[0]!.bimbelName}`
+    : 'Dashboard Bimbel',
+)
+
+/**
  * Visible items only: the mobile Dashboard link is `display:none` on desktop,
  * and roving focus must not land on something the reader cannot see.
  */
@@ -62,6 +93,10 @@ function focusItem(index: number) {
 
 async function openMenu(index = 0) {
   open.value = true
+  // Dimuat saat dibuka, bukan saat dirender: komponen ini ada di header setiap
+  // halaman, dan satu request per halaman untuk entri yang dipakai sebagian
+  // kecil akun adalah harga yang salah. `ensure` hanya menembak sekali.
+  ensureMemberships()
   await nextTick()
   focusItem(index)
 }
@@ -234,8 +269,9 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
           {{ item.label }}
         </NuxtLink>
 
-        <div v-if="dashboardPath" class="mt-1.5 border-t border-hairline pt-1.5">
+        <div v-if="dashboardPath || bimbelPath" class="mt-1.5 border-t border-hairline pt-1.5">
           <NuxtLink
+            v-if="dashboardPath"
             :to="dashboardPath"
             role="menuitem"
             tabindex="-1"
@@ -245,6 +281,18 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
           >
             <IconChart class="h-[1.1rem] w-[1.1rem] shrink-0" />
             {{ dashboardLabel }}
+          </NuxtLink>
+
+          <NuxtLink
+            v-if="bimbelPath"
+            :to="bimbelPath"
+            role="menuitem"
+            tabindex="-1"
+            class="mt-1 flex min-h-11 items-center gap-2.5 rounded-xs px-3.5 text-[0.94rem] font-medium text-muted transition-colors duration-200 first:mt-0 hover:bg-surface-alt hover:text-ink"
+            @click="close(false)"
+          >
+            <IconUsers class="h-[1.1rem] w-[1.1rem] shrink-0" />
+            <span class="truncate">{{ bimbelLabel }}</span>
           </NuxtLink>
         </div>
 

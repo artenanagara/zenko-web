@@ -10,8 +10,16 @@ const memberships = useBimbelMemberships()
 const toast = useToast()
 const { confirm } = useConfirm()
 
+/**
+ * Membuat kelas hanya butuh satu nama. Sebagai panel ia menempati kepala
+ * halaman terus-menerus untuk tindakan yang dilakukan beberapa kali setahun,
+ * dan mendorong daftar kelas — isi halaman yang sebenarnya — ke bawah lipatan.
+ * Jadi ia modal, dipanggil dari tombol di kepala halaman.
+ */
+const createOpen = ref(false)
 const name = ref('')
 const creating = ref(false)
+const createError = ref('')
 const membership = computed(() => memberships.data.value.find(item => item.bimbelId === bimbelId))
 const canManage = computed(() => membership.value?.role === 'owner' || membership.value?.role === 'admin')
 
@@ -20,16 +28,33 @@ onMounted(async () => {
   await classes.refresh()
 })
 
+function openCreate() {
+  name.value = ''
+  createError.value = ''
+  createOpen.value = true
+}
+
+/** Overlay/Escape tidak boleh menutup saat permintaan sedang dikirim. */
+function setCreateOpen(value: boolean) {
+  if (creating.value) return
+  createOpen.value = value
+}
+
 async function createClass() {
+  if (!name.value.trim() || creating.value) return
   creating.value = true
+  createError.value = ''
   try {
     await createBimbelClass(bimbelId, name.value)
+    createOpen.value = false
     name.value = ''
     await classes.refresh()
     toast.success('Kelas dibuat.')
   }
   catch (cause) {
-    toast.error('Gagal membuat kelas.', tutorApiMessage(cause, 'Coba lagi.'))
+    // Pesannya tinggal di dalam modal: nama yang ditolak diperbaiki di kolom
+    // yang sama, dan modal yang tertutup akan menghapus ketikannya.
+    createError.value = tutorApiMessage(cause, 'Coba lagi.')
   }
   finally {
     creating.value = false
@@ -59,21 +84,11 @@ async function remove(item: BimbelClass) {
   <div class="grid gap-6">
     <!-- Kelas mengelompokkan siswa untuk keperluan administrasi. Ia tidak
          mengatur akses: bank soal bimbel terbuka bagi setiap anggota aktif. -->
-    <AppPageHeader title="Kelas" description="Kelompokkan siswa ke dalam rombel atau program agar daftarnya tetap terbaca saat jumlahnya bertambah." />
-
-    <DashboardPanel v-if="canManage" title="Buat kelas">
-      <form class="flex max-w-xl items-end gap-3" @submit.prevent="createClass">
-        <AppInput
-          id="bimbel-class-name"
-          v-model="name"
-          class="flex-1"
-          label="Nama kelas"
-          placeholder="Contoh: Intensif UTBK A"
-          required
-        />
-        <AppButton type="submit" :disabled="creating">{{ creating ? 'Membuat…' : 'Buat' }}</AppButton>
-      </form>
-    </DashboardPanel>
+    <AppPageHeader title="Kelas" description="Kelompokkan siswa ke dalam rombel atau program agar daftarnya tetap terbaca saat jumlahnya bertambah.">
+      <template v-if="canManage" #actions>
+        <AppButton size="sm" @click="openCreate()">Buat kelas</AppButton>
+      </template>
+    </AppPageHeader>
 
     <DashboardPanel title="Daftar kelas">
       <DashboardSkeleton v-if="classes.pending.value" :count="4" label="Memuat kelas…" />
@@ -105,8 +120,36 @@ async function remove(item: BimbelClass) {
         title="Belum ada kelas"
         description="Kelas memudahkan membaca dan menyaring daftar siswa per rombel atau program, alih-alih satu daftar panjang."
         :action-label="canManage ? 'Buat kelas' : undefined"
-        @action="focusField('bimbel-class-name')"
+        @action="openCreate()"
       />
     </DashboardPanel>
+
+    <AppModal
+      :model-value="createOpen"
+      title="Buat kelas"
+      description="Kelas hanya mengelompokkan siswa untuk administrasi — bank soal bimbel tetap terbuka bagi setiap anggota aktif."
+      @update:model-value="setCreateOpen"
+    >
+      <form class="grid gap-3" @submit.prevent="createClass">
+        <AppInput
+          id="bimbel-class-name"
+          v-model="name"
+          label="Nama kelas"
+          placeholder="Contoh: Intensif UTBK A"
+          :disabled="creating"
+          required
+        />
+        <AppInlineMessage v-if="createError" type="error">{{ createError }}</AppInlineMessage>
+      </form>
+
+      <template #footer>
+        <AppButton variant="outline" size="sm" :disabled="creating" @click="setCreateOpen(false)">
+          Batal
+        </AppButton>
+        <AppButton size="sm" :loading="creating" :disabled="!name.trim() || creating" @click="createClass()">
+          Buat kelas
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>

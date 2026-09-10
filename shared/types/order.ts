@@ -1,15 +1,33 @@
+import type { PaymentChannel } from '#shared/types/account'
+
 /**
  * Placing an order.
  *
  * The checkout page posts a slug and nothing else — the session cookie decides
  * who is buying and the server recomputes the price from the slug, so the
  * browser is never trusted to carry an amount. zenko-api answers POST /orders
- * with a `Purchase` (see #shared/types/account), charged through Duitku QRIS
- * and pending until the webhook reports it paid.
+ * with a `Purchase` (see #shared/types/account), charged through DOKU QRIS
+ * and pending until the webhook reports it paid — or, when the buyer picks the
+ * manual channel, waiting on an admin to spot the transfer instead.
  * Keep in sync with zenko-api/internal/model/order.go.
  */
 
 /** Body of POST /orders. The session identifies the buyer; the slug is priced server-side. */
 export interface CreateOrderRequest {
   slug: string
+  /**
+   * Which payment path the buyer picked, from GET /payments/methods.
+   *
+   * The one payment decision the browser is allowed to make — and still not a
+   * trusted one: the server checks it against its own list and refuses
+   * anything it cannot serve rather than quietly substituting a default.
+   * Omit it to take whatever the server prefers.
+   */
+  paymentChannel?: PaymentChannel
+}
+
+/** GET /payments/methods — which paths this deployment can actually charge. */
+export interface PaymentMethods {
+  available: PaymentChannel[]
+  default: PaymentChannel
 }

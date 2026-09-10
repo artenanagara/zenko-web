@@ -30,15 +30,39 @@ export function useBimbelMemberships() {
   const data = useState<BimbelMembership[]>('bimbel-memberships', () => [])
   const pending = useState('bimbel-memberships-pending', () => false)
   const error = useState('bimbel-memberships-error', () => '')
+  /** Sudah pernah dicoba dimuat di sesi ini — dasar `ensure` di bawah. */
+  const loaded = useState('bimbel-memberships-loaded', () => false)
 
   async function refresh() {
     pending.value = true
     error.value = ''
     try { data.value = await bimbelRequest<BimbelMembership[]>('/me/bimbels') }
     catch (cause) { error.value = tutorApiMessage(cause, 'Gagal memuat bimbel.') }
-    finally { pending.value = false }
+    finally {
+      pending.value = false
+      loaded.value = true
+    }
   }
-  return { data, pending, error, refresh }
+
+  /**
+   * Muat sekali saja, kalau belum pernah.
+   *
+   * Untuk permukaan yang perlu tahu keanggotaan tetapi tidak boleh membayar
+   * satu request di setiap halaman. Menu profil ada di header setiap halaman
+   * dan memakai ini saat menunya dibuka, jadi akun yang tidak pernah membuka
+   * menu itu tidak pernah menembakkan request-nya sama sekali.
+   *
+   * Kegagalan tidak dicoba ulang otomatis: `loaded` ditandai di `finally`,
+   * karena permukaan yang memanggilnya hanya kehilangan satu entri menu kalau
+   * gagal, dan mencoba lagi di tiap pembukaan menu akan mengulang request yang
+   * sama pada akun yang memang tidak punya bimbel.
+   */
+  async function ensure() {
+    if (loaded.value || pending.value) return
+    await refresh()
+  }
+
+  return { data, pending, error, refresh, ensure }
 }
 
 function resource<T>(loader: () => Promise<T>, fallback: T, message: string) {
@@ -157,14 +181,48 @@ export function confirmBimbelOrderPayment(
 export const cancelBimbelOrder = (id: string, orderId: string) => bimbelRequest<void>(bimbelPath(id, `/billing/orders/${orderId}/cancel`), { method: 'POST' })
 export const submitBimbelProductPublic = (id: string, productId: string) => bimbelRequest(bimbelPath(id, `/products/${productId}/submit-public`), { method: 'POST' })
 
+/**
+ * Direktori bimbel untuk admin — seluruh organisasi, terbaru dulu.
+ *
+ * Menggantikan antrean persetujuan, yang hilang bersama persetujuannya:
+ * mendaftarkan bimbel sekarang langsung membuat ruangnya. Pertanyaan yang
+ * tersisa bukan lagi "boleh ada atau tidak", melainkan siapa yang mendaftar,
+ * di tingkat apa, dan langganannya masih hidup atau tidak.
+ */
+export const useAdminBimbels = () => resource(
+  () => bimbelRequest<Bimbel[]>('/admin/bimbels'), [], 'Gagal memuat daftar bimbel.',
+)
 export const useAdminBimbelApplications = (status = 'pending') => resource(
   () => bimbelRequest<BimbelApplication[]>('/admin/bimbel-applications', { query: { status } }), [], 'Gagal memuat pengajuan bimbel.',
 )
 export const decideBimbelApplication = (id: string, status: 'approved' | 'rejected', reason = '') => bimbelRequest<BimbelApplication>(`/admin/bimbel-applications/${id}/decision`, { method: 'POST', body: { status, reason } })
-export const useAdminBimbelOrders = (status = 'pending') => resource(
-  () => bimbelRequest<BimbelOrder[]>('/admin/bimbel-orders', { query: { status } }), [], 'Gagal memuat pembayaran bimbel.',
+/**
+ * Buku tagihan langganan bimbel — seluruh status, bukan satu.
+ *
+ * Dulu defaultnya `pending`, dan itu diam-diam membuat halamannya jadi daftar
+ * tagihan yang menunggu *pembayarnya* sambil terlihat seperti antrean yang
+ * menunggu Zenko. Yang paling sering ditanyakan justru hilang: tagihan
+ * `verifying` — "bukti saya sudah masuk belum?" — lenyap dari daftar tepat saat
+ * buktinya datang. Antrean yang benar-benar menunggu admin ada di
+ * `/dashboard/admin/payments`, disusun dari bukti transfer, bukan dari sini.
+ *
+ * Dimuat sekali lalu disaring di klien, seperti meja verifikasi: jumlah
+ * tagihannya kecil dan berpindah filter tidak boleh berarti menunggu jaringan.
+ */
+export const useAdminBimbelOrders = () => resource(
+  () => bimbelRequest<BimbelOrder[]>('/admin/bimbel-orders', { query: { status: 'all' } }), [], 'Gagal memuat tagihan bimbel.',
 )
-export const activateBimbelOrder = (id: string) => bimbelRequest<BimbelOrder>(`/admin/bimbel-orders/${id}/activate`, { method: 'POST' })
+/**
+ * Aktivasi manual: mengakui pembayaran yang tidak pernah dilihat sistem.
+ *
+ * `reason` wajib dan ditolak server kalau kosong — endpoint ini memberi kursi
+ * dan periode berbayar tanpa satu pun bukti tersimpan, jadi catatannya adalah
+ * satu-satunya jejak yang tersisa. Jalur biasanya bukan ini, melainkan antrean
+ * bukti transfer di Verifikasi pembayaran.
+ */
+export const activateBimbelOrder = (id: string, reason: string) => bimbelRequest<BimbelOrder>(`/admin/bimbel-orders/${id}/activate`, { method: 'POST', body: { reason } })
+/** Menagih pemilik bimbel lewat email. Hanya untuk tagihan yang masih `pending`. */
+export const remindBimbelOrder = (id: string) => bimbelRequest<BimbelOrder>(`/admin/bimbel-orders/${id}/reminder`, { method: 'POST' })
 
 /**
  * Antrean verifikasi bukti transfer langganan bimbel.

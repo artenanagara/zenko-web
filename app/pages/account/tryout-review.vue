@@ -199,6 +199,17 @@ const unansweredCount = computed(() => allQuestions.value.filter(entry => !entry
             </span>
           </p>
         </div>
+        <!-- Keterangan skor dibekukan ke snapshot attempt ini, jadi riwayat
+             lama tetap terbaca dengan kalimat yang berlaku saat dikerjakan. -->
+        <p
+          v-if="review.scoreDisclaimer"
+          class="border-t border-hairline bg-surface-alt"
+        >
+          <span class="container-page flex items-start gap-2 py-2.5 text-[0.8rem] leading-[1.55] text-muted">
+            <AppIcon name="info" :size="14" class="mt-0.5 shrink-0" aria-hidden="true" />
+            {{ review.scoreDisclaimer }}
+          </span>
+        </p>
       </header>
 
       <main class="container-page grid gap-5 py-6 md:h-[calc(100vh-3.375rem)] md:grid-cols-[minmax(0,1fr)_280px]">

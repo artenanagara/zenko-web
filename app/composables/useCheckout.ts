@@ -6,7 +6,7 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *
  * POST /orders creates a pending purchase from a slug — the session cookie says
  * who is buying and the server prices the slug, so the browser carries neither
- * identity nor amount. It also charges a QRIS payment through Duitku in the
+ * identity nor amount. It also charges a QRIS payment through DOKU in the
  * same request and returns the pending purchase with `qrUrl`/`expiresAt`
  * filled in, which is what the checkout page renders while it waits.
  *
@@ -14,14 +14,14 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *   connected yet, rather than pretending an order was placed.
  * - paymentEnabled on → the order is created and left pending. With a
  *   payment gateway key configured on the backend, `purchase.qrUrl` carries
- *   Duitku's raw QRIS payload string (rendered into a scannable code
+ *   DOKU's raw QRIS payload string (rendered into a scannable code
  *   client-side, see payment.vue); without one (local dev with no gateway key
  *   set) it stays null and the page falls back to a plain "waiting for
  *   payment" message, same as before this was wired up.
  *
  * Settlement is never polled aggressively for its own sake — a short interval
  * checks `/me/purchases/:invoice` while a charge is outstanding, but it is
- * Duitku's webhook that actually marks the order paid server-side; polling
+ * DOKU's webhook that actually marks the order paid server-side; polling
  * only notices once that has already happened. A local timer flips the state
  * to 'expired' at the QR's own deadline as a client-side fallback, in case the
  * settlement (or expiry) webhook is slow to land.
@@ -177,14 +177,19 @@ export function useCheckout() {
    */
   async function confirmPayment(
     invoice: string,
-    payload: { file?: File | null, senderName: string, paidAmount: number, note?: string },
+    payload: { file?: File | null, senderName?: string, paidAmount?: number, note?: string } = {},
   ): Promise<Purchase | null> {
     error.value = ''
 
+    // Every field is optional now, and the package checkout sends none of
+    // them: the unique code in the amount already identifies the order in the
+    // merchant's mutation list, so a retyped name and figure add no evidence
+    // and only add ways for an honest payer to get stuck. The parameters stay
+    // because bimbel invoice payment still collects them.
     const body = new FormData()
     if (payload.file) body.append('proof', payload.file)
-    body.append('senderName', payload.senderName)
-    body.append('paidAmount', String(payload.paidAmount))
+    if (payload.senderName) body.append('senderName', payload.senderName)
+    if (payload.paidAmount) body.append('paidAmount', String(payload.paidAmount))
     body.append('transferredAt', String(Math.floor(Date.now() / 1000)))
     if (payload.note) body.append('note', payload.note)
 
@@ -209,7 +214,7 @@ export function useCheckout() {
    * `free` is a client-side hint only — the package's own price, already on
    * screen before this is ever called — never trusted as the actual charge.
    * zenko-api recomputes the total from `request.slug` and independently
-   * decides whether the resulting order needs Duitku at all (see
+   * decides whether the resulting order needs a gateway at all (see
    * Orders.Create: a Rp0 total skips ChargeQRIS and is written paid outright).
    * This just decides whether `!config.paymentEnabled` should still block the
    * attempt: that flag exists to stop a real charge from being attempted
@@ -250,7 +255,7 @@ export function useCheckout() {
       }
 
       if (created.qrUrl || created.paymentChannel === 'manual_qris') {
-        // Something to pay: either a Duitku QR to scan, or the static QRIS
+        // Something to pay: either a DOKU QR to scan, or the static QRIS
         // poster and its receipt upload. Either way the dedicated payment page
         // owns showing it and waiting from here.
         await navigateTo(`/pembayaran/${created.invoice}`)

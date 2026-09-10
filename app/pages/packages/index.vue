@@ -18,18 +18,24 @@ useHead({
   link: [{ rel: 'canonical', href: 'https://zenkoedu.id/paket' }],
 })
 
-// Sort is read from the URL first: the fetch needs an order before there is a
-// list to filter.
+// Sort is read from the URL first: the request needs an order before there is
+// anything to show.
 const sort = useSortQuery()
-const { data: packages, pending, error } = usePackages(sort)
 
+// One composable now: it owns the selection AND the request, because the
+// server does the matching and returns the page and its facet counts together.
 const {
   search,
   categories,
   subcategories,
   prices,
   rating,
+  page,
+  total,
+  pageCount,
   filtered,
+  pending,
+  error,
   categoryOptions,
   subcategoryOptions,
   priceOptions,
@@ -37,7 +43,19 @@ const {
   activeFilters,
   activeCount,
   reset,
-} = usePackageFilters(packages, sort)
+} = usePackageFilters(sort)
+
+const resultsRef = ref<HTMLElement | null>(null)
+
+/**
+ * Turning a page scrolls back to the top of the results, not the top of the
+ * document: the sidebar stays where it was, and the first new card is what
+ * the reader is looking for.
+ */
+function goToPage(target: number) {
+  page.value = Math.min(Math.max(target, 1), pageCount.value)
+  resultsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 // The sidebar is a plain disclosure on mobile rather than a modal: it sits
 // above the results, so closing it lands you right on what changed.
@@ -101,9 +119,12 @@ const showFilters = ref(false)
             <h1 class="flex items-center gap-2.5 text-[1.1rem] font-bold tracking-[-0.03em]">
               <IconGrid class="h-5 w-5 text-primary" />
               Semua paket
+              <!-- The total across every page, not this page's length: a
+                   number that read "24" on each of four pages would describe
+                   nothing the reader is looking at. -->
               <span class="font-medium text-muted" aria-live="polite">
                 <template v-if="pending">(memuat…)</template>
-                <template v-else>({{ filtered.length }})</template>
+                <template v-else>({{ total }})</template>
               </span>
             </h1>
 
@@ -136,6 +157,8 @@ const showFilters = ref(false)
             </li>
           </ul>
 
+          <div ref="resultsRef" class="scroll-mt-24" />
+
           <PackageGrid :items="filtered" :pending="pending" :error="error" :skeleton-count="9">
             <template #empty>
               <div class="rounded-lg bg-surface-sunken px-6 py-16 text-center">
@@ -147,6 +170,36 @@ const showFilters = ref(false)
               </div>
             </template>
           </PackageGrid>
+
+          <!-- Pager. Hidden on a single page, because a control that cannot do
+               anything still asks to be read. -->
+          <nav
+            v-if="pageCount > 1"
+            class="mt-8 flex flex-wrap items-center justify-center gap-2"
+            aria-label="Halaman katalog"
+          >
+            <AppButton
+              variant="outline"
+              size="sm"
+              :disabled="page <= 1 || pending"
+              @click="goToPage(page - 1)"
+            >
+              Sebelumnya
+            </AppButton>
+
+            <span class="px-3 text-[0.9rem] font-semibold text-muted tabular-nums" aria-live="polite">
+              Halaman {{ page }} dari {{ pageCount }}
+            </span>
+
+            <AppButton
+              variant="outline"
+              size="sm"
+              :disabled="page >= pageCount || pending"
+              @click="goToPage(page + 1)"
+            >
+              Berikutnya
+            </AppButton>
+          </nav>
         </div>
       </div>
     </div>

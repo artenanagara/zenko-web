@@ -10,9 +10,20 @@ const bimbel = useBimbelDetail(bimbelId)
 const { data: members, pending, error, refresh } = useBimbelMembers(bimbelId)
 const toast = useToast()
 
+/**
+ * Menambah anggota adalah satu email dan satu peran. Sebagai panel ia duduk
+ * permanen di atas roster — isi halaman yang sebenarnya — untuk tindakan yang
+ * dipakai sesekali, dan di HP ia mendorong tabel anggota keluar dari layar
+ * pertama. Jadi ia modal, dipanggil dari tombol di kepala halaman; kode
+ * bergabung ikut ke dalamnya karena ia jawaban untuk pertanyaan yang sama.
+ */
+const inviteOpen = ref(false)
 const invite = reactive({ email: '', role: 'student' })
 const inviting = ref(false)
+const inviteError = ref('')
 const busyId = ref('')
+
+const uid = useId()
 
 const ROLE_OPTIONS: TableControlOption[] = [
   { value: 'student', label: 'Siswa' },
@@ -152,16 +163,33 @@ function statusTone(status: BimbelMemberStatus) {
   return STATUS_TONE[status]
 }
 
+function openInvite() {
+  invite.email = ''
+  inviteError.value = ''
+  inviteOpen.value = true
+}
+
+/** Overlay/Escape tidak boleh menutup saat permintaan sedang dikirim. */
+function setInviteOpen(value: boolean) {
+  if (inviting.value) return
+  inviteOpen.value = value
+}
+
 async function sendInvite() {
+  if (!invite.email.trim() || inviting.value) return
   inviting.value = true
+  inviteError.value = ''
   try {
     await inviteBimbelMember(bimbelId, invite.email, invite.role)
+    inviteOpen.value = false
     invite.email = ''
     await refresh()
     toast.success('Anggota ditambahkan.', 'Statusnya menunggu sampai diaktifkan.')
   }
   catch (cause) {
-    toast.error('Belum bisa menambahkan anggota.', tutorApiMessage(cause, 'Pastikan email sudah memiliki akun Zenko.'))
+    // Pesannya tinggal di dalam modal: email yang belum punya akun Zenko
+    // diperbaiki di kolom yang sama, dan menutup modal menghapus ketikannya.
+    inviteError.value = tutorApiMessage(cause, 'Pastikan email sudah memiliki akun Zenko.')
   }
   finally {
     inviting.value = false
@@ -189,34 +217,11 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
     <AppPageHeader
       title="Siswa & tim"
       :description="`${bimbel.data.value?.seatsUsed ?? 0} dari ${bimbel.data.value?.seatQuota ?? 0} kursi siswa aktif terpakai.`"
-    />
-
-    <DashboardPanel
-      title="Tambah anggota"
-      description="Undang akun Zenko yang sudah terdaftar, atau bagikan kode bergabung kepada siswa."
     >
-      <div class="grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-end">
-        <form class="grid gap-3 sm:grid-cols-[1fr_160px_auto] sm:items-end" @submit.prevent="sendInvite">
-          <AppInput id="bimbel-invite-email" v-model="invite.email" type="email" label="Email akun Zenko" required />
-          <AppSelect v-model="invite.role" label="Peran" :options="ROLE_OPTIONS" />
-          <AppButton type="submit" :disabled="inviting">
-            {{ inviting ? 'Menambahkan…' : 'Tambahkan' }}
-          </AppButton>
-        </form>
-
-        <div class="hidden h-12 w-px bg-hairline lg:block" />
-
-        <div>
-          <p class="text-xs font-bold tracking-wide text-muted uppercase">Kode bergabung</p>
-          <div class="mt-2 flex flex-wrap items-center gap-3">
-            <code class="rounded-sm bg-surface-alt px-4 py-2 text-lg font-bold tracking-widest">
-              {{ bimbel.data.value?.joinCode || '—' }}
-            </code>
-            <span class="text-xs text-muted">Permintaan siswa tetap perlu disetujui.</span>
-          </div>
-        </div>
-      </div>
-    </DashboardPanel>
+      <template #actions>
+        <AppButton size="sm" @click="openInvite()">Tambah anggota</AppButton>
+      </template>
+    </AppPageHeader>
 
     <DashboardPanel title="Daftar anggota">
       <DashboardSkeleton v-if="pending" :count="5" label="Memuat anggota…" />
@@ -233,9 +238,9 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
       <AppEmptyState
         v-else-if="members.length === 0"
         title="Belum ada anggota"
-        description="Tambahkan siswa atau pengajar pertama lewat email akun Zenko, atau bagikan kode bergabung di atas."
+        description="Tambahkan siswa atau pengajar pertama lewat email akun Zenko, atau bagikan kode bergabung bimbelmu."
         action-label="Tambah anggota"
-        @action="focusField('bimbel-invite-email')"
+        @action="openInvite()"
       />
 
       <div v-else class="grid gap-4">
@@ -341,5 +346,68 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
         </DashboardTable>
       </div>
     </DashboardPanel>
+
+    <AppModal
+      :model-value="inviteOpen"
+      title="Tambah anggota"
+      description="Undang akun Zenko yang sudah terdaftar, atau bagikan kode bergabung kepada siswa."
+      @update:model-value="setInviteOpen"
+    >
+      <form class="grid gap-3" @submit.prevent="sendInvite">
+        <AppInput
+          id="bimbel-invite-email"
+          v-model="invite.email"
+          type="email"
+          label="Email akun Zenko"
+          :disabled="inviting"
+          required
+        />
+        <!-- Baris tombol, bukan dropdown: daftar AppSelect mengambang absolut
+             dan panel AppModal meng-clip isinya, jadi di dalam dialog
+             daftarnya terpotong tepi. Tiga peran juga muat terbaca sekaligus. -->
+        <div>
+          <p :id="`${uid}-invite-role`" class="mb-2 text-[0.82rem] font-semibold text-ink">Peran</p>
+          <div class="flex flex-wrap gap-2" role="radiogroup" :aria-labelledby="`${uid}-invite-role`">
+            <button
+              v-for="option in ROLE_OPTIONS"
+              :key="option.value"
+              type="button"
+              role="radio"
+              :aria-checked="invite.role === option.value"
+              :disabled="inviting"
+              class="rounded-md border px-4 py-2 text-[0.88rem] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+              :class="invite.role === option.value
+                ? 'border-primary bg-primary-soft text-primary'
+                : 'border-hairline bg-surface text-muted enabled:hover:border-line enabled:hover:text-ink'"
+              @click="invite.role = String(option.value) as BimbelRole"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+        <AppInlineMessage v-if="inviteError" type="error">{{ inviteError }}</AppInlineMessage>
+
+        <!-- Jalan kedua untuk pertanyaan yang sama: siswa yang jumlahnya banyak
+             lebih murah diundang lewat kode daripada satu per satu lewat email. -->
+        <div class="mt-1 border-t border-hairline pt-4">
+          <p class="text-xs font-bold tracking-wide text-muted uppercase">Kode bergabung</p>
+          <div class="mt-2 flex flex-wrap items-center gap-3">
+            <code class="rounded-sm bg-surface-alt px-4 py-2 text-lg font-bold tracking-widest">
+              {{ bimbel.data.value?.joinCode || '—' }}
+            </code>
+            <span class="text-xs text-muted">Permintaan siswa tetap perlu disetujui.</span>
+          </div>
+        </div>
+      </form>
+
+      <template #footer>
+        <AppButton variant="outline" size="sm" :disabled="inviting" @click="setInviteOpen(false)">
+          Batal
+        </AppButton>
+        <AppButton size="sm" :loading="inviting" :disabled="!invite.email.trim() || inviting" @click="sendInvite()">
+          Tambahkan
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import type { ProductIdentity } from './wizard/ProductIdentityPicker.vue'
 import type {
+  ExamType,
   ProductMode,
   ProductType,
   TutorProductDetail,
@@ -135,7 +137,7 @@ onMounted(refreshPricingRule)
 
 /**
  * Harga hanya dikunci ketika checkout belum diaktifkan pada environment ini.
- * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk Duitku Sandbox, jadi
+ * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk menguji DOKU, jadi
  * tutor bisa mengisi harga berbayar; nilai Rp0 tetap dikirim sebagai paket
  * gratis dan checkout tidak perlu memanggil gateway.
  */
@@ -150,6 +152,8 @@ const form = reactive({
   examTypeSlug: '',
   mode: 'simulasi' as ProductMode,
   sectionTitle: '',
+  /** Posisi kurikulum paket latihan; null untuk paket dari jenis ujian. */
+  schoolPractice: null as SchoolPractice | null,
   questionTarget: null as number | null,
   durationMinutes: null as number | null,
   title: '',
@@ -170,25 +174,38 @@ function cleanIncludes(rows: string[]): string[] {
   return rows.map(row => row.trim()).filter(row => row.length > 0)
 }
 
-const INCLUDE_OPTIONS = [
-  { label: 'Pembahasan video untuk setiap soal', category: null },
-  { label: 'Pembahasan tertulis tiap soal', category: null },
-  { label: 'Analisis skor per subtes', category: null },
-  { label: 'Akses selamanya, bisa diulang kapan saja', category: null },
-  { label: 'Grup diskusi bersama tutor', category: null },
-  { label: 'Simulasi antarmuka CAT BKN', category: 'SKD' },
-  { label: 'Skor & ambang batas resmi per subtes SKD', category: 'SKD' },
-  { label: 'Simulasi antarmuka ujian TKA (Pusmendik)', category: 'TKA' },
-  { label: 'Skor otomatis skala 0–100 seperti TKA resmi', category: 'TKA' },
-].filter((option, index, options) => options.findIndex(item => item.label === option.label) === index)
+/**
+ * Ready-made "Yang kamu dapatkan" bullets. Two of them used to promise a
+ * "Simulasi antarmuka CAT BKN" and a "Simulasi antarmuka ujian TKA
+ * (Pusmendik)"; both are gone, because every exam room now wears Zenko's own
+ * chrome and neither claim was true any more.
+ *
+ * `appliesTo` filters rather than sorts: a bullet only offered when it is
+ * actually true of this package cannot be ticked onto one where it is false.
+ */
+const INCLUDE_OPTIONS: { label: string, appliesTo?: (exam: ExamType) => boolean }[] = [
+  { label: 'Pembahasan tertulis tiap soal' },
+  { label: 'Pembahasan video untuk setiap soal' },
+  { label: 'Analisis skor per bagian' },
+  { label: 'Akses selamanya, bisa diulang kapan saja' },
+  { label: 'Grup diskusi bersama tutor' },
+  {
+    label: 'Waktu pengerjaan per bagian seperti ujian aslinya',
+    appliesTo: exam => exam.timerPolicy === 'sequential',
+  },
+  {
+    label: 'Skor otomatis skala 0–100 seperti ujian aslinya',
+    appliesTo: exam => exam.scoreScale === 'normalized_100',
+  },
+  {
+    label: 'Skor dan ambang batas resmi per bagian',
+    appliesTo: exam => exam.sections.some(section => section.passingGrade != null),
+  },
+]
 
 const includeOptions = computed(() => {
-  const category = selectedExamType.value?.category?.toLowerCase() ?? ''
-  return [...INCLUDE_OPTIONS].sort((a, b) => {
-    const aRelevant = a.category ? category.includes(a.category.toLowerCase()) : false
-    const bRelevant = b.category ? category.includes(b.category.toLowerCase()) : false
-    return Number(bRelevant) - Number(aRelevant)
-  })
+  const exam = selectedExamType.value
+  return INCLUDE_OPTIONS.filter(option => !option.appliesTo || (exam ? option.appliesTo(exam) : false))
 })
 
 function toggleInclude(label: string) {
@@ -216,67 +233,32 @@ const selectedExamType = computed(() =>
   examTypes.value.find(exam => exam.slug === form.examTypeSlug) ?? null,
 )
 
-/* --------------------------------------- kelompok 1: kategori → sub-kategori */
+/* ------------------------------------------- kelompok 1: identitas paket */
 
 /**
- * Pilihan kategori/sub-kategori (kelompok 1a/1b). Memilih keduanya = memilih
- * satu exam type slug (skd-cpns, tka-smp, …) — server tetap satu-satunya
- * sumber kategori produk, wizard hanya menyusun slug-nya dari dua langkah.
+ * Identitas paket — rumpun, program, mode, dan bagian — dipilih di dialog
+ * ProductIdentityPicker, bukan sebagai tumpukan dropdown yang tiap satunya
+ * baru muncul setelah yang di atasnya dijawab. Wizard menyimpan hasilnya saja.
  */
-const categoryChoice = ref('')
-const subcategoryChoice = ref('')
+const productIdentity = computed<ProductIdentity>(() => ({
+  examTypeSlug: form.examTypeSlug,
+  mode: form.mode,
+  sectionTitle: form.sectionTitle,
+  schoolPractice: form.schoolPractice,
+}))
 
-/** Kategori unik dalam urutan seed (SKD lalu TKA), dengan deskripsi ringkas. */
-const categoryCards = computed(() => {
-  const seen = new Map<string, { value: string, title: string, description: string }>()
-  for (const exam of examTypes.value) {
-    if (!exam.category || seen.has(exam.category)) continue
-    seen.set(exam.category, {
-      value: exam.category,
-      title: exam.category === 'SKD'
-        ? 'SKD — Seleksi Kompetensi Dasar'
-        : exam.category === 'TKA' ? 'TKA — Tes Kemampuan Akademik' : exam.category,
-      description: exam.category === 'SKD'
-        ? 'CAT BKN: TWK, TIU, TKP — untuk CPNS dan Sekolah Kedinasan.'
-        : exam.category === 'TKA'
-          ? 'Pusmendik: latihan per mata pelajaran untuk jenjang SD–SMK.'
-          : '',
-    })
-  }
-  return [...seen.values()]
-})
-
-/** Sub-kategori milik kategori terpilih, tetap dalam urutan seed. */
-const subcategoryCards = computed(() =>
-  examTypes.value
-    .filter(exam => exam.category === categoryChoice.value)
-    .map(exam => ({ value: exam.subcategory, slug: exam.slug, description: exam.description })),
-)
-
-// Kategori + sub-kategori menyusun slug jenis ujian; pasangan yang belum
-// lengkap (atau tidak dikenal) berarti belum ada jenis ujian terpilih.
-watch([categoryChoice, subcategoryChoice], ([category, subcategory]) => {
-  if (isEdit.value) return
-  form.examTypeSlug = examTypes.value.find(
-    exam => exam.category === category && exam.subcategory === subcategory,
-  )?.slug ?? ''
-})
-
-// Edit mode (dan create yang kembali ke langkah 1): pilihan kartu mengikuti
-// exam type produk. Produk legacy yang slug-nya sudah tidak ada di seed tidak
-// punya kartu untuk dicocokkan — langkah 1 lalu menampilkan label tersimpan.
-watch(selectedExamType, (exam) => {
-  if (!exam) return
-  categoryChoice.value = exam.category
-  subcategoryChoice.value = exam.subcategory
-}, { immediate: true })
+function applyIdentity(identity: ProductIdentity) {
+  form.examTypeSlug = identity.examTypeSlug
+  form.mode = identity.mode
+  form.sectionTitle = identity.sectionTitle
+  form.schoolPractice = identity.schoolPractice
+}
 
 /**
- * Aturan lintas kelompok (spec §4): mengganti pilihan kelompok 1 setelah ada
- * isian yang bergantung padanya (subtes/mapel terpilih, angka konfigurasi
- * yang diketik sendiri) meminta konfirmasi dulu — pilihan baru mengatur ulang
- * konteks itu. Soal sendiri baru bisa ada di edit mode, dan di sana seluruh
- * kelompok 1 memang terkunci (server juga menolak mengubahnya).
+ * Mengganti identitas paket setelah ada isian yang bergantung padanya (bagian
+ * terpilih, angka konfigurasi yang diketik sendiri) meminta konfirmasi dulu —
+ * pilihan baru mengatur ulang konteks itu. Soal sendiri baru bisa ada di edit
+ * mode, dan di sana identitasnya memang terkunci (server juga menolaknya).
  */
 function confirmContextChange(): boolean {
   if (isEdit.value) return false
@@ -290,43 +272,15 @@ function confirmContextChange(): boolean {
   )
 }
 
-function selectCategory(value: string) {
-  if (isEdit.value || value === categoryChoice.value) return
-  if (!confirmContextChange()) return
-  categoryChoice.value = value
-  subcategoryChoice.value = ''
-}
-
-function selectSubcategory(value: string) {
-  if (isEdit.value || value === subcategoryChoice.value) return
-  if (!confirmContextChange()) return
-  subcategoryChoice.value = value
-}
-
-function selectProductMode(value: string | number) {
-  if (!isProductMode(value) || value === form.mode) return
-  if (!confirmContextChange()) return
-  form.mode = value
-}
-
-/**
- * Kapan langkah subtes/mapel (1d) tampil: SKD mini memilih satu subtes;
- * produk TKA memilih satu mapel di KEDUA mode — produk TKA selalu tepat satu
- * mapel. SKD simulasi melewati langkah ini: ketiga subtesnya terpasang.
- */
-const needsSectionTitle = computed(() => {
-  if (!isSingle.value || !selectedExamType.value) return false
-  if (selectedExamType.value.category === 'TKA') return true
-  return form.mode === 'mini_tryout' && (selectedExamType.value.sections.length ?? 0) > 0
-})
-
-/** Jumlah soal & durasi terkunci mengikuti standar resmi (simulasi SKD & TKA). */
-const configLocked = computed(() =>
-  form.mode === 'simulasi'
-  && (selectedExamType.value?.category === 'SKD' || selectedExamType.value?.category === 'TKA'),
+/** Paket ini butuh satu bagian terpilih — cermin aturan server. */
+const needsSectionTitle = computed(() =>
+  isSingle.value && needsSectionChoice(selectedExamType.value, form.mode),
 )
 
-/** Template subtes/mapel yang dipilih (mini SKD, atau mapel TKA kedua mode). */
+/** Jumlah soal & durasi terkunci mengikuti standar resmi yang dipublikasikan. */
+const configLocked = computed(() => isConfigLocked(selectedExamType.value, form.mode))
+
+/** Template bagian yang dipilih. */
 const selectedSectionTemplate = computed(() =>
   selectedExamType.value?.sections.find(section => section.title === form.sectionTitle) ?? null,
 )
@@ -339,8 +293,9 @@ const simulasiTotalMinutes = computed(() => {
   const exam = selectedExamType.value
   if (!exam) return 0
   if (exam.simulasiTotalMinutes) return exam.simulasiTotalMinutes
-  if (exam.category === 'TKA') return selectedSectionTemplate.value?.durationMinutes ?? 0
-  return exam.sections.reduce((sum, section) => sum + section.durationMinutes, 0)
+  return Math.round(
+    lockedSections.value.reduce((sum, section) => sum + section.durationSeconds, 0) / 60,
+  )
 })
 
 /**
@@ -370,11 +325,29 @@ const appliedTemplate = reactive({
   durationMinutes: null as number | null,
 })
 
-// A stale subtest choice from a previous exam type (or from switching back to
-// Simulasi) must never leak into a later mini-tryout submission.
+/**
+ * A stale subtest choice from a previous exam type (or from switching back to
+ * Simulasi) must never leak into a later mini-tryout submission.
+ *
+ * "Stale" is decided by whether the title still names a section of the exam
+ * type now selected, and whether this mode asks for one at all — NOT by the
+ * mere fact that the identity changed. Clearing unconditionally was correct
+ * while the three fields were three separate dropdowns changed one at a time;
+ * once they became one dialog that applies all of them together
+ * (ProductIdentityPicker), this watcher fired after applyIdentity had already
+ * written the section and wiped it on the same tick. Every package that needs
+ * a section — every mini tryout, and every blueprint sold one section at a
+ * time — was then stuck on "Pilih satu bagian dulu sebelum lanjut", with the
+ * only control that can choose one handing back an answer this threw away.
+ */
 watch([() => form.examTypeSlug, () => form.mode], () => {
   if (isEdit.value) return
-  form.sectionTitle = ''
+
+  const stillBelongs = form.sectionTitle !== ''
+    && needsSectionChoice(selectedExamType.value, form.mode)
+    && (selectedExamType.value?.sections.some(section => section.title === form.sectionTitle) ?? false)
+  if (!stillBelongs) form.sectionTitle = ''
+
   form.questionTarget = null
   form.durationMinutes = null
   appliedTemplate.questionTarget = null
@@ -412,80 +385,21 @@ const PRODUCT_TYPE_OPTIONS: { value: ProductType, label: string }[] = [
   { value: 'bundle', label: 'Bundling' },
 ]
 
-// Iterated as a fixed literal list (not Object.entries(PRODUCT_MODE_LABEL)):
-// Object.entries always widens keys back to `string`, which would need an
-// `as ProductMode` to recover — this keeps the option values honestly typed.
-const PRODUCT_MODE_VALUES: ProductMode[] = ['simulasi', 'mini_tryout']
-const productModeOptions = computed<{ value: ProductMode, label: string }[]>(() =>
-  PRODUCT_MODE_VALUES.map(value => ({ value, label: PRODUCT_MODE_LABEL[value] })),
-)
-
-/** Label "mapel tambahan Zenko" — Bahasa Inggris bukan mata uji TKA SMP nasional (spec Q5). */
-function zenkoExtraMapel(examSlug: string | undefined, title: string): boolean {
-  return examSlug === 'tka-smp' && title === 'Bahasa Inggris'
-}
+/* -------------------------------------- kelompok 2: standar yang berlaku */
 
 /**
- * Pilihan subtes (SKD mini) / mapel (TKA kedua mode) untuk langkah 1d.
+ * Bagian-bagian paket ini beserta angka standarnya, sebagai baris ringkas
+ * untuk langkah Konfigurasi.
  *
- * Saat edit, subtesnya sudah terkunci dan yang perlu tampil hanya subtes milik
- * produk ini — tanpa angka template di labelnya, karena angka produk boleh
- * berbeda dari template (justru itu inti fitur "jumlah soal custom"), dan
- * menempelkan angka template di sini akan berbohong tentang isi produknya.
- */
-const sectionTitleOptions = computed(() => {
-  const savedSection = isEdit.value ? detail.value?.sections?.[0] : null
-  if (savedSection) return [{ value: savedSection.title, label: savedSection.title }]
-
-  return (selectedExamType.value?.sections ?? []).map(section => ({
-    value: section.title,
-    label: `${section.title} (${section.questionTarget} soal · ${section.durationMinutes} menit)`
-      + (zenkoExtraMapel(selectedExamType.value?.slug, section.title) ? ' — mapel tambahan Zenko' : ''),
-  }))
-})
-
-/* ------------------------------- kelompok 1/2: opsi & info kolom kanan ---- */
-
-/**
- * Semua pilihan langkah 1 memakai dropdown yang sama bentuknya (kategori dulu
- * berupa kartu radio, sub-kategori berupa strip chip). Alasannya bukan sekadar
- * seragam: penjelasan tiap pilihan tidak lagi menempel di bawah kontrolnya —
- * penjelasan itu pindah ke kolom info di kanan, yang isinya mengikuti apa yang
- * sedang dipilih — jadi kontrolnya sendiri tinggal perlu memuat labelnya.
- */
-const categoryOptions = computed(() =>
-  categoryCards.value.map(card => ({ value: card.value, label: card.title, description: card.description })),
-)
-
-const subcategoryOptions = computed(() =>
-  subcategoryCards.value.map(sub => ({ value: sub.value, label: sub.value, description: sub.description })),
-)
-
-const subcategoryLabel = computed(() => (categoryChoice.value === 'TKA' ? 'Jenjang' : 'Sub-kategori'))
-
-const selectedCategoryCard = computed(() =>
-  categoryCards.value.find(card => card.value === categoryChoice.value) ?? null,
-)
-
-/** Apa arti tiap jenis ujian — dipakai kolom info, bukan label dropdown-nya. */
-const PRODUCT_MODE_DESCRIPTION: Record<ProductMode, string> = {
-  simulasi: 'Paket utuh mengikuti standar resmi: susunan subtes, jumlah soal, durasi, dan penilaiannya terkunci.',
-  mini_tryout: 'Latihan satu subtes saja. Jumlah soal dan durasinya boleh kamu atur sendiri di langkah berikutnya.',
-}
-
-/**
- * Subtes yang terkunci mengikuti standar resmi, sebagai baris ringkas untuk
- * langkah 2 dan untuk kolom info langkah 1.
- *
- * Menggantikan tiga blok terpisah di langkah Konfigurasi (daftar subtes +
- * kalimat total + strip chip penilaian), yang mengulang nama subtes yang sama
- * sampai tiga kali dan membuat layar itu terbaca penuh padahal tidak ada satu
- * pun yang bisa diubah di sana.
+ * Menggantikan tiga blok terpisah (daftar subtes + kalimat total + strip chip
+ * penilaian) yang mengulang nama subtes yang sama sampai tiga kali dan
+ * membuat layar itu terbaca penuh padahal tidak ada satu pun yang bisa diubah.
  */
 interface LockedSectionRow {
   title: string
   questionTarget: number
-  durationMinutes: number
+  /** Kept in seconds so summing them never rounds twice. */
+  durationSeconds: number
   scoring: string
   passingGrade: number | null
 }
@@ -493,15 +407,19 @@ interface LockedSectionRow {
 const lockedSections = computed<LockedSectionRow[]>(() => {
   const exam = selectedExamType.value
   if (!exam) return []
-  const sections = exam.category === 'SKD' && form.mode === 'simulasi'
-    ? exam.sections
-    : (selectedSectionTemplate.value ? [selectedSectionTemplate.value] : [])
+  // A one-section package shows the section it was built from; anything else
+  // shows every section the simulasi copies.
+  const sections = needsSectionTitle.value
+    ? (selectedSectionTemplate.value ? [selectedSectionTemplate.value] : [])
+    : exam.sections
 
   return sections.map(section => ({
     title: section.title,
     questionTarget: section.questionTarget,
-    durationMinutes: section.durationMinutes,
-    scoring: section.scoringMode === 'weighted' ? 'bobot 1–5 per opsi' : `+${section.pointsCorrect} per jawaban benar`,
+    durationSeconds: sectionSeconds(section),
+    scoring: section.scoringMode === 'weighted'
+      ? `bobot 1–${section.maxOptionWeight || 5} per opsi`
+      : `+${section.pointsCorrect} per jawaban benar`,
     passingGrade: section.passingGrade ?? null,
   }))
 })
@@ -515,10 +433,6 @@ const lockedTotalQuestions = computed(() =>
 function isProductType(value: string | number): value is ProductType {
   return value === 'single' || value === 'bundle'
 }
-function isProductMode(value: string | number): value is ProductMode {
-  return value === 'simulasi' || value === 'mini_tryout'
-}
-
 watch(() => form.type, (type) => {
   if (type === 'bundle' && !ownRequested.value && import.meta.client) {
     ownRequested.value = true
@@ -551,6 +465,7 @@ watch(detail, (loaded) => {
   form.type = loaded.type
   form.examTypeSlug = loaded.examType ?? ''
   form.mode = loaded.mode ?? 'simulasi'
+  form.schoolPractice = loaded.schoolPractice ?? null
   form.sectionTitle = loaded.sections?.[0]?.title ?? ''
   form.title = loaded.title
   form.description = loaded.description ?? ''
@@ -751,7 +666,9 @@ async function persist(): Promise<boolean> {
 /* ----------------------------------------------------------------- steps */
 
 const STEPS = [
-  { n: 1, label: 'Jenis Ujian' },
+  // "Identitas Paket", not "Jenis Ujian": a school exercise has no exam type,
+  // and the step is where both kinds of package get their identity.
+  { n: 1, label: 'Identitas Paket' },
   { n: 2, label: 'Konfigurasi Ujian' },
   { n: 3, label: 'Detail Produk' },
   { n: 4, label: 'Soal' },
@@ -781,7 +698,6 @@ const toast = useToast()
  * that button sat nowhere near the field it was about.
  */
 const examTypeBlockRef = ref<HTMLElement | null>(null)
-const sectionBlockRef = ref<HTMLElement | null>(null)
 const includesBlockRef = ref<HTMLElement | null>(null)
 
 /** Set by validateThrough(); raised by whoever called it. */
@@ -814,16 +730,11 @@ function validateThrough(target: number): boolean {
   if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED && target !== 3) {
     return failStep('Produk tayang hanya bisa mengubah harga di langkah Detail Produk.', 'product-title')
   }
-  if (target > 1 && isSingle.value && !form.examTypeSlug) {
-    return failStep('Pilih kategori dan sub-kategori ujian dulu sebelum lanjut.', examTypeBlockRef)
+  if (target > 1 && isSingle.value && !form.examTypeSlug && !form.schoolPractice) {
+    return failStep('Pilih identitas paket dulu sebelum lanjut.', examTypeBlockRef)
   }
   if (target > 1 && !isEdit.value && needsSectionTitle.value && !form.sectionTitle) {
-    return failStep(
-      selectedExamType.value?.category === 'TKA'
-        ? 'Pilih satu mata pelajaran dulu sebelum lanjut.'
-        : 'Pilih subtes dulu sebelum lanjut.',
-      sectionBlockRef,
-    )
+    return failStep('Pilih satu bagian dulu sebelum lanjut.', examTypeBlockRef)
   }
   if (target > 3 && !form.title.trim()) {
     return failStep('Isi judul produk dulu sebelum lanjut.', 'product-title')
@@ -867,12 +778,12 @@ async function createAndContinue() {
   creating.value = true
   saveState.value = 'saving'
   try {
-    // sectionTitle ikut saat mini tryout DAN saat produk TKA (kedua mode —
-    // produk TKA selalu satu mapel). questionTarget/durationMinutes hanya
-    // untuk mini tryout: server menjawab 400 kalau dikirim pada simulasi
-    // SKD/TKA, yang konfigurasinya terkunci standar resmi.
-    const sendSectionTitle = form.mode === 'mini_tryout' || needsSectionTitle.value
-    const sendConfig = form.mode === 'mini_tryout' && !configLocked.value
+    // Sebuah paket diidentifikasi lewat jenis ujian ATAU posisi kurikulum,
+    // tidak pernah keduanya — server menolak body yang menyebut dua-duanya.
+    // questionTarget/durationMinutes hanya dikirim saat memang boleh diatur:
+    // server menjawab 400 kalau dikirim pada simulasi yang terkunci standar.
+    const practice = isSingle.value ? form.schoolPractice : null
+    const sendConfig = isSingle.value && !configLocked.value
     const created = await createTutorProduct({
       type: form.type,
       title: form.title.trim(),
@@ -880,9 +791,10 @@ async function createAndContinue() {
       // diulang di body; dari ruang kerja tutor inilah satu-satunya cara
       // pilihan "Terbitkan sebagai" sampai ke server.
       ...(!props.bimbelId && ownerBimbelId.value ? { ownerBimbelId: ownerBimbelId.value } : {}),
-      examTypeSlug: isSingle.value ? form.examTypeSlug : undefined,
+      ...(practice ? { schoolPractice: practice } : {}),
+      ...(isSingle.value && !practice && form.examTypeSlug ? { examTypeSlug: form.examTypeSlug } : {}),
       mode: form.mode,
-      ...(isSingle.value && sendSectionTitle && form.sectionTitle ? { sectionTitle: form.sectionTitle } : {}),
+      ...(needsSectionTitle.value && form.sectionTitle ? { sectionTitle: form.sectionTitle } : {}),
       ...(sendConfig && form.questionTarget ? { questionTarget: form.questionTarget } : {}),
       ...(sendConfig && form.durationMinutes ? { durationMinutes: form.durationMinutes } : {}),
     }, workspace.value)
@@ -1279,16 +1191,12 @@ const priceHintBlocking = computed(() =>
         </li>
       </ol>
 
-      <!-- ============================================= Kelompok 1: Jenis Ujian -->
+      <!-- ============================================ Kelompok 1: Identitas -->
       <DashboardPanel v-if="step === 1">
-        <!-- Dua kolom, pola yang sama dengan langkah Detail Produk: kontrol di
-             kiri, keterangan di kanan. Sebelumnya tiap pilihan membawa
-             penjelasannya sendiri tepat di bawahnya (kartu kategori dengan dua
-             baris teks, deskripsi jenis ujian, kotak info subtes SKD) sementara
-             separuh kanan panel dibiarkan kosong — kolomnya jadi panjang dan
-             penjelasan yang sudah tidak relevan tetap ikut terbaca. Sekarang
-             kolom kanan menampilkan penjelasan untuk apa yang SEDANG dipilih,
-             dan berubah mengikutinya. -->
+        <!-- Kontrol di kiri, keterangan umum di kanan. Kolom kanan sengaja
+             tidak lagi berubah mengikuti pilihan: penjelasan tiap pilihan kini
+             ada di dialog tempat pilihan itu dibuat, bersama pilihannya. Yang
+             tersisa di sini hanya yang berlaku sepanjang langkah ini. -->
         <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div class="grid max-w-160 gap-5">
             <!-- Kepemilikan: keadaan di ruang kerja bimbel, pilihan di ruang
@@ -1324,129 +1232,50 @@ const priceHintBlocking = computed(() =>
             />
 
             <template v-if="isSingle">
-              <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat kategori ujian...</p>
+              <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat pilihan ujian...</p>
               <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
-                Gagal memuat kategori ujian. Muat ulang halaman untuk mencoba lagi.
+                Gagal memuat pilihan ujian. Muat ulang halaman untuk mencoba lagi.
               </p>
-
-              <template v-else>
-                <!-- 1a. Kategori (SKD/TKA). -->
-                <div ref="examTypeBlockRef" class="scroll-mt-24">
-                  <AppSelect
-                    :options="categoryOptions"
-                    :model-value="categoryChoice"
-                    :disabled="isEdit"
-                    label="Kategori ujian"
-                    placeholder="Pilih kategori ujian"
-                    @update:model-value="(value) => selectCategory(String(value))"
-                  />
-                </div>
-
-                <!-- 1b. Sub-kategori: CPNS/Kedinasan untuk SKD, jenjang untuk TKA. -->
-                <AppSelect
-                  v-if="categoryChoice && subcategoryOptions.length"
-                  :options="subcategoryOptions"
-                  :model-value="subcategoryChoice"
-                  :disabled="isEdit"
-                  :label="subcategoryLabel"
-                  :placeholder="`Pilih ${subcategoryLabel.toLowerCase()}`"
-                  @update:model-value="(value) => selectSubcategory(String(value))"
+              <div v-else ref="examTypeBlockRef" class="scroll-mt-24">
+                <ProductIdentityPicker
+                  :identity="productIdentity"
+                  :exam-types="examTypes"
+                  :locked="isEdit"
+                  :confirm-change="confirmContextChange"
+                  @apply="applyIdentity"
                 />
-
-                <!-- 1c. Jenis ujian: Simulasi (standar terkunci) / Mini Tryout. -->
-                <AppSelect
-                  v-if="selectedExamType?.sections.length"
-                  :options="productModeOptions"
-                  :model-value="form.mode"
-                  :disabled="isEdit"
-                  label="Jenis ujian"
-                  @update:model-value="selectProductMode"
-                />
-
-                <!-- 1d. Subtes/mapel — SKD mini memilih satu subtes; produk TKA
-                     memilih satu mapel di kedua mode. SKD simulasi melewati
-                     langkah ini: ketiga subtes resminya terpasang otomatis. -->
-                <div v-if="needsSectionTitle" ref="sectionBlockRef" class="scroll-mt-24">
-                  <AppSelect
-                    :options="sectionTitleOptions"
-                    :model-value="form.sectionTitle"
-                    :disabled="isEdit"
-                    :label="selectedExamType?.category === 'TKA' ? 'Mata pelajaran' : 'Subtes'"
-                    :placeholder="selectedExamType?.category === 'TKA' ? 'Pilih mata pelajaran' : 'Pilih subtes'"
-                    @update:model-value="(value) => { form.sectionTitle = String(value) }"
-                  />
-                </div>
-              </template>
+              </div>
             </template>
           </div>
 
-          <!-- Kolom info: satu kartu yang isinya mengikuti pilihan di kiri.
-               `self-start` wajib supaya item grid tidak meregang setinggi kolom
-               kiri (sticky tidak akan punya ruang gerak); offset `top-20`
-               mengukur header dashboard yang `sticky top-0` di layar ini. -->
+          <!-- Kolom info: keterangan umum langkah ini, tidak berubah mengikuti
+               pilihan. `self-start` wajib supaya item grid tidak meregang
+               setinggi kolom kiri (sticky tidak akan punya ruang gerak);
+               offset `top-20` mengukur header dashboard yang `sticky top-0`. -->
           <aside class="self-start lg:sticky lg:top-20">
             <div class="grid gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-4 text-[0.84rem] leading-[1.65] text-muted">
               <div>
-                <h3 class="text-[0.9rem] font-semibold text-ink">
-                  {{ isSingle ? 'Try-out tunggal' : 'Bundling' }}
-                </h3>
+                <h3 class="text-[0.9rem] font-semibold text-ink">Tipe paket</h3>
                 <p class="mt-1">
-                  {{ isSingle
-                    ? 'Satu try-out utuh dengan subtes dan soal yang kamu susun sendiri.'
-                    : 'Gabungan beberapa try-out tunggal milikmu yang sudah tayang, dijual satu harga. Anggotanya dipilih di langkah Soal.' }}
+                  <strong class="font-semibold text-ink">Try-out tunggal</strong> adalah satu paket utuh dengan
+                  bagian dan soal yang kamu susun sendiri.
+                  <strong class="font-semibold text-ink">Bundling</strong> menggabungkan beberapa try-out tunggal
+                  milikmu yang sudah tayang menjadi satu harga; anggotanya dipilih di langkah Soal.
                 </p>
               </div>
 
-              <template v-if="isSingle">
-                <div v-if="selectedCategoryCard" class="border-t border-hairline pt-4">
-                  <h3 class="text-[0.9rem] font-semibold text-ink">{{ selectedCategoryCard.title }}</h3>
-                  <p class="mt-1">{{ selectedCategoryCard.description }}</p>
-                  <p v-if="selectedExamType" class="mt-2">{{ selectedExamType.description }}</p>
-                </div>
-
-                <div v-if="selectedExamType?.sections.length" class="border-t border-hairline pt-4">
-                  <h3 class="text-[0.9rem] font-semibold text-ink">{{ PRODUCT_MODE_LABEL[form.mode] }}</h3>
-                  <p class="mt-1">{{ PRODUCT_MODE_DESCRIPTION[form.mode] }}</p>
-
-                  <!-- Simulasi SKD tidak punya langkah pilih-subtes: yang perlu
-                       diketahui tutor adalah apa yang sudah terpasang untuknya. -->
-                  <ul
-                    v-if="!needsSectionTitle && lockedSections.length"
-                    class="mt-2.5 grid gap-1"
-                  >
-                    <li
-                      v-for="section in lockedSections"
-                      :key="section.title"
-                      class="flex items-baseline justify-between gap-3"
-                    >
-                      <span class="text-ink">{{ section.title }}</span>
-                      <span class="shrink-0 tabular-nums">{{ section.questionTarget }} soal</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <p
-                  v-if="zenkoExtraMapel(selectedExamType?.slug, form.sectionTitle)"
-                  class="border-t border-hairline pt-4"
-                >
-                  <strong class="font-semibold text-ink">Bahasa Inggris</strong> adalah mapel tambahan Zenko —
-                  bukan mata uji TKA SMP nasional (mata uji resmi SD/SMP hanya Bahasa Indonesia dan Matematika).
+              <div class="border-t border-hairline pt-4">
+                <h3 class="text-[0.9rem] font-semibold text-ink">Identitas paket</h3>
+                <p class="mt-1">
+                  Identitas menentukan aturan yang berlaku sesudahnya: bagian, jumlah soal, durasi, jenis soal
+                  yang boleh dipakai, dan cara skornya dibaca. Kategori katalog diturunkan dari sini — tidak ada
+                  field kategori yang perlu kamu isi.
                 </p>
+              </div>
 
-                <!-- Produk legacy: jenis ujiannya sudah tidak ada di daftar,
-                     jadi tidak ada opsi yang bisa dicocokkan — tampilkan
-                     identitas tersimpannya apa adanya. -->
-                <p v-if="isEdit && !selectedExamType && detail?.examType" class="border-t border-hairline pt-4">
-                  Produk ini memakai jenis ujian lama <strong class="font-semibold text-ink">{{ detail.examType }}</strong>
-                  (kategori {{ detail.category || '—' }}) yang sudah tidak ditawarkan untuk produk baru.
-                  Produk tetap berfungsi dengan konfigurasi tersimpannya.
-                </p>
-              </template>
-
-              <p v-if="isEdit" class="border-t border-hairline pt-4">
-                Tipe, kategori, sub-kategori, jenis ujian, dan subtes/mapel terkunci setelah produk
-                dibuat. Jumlah soal dan durasi mini tryout masih bisa disesuaikan di langkah
-                Konfigurasi Ujian selama produk berstatus draft.
+              <p class="border-t border-hairline pt-4">
+                Setelah paket dibuat, identitasnya terkunci. Jumlah soal dan durasi paket yang tidak mengikuti
+                standar resmi masih bisa disesuaikan di langkah Konfigurasi Ujian selama berstatus draft.
               </p>
             </div>
           </aside>
@@ -1459,115 +1288,108 @@ const priceHintBlocking = computed(() =>
         title="Konfigurasi Ujian"
         description="Jumlah soal, durasi, dan opsi pengerjaan paket ini."
       >
-        <!-- Susunan yang sama dengan langkah 1: yang bisa diatur di kiri, yang
-             hanya perlu diketahui di kanan. Versi lamanya menumpuk lima blok
-             berurutan — kotak "terkunci mengikuti standar resmi", daftar
-             subtes, kalimat total, strip chip penilaian, lalu kalimat aturan
-             CAT BKN — yang menyebut nama subtes yang sama sampai tiga kali
-             padahal tidak satu pun bisa diubah. Sekarang semuanya jadi satu
-             tabel ringkas: satu baris per subtes, membawa soal, durasi,
-             penilaian, dan ambangnya sekaligus. -->
-        <template v-if="isSingle">
-          <div class="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <div class="grid max-w-160 gap-5">
-              <!-- Mini tryout: bisa diatur, prefilled angka standar. -->
-              <div v-if="form.mode === 'mini_tryout' && !isCustom">
-                <p class="text-[0.88rem] text-muted">
-                  Mini tryout {{ form.sectionTitle || 'subtes terpilih' }} — jumlah soal dan durasi
-                  boleh berbeda dari standar, terisi otomatis dari nilai standarnya.
-                </p>
-                <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label for="product-question-target" :class="FIELD_LABEL_CLASS">Jumlah soal</label>
-                    <input id="product-question-target" v-model.number="form.questionTarget" type="number" min="1" max="200" placeholder="30" :disabled="!isFieldEditable('section')" :class="FIELD_CLASS">
-                  </div>
-                  <div>
-                    <label for="product-duration-minutes" :class="FIELD_LABEL_CLASS">Durasi (menit)</label>
-                    <input id="product-duration-minutes" v-model.number="form.durationMinutes" type="number" min="1" max="300" placeholder="60" :disabled="!isFieldEditable('section')" :class="FIELD_CLASS">
-                  </div>
-                </div>
-                <p class="mt-2 text-[0.82rem] text-muted">Maksimal 200 soal dan 300 menit.</p>
+        <!-- Satu kolom. Isi langkah ini hanya dua hal — angka yang bisa diatur
+             dan susunan yang berlaku — dan keduanya adalah isi, bukan
+             keterangan; memaksanya jadi dua kolom cuma menyempitkan tabelnya. -->
+        <div v-if="isSingle" class="grid max-w-200 gap-6">
+          <!-- Bisa diatur: mini tryout dan paket latihan mata pelajaran,
+               terisi otomatis dari angka standarnya sebagai titik awal. -->
+          <div v-if="!configLocked && !isCustom">
+            <p class="text-[0.88rem] text-muted">
+              Jumlah soal dan durasi paket ini kamu yang menentukan.
+            </p>
+            <div class="mt-3 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="product-question-target" :class="FIELD_LABEL_CLASS">Jumlah soal</label>
+                <input id="product-question-target" v-model.number="form.questionTarget" type="number" min="1" max="200" placeholder="30" :disabled="!isFieldEditable('section')" :class="FIELD_CLASS">
               </div>
-
-              <!-- Produk custom/legacy: subtesnya diatur di langkah Soal. -->
-              <AppSectionMessage v-else-if="isCustom" appearance="information">
-                Produk dengan jenis ujian custom mengatur subtes, jumlah soal, dan durasinya
-                langsung di langkah Soal.
-              </AppSectionMessage>
-
-              <!-- Acak soal — berlaku untuk semua produk single, dan satu-satunya
-                   yang bisa diatur pada paket simulasi. -->
-              <div class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5">
-                <div>
-                  <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
-                    Acak urutan soal saat dikerjakan siswa
-                  </label>
-                  <p class="mt-1 text-[0.82rem] text-muted">
-                    Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
-                    selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
-                    soal ini tidak berubah.
-                  </p>
-                </div>
-                <button
-                  id="product-shuffle-questions"
-                  type="button"
-                  role="switch"
-                  :aria-checked="form.shuffleQuestions"
-                  aria-labelledby="product-shuffle-questions-label"
-                  class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                  :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
-                  :disabled="!isFieldEditable('details')"
-                  @click="form.shuffleQuestions = !form.shuffleQuestions"
-                >
-                  <span
-                    class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
-                    :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
-                  />
-                </button>
+              <div>
+                <label for="product-duration-minutes" :class="FIELD_LABEL_CLASS">Durasi (menit)</label>
+                <input id="product-duration-minutes" v-model.number="form.durationMinutes" type="number" min="1" max="300" placeholder="60" :disabled="!isFieldEditable('section')" :class="FIELD_CLASS">
               </div>
             </div>
-
-            <!-- Kolom kanan: standar resmi yang berlaku untuk paket ini. -->
-            <aside v-if="lockedSections.length" class="self-start lg:sticky lg:top-20">
-              <div class="rounded-md border border-hairline bg-surface-alt px-4 py-4">
-                <h3 class="flex items-center gap-1.5 text-[0.9rem] font-semibold text-ink">
-                  <AppIcon name="lock-simple" :size="14" aria-hidden="true" class="text-muted" />
-                  Standar resmi {{ selectedExamType?.category }}
-                </h3>
-                <p class="mt-1 text-[0.84rem] leading-[1.65] text-muted">
-                  {{ configLocked
-                    ? 'Susunan di bawah ini terkunci. Tugasmu tinggal mengisi soalnya.'
-                    : 'Angka standar subtes ini, sebagai pembanding jumlah soal dan durasi yang kamu isi.' }}
-                </p>
-
-                <ul class="mt-3 grid gap-2.5">
-                  <li v-for="section in lockedSections" :key="section.title" class="text-[0.84rem]">
-                    <span class="flex items-baseline justify-between gap-3">
-                      <span class="font-semibold text-ink">{{ section.title }}</span>
-                      <span class="shrink-0 text-muted tabular-nums">{{ section.questionTarget }} soal</span>
-                    </span>
-                    <span class="mt-0.5 block text-[0.8rem] text-muted">
-                      {{ section.scoring }}<template v-if="section.passingGrade != null"> · ambang {{ section.passingGrade }}</template>
-                    </span>
-                  </li>
-                </ul>
-
-                <p v-if="configLocked" class="mt-3 border-t border-hairline pt-3 text-[0.84rem] font-semibold text-ink tabular-nums">
-                  {{ lockedTotalQuestions }} soal · {{ simulasiTotalMinutes }} menit
-                  <span class="block text-[0.8rem] font-normal text-muted">
-                    {{ selectedExamType?.category === 'SKD'
-                      ? 'Satu timer untuk seluruh subtes, persis CAT BKN.'
-                      : 'Satu timer untuk satu mata pelajaran, meniru TKA resmi.' }}
-                  </span>
-                </p>
-
-                <p v-if="selectedExamType?.category === 'SKD'" class="mt-3 text-[0.8rem] leading-[1.6] text-muted">
-                  Skor dan status Lulus/Tidak Lulus dihitung otomatis mengikuti aturan resmi CAT BKN.
-                </p>
-              </div>
-            </aside>
+            <p class="mt-2 text-[0.82rem] text-muted">Maksimal 200 soal dan 300 menit.</p>
           </div>
-        </template>
+
+          <!-- Produk custom/legacy: subtesnya diatur di langkah Soal. -->
+          <AppSectionMessage v-else-if="isCustom" appearance="information">
+            Produk dengan jenis ujian custom mengatur subtes, jumlah soal, dan durasinya
+            langsung di langkah Soal.
+          </AppSectionMessage>
+
+          <!-- Susunan yang berlaku, satu baris per bagian: soal, durasi,
+               penilaian, dan ambangnya sekaligus. -->
+          <section v-if="lockedSections.length" class="overflow-hidden rounded-md border border-hairline">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-surface-alt px-4 py-3">
+              <h3 class="flex items-center gap-1.5 text-[0.9rem] font-semibold text-ink">
+                <AppIcon v-if="configLocked" name="lock-simple" :size="14" aria-hidden="true" class="text-muted" />
+                Susunan {{ selectedExamType?.label }}
+              </h3>
+              <p v-if="configLocked" class="text-[0.82rem] font-semibold text-muted tabular-nums">
+                {{ lockedTotalQuestions }} soal · {{ simulasiTotalMinutes }} menit
+              </p>
+            </div>
+
+            <p class="border-b border-hairline px-4 py-2.5 text-[0.84rem] leading-[1.6] text-muted">
+              {{ configLocked
+                ? 'Susunan ini terkunci mengikuti standar resmi. Tugasmu tinggal mengisi soalnya.'
+                : 'Angka standar bagian ini, sebagai pembanding jumlah soal dan durasi yang kamu isi.' }}
+            </p>
+
+            <ul class="divide-y divide-hairline">
+              <li
+                v-for="section in lockedSections"
+                :key="section.title"
+                class="grid gap-1 px-4 py-3 text-[0.86rem] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline sm:gap-4"
+              >
+                <span>
+                  <span class="font-semibold text-ink">{{ section.title }}</span>
+                  <span class="mt-0.5 block text-[0.82rem] text-muted">
+                    {{ section.scoring }}<template v-if="section.passingGrade != null"> · ambang batas {{ section.passingGrade }}</template>
+                  </span>
+                </span>
+                <span class="shrink-0 text-muted tabular-nums sm:text-right">
+                  {{ section.questionTarget }} soal · {{ formatMinutes(section.durationSeconds) }}
+                </span>
+              </li>
+            </ul>
+
+            <p v-if="selectedExamType?.scoreDisclaimer" class="flex items-start gap-2 border-t border-hairline bg-surface-alt px-4 py-3 text-[0.82rem] leading-[1.6] text-muted">
+              <AppIcon name="info" :size="14" class="mt-0.5 shrink-0" aria-hidden="true" />
+              {{ selectedExamType.scoreDisclaimer }}
+            </p>
+          </section>
+
+          <!-- Acak soal — berlaku untuk semua produk single. -->
+          <div class="flex items-start justify-between gap-4 rounded-md border border-hairline bg-surface-alt px-4 py-3.5">
+            <div>
+              <label id="product-shuffle-questions-label" for="product-shuffle-questions" class="text-[0.9rem] font-semibold">
+                Acak urutan soal saat dikerjakan siswa
+              </label>
+              <p class="mt-1 text-[0.82rem] text-muted">
+                Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
+                selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
+                soal ini tidak berubah.
+              </p>
+            </div>
+            <button
+              id="product-shuffle-questions"
+              type="button"
+              role="switch"
+              :aria-checked="form.shuffleQuestions"
+              aria-labelledby="product-shuffle-questions-label"
+              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-hairline transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              :class="form.shuffleQuestions ? 'bg-primary' : 'bg-surface-sunken'"
+              :disabled="!isFieldEditable('details')"
+              @click="form.shuffleQuestions = !form.shuffleQuestions"
+            >
+              <span
+                class="inline-block size-4 transform rounded-full bg-surface shadow-sm transition-transform"
+                :class="form.shuffleQuestions ? 'translate-x-6' : 'translate-x-1'"
+              />
+            </button>
+          </div>
+        </div>
 
         <AppSectionMessage v-else appearance="information">
           Bundling tidak punya konfigurasi ujian sendiri — tiap produk anggotanya membawa

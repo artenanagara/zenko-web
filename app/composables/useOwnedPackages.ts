@@ -71,51 +71,75 @@ export function useOwnedPackages(): AsyncResource<OwnedPackage[]> {
 }
 
 /**
- * Tells zenko-api a sitting just started, so it has its own record of when
- * the clock began — the authority CreateAttempt checks a submission's timing
- * against, since the room's own countdown runs off sessionStorage, which is
- * editable in devtools and only ever meant for the on-screen display.
- *
- * Fire-and-forget, mirroring recordAttempt's own best-effort posture: a
- * failed beacon (offline, a blocked request) must not stop the sitting from
- * starting — it only means this particular attempt falls back to the
- * pre-existing behaviour of not enforcing a server-side deadline.
+ * What POST /me/packages/:slug/tryout/start returns: the sitting the server
+ * opened for this run, and the deadline it fixed for it.
  */
-export async function startTryoutSitting(slug: string): Promise<void> {
+export interface TryoutSitting {
+  sittingId: string
+  startedAt: number
+  deadlineAt: number
+  durationMinutes: number
+}
+
+/**
+ * Opens a sitting server-side and returns its handle.
+ *
+ * The sitting is the authority behind the clock: the room's own countdown runs
+ * off sessionStorage, which is editable in devtools, so it can say when to stop
+ * rendering questions but never whether a submission was on time. The server
+ * fixes the deadline when the sitting opens and checks the submission against
+ * that, not against anything this browser claims.
+ *
+ * This is no longer fire-and-forget. A submission has to spend a sitting, so a
+ * failed start means there is nothing to submit against — the caller has to
+ * know, rather than letting the student work for an hour and be refused at the
+ * end. Returns null on failure and lets the caller decide.
+ */
+export async function startTryoutSitting(slug: string): Promise<TryoutSitting | null> {
   const { public: config } = useRuntimeConfig()
   try {
-    await useApiFetch(`/me/packages/${slug}/tryout/start`, {
+    return await useApiFetch<TryoutSitting>(`/me/packages/${slug}/tryout/start`, {
       baseURL: config.apiBase,
       method: 'POST',
       credentials: 'include',
     })
   }
   catch {
-    // Best-effort — see the doc comment above.
+    return null
   }
 }
 
 /**
- * Persists a finished try out sitting and returns the stored attempt.
+ * Submits a finished try out sitting and returns the attempt the server scored.
  *
- * Posts the result — score, per-section tallies, and every question's answer
- * — to POST /me/packages/:slug/attempts. `answers` is what makes "Lihat
- * pembahasan" reopenable later from Riwayat pengerjaan: zenko-api judges each
- * one against its own copy of the product and stores the result as the
- * attempt's review snapshot, rather than trusting anything about correctness
- * from this request. The returned Attempt's id is that review's key —
- * TryoutResult navigates to `/akun/paket/:slug/kerjakan/pembahasan/:id` with it.
+ * `answers` is the whole payload that matters: zenko-api rebuilds the blueprint
+ * from its own copy of the product, judges every answer against the real key,
+ * and stores that as the attempt's review snapshot. The score and per-section
+ * tallies in `result` are sent for wire compatibility and then discarded — the
+ * room has no answer key to compute them from any more, and a number this
+ * browser made up was never something the server should have recorded.
+ *
+ * `sittingId` names the clock this run was worked under. Without it the server
+ * falls back to the account's latest open sitting for the package; with no
+ * sitting at all the submission is refused, which is what makes the deadline
+ * mean something.
+ *
+ * The returned Attempt carries the authoritative score and is the key to the
+ * pembahasan — TryoutResult navigates to
+ * `/akun/paket/:slug/kerjakan/pembahasan/:id` with its id.
  */
 export async function recordAttempt(
   slug: string,
   result: TryoutResult,
   answers: Record<string, TryoutAnswerState> = {},
+  sittingId = '',
 ): Promise<Attempt | null> {
   const { public: config } = useRuntimeConfig()
 
   const body: RecordAttemptRequest = {
     score: result.score,
     finishedAt: result.finishedAt,
+    sittingId,
     sections: result.sections.map(section => ({
       title: section.title,
       correct: section.correct,

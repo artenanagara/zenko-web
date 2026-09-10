@@ -115,7 +115,7 @@ function print() {
             <p class="mt-3 text-[0.82rem] leading-[1.6] text-muted">
               Marketplace try out<br>
               Jakarta, Indonesia<br>
-              support@zenkoedu.id
+              halo@zenkoedu.id
             </p>
           </div>
 
@@ -181,7 +181,7 @@ function print() {
               <dl class="mt-2.5 grid gap-1 text-[0.84rem]">
                 <div class="flex justify-between gap-4">
                   <dt class="text-muted">Harga normal</dt>
-                  <dd class="text-muted tabular-nums">{{ formatRupiah(line.priceOriginal) }}</dd>
+                  <dd class="text-muted tabular-nums">{{ formatRupiah(itemListPrice(line)) }}</dd>
                 </div>
                 <div v-if="line.priceOriginal > line.price" class="flex justify-between gap-4">
                   <dt class="text-muted">Diskon</dt>
@@ -217,7 +217,7 @@ function print() {
                   </td>
                   <td class="py-3.5 pr-4 text-[0.9rem] text-muted">{{ line.category }}</td>
                   <td class="py-3.5 pr-4 text-right text-[0.9rem] text-muted tabular-nums">
-                    {{ formatRupiah(line.priceOriginal) }}
+                    {{ formatRupiah(itemListPrice(line)) }}
                   </td>
                   <td class="py-3.5 pr-4 text-right text-[0.9rem] tabular-nums">
                     <span v-if="line.priceOriginal > line.price" class="font-semibold text-success-ink">
@@ -271,7 +271,7 @@ function print() {
           <p>
             Dokumen ini dibuat otomatis dan sah tanpa tanda tangan. Pembayaran
             diproses oleh penyedia pembayaran berlisensi; Zenko tidak menyimpan
-            data kartu kamu. Ada yang tidak cocok? Hubungi support@zenkoedu.id dengan
+            data kartu kamu. Ada yang tidak cocok? Hubungi halo@zenkoedu.id dengan
             menyebut nomor invoice di atas.
           </p>
         </footer>

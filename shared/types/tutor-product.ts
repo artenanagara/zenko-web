@@ -6,8 +6,59 @@
 
 export type ProductType = 'single' | 'bundle'
 
-/** simulasi = semua subtes diisi (default). mini_tryout = satu subtes saja. */
-export type ProductMode = 'simulasi' | 'mini_tryout'
+/**
+ * How a single product got its sections.
+ *
+ * simulasi = every subtest of its exam type. mini_tryout = one the tutor
+ * picked. latihan = a school exercise, which has no exam type at all and
+ * carries a SchoolPractice position instead.
+ */
+export type ProductMode = 'simulasi' | 'mini_tryout' | 'latihan'
+
+/**
+ * The taxonomy keys, mirroring zenko-api's model/exam_taxonomy.go. Behaviour
+ * reads these, never a display string: the result screen used to switch scales
+ * on the branding seal, so rebranding a package silently regraded it.
+ */
+export type ExamFamily = 'school' | 'university' | 'asn' | 'military-police' | 'career' | 'language'
+
+/** How the result screen must read the points scored. */
+export type ScoreScale = 'raw' | 'normalized_100' | 'estimated'
+
+/** Whether a simulasi covers every section or exactly one the tutor picks. */
+export type SimulationScope = 'full' | 'section'
+
+/**
+ * Whether the blueprint reproduces a published official format, or is Zenko's
+ * own practice arrangement. A practice package must never be presented as a
+ * replica of the real exam.
+ */
+export type ExamFidelity = 'official' | 'practice'
+
+export type EducationLevel = 'SD' | 'SMP' | 'SMA' | 'SMK'
+
+/**
+ * A school exercise's place in the curriculum — its identity in place of an
+ * exam type, because nothing about a latihan is standardised.
+ */
+export interface SchoolPractice {
+  level: EducationLevel
+  grade: number
+  subject: string
+  /** Bab or materi, typed freely. Optional: a package may span several. */
+  topic?: string
+}
+
+/** GET /subjects — the curriculum list, served as data so the wizard never
+ *  hard-codes a mapel list of its own. */
+export interface SchoolSubject {
+  slug: string
+  label: string
+  levels: EducationLevel[]
+  minGrade: number
+  maxGrade: number
+  active: boolean
+}
 
 /** draft → review → live | rejected (→ draft again after edits) → archived */
 export type ProductStatus = 'draft' | 'review' | 'live' | 'rejected' | 'archived'
@@ -29,14 +80,13 @@ export type ScoringMode = 'flat' | 'weighted'
 /** Bagaimana timer produk dari jenis ujian ini berjalan di ruang ujian. */
 export type TimerPolicy = 'flat' | 'sequential'
 
-/** Chrome CBT resmi yang dipakai ruang ujian — lihat model.Theme* di zenko-api. */
-export type ExamTheme = 'catbkn' | 'tka' | 'zenko'
-
 /** One subtes template inside an exam type (and the editable shape for custom). */
 export interface SectionTemplate {
   title: string
   questionTarget: number
   durationMinutes: number
+  /** Exact section timer; takes precedence over the legacy minute value. */
+  durationSeconds?: number
   scoringMode: ScoringMode
   pointsCorrect: number
   passingGrade?: number
@@ -46,6 +96,8 @@ export interface SectionTemplate {
    * boleh (TKA); SKD mengunci TWK/TIU ke single_choice dan TKP ke weighted.
    */
   allowedKinds?: QuestionKind[]
+  maxOptionWeight?: number
+  requiredOptionCount?: number
 }
 
 /** GET /exam-types — jenis ujian + template subtesnya, seeded server-side. */
@@ -53,6 +105,16 @@ export interface ExamType {
   slug: string
   label: string
   description: string
+  family?: ExamFamily
+  simulationScope?: SimulationScope
+  scoreScale?: ScoreScale
+  fidelity?: ExamFidelity
+  /**
+   * The caveat that must appear beside any score or structure built from this
+   * blueprint. Present whenever the structure is not the official one, or the
+   * score cannot reproduce the official one.
+   */
+  scoreDisclaimer?: string
   /**
    * Kategori katalog yang dipakai produk dengan kategori ujian ini. Satu-satunya
    * sumbernya: wizard tidak lagi punya field kategori, jadi server yang
@@ -62,7 +124,6 @@ export interface ExamType {
   /** Level facet kedua: CPNS/Kedinasan untuk SKD, jenjang untuk TKA. */
   subcategory: string
   timerPolicy: TimerPolicy
-  theme: ExamTheme
   /** False untuk SKD — editor menyembunyikan field level kognitif. */
   cognitiveLevelEnabled: boolean
   /**
@@ -142,7 +203,7 @@ export interface TutorPassage {
 }
 
 /** Batas soal per wacana — cermin model.MaxQuestionsPerPassage di zenko-api. */
-export const MAX_QUESTIONS_PER_PASSAGE = 5
+export const MAX_QUESTIONS_PER_PASSAGE = 7
 
 /** Wire shape POST/PATCH .../passages — title opsional, content wajib. */
 export interface PassageDraft {
@@ -182,6 +243,8 @@ export interface TutorProductSummary {
   title: string
   slug: string
   category: string
+  family?: ExamFamily
+  schoolPractice?: SchoolPractice
   /** Level facet kedua (SKD → CPNS/Kedinasan, TKA → jenjang); kosong untuk bundel/legacy. */
   subcategory: string
   thumbnailUrl: string
@@ -278,6 +341,7 @@ export interface CreateProductRequest {
   examTypeSlug?: string
   /** single only: defaults to `simulasi` server-side when omitted. */
   mode?: ProductMode
+  schoolPractice?: SchoolPractice
   /**
    * Judul template subtes/mapel yang dipilih. Wajib saat mode `mini_tryout`,
    * dan wajib untuk SEMUA produk TKA (simulasi maupun mini) — produk TKA

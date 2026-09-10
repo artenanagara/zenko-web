@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Attempt } from '#shared/types/account'
+import type { TryoutBlueprint, TryoutResult } from '#shared/types/tryout'
 
 definePageMeta({
   path: '/akun/paket/:slug()/kerjakan',
@@ -20,12 +21,81 @@ const {
   refresh: blueprintRefresh,
 } = useTryoutBlueprint(slug)
 
+/**
+ * Attempt lengkap dari server untuk sesi ini. Server menghitung ulang skor dari
+ * snapshot review miliknya sendiri dan mengembalikan angka otoritatif (skor per
+ * subtes, ambang batas, verdict) — TryoutResult menampilkan angka ini.
+ *
+ * Sejak kunci jawaban tidak lagi ikut dikirim bersama soal, ini bukan sekadar
+ * pelengkap: browser tidak punya kunci untuk menghitung apa pun, jadi inilah
+ * satu-satunya sumber angka.
+ */
+const recordedAttempt = ref<Attempt | null>(null)
+const recordedAttemptId = ref<string | null>(null)
+/** Sitting yang dibuka server untuk pengerjaan ini. */
+const sittingId = ref('')
+
 const session = useTryoutSession(slug, blueprint, {
-  // Best-effort beacon so zenko-api has its own record of when this sitting
-  // began — see startTryoutSitting and Account.attemptSubmittedLate. Not
-  // awaited: the room must not stall on it before showing question one.
-  onStart: () => { void startTryoutSitting(slug) },
+  // Membuka sitting di server: inilah jam yang dipakai untuk menilai apakah
+  // pengiriman jawaban masih tepat waktu, dan handle-nya wajib ikut saat
+  // submit. Tidak di-await supaya ruang ujian tidak tertahan sebelum soal
+  // pertama tampil; kegagalannya muncul saat menilai, dengan tombol coba lagi.
+  onStart: () => {
+    sittingId.value = ''
+    void startTryoutSitting(slug).then((sitting) => {
+      sittingId.value = sitting?.sittingId ?? ''
+    })
+  },
+  /**
+   * Penilaian dititipkan ke API, persis seperti halaman "coba gratis".
+   *
+   * Soal yang dikerjakan datang tanpa kunci jawaban — membacanya dari network
+   * tab lalu menjawab benar adalah kecurangan yang tidak bisa dideteksi
+   * perhitungan ulang server — jadi tidak ada lagi yang bisa dihitung di
+   * browser. Kegagalan menyimpan tidak lagi berarti "tampilkan skor lokal",
+   * karena skor lokal itu kini pasti nol; yang benar adalah menawarkan nilai
+   * ulang, dan jawaban masih ada di memori sesi untuk itu.
+   */
+  grade: async (answers) => {
+    const attempt = await recordAttempt(slug, blankResultFor(blueprint.value), answers, sittingId.value)
+    if (!attempt) throw new Error('attempt tidak tersimpan')
+
+    recordedAttempt.value = attempt
+    recordedAttemptId.value = attempt.id
+    return {
+      score: attempt.score,
+      maxScore: attempt.maxScore,
+      sections: attempt.sections.map(section => ({
+        title: section.title,
+        correct: section.correct,
+        total: section.total,
+        score: section.score,
+        maxScore: section.maxScore,
+      })),
+    }
+  },
 })
+
+/**
+ * Kerangka agregat yang dikirim bersama jawaban. Server mengabaikan angkanya
+ * dan menghitung ulang semuanya, tapi kontrak wire-nya masih mewajibkan daftar
+ * subtes yang tidak kosong — jadi yang dikirim adalah judul dan jumlah soal
+ * tiap subtes, tanpa mengarang satu pun nilai.
+ */
+function blankResultFor(current: TryoutBlueprint | null | undefined): TryoutResult {
+  return {
+    finishedAt: Math.floor(Date.now() / 1000),
+    score: 0,
+    maxScore: 0,
+    sections: (current?.sections ?? []).map(section => ({
+      title: section.title,
+      correct: 0,
+      total: section.questions.length,
+      score: 0,
+      maxScore: 0,
+    })),
+  }
+}
 const isFlat = computed(() => blueprint.value?.mode === 'flat')
 
 useHead({
@@ -38,7 +108,7 @@ const totalQuestions = computed(() => blueprint.value?.sections.reduce((sum, s) 
 // jumlah durasi per subtes); payload lama jatuh ke penjumlahan seperti dulu.
 const totalMinutes = computed(() =>
   blueprint.value?.totalDurationMinutes
-  || (blueprint.value?.sections.reduce((sum, s) => sum + s.durationMinutes, 0) ?? 0),
+  || Math.round(totalSeconds(blueprint.value?.sections ?? []) / 60),
 )
 
 const nextSection = computed(() => blueprint.value?.sections[session.sectionIndex.value + 1] ?? null)
@@ -68,42 +138,7 @@ function confirmEndSection() {
   session.endSection()
 }
 
-// Persist the result once, when the sitting finishes. Live this POSTs to
-// zenko-api; a failure is swallowed on purpose — the result screen already
-// shows the locally computed score, and a lost network write must not blank it.
-//
-// recordedAttemptId is what makes "Lihat pembahasan" a real page instead of
-// an inline toggle: TryoutResult only renders that button once this holds a
-// real id, since a review page has nothing to load without one. It stays
-// null on a failed write — a smaller loss (one sitting whose pembahasan
-// cannot be reopened) than blanking the score already shown from the
-// finished session, which recording best-effort is here to avoid.
-let recorded = false
-const recordedAttemptId = ref<string | null>(null)
-/**
- * Attempt lengkap dari server. Sejak rework SKD/TKA server menghitung ulang
- * skor dari snapshot review-nya sendiri dan mengembalikan nilai otoritatif
- * (skor per subtes, ambang batas, verdict) — TryoutResult menampilkan ANGKA
- * SERVER ini saat ada, dan hanya jatuh ke hitungan lokal browser kalau
- * penyimpanannya gagal (atau untuk produk legacy yang tidak dinilai server).
- */
-const recordedAttempt = ref<Attempt | null>(null)
-watch(session.phase, async (phase) => {
-  if (phase === 'finished' && session.result.value && !recorded) {
-    recorded = true
-    try {
-      const attempt = await recordAttempt(slug, session.result.value, session.answers.value)
-      recordedAttemptId.value = attempt?.id ?? null
-      recordedAttempt.value = attempt
-    }
-    catch {
-      // Best-effort: the score is still shown from the finished session.
-    }
-  }
-})
-
 function retry() {
-  recorded = false
   recordedAttemptId.value = null
   recordedAttempt.value = null
   session.start()
@@ -168,7 +203,7 @@ function retry() {
               </span>
             </span>
             <span v-if="!isFlat" class="text-[0.86rem] font-semibold text-muted tabular-nums">
-              {{ section.durationMinutes }} menit
+              {{ sectionDurationLabel(section) }}
             </span>
           </li>
         </ul>
@@ -335,7 +370,7 @@ function retry() {
         <div v-if="nextSection" class="mt-6 rounded-lg border border-hairline bg-surface p-5 shadow-xs">
           <p class="text-[0.78rem] font-bold tracking-widest text-faint uppercase">Subtes berikutnya</p>
           <p class="mt-1.5 font-bold tracking-[-0.02em]">{{ nextSection.code }} · {{ nextSection.title }}</p>
-          <p class="mt-1 text-[0.86rem] text-muted">{{ nextSection.questions.length }} soal · {{ nextSection.durationMinutes }} menit</p>
+          <p class="mt-1 text-[0.86rem] text-muted">{{ nextSection.questions.length }} soal · {{ sectionDurationLabel(nextSection) }}</p>
         </div>
 
         <AppButton size="lg" class="mt-6" @click="session.startNextSection()">
@@ -344,11 +379,53 @@ function retry() {
       </div>
     </div>
 
+    <!--
+      Sedang dinilai: skornya dihitung server dari kunci jawaban yang tidak
+      pernah dikirim ke browser, jadi ada jeda sekejap sebelum hasilnya ada.
+    -->
+    <div
+      v-else-if="session.phase.value === 'finished' && session.grading.value"
+      class="container-page grid max-w-2xl gap-4 py-16 text-center md:py-24"
+    >
+      <IconSpinner class="mx-auto h-7 w-7 animate-spin text-primary" />
+      <p class="text-muted">Menilai jawabanmu…</p>
+    </div>
+
+    <!--
+      Penilaian gagal: jawaban masih ada di memori sesi, jadi tawarkan nilai
+      ulang alih-alih menampilkan skor nol yang tidak benar.
+    -->
+    <div
+      v-else-if="session.phase.value === 'finished' && session.gradeFailed.value"
+      class="container-page grid max-w-md gap-4 py-16 md:py-24"
+    >
+      <div class="rounded-lg border border-hairline bg-surface p-6 text-center shadow-xs">
+        <h1 class="font-bold tracking-[-0.02em]">Nilai belum bisa dihitung</h1>
+        <p class="mt-2 text-[0.9rem] text-muted">
+          Hasil pengerjaanmu belum berhasil disimpan. Jawabanmu masih ada di halaman ini —
+          coba nilai ulang.
+        </p>
+        <div class="mt-5 flex flex-wrap justify-center gap-2.5">
+          <AppButton size="sm" @click="session.retryGrade()">Nilai ulang</AppButton>
+          <AppButton
+            :to="`/akun/paket/${slug}`"
+            variant="light"
+            size="sm"
+            class="border border-hairline-strong shadow-none"
+          >
+            Kembali ke paket
+          </AppButton>
+        </div>
+      </div>
+    </div>
+
     <!-- Selesai. -->
     <TryoutResult
       v-else-if="session.phase.value === 'finished' && session.result.value"
       :result="session.result.value"
       :theme="blueprint.theme"
+      :score-scale="blueprint.scoreScale"
+      :score-disclaimer="blueprint.scoreDisclaimer"
       :package-title="blueprint.title"
       :package-slug="slug"
       :blueprint="blueprint"

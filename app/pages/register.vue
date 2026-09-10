@@ -84,7 +84,7 @@ async function onSubmit() {
           Buat akun Zenko
         </h1>
         <p class="mt-2.5 text-muted">
-          Gratis, dan kamu hanya membayar paket yang kamu beli.
+          Gratis. Kamu hanya membayar paket yang dibeli.
         </p>
 
         <form class="mt-8 grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -93,7 +93,7 @@ async function onSubmit() {
             v-model="form.name"
             label="Nama lengkap"
             autocomplete="name"
-            placeholder="Nama sesuai kartu identitas"
+            placeholder="Nama lengkap"
             :error="errors.name"
           />
 

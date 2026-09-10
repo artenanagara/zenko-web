@@ -112,12 +112,13 @@ async function onSubmit() {
     })
     isSubmitted.value = true
     // Status terbaru dipakai halaman /akun/bimbel juga, jadi diambil ulang
-    // supaya keduanya tidak berbeda cerita.
+    // supaya keduanya tidak berbeda cerita. Sekaligus yang membawa `bimbelId`
+    // ruang yang baru saja dibuat, dan itu tujuan tombol di layar konfirmasi.
     await application.refresh()
   }
   catch (cause) {
-    // 409 punya alasan yang bisa ditindaklanjuti sendiri oleh pengaju (masih
-    // ditinjau, atau sudah mengelola bimbel), jadi pesan server diteruskan.
+    // 409 punya alasan yang bisa ditindaklanjuti sendiri oleh pendaftar
+    // (sudah mengelola bimbel), jadi pesan server diteruskan.
     const conflict = (cause as { statusCode?: number })?.statusCode === 409
     submitError.value = conflict
       ? tutorApiMessage(cause, 'Pengajuanmu tidak bisa diproses.')
@@ -169,8 +170,8 @@ const formState = computed<FormState>(() => {
           Daftarkan <span class="text-accent">bimbelmu</span>
         </h1>
         <p class="mx-auto mt-3.5 max-w-120 leading-[1.7] text-muted">
-          Setelah disetujui, ruang bimbelmu aktif selama 14 hari untuk 50 siswa
-          tanpa biaya.
+          Tanpa menunggu persetujuan. Begitu formulir ini terkirim, ruang
+          bimbelmu langsung aktif selama 7 hari untuk 25 siswa tanpa biaya.
         </p>
       </div>
 
@@ -179,13 +180,13 @@ const formState = computed<FormState>(() => {
           Memeriksa akun...
         </p>
 
-        <!-- Persetujuan pengajuan memberi sebuah akun kuasa atas satu bimbel,
-             jadi akunnya harus ada lebih dulu. -->
+        <!-- Mendaftar memberi sebuah akun kuasa atas satu bimbel, jadi
+             akunnya harus ada lebih dulu. -->
         <div v-else-if="formState === 'signed-out'" class="py-4 text-center">
-          <h2 class="text-[1.25rem] font-bold tracking-[-0.03em]">Masuk untuk mengirim pengajuan</h2>
+          <h2 class="text-[1.25rem] font-bold tracking-[-0.03em]">Masuk untuk mendaftarkan bimbel</h2>
           <p class="mx-auto mt-3 max-w-105 leading-[1.7] text-muted">
-            Pengajuan terhubung ke akun Zenko agar kamu bisa memantau statusnya.
-            Jika disetujui, ruang bimbel aktif di akun yang sama.
+            Ruang bimbel melekat pada akun Zenko yang mendaftarkannya, dan akun
+            itulah yang jadi pemiliknya.
           </p>
           <AppButton :to="SIGN_IN_PATH" size="lg" class="mt-6">Masuk ke akun</AppButton>
           <p class="mt-4 text-[0.86rem] text-muted">
@@ -201,12 +202,18 @@ const formState = computed<FormState>(() => {
           >
             <AppIcon name="check" :size="28" weight="bold" />
           </span>
-          <h2 class="mt-5 text-[1.35rem] font-bold tracking-[-0.03em]">Pengajuan berhasil dikirim</h2>
+          <h2 class="mt-5 text-[1.35rem] font-bold tracking-[-0.03em]">Ruang bimbelmu sudah aktif</h2>
           <p class="mx-auto mt-3 max-w-100 leading-[1.7] text-muted">
-            Tim kami akan meninjau data bimbelmu dan menghubungi lewat WhatsApp
-            atau email setelah proses peninjauan selesai.
+            Uji coba 7 hari untuk 25 siswa berjalan mulai sekarang. Langkah
+            berikutnya: bagikan kode bergabung ke siswamu, lalu susun bank soal
+            pertama.
           </p>
-          <AppButton to="/akun/bimbel" variant="outline" class="mt-6">Lihat status di akun</AppButton>
+          <AppButton
+            :to="myApplication?.bimbelId ? `/dashboard/bimbel/${myApplication.bimbelId}` : '/akun/bimbel'"
+            class="mt-6"
+          >
+            Buka dashboard bimbel
+          </AppButton>
         </div>
 
         <div
@@ -214,6 +221,22 @@ const formState = computed<FormState>(() => {
           class="grid gap-5"
         >
           <BimbelApplicationStatus :application="myApplication" />
+
+          <!-- Hanya bisa muncul untuk pengajuan yang dikirim sebelum
+               pendaftaran jadi instan: sejak itu tidak ada lagi yang berhenti
+               di `pending`. Tombolnya memanggil endpoint yang sama, yang
+               menyelesaikan pengajuan tertunda alih-alih menolaknya, jadi orang
+               yang sudah menunggu keputusan tidak perlu mengisi formulir lagi. -->
+          <div v-if="formState === 'in-review'" class="text-center">
+            <AppButton :loading="isSubmitting" @click="onSubmit()">
+              Aktifkan ruang bimbel sekarang
+            </AppButton>
+            <p class="mt-3 text-[0.88rem] text-muted">
+              Persetujuan admin sudah tidak diperlukan lagi — pengajuanmu tinggal
+              diselesaikan.
+            </p>
+            <AppInlineMessage v-if="submitError" type="error" class="mt-3">{{ submitError }}</AppInlineMessage>
+          </div>
           <p class="text-center text-[0.88rem] text-muted">
             Semua bimbel yang kamu ikuti terkumpul di
             <NuxtLink to="/akun/bimbel" class="font-semibold text-primary hover:underline">

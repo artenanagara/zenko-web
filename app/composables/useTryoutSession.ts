@@ -153,15 +153,19 @@ export interface TryoutSessionOptions {
    * Grades the sitting somewhere other than this browser, and becomes the
    * result screen's only source of numbers.
    *
-   * The "coba gratis" sample needs it: its questions arrive with no `correct`,
-   * `points` or `scores`, on purpose — a public endpoint that shipped the
-   * answer key would hand every visitor the keys to five real questions — so
-   * the API grades the submission and returns the tally. Left unset, the
-   * sitting is graded locally from the blueprint, which is what an owned
-   * package does.
+   * Both real sittings use it. Questions arrive with no `correct`, `points`,
+   * `scores` or pembahasan — a payload carrying the answer key is a payload a
+   * student can read the answers out of, whether they paid for the package or
+   * are trying five questions for free — so the API grades the submission and
+   * returns the tally.
    *
-   * A rejection is surfaced as `gradeFailed` rather than swallowed: unlike the
-   * paid sitting, there is no locally computed score to fall back on.
+   * Left unset, the sitting is graded locally from the blueprint. That is now
+   * only the tutor/admin preview, whose blueprint does still carry the key
+   * because the caller wrote it.
+   *
+   * A rejection is surfaced as `gradeFailed` rather than swallowed: there is no
+   * locally computed score to fall back on, and showing a zero would be a lie
+   * about how the participant did.
    */
   grade?: (answers: Record<string, TryoutAnswerState>) => Promise<TryoutSampleScore>
   /**
@@ -374,11 +378,12 @@ export function useTryoutSession(
     // one (SKD simulasi: 100 minutes for all 110 questions under one timer —
     // NOT the 105 the per-section mini-tryout defaults sum to); older
     // payloads and the sample blueprint fall back to summing the sections.
-    const totalMinutes = currentBlueprint.mode === 'flat'
+    const totalSeconds = currentBlueprint.mode === 'flat'
       ? (currentBlueprint.totalDurationMinutes
-        || currentBlueprint.sections.reduce((sum, s) => sum + s.durationMinutes, 0))
-      : currentBlueprint.sections[0]!.durationMinutes
-    sectionEndsAt.value = Date.now() + totalMinutes * 60_000
+          ? currentBlueprint.totalDurationMinutes * 60
+          : currentBlueprint.sections.reduce((sum, section) => sum + sectionSeconds(section), 0))
+      : sectionSeconds(currentBlueprint.sections[0]!)
+    sectionEndsAt.value = Date.now() + totalSeconds * 1_000
     result.value = null
     grading.value = false
     gradeFailed.value = false
@@ -455,7 +460,7 @@ export function useTryoutSession(
     const nextSection = currentBlueprint.sections[nextIndex]
     if (!nextSection) return
     currentIndex.value = sectionOffsets.value[nextIndex] ?? currentIndex.value
-    sectionEndsAt.value = Date.now() + nextSection.durationMinutes * 60_000
+    sectionEndsAt.value = Date.now() + sectionSeconds(nextSection) * 1_000
     phase.value = 'running'
     persist()
   }

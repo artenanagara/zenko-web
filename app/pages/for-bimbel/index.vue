@@ -22,10 +22,10 @@ definePageMeta({ path: '/untuk-bimbel' })
 useSeoMeta({
   title: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   description:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
   ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
   ogDescription:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa, dengan uji coba 14 hari untuk 50 siswa.',
+    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel',
   twitterCard: 'summary_large_image',
@@ -68,24 +68,24 @@ const benefits = [
 /** Empat langkah dari pengajuan sampai siswa pertama masuk. */
 const steps = [
   {
-    title: 'Ajukan bimbelmu',
+    title: 'Daftarkan bimbelmu',
     description:
       'Isi formulir singkat: nama bimbel, kontak pengelola, dan perkiraan jumlah siswa.',
   },
   {
-    title: 'Tim Zenko meninjau',
+    title: 'Ruang bimbel langsung jadi',
     description:
-      'Kami memeriksa data bimbelmu, lalu mengabari hasilnya lewat WhatsApp atau email.',
-  },
-  {
-    title: 'Uji coba 14 hari',
-    description:
-      'Ruang bimbel langsung aktif untuk 50 siswa. Tanpa kartu kredit dan tanpa tagihan di muka.',
+      'Tidak ada antrean persetujuan. Begitu formulirnya terkirim, dashboard bimbelmu sudah bisa dibuka.',
   },
   {
     title: 'Undang siswamu',
     description:
       'Bagikan kode bergabung ke siswa, lalu aktifkan permintaan yang masuk dari dashboard.',
+  },
+  {
+    title: 'Pilih kelas langganan',
+    description:
+      'Uji coba 7 hari untuk 25 siswa berjalan lebih dulu. Perpanjang dengan kelas dan kuota kursi yang kamu tentukan sendiri.',
   },
 ] as const
 
@@ -100,7 +100,7 @@ const faqs = [
   {
     question: 'Berapa biaya berlangganan Zenko untuk bimbel?',
     answer:
-      'Ada tiga tingkat: Langganan Dasar Rp75.000 per bulan sudah termasuk 25 kursi siswa, Langganan Pro Rp135.000 untuk 50 kursi, dan Langganan Institusi Rp375.000 untuk 150 kursi. Siswa di atas kursi yang sudah termasuk ditagih Rp3.000 per siswa per bulan di semua tingkat, dengan kelipatan kuota 5 kursi. Tidak ada biaya pendaftaran, dan satu tagihan bisa dibuat untuk maksimal 12 bulan sekaligus.',
+      'Ada tiga tingkat: Kelas Dasar Rp75.000 per bulan sudah termasuk 25 kursi siswa, Kelas Pro Rp135.000 untuk 50 kursi, dan Kelas Institusi Rp375.000 untuk 150 kursi. Siswa di atas kursi yang sudah termasuk ditagih Rp3.000 per siswa per bulan di semua tingkat, dengan kelipatan kuota 5 kursi. Tidak ada biaya pendaftaran, dan satu tagihan bisa dibuat untuk maksimal 12 bulan sekaligus.',
   },
   {
     question: 'Apa untungnya membayar tahunan?',
@@ -110,7 +110,7 @@ const faqs = [
   {
     question: 'Apakah ada masa uji coba?',
     answer:
-      'Ada. Begitu pengajuanmu disetujui, bimbelmu mendapat 14 hari uji coba dengan kemampuan Langganan Pro untuk 50 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan angkatan yang sebenarnya.',
+      'Ada. Begitu formulirnya terkirim, bimbelmu langsung mendapat 7 hari uji coba dengan kemampuan Kelas Pro untuk 25 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan satu rombel yang sebenarnya.',
   },
   {
     question: 'Bagaimana cara membayar tagihannya?',
@@ -135,14 +135,18 @@ const faqs = [
   {
     question: 'Berapa pengajar yang bisa saya libatkan?',
     answer:
-      'Tergantung tingkat langganannya: Langganan Dasar sampai 3 pengajar, Langganan Pro sampai 10, dan Langganan Institusi tanpa batas. Pengajar dan admin tidak pernah dihitung sebagai kursi berlangganan — yang dihitung hanya siswa.',
+      'Tergantung tingkat langganannya: Kelas Dasar sampai 3 pengajar, Kelas Pro sampai 10, dan Kelas Institusi tanpa batas. Pengajar dan admin tidak pernah dihitung sebagai kursi berlangganan — yang dihitung hanya siswa.',
   },
 ] as const
 
-// Satu observer per section; tiap kartu lalu menjalankan --cycle sendiri.
-const { target: benefitRef, ready: benefitReady, isInView: benefitInView } = useInView(0.15)
+// Satu observer untuk section "Cara kerja"; tiap kartu lalu menjalankan
+// --cycle sendiri.
+//
+// Section "Manfaat" sengaja tidak punya observer. Empat kartunya berisi
+// kalimat yang menjelaskan produk, bukan yang memamerkannya, dan memunculkan
+// mereka satu per satu membuat orang yang menggulung cepat membaca kartu yang
+// masih setengah tampil — biaya yang tidak dibayar oleh apa pun.
 const { target: stepRef, ready: stepReady, isInView: stepInView } = useInView(0.2)
-void benefitRef
 void stepRef
 </script>
 
@@ -160,7 +164,7 @@ void stepRef
             class="mb-5 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-2 pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
           >
             <span class="h-2 w-2 rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
-            Uji coba 14 hari untuk 50 siswa
+            Uji coba 7 hari untuk 25 siswa
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
@@ -185,12 +189,7 @@ void stepRef
     <!-- ==================================================================
          2. Manfaat
          ================================================================== -->
-    <section
-      ref="benefitRef"
-      class="py-18 md:py-22"
-      :class="[benefitReady && 'anim-ready', benefitInView && 'is-inview']"
-      aria-labelledby="manfaat-bimbel-heading"
-    >
+    <section class="py-18 md:py-22" aria-labelledby="manfaat-bimbel-heading">
       <div class="container-page">
         <div class="mx-auto mb-11 max-w-160 text-center">
           <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
@@ -207,10 +206,9 @@ void stepRef
 
         <div class="mx-auto grid max-w-300 grid-cols-1 gap-5 rounded-4xl bg-surface-alt p-4 md:grid-cols-2 md:p-6">
           <article
-            v-for="(benefit, index) in benefits"
+            v-for="benefit in benefits"
             :key="benefit.title"
-            class="anim-item flex flex-col rounded-[26px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
-            :style="{ '--delay': `${index * 110}ms` }"
+            class="flex flex-col rounded-[26px] border border-hairline bg-surface p-6 shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift md:p-8"
           >
             <span
               class="inline-flex h-12 w-12 items-center justify-center rounded-[14px] bg-linear-to-b from-primary-light to-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_14px_rgba(47,111,235,0.22)]"
@@ -341,11 +339,11 @@ void stepRef
       <div class="container-page">
         <div class="mx-auto max-w-160 text-center">
           <h2 id="cta-bimbel-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Mulai dari <span class="text-accent">uji coba 14 hari</span>
+            Mulai dari <span class="text-accent">uji coba 7 hari</span>
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
-            Ajukan bimbelmu hari ini. Setelah disetujui, ruang bimbel langsung
-            aktif untuk 50 siswa tanpa biaya.
+            Daftarkan bimbelmu hari ini. Tanpa menunggu persetujuan — ruang
+            bimbel langsung aktif untuk 25 siswa tanpa biaya.
           </p>
           <AppButton :to="REGISTER_PATH" size="lg" class="mt-8">Daftarkan bimbel</AppButton>
           <p class="mt-4 text-[0.86rem] text-muted">

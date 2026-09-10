@@ -1,5 +1,96 @@
 # Changelog
 
+## [0.19.2](https://github.com/artenanagara/zenko-web/compare/v0.19.1...v0.19.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* **wizard:** pertahankan bagian yang dipilih dialog identitas, dan perbaiki E2E katalog ([66ad022](https://github.com/artenanagara/zenko-web/commit/66ad0226bda6372f55e83a36c0c8e7c90648b064))
+* **wizard:** pertahankan bagian yang dipilih dialog identitas, dan perbaiki E2E katalog ([15bfddf](https://github.com/artenanagara/zenko-web/commit/15bfddfe96d9cc9e27934cab3273fadcf2970b17))
+
+## [0.19.1](https://github.com/artenanagara/zenko-web/compare/v0.19.0...v0.19.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **tryout:** nilai di server, dan wajibkan referensi transfer pencairan ([76e8da0](https://github.com/artenanagara/zenko-web/commit/76e8da0ae44d080a40759f57f69b66730913f4b0))
+* **tryout:** nilai di server, dan wajibkan referensi transfer pencairan ([754561a](https://github.com/artenanagara/zenko-web/commit/754561ae09f4bdb632f571972c5ae2c4fe96d55e))
+
+## [0.19.0](https://github.com/artenanagara/zenko-web/compare/v0.18.0...v0.19.0) (2026-09-09)
+
+
+### Features
+
+* wizard paket lewat dialog, katalog server-side, dan perapian copy autentikasi ([8dbd171](https://github.com/artenanagara/zenko-web/commit/8dbd171aa135c5d1ef608865544a349c76741e5f))
+
+## [0.18.0](https://github.com/artenanagara/zenko-web/compare/v0.17.0...v0.18.0) (2026-09-08)
+
+
+### Features
+
+* **admin:** satu antrean verifikasi untuk pembelian dan langganan ([4d0a1df](https://github.com/artenanagara/zenko-web/commit/4d0a1df8347aaf82b35f2f02241159a40e056249))
+* bimbel workspaces, DOKU checkout, and a reworked About page ([7002925](https://github.com/artenanagara/zenko-web/commit/7002925f96ad6c5256ad7007d891f9fc40a7306c))
+* **bimbel:** context switcher, and one job per URL ([b674d9c](https://github.com/artenanagara/zenko-web/commit/b674d9cd48c164afe9dd0280580d9efe1f71bac3))
+* **bimbel:** converge the dashboard on the design system, add the public landing ([6812697](https://github.com/artenanagara/zenko-web/commit/681269705d3fbb7ea1aba3b1159e9d39456d623e))
+* **bimbel:** ganti penugasan dengan akses lewat keanggotaan ([dd0701b](https://github.com/artenanagara/zenko-web/commit/dd0701b68ee56b37c0e68075a81ecd1d2a2a43e5))
+* **bimbel:** kepemilikan paket jadi pilihan, penulisnya berhenti dihilangkan ([e882e5b](https://github.com/artenanagara/zenko-web/commit/e882e5baa61e70c3c374a405842c4772503bcc0c))
+* **bimbel:** tingkat langganan, diskon tahunan nyata, dan jalur pembayaran ([a6faf2f](https://github.com/artenanagara/zenko-web/commit/a6faf2f70142b45fa593c6167c05cbb507d7474d))
+* **checkout:** DOKU tampil sebagai "Segera", DANA disebut sebagai penerbit ([ccc4523](https://github.com/artenanagara/zenko-web/commit/ccc45237644e965fef3c45dbf9eb05d1b2fcc5a8))
+* **payment:** pilihan metode di checkout, konfirmasi tanpa bukti, DOKU ([86a014a](https://github.com/artenanagara/zenko-web/commit/86a014a317e25f89c146ab7f966beaefae1f01f8))
+
+
+### Bug Fixes
+
+* **bimbel:** stop selling the assignment feature that no longer exists ([c78b6eb](https://github.com/artenanagara/zenko-web/commit/c78b6eb470ff45d4ed4acfdf3c1eff32137dd9a0))
+* **checkout:** jangan tampilkan "Harga paket Rp0" di atas total non-nol ([e4a0764](https://github.com/artenanagara/zenko-web/commit/e4a0764e8a7020ebf7bccd91c5896817155ab5aa))
+* **checkout:** pilih metode pembayaran tidak pernah tampil ([1c0a9eb](https://github.com/artenanagara/zenko-web/commit/1c0a9eb0a6e1b70ba82d89f969a7a317ab8470f6))
+* **invoice:** "Subtotal Rp0" di atas total non-nol ([07352da](https://github.com/artenanagara/zenko-web/commit/07352da2f08f6b79edea3799624b8a84acbbc78c))
+* **seo:** the brand is the seller, the author is the writer ([d30d62f](https://github.com/artenanagara/zenko-web/commit/d30d62f7180fc2ebf51e9f69c3c852d6289514fd))
+* **ui:** selesaikan migrasi modifier important ke sintaks Tailwind v4 ([a92250b](https://github.com/artenanagara/zenko-web/commit/a92250b506d4a963c4f2fe5ed4fc992257c3898b))
+
+## [0.17.0](https://github.com/artenanagara/zenko-web/compare/v0.16.0...v0.17.0) (2026-09-03)
+
+
+### Features
+
+* **editor:** improve LaTeX modal — percent symbol, live preview, display math ([1006e0c](https://github.com/artenanagara/zenko-web/commit/1006e0c982308260270e8bfe77d17161da8ecd5b))
+* **editor:** LaTeX modal — percent symbol, live preview, display math ([be8137e](https://github.com/artenanagara/zenko-web/commit/be8137e315e04eb22e26e1ac7bfc19cd8b3fb1f5))
+
+
+### Bug Fixes
+
+* **editor:** flatten the LaTeX symbol palette into one grid ([5644c63](https://github.com/artenanagara/zenko-web/commit/5644c63e5dfda20b64053e89699e08d961005230))
+* **editor:** flatten the LaTeX symbol palette into one label-less grid ([a5d3709](https://github.com/artenanagara/zenko-web/commit/a5d3709c3dec7beda45deada674118cbaf5a0ae5))
+
+## [0.16.0](https://github.com/artenanagara/zenko-web/compare/v0.15.3...v0.16.0) (2026-09-02)
+
+
+### Features
+
+* **catalog:** add a fallback package cover, and drop the thumbnail URL input ([c2599b5](https://github.com/artenanagara/zenko-web/commit/c2599b5d99d7ec830913f8591e968b2e4dad74bf))
+* **dashboard:** replace the stacked revenue bars with one trend line ([56a16d2](https://github.com/artenanagara/zenko-web/commit/56a16d29f6e265f04db98f37b8065bf954991a17))
+* **tutor:** make CSV import an action, and pin the question grid ([4e2d0a3](https://github.com/artenanagara/zenko-web/commit/4e2d0a3f3a36075b5deb7fe7d401a74d7c307402))
+* **tutor:** move the wizard's explanations into a contextual info column ([fd798bf](https://github.com/artenanagara/zenko-web/commit/fd798bf847d69207cda6f3c710e9f214643d503a))
+* **tutor:** rework the dashboard chart, wizard steps, question import, covers and toasts ([67d394a](https://github.com/artenanagara/zenko-web/commit/67d394ae66001a7252c0c669bf7a2f16d4c2ad25))
+
+
+### Bug Fixes
+
+* **account:** move "Edit profil" into the panel header ([f371645](https://github.com/artenanagara/zenko-web/commit/f371645540bb9e14de52d3536c87f6854af3d1fb))
+* **dev:** let the CSP reach zenko-api on its own origin ([05a230a](https://github.com/artenanagara/zenko-web/commit/05a230a5ec1994b0c606e0baf9588db4f5ee122c))
+* **dev:** let the CSP reach zenko-api on its own origin ([945eee1](https://github.com/artenanagara/zenko-web/commit/945eee16028dd5f5b9f85d7ceb450babea8fb617))
+* **tryout:** tell zenko-api when a sitting actually starts ([b563ff2](https://github.com/artenanagara/zenko-web/commit/b563ff2e9ad79814e14bb28a7053ae66ff457a72))
+* **tryout:** tell zenko-api when a sitting actually starts ([613407c](https://github.com/artenanagara/zenko-web/commit/613407c03dc90cec86b08baf7c5d6d05d28576e1))
+* **tutor:** show "Tipe soal" only when the kind can be changed ([2dd7f72](https://github.com/artenanagara/zenko-web/commit/2dd7f7221cd62a681764559a74e1cffce4fc3b19))
+* **ui:** anchor toasts to the top-right corner ([c3bf3d3](https://github.com/artenanagara/zenko-web/commit/c3bf3d31da24e926fd9adff92ef8934f5acd420f))
+
+## [0.15.3](https://github.com/artenanagara/zenko-web/compare/v0.15.2...v0.15.3) (2026-08-31)
+
+
+### Bug Fixes
+
+* **ui:** align tutor status banner ([f6d5ee5](https://github.com/artenanagara/zenko-web/commit/f6d5ee5e7a2f7cc87b54463abdbbb8161856b68f))
+
 ## [0.15.2](https://github.com/artenanagara/zenko-web/compare/v0.15.1...v0.15.2) (2026-08-31)
 
 

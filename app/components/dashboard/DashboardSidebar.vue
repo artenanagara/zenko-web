@@ -15,6 +15,10 @@ import type { DashboardNav, DashboardNavChild, DashboardNavItem } from '~/compos
  * — the children own the routes) over a nested list. Children carry no icon
  * by construction; they are indented so their labels line up under the
  * parent's.
+ *
+ * `item.section` is the other, flatter kind of grouping: a heading printed
+ * over a run of entries that share it. It only labels tingkatnya — every
+ * entry keeps its own route and its own row.
  */
 const props = withDefaults(defineProps<{
   nav: DashboardNav
@@ -47,6 +51,31 @@ function rowBadge(item: DashboardNavItem): number {
 const emit = defineEmits<{ toggle: [], close: [] }>()
 
 const route = useRoute()
+
+/* --------------------------------------------------------------------------
+ * Kelompok bertingkat
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Daftar dipecah menjadi kelompok menurut `item.section`, mengikuti urutan
+ * aslinya — jadi nav yang menentukan tingkatnya, bukan komponen ini.
+ *
+ * Entri berurutan dengan section yang sama masuk ke kelompok yang sama; entri
+ * tanpa section membentuk kelompok tanpa judul. Sengaja tidak dikumpulkan
+ * berdasarkan nama (mis. semua 'Keuangan' ditarik jadi satu di mana pun
+ * letaknya): itu akan diam-diam menyusun ulang nav, dan urutan di
+ * `useDashboardNav` justru bagian yang harus bisa dibaca apa adanya.
+ */
+const sections = computed<{ label: string, items: DashboardNavItem[] }[]>(() => {
+  const groups: { label: string, items: DashboardNavItem[] }[] = []
+  for (const item of props.nav.items) {
+    const label = item.section ?? ''
+    const last = groups[groups.length - 1]
+    if (last && last.label === label) last.items.push(item)
+    else groups.push({ label, items: [item] })
+  }
+  return groups
+})
 
 /* --------------------------------------------------------------------------
  * Sub-menu expansion
@@ -119,6 +148,9 @@ function itemClass(active = false, look: { child?: boolean, within?: boolean } =
 
 // One id per component instance (the rail and the drawer both render this
 // tree), suffixed per group so `aria-controls` never collides.
+/** Sakelar ciutkan: ikon saja, ukuran sentuh tetap 40px di kedua keadaan. */
+const TOGGLE_CLASS = 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-muted transition-colors duration-200 ease-smooth hover:bg-surface-alt hover:text-ink focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none'
+
 const uid = useId()
 function submenuId(item: DashboardNavItem): string {
   return `${uid}-submenu-${item.to.replace(/[^a-z0-9]+/gi, '-')}`
@@ -132,10 +164,29 @@ function submenuId(item: DashboardNavItem): string {
       class="flex h-16 shrink-0 items-center border-b border-hairline"
       :class="collapsed ? 'justify-center' : 'justify-between pr-3 pl-5'"
     >
-      <NuxtLink v-if="collapsed" to="/" aria-label="Zenko — beranda">
-        <BrandIcon class="h-8 w-8 shrink-0 drop-shadow-[0_6px_14px_rgba(47,111,235,0.3)]" />
+      <!-- Logo adalah jalan keluar ke situs publik, di kedua keadaan. Dulu
+           hanya versi ciutnya yang menautkan, dan jalan keluar sebenarnya ada
+           sebagai baris "Kembali ke situs" di kaki sidebar — padahal logo
+           produk yang membawa pulang adalah hal pertama yang dicoba orang. -->
+      <NuxtLink to="/" aria-label="Zenko — kembali ke situs" :title="collapsed ? 'Kembali ke situs' : undefined">
+        <BrandIcon v-if="collapsed" class="h-8 w-8 shrink-0 drop-shadow-[0_6px_14px_rgba(47,111,235,0.3)]" />
+        <BrandMark v-else img-class="h-9 w-auto object-contain" />
       </NuxtLink>
-      <BrandMark v-else img-class="h-9 w-auto object-contain" aria-label="Zenko — beranda" />
+
+      <!-- Ciutkan/bentangkan, di ujung kanan sebaris dengan logo. Ikon saja:
+           tempatnya sudah menjelaskan apa yang diciutkan, dan sebagai baris
+           bertulisan di kaki sidebar ia dulu terbaca seperti tujuan navigasi
+           di antara menu-menu yang lain, bukan sebagai sakelar tampilan. -->
+      <button
+        v-if="variant === 'rail' && !collapsed"
+        type="button"
+        :class="TOGGLE_CLASS"
+        :aria-expanded="true"
+        aria-label="Ciutkan sidebar"
+        @click="emit('toggle')"
+      >
+        <IconSidebar class="h-[1.1rem] w-[1.1rem]" />
+      </button>
 
       <button
         v-if="variant === 'drawer'"
@@ -145,6 +196,23 @@ function submenuId(item: DashboardNavItem): string {
         @click="emit('close')"
       >
         <IconClose class="h-5 w-5" />
+      </button>
+    </div>
+
+    <!-- Rail yang sudah diciutkan hanya selebar 4.5rem, tidak cukup untuk
+         logo dan sakelar berdampingan — jadi di sana sakelarnya turun tepat
+         di bawah logo, tetap sebagai hal pertama yang terlihat dan satu-satunya
+         jalan membentangkannya kembali. -->
+    <div v-if="variant === 'rail' && collapsed" class="flex shrink-0 justify-center border-b border-hairline py-2">
+      <button
+        type="button"
+        :class="TOGGLE_CLASS"
+        :aria-expanded="false"
+        aria-label="Bentangkan sidebar"
+        title="Bentangkan sidebar"
+        @click="emit('toggle')"
+      >
+        <IconSidebar class="h-[1.1rem] w-[1.1rem]" />
       </button>
     </div>
 
@@ -169,89 +237,76 @@ function submenuId(item: DashboardNavItem): string {
           <DashboardContextSwitcher :collapsed="collapsed" />
         </div>
 
-        <ul class="grid gap-1">
-          <li v-for="item in nav.items" :key="item.to">
-            <!-- Group: a button over a nested list. Only when there is room for
-                 the list — the icon-only rail falls through to the link below. -->
-            <template v-if="hasChildren(item) && !collapsed">
-              <button
-                type="button"
-                class="w-full"
-                :class="itemClass(false, { within: isGroupActive(item) })"
-                :aria-expanded="isExpanded(item)"
-                :aria-controls="submenuId(item)"
-                @click="toggleGroup(item)"
+        <template v-for="(section, index) in sections" :key="section.label || `plain-${index}`">
+          <!-- Judul kelompok. Pada rail yang diciutkan tidak ada ruang untuk
+               teks, jadi pemisahnya jadi garis: tingkatnya tetap terbaca tanpa
+               ikon yang tiba-tiba kehilangan konteks. -->
+          <p
+            v-if="section.label && !collapsed"
+            class="px-3.5 pt-5 pb-1.5 text-[0.68rem] font-bold tracking-[0.1em] text-faint uppercase"
+          >
+            {{ section.label }}
+          </p>
+          <hr v-else-if="section.label" class="mx-3 my-2.5 border-t border-hairline">
+
+          <ul class="grid gap-1" :aria-label="section.label || undefined">
+            <li v-for="item in section.items" :key="item.to">
+              <!-- Group: a button over a nested list. Only when there is room for
+                   the list — the icon-only rail falls through to the link below. -->
+              <template v-if="hasChildren(item) && !collapsed">
+                <button
+                  type="button"
+                  class="w-full"
+                  :class="itemClass(false, { within: isGroupActive(item) })"
+                  :aria-expanded="isExpanded(item)"
+                  :aria-controls="submenuId(item)"
+                  @click="toggleGroup(item)"
+                >
+                  <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
+                  <span class="truncate">{{ item.label }}</span>
+
+                  <span class="ml-auto flex shrink-0 items-center gap-1.5">
+                    <!-- Aggregate only while collapsed: an open sub-menu already
+                         shows each child's number, and showing both double-counts. -->
+                    <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
+                    <IconChevron
+                      class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
+                      :class="isExpanded(item) ? '' : '-rotate-90'"
+                    />
+                  </span>
+                </button>
+
+                <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
+                  <li v-for="child in item.children ?? []" :key="child.to">
+                    <NuxtLink
+                      :to="child.to"
+                      :class="itemClass(isDashboardItemActive(child, route), { child: true })"
+                      :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
+                    >
+                      <span class="truncate">{{ child.label }}</span>
+                      <DashboardNavBadge :count="badgeFor(child)" />
+                    </NuxtLink>
+                  </li>
+                </ul>
+              </template>
+
+              <!-- Leaf — and the icon-only rail's stand-in for a group, which
+                   points at its first child since a sub-menu cannot render here. -->
+              <NuxtLink
+                v-else
+                :to="item.children?.[0]?.to ?? item.to"
+                :class="itemClass(isDashboardItemActive(item, route))"
+                :title="collapsed ? item.label : undefined"
+                :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
               >
                 <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
-                <span class="truncate">{{ item.label }}</span>
-
-                <span class="ml-auto flex shrink-0 items-center gap-1.5">
-                  <!-- Aggregate only while collapsed: an open sub-menu already
-                       shows each child's number, and showing both double-counts. -->
-                  <DashboardNavBadge v-if="!isExpanded(item)" :count="groupBadge(item)" />
-                  <IconChevron
-                    class="h-4 w-4 shrink-0 transition-transform duration-200 ease-smooth"
-                    :class="isExpanded(item) ? '' : '-rotate-90'"
-                  />
-                </span>
-              </button>
-
-              <ul v-show="isExpanded(item)" :id="submenuId(item)" class="mt-1 grid gap-1">
-                <li v-for="child in item.children ?? []" :key="child.to">
-                  <NuxtLink
-                    :to="child.to"
-                    :class="itemClass(isDashboardItemActive(child, route), { child: true })"
-                    :aria-current="isDashboardItemActive(child, route) ? 'page' : undefined"
-                  >
-                    <span class="truncate">{{ child.label }}</span>
-                    <DashboardNavBadge :count="badgeFor(child)" />
-                  </NuxtLink>
-                </li>
-              </ul>
-            </template>
-
-            <!-- Leaf — and the icon-only rail's stand-in for a group, which
-                 points at its first child since a sub-menu cannot render here. -->
-            <NuxtLink
-              v-else
-              :to="item.children?.[0]?.to ?? item.to"
-              :class="itemClass(isDashboardItemActive(item, route))"
-              :title="collapsed ? item.label : undefined"
-              :aria-current="isDashboardItemActive(item, route) ? 'page' : undefined"
-            >
-              <component :is="item.icon" class="h-[1.1rem] w-[1.1rem] shrink-0" />
-              <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
-              <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
-            </NuxtLink>
-          </li>
-        </ul>
+                <span :class="collapsed ? 'sr-only' : 'truncate'">{{ item.label }}</span>
+                <DashboardNavBadge :count="rowBadge(item)" :dot="collapsed" />
+              </NuxtLink>
+            </li>
+          </ul>
+        </template>
       </ClientOnly>
     </nav>
-
-    <!-- Pinned footer: the way back out, plus the collapse toggle on desktop. -->
-    <div class="shrink-0 border-t border-hairline p-3">
-      <NuxtLink
-        to="/"
-        :class="itemClass()"
-        :title="collapsed ? 'Kembali ke situs' : undefined"
-      >
-        <IconArrowLeft class="h-[1.1rem] w-[1.1rem] shrink-0" />
-        <span :class="collapsed ? 'sr-only' : 'truncate'">Kembali ke situs</span>
-      </NuxtLink>
-
-      <button
-        v-if="variant === 'rail'"
-        type="button"
-        class="mt-1 w-full"
-        :class="itemClass()"
-        :aria-expanded="!collapsed"
-        :aria-label="collapsed ? 'Bentangkan sidebar' : 'Ciutkan sidebar'"
-        :title="collapsed ? 'Bentangkan sidebar' : undefined"
-        @click="emit('toggle')"
-      >
-        <IconSidebar class="h-[1.1rem] w-[1.1rem] shrink-0" />
-        <span :class="collapsed ? 'sr-only' : 'truncate'">Ciutkan sidebar</span>
-      </button>
-    </div>
   </div>
 </template>

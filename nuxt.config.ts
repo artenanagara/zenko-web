@@ -98,6 +98,13 @@ export default defineNuxtConfig({
     { path: designSystemComponentsDir('primitives'), pathPrefix: false },
     { path: '~/components', pathPrefix: false },
   ],
+  // pathPrefix: false pada ketiga entri di atas berarti komponen terdaftar
+  // dengan nama filenya saja: app/components/checkout/PaymentMethodPicker.vue
+  // adalah <PaymentMethodPicker>, bukan <CheckoutPaymentMethodPicker>. Nama
+  // berprefix direktori tidak menggagalkan build — Vite meninggalkannya
+  // sebagai resolveComponent() runtime, yang tidak menemukan apa pun lalu
+  // merender kosong tanpa suara. Sekali ini menyembunyikan pilihan metode
+  // pembayaran di checkout selama satu rilis penuh.
 
   // @artenanagara/zenko-design-system ships raw .vue/.ts source (no pre-build step) since
   // both apps run the same Nuxt/Vue major versions — transpile so Nitro's

@@ -18,17 +18,20 @@ interface MenuItem {
 /**
  * Pemilih konteks di puncak sidebar dashboard.
  *
- * Sebelum ini, satu-satunya pintu ke `/dashboard/bimbel/*` di seluruh aplikasi
- * adalah tombol pada kartu keanggotaan di halaman "Bimbel saya" — dan pemilik
- * bimbel yang role globalnya masih `student` tidak pernah melihat entri
- * Dashboard di menu profil sama sekali, karena `homePathFor` hanya mengenal
- * student, tutor, dan admin. Keanggotaan bimbel adalah dimensi terpisah dari
- * role global, jadi ia butuh pemilihnya sendiri.
+ * Keanggotaan bimbel adalah dimensi terpisah dari role global — `homePathFor`
+ * hanya mengenal student, tutor, dan admin — jadi ia butuh pemilihnya sendiri.
+ *
+ * Di sinilah daftar ruang kerja hidup, dan hanya di sini. Menu profil membawa
+ * satu entri saja sebagai pintu masuknya, dan halaman "Bimbel saya" tidak lagi
+ * memuat daftarnya sama sekali: daftar yang sama di dua tempat berarti yang
+ * satu tidak pernah tahu konteks mana yang sedang dibuka, dan tetap
+ * memperlihatkan semuanya seolah tidak ada yang sedang dipilih.
  *
  * Yang muncul di sini hanyalah konteks yang benar-benar punya ruang kerja.
- * Keanggotaan sebagai siswa tidak: tujuannya `/akun/paket-bimbel`, bukan
- * dashboard, dan `useDashboardNav` memang mengembalikan nav kosong untuknya.
- * Menampilkannya di sini akan menjanjikan ruang yang tidak ada.
+ * Keanggotaan sebagai siswa tidak: tujuannya `/akun/bimbel` — tempat paket
+ * bimbelnya hidup — bukan dashboard, dan `useDashboardNav` memang mengembalikan
+ * nav kosong untuknya. Menampilkannya di sini akan menjanjikan ruang yang tidak
+ * ada.
  */
 const props = defineProps<{ collapsed?: boolean }>()
 

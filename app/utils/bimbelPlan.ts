@@ -3,11 +3,17 @@ import type { BimbelPlan } from '#shared/types/bimbel'
 /**
  * Penamaan tingkat langganan di seluruh UI.
  *
- * Selalu ditulis lengkap — "Langganan Dasar", bukan "Dasar" apalagi "Paket
- * Dasar". Di Zenko "paket" sudah berarti produk tryout yang dijual, jadi
- * memakainya untuk tingkat langganan membuat pengelola bimbel tidak bisa
- * membedakan soal yang ia jual dari langganan yang ia bayar
+ * Selalu ditulis lengkap — "Kelas Dasar", bukan "Dasar" saja. Kata depannya
+ * tidak boleh "Paket": di Zenko "paket" sudah berarti produk tryout yang
+ * dijual, jadi "Paket Dasar" membuat pengelola bimbel tidak bisa membedakan
+ * soal yang ia jual dari langganan yang ia bayar
  * (docs/konsep-bimbel-agency.md §1.2).
+ *
+ * CATATAN: "Kelas" juga sudah dipakai di dalam dashboard bimbel untuk rombel —
+ * ada menunya sendiri di sidebar. Jadi tabrakan yang sama seperti "Paket" masih
+ * mungkin terjadi di sini, hanya dengan kata yang berbeda; kalau suatu saat ada
+ * yang bingung antara "Kelas Pro" (tingkat langganan) dan "Kelas Intensif A"
+ * (rombel siswa), inilah tempat memperbaikinya.
  */
 const PLAN_NAMES: Record<BimbelPlan, string> = {
   dasar: 'Dasar',
@@ -21,7 +27,7 @@ const PLAN_NAMES: Record<BimbelPlan, string> = {
  * tabel tetap menyebut tingkatnya alih-alih memperlihatkan slug.
  */
 export function bimbelPlanLabel(plan: BimbelPlan, name?: string): string {
-  return `Langganan ${name?.trim() || PLAN_NAMES[plan]}`
+  return `Kelas ${name?.trim() || PLAN_NAMES[plan]}`
 }
 
 /**

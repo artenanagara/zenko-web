@@ -299,11 +299,11 @@ const quickLinks = [
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="mailto:support@zenkoedu.id"
+              href="mailto:halo@zenkoedu.id"
               class="inline-flex min-h-13 items-center gap-2 rounded-xs bg-surface px-8 font-bold text-primary shadow-[0_8px_20px_rgba(12,40,100,0.18)] transition-[transform] duration-200 ease-smooth hover:-translate-y-px"
             >
               <IconMail class="h-4.5 w-4.5" aria-hidden="true" />
-              support@zenkoedu.id
+              halo@zenkoedu.id
             </a>
             <a
               href="tel:+6288227663468"
@@ -319,7 +319,7 @@ const quickLinks = [
           <p class="mx-auto mt-8 max-w-[60ch] border-t border-white/15 pt-6 text-[0.88rem] leading-[1.7] text-white/70">
             Zenko diselenggarakan oleh <strong class="font-semibold text-white">PT Zenko Edukasi Digital</strong>,
             Klaten, Jawa Tengah, Indonesia. Pembayaran diproses melalui QRIS oleh
-            <strong class="font-semibold text-white">Duitku</strong>. Zenko tidak pernah
+            <strong class="font-semibold text-white">DOKU</strong>. Zenko tidak pernah
             meminta PIN, OTP, atau kata sandi lewat email maupun telepon.
           </p>
         </div>

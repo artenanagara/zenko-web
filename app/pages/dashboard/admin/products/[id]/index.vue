@@ -82,9 +82,15 @@ const hasDiscount = computed(() =>
 const modeSummary = computed(() => {
   const product = detail.value
   if (!product || product.type !== 'single') return ''
-  if (product.mode === 'mini_tryout') {
-    return `${PRODUCT_MODE_LABEL.mini_tryout}: ${product.sections?.[0]?.title ?? 'Belum ditentukan'}`
+  const section = product.sections?.[0]?.title ?? 'Belum ditentukan'
+  if (product.mode === 'latihan') {
+    const practice = product.schoolPractice
+    return practice
+      ? `${PRODUCT_MODE_LABEL.latihan}: ${practice.level} kelas ${practice.grade} · ${section}`
+        + (practice.topic ? ` · ${practice.topic}` : '')
+      : PRODUCT_MODE_LABEL.latihan
   }
+  if (product.mode === 'mini_tryout') return `${PRODUCT_MODE_LABEL.mini_tryout}: ${section}`
   return PRODUCT_MODE_LABEL.simulasi
 })
 
