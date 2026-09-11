@@ -24,9 +24,12 @@ import type { TableControlOption } from '~/composables/useTableControls'
  * sini hanyalah pembayar yang bilang "saya sudah transfer" — sinyal untuk
  * memeriksa, bukan buktinya sendiri.
  *
- * Berbeda dari antrean lain yang berbentuk tabel, satu keputusan di sini
- * dibuat dengan membandingkan beberapa angka berdampingan. Jadi tiap baris
- * tampil sebagai kartu, bukan baris yang harus diklik dulu.
+ * Antreannya tabel, satu baris satu konfirmasi, dan dibuka pada "Semua":
+ * halaman yang kosong hanya karena tidak ada yang menunggu terbaca seperti
+ * belum ada konfirmasi sama sekali, padahal riwayat keputusannya justru yang
+ * admin cari saat pembeli bertanya. Jumlah yang masih perlu diperiksa selalu
+ * disebut di header — termasuk ketika nol, karena "nol" adalah jawaban yang
+ * ingin dibaca admin, bukan ketiadaan angka.
  */
 definePageMeta({
   layout: 'dashboard',
@@ -118,7 +121,7 @@ const {
     newest: (a, b) => b.createdAt - a.createdAt,
     'amount-desc': (a, b) => b.amountDue - a.amountDue,
   },
-  defaultFilter: 'queue',
+  defaultFilter: 'all',
   defaultSort: 'oldest',
 })
 
@@ -365,8 +368,11 @@ const zoomed = ref<VerificationItem | null>(null)
           berbeda.
         </p>
       </div>
-      <DashboardBadge v-if="queueCount > 0" tone="warning">
-        {{ queueCount }} perlu diperiksa
+      <!-- Selalu tampil, juga saat nol: admin membuka halaman ini untuk
+           menjawab "ada yang harus saya periksa?", dan badge yang hilang
+           bukan jawaban. -->
+      <DashboardBadge v-if="loaded" :tone="queueCount > 0 ? 'warning' : 'success'">
+        {{ queueCount > 0 ? `${queueCount} perlu diperiksa` : 'Tidak ada yang perlu diperiksa' }}
       </DashboardBadge>
     </header>
 
@@ -422,18 +428,13 @@ const zoomed = ref<VerificationItem | null>(null)
     </p>
 
     <p v-else-if="rows.length === 0" class="mt-10 text-center text-[0.92rem] text-muted">
-      {{ isActive ? 'Tidak ada konfirmasi yang cocok dengan filter ini.' : 'Belum ada konfirmasi pembayaran yang menunggu.' }}
+      {{ isActive ? 'Tidak ada konfirmasi yang cocok dengan filter ini.' : 'Belum ada konfirmasi pembayaran yang masuk.' }}
     </p>
 
-    <!-- Antrean sebagai tabel: satu baris satu konfirmasi.
-         Sebelumnya tiap konfirmasi adalah kartu setinggi ~340px dengan
-         pratinjau bukti 160px di dalamnya, jadi antrean sepuluh butuh
-         belasan layar untuk dilewati dan tidak ada dua baris pun yang
-         nominalnya bisa dibandingkan berdampingan. Padahal pekerjaannya
-         justru membandingkan: tagihan lawan yang diklaim, satu baris lawan
-         mutasi bank. Buktinya turun jadi tautan kecil yang membuka modal
-         perbesaran yang sudah ada — dibuka saat diperlukan, bukan dimuat
-         untuk semua baris sekaligus. -->
+    <!-- Antrean sebagai tabel: satu baris satu konfirmasi, supaya tagihan
+         lawan yang diklaim dan satu baris lawan mutasi bank bisa dibandingkan
+         berdampingan. Buktinya tautan kecil yang membuka modal perbesaran —
+         dibuka saat diperlukan, bukan dimuat untuk semua baris sekaligus. -->
     <DashboardTable
       v-else
       class="mt-6"
