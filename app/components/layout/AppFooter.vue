@@ -42,7 +42,6 @@ const columns: FooterColumn[] = [
     links: [
       { label: 'Tentang Kami', to: '/tentang' },
       { label: 'Cara Kerja', to: '/#cara-kerja' },
-      { label: 'Panduan TKA', to: '/tka' },
     ],
   },
   {
