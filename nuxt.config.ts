@@ -196,14 +196,14 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'id' },
-      title: 'Zenko — Marketplace Try Out',
+      title: 'Zenko — Belajar Lebih Terarah',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
           content:
-            'Zenko membantu kamu menemukan dan membeli paket try out SKD/CPNS, BUMN, SNBT, dan TKA dengan harga terjangkau.',
+            'Zenko membantu kamu menemukan latihan untuk SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan berbagai ujian lainnya.',
         },
       ],
       link: [

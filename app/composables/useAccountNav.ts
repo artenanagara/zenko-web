@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import IconLifebuoy from '~/components/icons/IconLifebuoy.vue'
 import IconGrid from '~/components/icons/IconGrid.vue'
 import IconHome from '~/components/icons/IconHome.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
@@ -29,6 +30,7 @@ export const ACCOUNT_NAV: AccountNavItem[] = [
   { label: 'Bimbel saya', to: '/akun/bimbel', icon: IconUsers },
   { label: 'Riwayat pembelian', to: '/akun/pembelian', icon: IconReceipt },
   { label: 'Akun saya', to: '/akun/profil', icon: IconUser },
+  { label: 'Pusat Bantuan', to: '/pusat-bantuan', icon: IconLifebuoy },
 ]
 
 /**

@@ -40,7 +40,7 @@ const categories: FaqCategory[] = [
       {
         question: 'Apa itu Zenko?',
         answer:
-          'Zenko adalah marketplace tryout untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Siswa membeli paket tryout dari berbagai tutor, lalu mengerjakannya langsung di sistem CBT (Computer Based Test) Zenko.',
+          'Zenko adalah tempat menemukan latihan untuk berbagai tujuan ujian, mulai dari SKD, PPPK, UTBK-SNBT, TKA, hingga rekrutmen BUMN. Paket dibuat oleh tutor atau bimbel, lalu dikerjakan langsung di sistem CBT Zenko.',
       },
       {
         question: 'Bagaimana cara kerja tryout CBT-nya?',
@@ -149,8 +149,8 @@ useHead({
             <span class="text-accent mt-1 block">tentang Zenko</span>
           </h1>
           <p class="mx-auto mt-4 max-w-140 text-[1.02rem] text-muted">
-            Jawaban singkat seputar cara kerja Zenko, pembayaran, akun, refund,
-            dan menjadi tutor. Tidak menemukan jawabannya di sini?
+            Jawaban singkat seputar latihan, akun, pembayaran, dan peran tutor.
+            Kalau yang kamu cari belum ada di sini,
             <NuxtLink to="/pusat-bantuan" class="font-semibold text-primary hover:underline">
               Kunjungi Pusat Bantuan
             </NuxtLink>.

@@ -407,6 +407,12 @@ async function submitChangeRequest() {
         title="Profil publik tutor"
         description="Ditampilkan di halaman paket dan katalogmu."
       >
+        <!-- Sejajar judul panel, bukan di dasar tampilan baca: satu aksi
+             untuk seluruh panel tempatnya di header panel. -->
+        <template v-if="!profileEditing && tutorProfile" #action>
+          <AppButton size="sm" variant="outline" @click="startEditingProfile">Edit profil</AppButton>
+        </template>
+
         <DashboardSkeleton v-if="tutorProfilePending && !tutorProfile" :count="4" label="Memuat profil..." />
 
         <!-- Tampilan baca: apa yang siswa lihat, tanpa kolom input. -->
@@ -453,10 +459,6 @@ async function submitChangeRequest() {
               <dd v-else class="text-muted">Belum ada tautan.</dd>
             </div>
           </dl>
-
-          <div>
-            <AppButton size="sm" variant="outline" @click="startEditingProfile">Edit profil</AppButton>
-          </div>
         </div>
 
         <form v-else class="grid gap-5" @submit.prevent="saveProfile">

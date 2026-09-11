@@ -5,10 +5,10 @@ definePageMeta({ path: '/paket' })
 useSeoMeta({
   title: 'Katalog Paket Tryout | Zenko',
   description:
-    'Jelajahi paket latihan tryout SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK) di Zenko. Beli per paket, akses langsung, tanpa langganan.',
+    'Temukan paket latihan SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan ujian lainnya. Pilih sesuai targetmu, beli per paket, lalu langsung mulai latihan.',
   ogTitle: 'Katalog Paket Tryout | Zenko',
   ogDescription:
-    'Jelajahi paket latihan tryout SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK) di Zenko. Beli per paket, akses langsung, tanpa langganan.',
+    'Temukan paket latihan SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan ujian lainnya. Pilih sesuai targetmu, beli per paket, lalu langsung mulai latihan.',
   ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/paket',
   twitterCard: 'summary_large_image',
@@ -118,7 +118,7 @@ const showFilters = ref(false)
           <div class="mb-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
             <h1 class="flex items-center gap-2.5 text-[1.1rem] font-bold tracking-[-0.03em]">
               <IconGrid class="h-5 w-5 text-primary" />
-              Semua paket
+              Temukan latihanmu
               <!-- The total across every page, not this page's length: a
                    number that read "24" on each of four pages would describe
                    nothing the reader is looking at. -->
@@ -164,7 +164,7 @@ const showFilters = ref(false)
               <div class="rounded-lg bg-surface-sunken px-6 py-16 text-center">
                 <p class="font-bold tracking-[-0.02em]">Paketnya belum ketemu</p>
                 <p class="mx-auto mt-2 max-w-90 text-[0.94rem] text-muted">
-                  Coba kata kunci lain atau kurangi filter yang aktif. Siapa tahu paket yang pas sedang bersembunyi.
+                  Coba kata kunci lain atau kurangi filter yang aktif. Paket yang kamu cari mungkin memakai nama berbeda.
                 </p>
                 <AppButton class="mt-6" @click="reset">Atur ulang filter</AppButton>
               </div>

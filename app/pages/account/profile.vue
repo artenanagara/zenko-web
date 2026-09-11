@@ -17,7 +17,7 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
-const { user, signOutAllDevices } = useAuth()
+const { user, signOutAllDevices, deleteAccount } = useAuth()
 const { confirm } = useConfirm()
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -339,6 +339,47 @@ async function onSubmit() {
  * seperti logout biasa: bersihkan state auth lalu tinggalkan halaman terkunci
  * ini menuju beranda, apa pun hasil panggilannya (kita sudah dianggap keluar).
  * ------------------------------------------------------------------------ */
+
+/* --------------------------------------------------------------------------
+ * Hapus akun — hanya siswa; tutor/admin diarahkan ke tim Zenko (server yang
+ * menolak, UI cuma tidak menawarkan). Dua rem: frasa "HAPUS AKUN" yang harus
+ * diketik persis, dan kata sandi bila akunnya punya. Akun Google-only tidak
+ * punya kata sandi, jadi kolomnya tetap ada tapi boleh kosong — server yang
+ * tahu mana yang berlaku.
+ * ------------------------------------------------------------------------ */
+
+const DELETE_PHRASE = 'HAPUS AKUN'
+const deleteOpen = ref(false)
+const deleteForm = reactive({ confirmation: '', password: '' })
+const deleting = ref(false)
+const deleteError = ref('')
+const canDeleteAccount = computed(() => user.value?.role === 'student')
+const deletePhraseOk = computed(() => deleteForm.confirmation.trim() === DELETE_PHRASE)
+
+function openDelete() {
+  deleteForm.confirmation = ''
+  deleteForm.password = ''
+  deleteError.value = ''
+  deleteOpen.value = true
+}
+
+async function onDeleteAccount() {
+  if (!deletePhraseOk.value || deleting.value) return
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await deleteAccount({ confirmation: deleteForm.confirmation.trim(), password: deleteForm.password })
+    deleteOpen.value = false
+    toast.success('Akun kamu sudah dihapus.', 'Terima kasih sudah belajar bersama Zenko.')
+    await navigateTo('/')
+  }
+  catch (cause) {
+    deleteError.value = tutorApiMessage(cause, 'Akun belum berhasil dihapus. Coba lagi sebentar.')
+  }
+  finally {
+    deleting.value = false
+  }
+}
 
 const signingOutAll = ref(false)
 
@@ -666,6 +707,77 @@ async function onSignOutAllDevices() {
           </div>
         </div>
       </DashboardPanel>
+
+      <!-- Hapus akun — paling bawah, terpisah, dan hanya untuk siswa. Tutor
+           punya produk, penjualan, dan saldo yang penyelesaiannya keputusan
+           admin, bukan tombol. -->
+      <DashboardPanel
+        v-if="canDeleteAccount"
+        title="Hapus akun"
+        description="Menghapus akun Zenko-mu secara permanen."
+      >
+        <div class="grid max-w-125 gap-4">
+          <div class="flex items-start gap-3">
+            <span
+              aria-hidden="true"
+              class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger"
+            >
+              <AppIcon name="trash" :size="20" />
+            </span>
+            <p class="text-[0.9rem] text-muted">
+              Nama, foto, dan email dilepas dari akun ini dan kamu keluar dari semua perangkat.
+              <strong class="font-semibold text-ink">Paket yang sudah dibeli dan riwayat tryout-nya tidak bisa diakses lagi</strong>,
+              dan tidak bisa dipulihkan. Keanggotaan bimbel ikut dilepas; kalau kamu masih pengelola sebuah bimbel, alihkan dulu.
+              Email yang sama boleh dipakai untuk mendaftar lagi nanti.
+            </p>
+          </div>
+
+          <div>
+            <AppButton variant="danger" size="sm" @click="openDelete">
+              Hapus akun saya…
+            </AppButton>
+          </div>
+        </div>
+      </DashboardPanel>
     </div>
+
+    <AppModal
+      v-model="deleteOpen"
+      title="Hapus akun secara permanen?"
+      description="Tindakan ini tidak bisa dibatalkan. Untuk melanjutkan, ketik frasa di bawah dan masukkan kata sandimu."
+    >
+      <form id="delete-account-form" class="grid gap-4" @submit.prevent="onDeleteAccount">
+        <FormField
+          id="delete-confirmation"
+          v-model="deleteForm.confirmation"
+          :label="`Ketik ${DELETE_PHRASE}`"
+          :placeholder="DELETE_PHRASE"
+          autocomplete="off"
+          autocapitalize="characters"
+        />
+        <FormField
+          id="delete-password"
+          v-model="deleteForm.password"
+          type="password"
+          label="Kata sandi"
+          placeholder="Kosongkan jika kamu selalu masuk lewat Google"
+          autocomplete="current-password"
+        />
+        <AppInlineMessage v-if="deleteError" type="error">{{ deleteError }}</AppInlineMessage>
+      </form>
+      <template #footer>
+        <AppButton variant="outline" size="sm" :disabled="deleting" @click="deleteOpen = false">Batal</AppButton>
+        <AppButton
+          variant="danger"
+          size="sm"
+          type="submit"
+          form="delete-account-form"
+          :disabled="!deletePhraseOk || deleting"
+          :loading="deleting"
+        >
+          Hapus akun permanen
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>

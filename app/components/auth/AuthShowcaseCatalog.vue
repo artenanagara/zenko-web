@@ -10,8 +10,8 @@
  */
 const packages = [
   { category: 'SKD/CPNS', title: 'Latihan CPNS 2026 Intensif', tutor: 'Budi Santoso', rating: '4.9', price: 'Rp189.000', tone: 'from-[#4c86f0] to-[#2557c9]' },
-  { category: 'SKD · Kedinasan', title: 'Simulasi SKD Kedinasan', tutor: 'Mira Azzahra', rating: '4.8', price: 'Rp149.000', tone: 'from-[#5c93f5] to-[#2f6feb]' },
-  { category: 'TKA · SMA', title: 'TKA Matematika SMA', tutor: 'Dimas Prasetya', rating: '4.7', price: 'Rp219.000', tone: 'from-[#7da8fa] to-[#3f7bf0]' },
+  { category: 'UTBK-SNBT', title: 'Persiapan UTBK-SNBT', tutor: 'Mira Azzahra', rating: '4.8', price: 'Rp149.000', tone: 'from-[#5c93f5] to-[#2f6feb]' },
+  { category: 'PPPK', title: 'Latihan Kompetensi Teknis', tutor: 'Dimas Prasetya', rating: '4.7', price: 'Rp219.000', tone: 'from-[#7da8fa] to-[#3f7bf0]' },
 ]
 </script>
 
@@ -51,7 +51,7 @@ const packages = [
       style="--delay: 700ms"
     >
       <IconSeal class="h-5 w-5 shrink-0" />
-      120+ paket siap dikerjakan
+      Banyak tujuan ujian, satu tempat
     </p>
   </div>
 </template>

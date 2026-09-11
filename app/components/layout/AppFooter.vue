@@ -31,10 +31,11 @@ const columns: FooterColumn[] = [
     title: 'Paket',
     links: [
       { label: 'CPNS / SKD', to: '/paket?q=SKD' },
-      { label: 'Kedinasan', to: '/paket?q=Kedinasan' },
-      { label: 'TKA SMA', to: '/paket?q=TKA+SMA' },
-      { label: 'TKA SMP', to: '/paket?q=TKA+SMP' },
-      { label: 'Semua Paket', to: '/paket' },
+      { label: 'PPPK', to: '/paket?q=PPPK' },
+      { label: 'UTBK-SNBT', to: '/paket?q=UTBK+SNBT' },
+      { label: 'TKA', to: '/paket?q=TKA' },
+      { label: 'Rekrutmen BUMN', to: '/paket?q=BUMN' },
+      { label: 'Semua paket', to: '/paket' },
     ],
   },
   {
@@ -86,17 +87,17 @@ const year = new Date().getFullYear()
             id="footer-cta-heading"
             class="max-w-[22ch] text-[clamp(1.9rem,3.2vw,2.75rem)] leading-[1.12] tracking-[-0.04em] text-balance text-white"
           >
-            Siap mengukur kemampuanmu
-            <span class="text-accent mt-0.5 block text-[#8fb4ff]">sebelum hari ujian?</span>
+            Sudah tahu ujian yang kamu tuju?
+            <span class="text-accent mt-0.5 block text-[#8fb4ff]">Yuk, mulai latihan.</span>
           </h2>
           <p class="mt-4 max-w-[48ch] text-[1rem] leading-[1.7] text-white/68">
-            Kerjakan simulasi dengan waktu seperti ujian sebenarnya, lalu pelajari pembahasan setiap soalnya.
+            Temukan latihan yang pas, ukur kemampuanmu, lalu fokus ke materi yang masih perlu dikejar.
           </p>
         </div>
 
         <div class="flex flex-col items-start gap-3 lg:row-span-2 lg:items-end lg:self-end">
           <AppButton to="/paket" size="lg">
-            Cari paket tryout
+            Temukan latihan
             <IconArrowRight class="h-4 w-4" />
           </AppButton>
           <p class="text-[0.85rem] text-white/52">
@@ -165,7 +166,7 @@ const year = new Date().getFullYear()
             aria-label="Zenko"
           />
           <p class="mt-4 text-[0.88rem] leading-[1.7] text-white/60 md:mt-5 md:text-[0.9rem]">
-            Marketplace tryout SKD dan TKA. Siswa berlatih lewat simulasi ujian, tutor dan bimbel menerbitkan paket soalnya.
+            Tempat menemukan latihan untuk berbagai tujuan ujian. Siswa belajar lewat simulasi, sementara tutor dan bimbel membagikan keahliannya.
           </p>
 
           <!-- Kontak ditulis terang-terangan, bukan disembunyikan di balik

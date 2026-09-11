@@ -176,19 +176,19 @@ async function onSubmit() {
     </div>
 
     <AuthAside
-      badge="12.400+ siswa latihan bulan ini"
+      badge="Progresmu menunggu untuk dilanjutkan"
       :stats="[
-        { label: 'Paket tersedia', value: '120+' },
-        { label: 'Tutor terkurasi', value: '48' },
-        { label: 'Rata-rata rating', value: '4.8' },
+        { label: 'Paketmu', value: 'Rapi' },
+        { label: 'Hasilmu', value: 'Tersimpan' },
+        { label: 'Langkahmu', value: 'Terarah' },
       ]"
     >
       <template #showcase>
         <AuthShowcaseProgress />
       </template>
 
-      Setiap soal yang kamu kerjakan hari ini
-      <span class="text-accent">mengurangi kejutan di hari ujian</span>
+      Lanjutkan dari yang terakhir,
+      <span class="text-accent">lalu kejar yang masih kurang</span>
     </AuthAside>
   </main>
 </template>

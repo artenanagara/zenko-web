@@ -10,12 +10,12 @@ const { data: packages, pending, error } = usePackages(sort)
 const { data: testimonials } = useTestimonials()
 
 useSeoMeta({
-  title: 'Paket Tryout Online SKD dan TKA | Zenko',
+  title: 'Paket Tryout Online untuk Berbagai Ujian | Zenko',
   description:
-    'Latihan tryout online untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
-  ogTitle: 'Paket Tryout Online SKD dan TKA | Zenko',
+    'Temukan latihan SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan ujian lainnya. Kerjakan simulasi CBT, pahami hasilnya, lalu belajar lebih terarah.',
+  ogTitle: 'Paket Tryout Online untuk Berbagai Ujian | Zenko',
   ogDescription:
-    'Latihan tryout online untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
+    'Temukan latihan SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan ujian lainnya. Kerjakan simulasi CBT, pahami hasilnya, lalu belajar lebih terarah.',
   ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/',
   twitterCard: 'summary_large_image',

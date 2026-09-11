@@ -132,6 +132,8 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // menunggu persetujuan, jadi tidak ada satu baris pun di sana yang
       // menunggu admin — yang tersisa daftar bacaan, dan tempatnya di sini.
       { label: 'Daftar bimbel', to: '/dashboard/admin/bimbels', icon: IconHandshake, section: 'Direktori' },
+
+      { label: 'Pusat Bantuan', to: '/pusat-bantuan', icon: IconLifebuoy, section: 'Bantuan' },
     ],
   },
   tutor: {

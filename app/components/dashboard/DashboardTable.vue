@@ -38,9 +38,17 @@ const props = withDefaults(
     primaryKey?: string
     /** Kolom aksi, dipindah ke kaki kartu selebar penuh. */
     actionKey?: string
+    /**
+     * Sel lebih rapat (px-3, bukan px-5). Untuk tabel bersembilan kolom
+     * atau lebih, padding bawaan saja sudah memakan sepertiga lebar konten
+     * dan memaksa gulir ke samping pada layar laptop.
+     */
+    compact?: boolean
   }>(),
-  { primaryKey: undefined, actionKey: undefined },
+  { primaryKey: undefined, actionKey: undefined, compact: false },
 )
+
+const cellPadding = computed(() => (props.compact ? 'px-3 py-3' : 'px-5 py-3.5'))
 
 const primary = computed(() => props.columns.find(c => c.key === props.primaryKey) ?? props.columns[0])
 
@@ -97,14 +105,14 @@ function alignClass(col: DashboardTableColumn) {
     <table class="w-full text-left text-xs">
       <thead class="border-b border-line bg-surface-sunken font-bold tracking-wider text-ink uppercase">
         <tr>
-          <th v-for="col in columns" :key="col.key" class="px-5 py-3.5" :class="alignClass(col)">
+          <th v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col)]">
             {{ col.label }}
           </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-line text-slate-700">
         <tr v-for="(row, idx) in data" :key="idx" class="transition-colors hover:bg-surface-alt/70">
-          <td v-for="col in columns" :key="col.key" class="px-5 py-3.5" :class="alignClass(col)">
+          <td v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col)]">
             <slot :name="`cell(${col.key})`" :item="row" :value="row[col.key]">
               {{ row[col.key] }}
             </slot>

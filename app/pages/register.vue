@@ -192,17 +192,17 @@ async function onSubmit() {
     <AuthAside
       badge="Gratis, tanpa kartu kredit"
       :stats="[
-        { label: 'Paket tersedia', value: '120+' },
-        { label: 'Tutor terkurasi', value: '48' },
-        { label: 'Rata-rata rating', value: '4.8' },
+        { label: 'Pilihan ujian', value: 'Beragam' },
+        { label: 'Paket', value: 'Terkurasi' },
+        { label: 'Progres', value: 'Tersimpan' },
       ]"
     >
       <template #showcase>
         <AuthShowcaseCatalog />
       </template>
 
-      Mulai dari satu paket, lalu naikkan targetmu
-      <span class="text-accent">sesuai kemajuanmu sendiri</span>
+      Mulai dari satu latihan,
+      <span class="text-accent">lalu maju dengan caramu sendiri</span>
     </AuthAside>
   </main>
 </template>

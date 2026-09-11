@@ -14,10 +14,10 @@ definePageMeta({ path: '/jadi-tutor' })
 useSeoMeta({
   title: 'Jadi Tutor Zenko | Jual Paket Tryout Online',
   description:
-    'Daftar menjadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+    'Bagikan keahlianmu lewat paket latihan untuk berbagai tujuan ujian. Atur harga sendiri, gunakan sistem CBT Zenko, dan dapatkan 70% dari setiap penjualan.',
   ogTitle: 'Jadi Tutor Zenko | Jual Paket Tryout Online',
   ogDescription:
-    'Daftar menjadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+    'Bagikan keahlianmu lewat paket latihan untuk berbagai tujuan ujian. Atur harga sendiri, gunakan sistem CBT Zenko, dan dapatkan 70% dari setiap penjualan.',
   ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/jadi-tutor',
   twitterCard: 'summary_large_image',
@@ -67,7 +67,7 @@ const faqs = [
   {
     question: 'Kategori paket apa saja yang bisa saya buat?',
     answer:
-      'Saat ini kamu bisa menjual paket tryout untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Jika ingin membuat kategori baru, kamu bisa mendiskusikannya dengan tim kami.',
+      'Kamu bisa membuat paket untuk SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan jenis ujian lain yang tersedia di editor. Kalau bidangmu belum ada, bicarakan dengan tim Zenko agar kebutuhannya bisa ditinjau.',
   },
   {
     question: 'Berapa lama proses peninjauan pengajuan tutor?',
@@ -92,22 +92,22 @@ const faqs = [
  */
 const mockSales = [
   { title: 'Simulasi SKD Kedinasan', amount: '+Rp298rb' },
-  { title: 'TKA Matematika SMA', amount: '+Rp219rb' },
-  { title: 'Latihan CPNS Intensif', amount: '+Rp189rb' },
+  { title: 'Persiapan UTBK-SNBT', amount: '+Rp219rb' },
+  { title: 'Latihan PPPK Intensif', amount: '+Rp189rb' },
 ]
 
 const mockResults = [
   { title: 'Latihan CPNS 2026 Intensif', meta: 'SKD/CPNS · Rp189.000' },
-  { title: 'Simulasi SKD Kedinasan', meta: 'SKD · Kedinasan · Rp149.000' },
-  { title: 'TKA Matematika SMA', meta: 'TKA · SMA · Rp219.000' },
-  { title: 'Simulasi TKA Lengkap', meta: 'TKA · Rp129.000' },
+  { title: 'Persiapan UTBK-SNBT', meta: 'UTBK-SNBT · Rp149.000' },
+  { title: 'Latihan PPPK Teknis', meta: 'PPPK · Rp219.000' },
+  { title: 'Rekrutmen Bersama BUMN', meta: 'BUMN · Rp129.000' },
 ]
 
 const mockPerformance = [
   { title: 'Simulasi SKD Kedinasan', width: 82 },
-  { title: 'TKA Matematika SMA', width: 58 },
-  { title: 'Latihan CPNS Intensif', width: 39 },
-  { title: 'Simulasi TKA Lengkap', width: 68 },
+  { title: 'Persiapan UTBK-SNBT', width: 58 },
+  { title: 'Latihan PPPK Teknis', width: 39 },
+  { title: 'Rekrutmen Bersama BUMN', width: 68 },
 ]
 
 const mockPayouts = [
@@ -143,7 +143,7 @@ void benefitRef
 void advantageRef
 void flowRef
 
-const EXPERTISE_OPTIONS = ['SKD / CPNS', 'SKD / Kedinasan', 'TKA', 'Lainnya']
+const EXPERTISE_OPTIONS = ['SKD / CPNS', 'Sekolah Kedinasan', 'PPPK', 'UTBK-SNBT', 'TKA', 'Rekrutmen BUMN', 'Lainnya']
 
 // No name/email fields: the server reads identity from the session. The form
 // only asks what the applicant alone knows.
@@ -270,18 +270,18 @@ const formState = computed<FormState>(() => {
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
-            Jual paket tryout
-            <span class="text-accent mt-1 block">dari keahlianmu</span>
+            Punya keahlian mengajar?
+            <span class="text-accent mt-1 block">Bantu lebih banyak siswa maju.</span>
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Jadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA
-            buatanmu. Kamu menyiapkan soal dan pembahasan, Zenko membantu urusan
-            platform, pembayaran, serta penilaian otomatis.
+            Ubah bank soal dan pengalamanmu menjadi paket latihan untuk berbagai
+            tujuan ujian. Kamu fokus pada materi, Zenko membantu urusan platform,
+            pembayaran, dan penilaian otomatis.
           </p>
 
           <AppButton href="#form-pengajuan" size="lg" class="mt-8">
-            Daftar jadi tutor
+            Ajukan jadi tutor
           </AppButton>
         </div>
       </div>
@@ -302,11 +302,10 @@ const formState = computed<FormState>(() => {
             Manfaat jadi tutor
           </p>
           <h2 id="benefit-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Yang kamu dapat sebagai <span class="text-accent">tutor Zenko</span>
+            Keahlianmu siap <span class="text-accent">menjangkau lebih banyak siswa</span>
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
-            Zenko membantu kamu menjual paket tryout, menerima pembayaran, dan
-            memantau hasil penjualan dari satu tempat.
+            Susun paket, tayangkan di katalog, dan pantau penjualannya dari satu tempat.
           </p>
         </div>
 
@@ -594,11 +593,11 @@ const formState = computed<FormState>(() => {
             Kenapa Zenko
           </p>
           <h2 id="keunggulan-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Fokus membuat soal, <span class="text-accent">Zenko bantu sisanya</span>
+            Fokus pada materi, <span class="text-accent">Zenko bantu teknisnya</span>
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
-            Website, pembayaran, penilaian otomatis, dan pencatatan penjualan sudah
-            disiapkan agar kamu dapat fokus membuat paket tryout.
+            Sistem ujian, pembayaran, penilaian, dan pencatatan penjualan sudah siap
+            digunakan saat kamu mulai menerbitkan paket.
           </p>
         </div>
 
@@ -751,7 +750,7 @@ const formState = computed<FormState>(() => {
             Cara kerja
           </p>
           <h2 id="cara-kerja-tutor-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Tiga langkah untuk <span class="text-accent">mulai menjual paket tryout</span>
+            Tiga langkah untuk <span class="text-accent">membagikan keahlianmu</span>
           </h2>
         </div>
 
