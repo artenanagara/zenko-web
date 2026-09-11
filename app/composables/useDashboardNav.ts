@@ -146,12 +146,10 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       { label: 'Penjualan', to: '/dashboard/tutor/sales', icon: IconReceipt, section: 'Pendapatan' },
       { label: 'Pencairan', to: '/dashboard/tutor/payouts', icon: IconWallet, section: 'Pendapatan' },
 
+      // Pusat Bantuan sengaja tidak ada di sini (juga di sidebar bimbel dan
+      // dropdown profil): pintunya satu, tab Bantuan di Akun saya
+      // (/akun/profil?tab=bantuan), yang isinya sudah disaring per peran.
       { label: 'Pengaturan', to: '/dashboard/tutor/settings', icon: IconSettings, section: 'Akun' },
-
-      // Paling bawah, di bawah pengaturan: jarang dibuka, tapi saat dibutuhkan
-      // (produk ditolak, saldo tertahan) tidak boleh harus dicari. Mendarat di
-      // kategori tutor, bukan beranda bantuan yang berisi panduan siswa.
-      { label: 'Pusat Bantuan', to: '/pusat-bantuan#portal-tutor-heading', icon: IconLifebuoy, section: 'Bantuan' },
     ],
   },
 }
@@ -225,7 +223,6 @@ export function useDashboardNav() {
       if (canManage) {
         items.push({ label: 'Pengaturan', to: `${base}/settings`, icon: IconSettings, section: 'Pengelolaan' })
       }
-      items.push({ label: 'Pusat Bantuan', to: '/pusat-bantuan#bimbel-institusi-heading', icon: IconLifebuoy, section: 'Bantuan' })
       return { title: membership.bimbelName, items }
     }
 

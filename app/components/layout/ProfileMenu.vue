@@ -297,23 +297,13 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
         </div>
 
         <div class="mt-1.5 border-t border-hairline pt-1.5">
-          <!-- Bantuan duduk tepat di atas "Keluar": bukan halaman akun, tapi
-               satu-satunya jalan ke Pusat Bantuan dari header yang login. -->
-          <NuxtLink
-            to="/pusat-bantuan"
-            role="menuitem"
-            tabindex="-1"
-            class="flex min-h-11 items-center gap-2.5 rounded-xs px-3.5 text-[0.94rem] font-medium text-muted transition-colors duration-200 hover:bg-surface-alt hover:text-ink"
-            @click="close(false)"
-          >
-            <IconLifebuoy class="h-[1.1rem] w-[1.1rem] shrink-0" />
-            Pusat Bantuan
-          </NuxtLink>
+          <!-- Bantuan tidak lagi di sini: ia tab di dalam "Akun saya" di
+               atas (/akun/profil?tab=bantuan), sudah disaring per peran. -->
           <button
             type="button"
             role="menuitem"
             tabindex="-1"
-            class="mt-1 flex min-h-11 w-full items-center gap-2.5 rounded-xs px-3.5 text-left text-[0.94rem] font-semibold text-ink transition-colors duration-200 hover:bg-surface-sunken hover:text-red-600"
+            class="flex min-h-11 w-full items-center gap-2.5 rounded-xs px-3.5 text-left text-[0.94rem] font-semibold text-ink transition-colors duration-200 hover:bg-surface-sunken hover:text-red-600"
             @click="onSignOut"
           >
             <IconLogout class="h-[1.1rem] w-[1.1rem] shrink-0" />

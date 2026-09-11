@@ -221,19 +221,19 @@ export const helpArticles: HelpArticle[] = [
       {
         title: 'Ganti kata sandi',
         body:
-          'Buka tab "Kata sandi", isi kata sandi saat ini dan kata sandi baru (minimal 8 karakter dan harus berbeda dari yang lama), lalu klik "Simpan kata sandi".',
+          'Buka tab "Keamanan", klik "Ganti kata sandi", isi kata sandi saat ini dan kata sandi baru (minimal 8 karakter dan harus berbeda dari yang lama), lalu klik "Simpan kata sandi".',
       },
     ],
     troubleshooting: [
       {
         question: 'Saya selalu masuk dengan Google dan tidak tahu kata sandi saat ini. Bagaimana?',
         answer:
-          'Buat kata sandi dulu lewat /lupa-password (lihat panduan Reset Kata Sandi). Setelah itu kamu bisa menggantinya kapan saja dari tab "Kata sandi".',
+          'Buat kata sandi dulu lewat /lupa-password (lihat panduan Reset Kata Sandi). Setelah itu kamu bisa menggantinya kapan saja dari tab "Keamanan".',
       },
       {
         question: 'HP saya hilang atau akun saya pernah dibuka di perangkat orang lain.',
         answer:
-          'Di halaman /akun/profil ada pilihan "Keluar dari semua perangkat". Semua sesi yang sedang aktif akan berakhir, dan kamu perlu masuk lagi di perangkatmu sendiri.',
+          'Di tab "Keamanan" halaman /akun/profil ada pilihan "Keluar dari semua perangkat". Semua sesi yang sedang aktif akan berakhir, dan kamu perlu masuk lagi di perangkatmu sendiri.',
       },
     ],
     keywords: ['ubah profil', 'ganti nama', 'foto profil', 'ganti kata sandi akun', 'keluar semua perangkat'],

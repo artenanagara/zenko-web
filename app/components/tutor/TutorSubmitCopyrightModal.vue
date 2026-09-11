@@ -135,7 +135,7 @@ function scrollToEnd() {
 
         <p class="text-muted">
           Pernyataan ini merangkum Bagian 4 dan 9
-          <NuxtLink to="/terms#kewajiban-tutor" target="_blank" class="font-semibold text-ink underline hover:no-underline">Ketentuan Layanan Zenko</NuxtLink>.
+          <NuxtLink to="/ketentuan-layanan#kewajiban-tutor" target="_blank" class="font-semibold text-ink underline hover:no-underline">Ketentuan Layanan Zenko</NuxtLink>.
           Jika ada perbedaan, Ketentuan Layanan yang berlaku.
         </p>
       </div>
