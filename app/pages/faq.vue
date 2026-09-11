@@ -170,39 +170,45 @@ useHead({
       :class="index === 0 ? 'pt-18 md:pt-22' : ''"
       :aria-labelledby="`${category.id}-heading`"
     >
+      <!-- Judul dan daftarnya berbagi satu wrapper max-w-300, supaya di layar
+           lebar judul tidak menempel ke tepi container sementara daftarnya
+           berada di tengah. Inset judul mengikuti padding panel di bawahnya,
+           jadi teks judul sejajar dengan tepi kartu pertanyaan. -->
       <div class="container-page">
-        <h2
-          :id="`${category.id}-heading`"
-          class="mb-6 text-[clamp(1.4rem,2.4vw,1.8rem)] leading-[1.2] tracking-tighter"
-        >
-          {{ category.title }}
-        </h2>
-
-        <div class="mx-auto grid max-w-300 gap-3 rounded-4xl bg-surface-alt p-4 md:p-6">
-          <!-- Shared `name` per category makes each group exclusive on its
-               own, without JavaScript. -->
-          <details
-            v-for="item in category.items"
-            :key="item.question"
-            :name="`faq-${category.id}`"
-            class="group rounded-xl border border-hairline bg-surface px-5 py-4 shadow-xs transition-[box-shadow,border-color] duration-300 ease-smooth hover:shadow-lift open:shadow-lift md:px-6 md:py-5"
+        <div class="mx-auto max-w-300">
+          <h2
+            :id="`${category.id}-heading`"
+            class="mb-6 px-4 text-[clamp(1.4rem,2.4vw,1.8rem)] leading-[1.2] tracking-tighter md:px-6"
           >
-            <summary
-              class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold tracking-[-0.02em] [&::-webkit-details-marker]:hidden"
+            {{ category.title }}
+          </h2>
+
+          <div class="grid gap-3 rounded-4xl bg-surface-alt p-4 md:p-6">
+            <!-- Shared `name` per category makes each group exclusive on its
+                 own, without JavaScript. -->
+            <details
+              v-for="item in category.items"
+              :key="item.question"
+              :name="`faq-${category.id}`"
+              class="group rounded-xl border border-hairline bg-surface px-5 py-4 shadow-xs transition-[box-shadow,border-color] duration-300 ease-smooth hover:shadow-lift open:shadow-lift md:px-6 md:py-5"
             >
-              {{ item.question }}
+              <summary
+                class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold tracking-[-0.02em] [&::-webkit-details-marker]:hidden"
+              >
+                {{ item.question }}
 
-              <!-- Plus that becomes a minus when open -->
-              <span class="relative h-4 w-4 shrink-0" aria-hidden="true">
-                <span class="absolute top-1/2 left-0 h-0.5 w-4 -translate-y-1/2 rounded-pill bg-primary" />
-                <span
-                  class="absolute top-0 left-1/2 h-4 w-0.5 -translate-x-1/2 rounded-pill bg-primary transition-[opacity,rotate] duration-300 ease-smooth group-open:rotate-90 group-open:opacity-0"
-                />
-              </span>
-            </summary>
+                <!-- Plus that becomes a minus when open -->
+                <span class="relative h-4 w-4 shrink-0" aria-hidden="true">
+                  <span class="absolute top-1/2 left-0 h-0.5 w-4 -translate-y-1/2 rounded-pill bg-primary" />
+                  <span
+                    class="absolute top-0 left-1/2 h-4 w-0.5 -translate-x-1/2 rounded-pill bg-primary transition-[opacity,rotate] duration-300 ease-smooth group-open:rotate-90 group-open:opacity-0"
+                  />
+                </span>
+              </summary>
 
-            <p class="mt-3 leading-[1.7] text-muted">{{ item.answer }}</p>
-          </details>
+              <p class="mt-3 leading-[1.7] text-muted">{{ item.answer }}</p>
+            </details>
+          </div>
         </div>
       </div>
     </section>
