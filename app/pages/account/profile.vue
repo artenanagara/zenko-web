@@ -40,9 +40,13 @@ const ROLE_TONE: Record<Role, 'neutral' | 'brand'> = {
 
 const toast = useToast()
 
+// "Hapus akun" tab sendiri, bukan panel di bawah kata sandi: ia tindakan
+// sekali seumur akun dan berlaku untuk setiap peran, jadi tempatnya jelas
+// dan terpisah dari pengaturan yang dibuka rutin.
 const TABS = [
   { id: 'profil', label: 'Profil' },
-  { id: 'kata-sandi', label: 'Kata sandi' },
+  { id: 'kata-sandi', label: 'Keamanan' },
+  { id: 'hapus-akun', label: 'Hapus akun' },
 ]
 const activeTab = ref('profil')
 
@@ -353,8 +357,31 @@ const deleteOpen = ref(false)
 const deleteForm = reactive({ confirmation: '', password: '' })
 const deleting = ref(false)
 const deleteError = ref('')
-const canDeleteAccount = computed(() => user.value?.role === 'student')
 const deletePhraseOk = computed(() => deleteForm.confirmation.trim() === DELETE_PHRASE)
+
+/**
+ * Apa yang ikut pergi bersama akun ini, dibaca dari peran dan keanggotaan —
+ * supaya tutor tahu soal saldonya dan owner tahu bimbelnya ditutup SEBELUM
+ * menekan tombol, bukan dari pesan tolakan sesudahnya. Server tetap yang
+ * memutuskan; ini hanya pratinjau akibatnya.
+ */
+const isTutor = computed(() => user.value?.role === 'tutor')
+const isAdmin = computed(() => user.value?.role === 'admin')
+const { data: memberships, ensure: ensureMemberships } = useBimbelMemberships()
+const ownedBimbels = computed(() => memberships.value.filter(m => m.role === 'owner' && m.status !== 'left'))
+const managedBimbels = computed(() => memberships.value.filter(m => (m.role === 'admin' || m.role === 'teacher') && m.status !== 'left'))
+const balance = useTutorBalance()
+const owesBalance = computed(() => balance.data.value.available + balance.data.value.held > 0)
+const owedAmount = computed(() => balance.data.value.available + balance.data.value.held)
+
+onMounted(() => {
+  void ensureMemberships()
+  // Saldo hanya ada untuk tutor dan owner bimbel; siswa biasa tidak punya
+  // rute ini, jadi jangan memanggilnya untuk mereka.
+  watch([isTutor, ownedBimbels], ([tutor, owned]) => {
+    if (tutor || owned.length) void balance.refresh()
+  }, { immediate: true })
+})
 
 function openDelete() {
   deleteForm.confirmation = ''
@@ -708,32 +735,61 @@ async function onSignOutAllDevices() {
         </div>
       </DashboardPanel>
 
-      <!-- Hapus akun — paling bawah, terpisah, dan hanya untuk siswa. Tutor
-           punya produk, penjualan, dan saldo yang penyelesaiannya keputusan
-           admin, bukan tombol. -->
-      <DashboardPanel
-        v-if="canDeleteAccount"
-        title="Hapus akun"
-        description="Menghapus akun Zenko-mu secara permanen."
-      >
-        <div class="grid max-w-125 gap-4">
+    </div>
+
+    <div v-show="activeTab === 'hapus-akun'" id="panel-hapus-akun" class="grid gap-6" role="tabpanel" aria-labelledby="tab-hapus-akun">
+      <DashboardPanel title="Hapus akun" description="Menghapus akun Zenko-mu secara permanen.">
+        <div class="grid max-w-150 gap-5">
           <div class="flex items-start gap-3">
-            <span
-              aria-hidden="true"
-              class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger"
-            >
+            <span aria-hidden="true" class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-soft text-danger">
               <AppIcon name="trash" :size="20" />
             </span>
-            <p class="text-[0.9rem] text-muted">
-              Nama, foto, dan email dilepas dari akun ini dan kamu keluar dari semua perangkat.
-              <strong class="font-semibold text-ink">Paket yang sudah dibeli dan riwayat tryout-nya tidak bisa diakses lagi</strong>,
-              dan tidak bisa dipulihkan. Keanggotaan bimbel ikut dilepas; kalau kamu masih pengelola sebuah bimbel, alihkan dulu.
-              Email yang sama boleh dipakai untuk mendaftar lagi nanti.
-            </p>
+            <div class="grid gap-3 text-[0.9rem] text-muted">
+              <p>
+                Nama, foto, dan email dilepas dari akun ini dan kamu keluar dari semua perangkat.
+                <strong class="font-semibold text-ink">Tidak bisa dipulihkan.</strong>
+                Email yang sama boleh dipakai untuk mendaftar lagi nanti.
+              </p>
+              <p>
+                Paket yang sudah dibeli dan riwayat tryout-nya tidak bisa diakses lagi. Keanggotaan bimbel ikut dilepas.
+              </p>
+            </div>
           </div>
 
+          <!-- Akibat per peran, dibaca sebelum tombol — bukan ditemukan dari
+               pesan tolakan sesudah menekan. -->
+          <AppSectionMessage v-if="isAdmin" appearance="warning" title="Akun admin tidak bisa dihapus sendiri">
+            Minta admin lain menurunkan peranmu dulu; setelah itu akun bisa dihapus dari sini.
+          </AppSectionMessage>
+
+          <AppSectionMessage v-else-if="owesBalance" appearance="warning" title="Masih ada saldo yang mengendap">
+            Saldo {{ formatRupiah(owedAmount) }} belum dicairkan
+            (tersedia {{ formatRupiah(balance.data.value.available) }}, sedang diproses {{ formatRupiah(balance.data.value.held) }}).
+            Cairkan dulu, atau <strong class="font-semibold">hubungi admin Zenko</strong> — permintaan hapus akan ditolak selama saldo ini ada.
+          </AppSectionMessage>
+
+          <template v-else>
+            <AppSectionMessage v-if="isTutor" appearance="information" title="Akun tutor">
+              Semua paketmu diarsipkan — hilang dari katalog, tetapi siswa yang sudah membeli tetap bisa mengerjakannya.
+              Kalau di kemudian hari ada saldo yang mengendap, hubungi admin Zenko.
+            </AppSectionMessage>
+
+            <AppSectionMessage v-if="ownedBimbels.length" appearance="warning" title="Kamu owner bimbel">
+              <p>
+                {{ ownedBimbels.map(b => b.bimbelName).join(', ') }} akan <strong class="font-semibold">ditutup</strong>:
+                paket privatnya diarsipkan, semua anggota dilepas, dan setiap siswa aktif
+                <strong class="font-semibold">diberi tahu lewat email</strong>. Kalau bimbelnya ingin diteruskan orang lain,
+                alihkan kepemilikannya dulu dari Pengaturan bimbel.
+              </p>
+            </AppSectionMessage>
+
+            <AppSectionMessage v-if="managedBimbels.length" appearance="information" title="Keanggotaan tim bimbel">
+              Kamu keluar dari {{ managedBimbels.map(b => b.bimbelName).join(', ') }}; bimbelnya sendiri tidak berubah.
+            </AppSectionMessage>
+          </template>
+
           <div>
-            <AppButton variant="danger" size="sm" @click="openDelete">
+            <AppButton variant="danger" size="sm" :disabled="isAdmin || owesBalance" @click="openDelete">
               Hapus akun saya…
             </AppButton>
           </div>
