@@ -73,7 +73,8 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['~/assets/css/main.css'],
+  // lenis.css: tinggi html/body auto + overflow clip saat Lenis dihentikan.
+  css: ['lenis/dist/lenis.css', '~/assets/css/main.css'],
 
   // Components are grouped into folders by domain (ui, layout, home, …) purely
   // for navigation. pathPrefix: false keeps the folder out of the tag name, so
@@ -194,6 +195,10 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // Transisi halaman tipis (lihat .page-* di assets/css/main.css). `out-in`
+    // supaya halaman lama pudar dulu, baru yang baru masuk — dan scroll ke
+    // atas terjadi di antara keduanya, tidak terlihat sebagai lompatan.
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       htmlAttrs: { lang: 'id' },
       title: 'Zenko — Belajar Lebih Terarah',

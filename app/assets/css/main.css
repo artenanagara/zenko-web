@@ -55,6 +55,15 @@
     scroll-behavior: smooth;
   }
 
+  /* Lenis (plugins/lenis.client.ts) yang melembutkan gulir begitu aktif —
+     scroll-behavior native harus mati agar scroll programatik (kembali ke
+     atas saat pindah halaman, restore posisi tombol back) langsung, bukan
+     dianimasikan dua kali. Tanpa JS kelas ini tidak ada dan gulir halus
+     native di atas tetap berlaku. */
+  html.lenis {
+    scroll-behavior: auto;
+  }
+
   body {
     background: var(--color-surface);
     color: var(--color-ink);
@@ -82,6 +91,29 @@
       transition-duration: 0.01ms !important;
     }
   }
+}
+
+/* ==========================================================================
+   Page transition (nuxt.config app.pageTransition, mode out-in)
+   Sengaja tipis: pudar 140ms plus geser 4px, cukup untuk terasa sebagai
+   perpindahan tanpa membuat navigasi terasa lambat. Reduced-motion sudah
+   memangkasnya ke 0.01ms lewat aturan global di atas.
+   ========================================================================== */
+
+.page-enter-active,
+.page-leave-active {
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.page-leave-to {
+  opacity: 0;
 }
 
 /* ==========================================================================
