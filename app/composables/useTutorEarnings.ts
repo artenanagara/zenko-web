@@ -54,7 +54,7 @@ export function useTutorSales(workspace?: EarningsWorkspace) {
       sales.value = response.sales
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat riwayat penjualan.')
+      error.value = tutorApiMessage(cause, 'Riwayat penjualan belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -82,7 +82,7 @@ export function useTutorBalance(workspace?: EarningsWorkspace) {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat saldo.')
+      error.value = tutorApiMessage(cause, 'Saldo belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -205,7 +205,7 @@ export function useTutorPayouts(workspace?: EarningsWorkspace) {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat riwayat pencairan.')
+      error.value = tutorApiMessage(cause, 'Riwayat pencairan belum berhasil dimuat.')
     }
     finally {
       pending.value = false

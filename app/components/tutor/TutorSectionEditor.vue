@@ -235,7 +235,7 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menyimpan soal. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Soal belum berhasil disimpan. Coba lagi.')
   }
   finally {
     saving.value = false
@@ -273,7 +273,28 @@ async function removeQuestion(section: TutorSection, questionId: string) {
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menghapus soal. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Soal belum berhasil dihapus. Coba lagi.')
+  }
+}
+
+async function removeAllQuestions(section: TutorSection) {
+  const count = section.questions.length
+  if (count === 0) return
+  const ok = await confirm({
+    title: `Hapus semua ${count} soal di ${section.title}?`,
+    description: 'Seluruh soal di subtes ini dihapus permanen dan tidak dapat dikembalikan. Wacana yang sudah dibuat tetap ada. Subtes lain tidak tersentuh.',
+    confirmLabel: `Hapus ${count} soal`,
+  })
+  if (!ok) return
+
+  errorMessage.value = ''
+  try {
+    await deleteAllTutorQuestions(props.productId, section.id, props.workspace)
+    editorFor.value = ''
+    emit('refresh')
+  }
+  catch (cause) {
+    errorMessage.value = tutorApiMessage(cause, 'Soal belum berhasil dihapus. Coba lagi.')
   }
 }
 
@@ -284,7 +305,7 @@ async function reorderQuestions(section: TutorSection, questionIds: string[]) {
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal mengubah urutan soal. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Urutan soal belum berhasil diubah. Coba lagi.')
   }
 }
 
@@ -495,6 +516,7 @@ const activeSectionDotClass = computed(() =>
           @select="selectQuestion"
           @reorder="ids => reorderQuestions(activeSection!, ids)"
           @remove="id => removeQuestion(activeSection!, id)"
+          @remove-all="removeAllQuestions(activeSection!)"
         />
       </div>
     </div>
@@ -544,7 +566,7 @@ const activeSectionDotClass = computed(() =>
 
       <!-- max-h menahan tinggi dialog saat daftar baris yang dilewati panjang;
            AppModal sendiri tidak membatasi tinggi body-nya. -->
-      <div v-else class="max-h-[min(30rem,60vh)] overflow-y-auto">
+      <div v-else class="max-h-[min(30rem,60vh)] overflow-x-hidden overflow-y-auto">
         <TutorCsvImport
           :product-id="productId"
           :section="activeSection!"

@@ -5,7 +5,7 @@ definePageMeta({ layout: 'auth', path: '/daftar' })
 useHead({
   title: 'Daftar Akun | Zenko',
   meta: [
-    { name: 'description', content: 'Buat akun Zenko gratis untuk mulai latihan try out dan meraih skor terbaikmu.' },
+    { name: 'description', content: 'Buat akun Zenko gratis untuk mulai latihan tryout dan belajar lebih terarah.' },
     { name: 'robots', content: 'noindex' },
   ],
 })
@@ -81,10 +81,10 @@ async function onSubmit() {
         <BrandMark img-class="h-10 w-auto object-contain" />
 
         <h1 class="mt-9 text-[clamp(1.7rem,2.6vw,2.1rem)] leading-[1.18] tracking-[-0.04em]">
-          Buat akun Zenko
+          Mulai belajar bareng Zenko
         </h1>
         <p class="mt-2.5 text-muted">
-          Gratis. Kamu hanya membayar paket yang dibeli.
+          Daftarnya gratis. Kamu hanya membayar paket yang dipilih.
         </p>
 
         <form class="mt-8 grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -183,7 +183,7 @@ async function onSubmit() {
         <p class="mt-8 text-center text-[0.9rem] text-muted">
           Sudah punya akun?
           <NuxtLink to="/masuk" class="font-semibold text-primary hover:underline">
-            Masuk di sini
+            Masuk ke akun
           </NuxtLink>
         </p>
       </div>
@@ -192,17 +192,17 @@ async function onSubmit() {
     <AuthAside
       badge="Gratis, tanpa kartu kredit"
       :stats="[
-        { label: 'Paket tersedia', value: '120+' },
-        { label: 'Tutor terkurasi', value: '48' },
-        { label: 'Rata-rata rating', value: '4.8' },
+        { label: 'Pilihan ujian', value: 'Beragam' },
+        { label: 'Paket', value: 'Terkurasi' },
+        { label: 'Progres', value: 'Tersimpan' },
       ]"
     >
       <template #showcase>
         <AuthShowcaseCatalog />
       </template>
 
-      Mulai dari satu paket, lalu naikkan targetmu
-      <span class="text-accent">sesuai kemajuanmu sendiri</span>
+      Mulai dari satu latihan,
+      <span class="text-accent">lalu maju dengan caramu sendiri</span>
     </AuthAside>
   </main>
 </template>

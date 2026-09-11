@@ -22,6 +22,9 @@ export interface AccountNavItem {
  * dimaksud: keduanya tentang bimbel yang sama, dan satu-satunya cara tahu
  * bedanya adalah membuka keduanya. Sekarang seluruh paket bimbel ada di dalam
  * "Bimbel saya", bersama keanggotaan yang membukanya.
+ *
+ * Pusat Bantuan tidak lagi jadi entri rail: ia tab "Bantuan" di dalam Akun
+ * saya (/akun/profil?tab=bantuan), sudah disaring menurut peran akun.
  */
 export const ACCOUNT_NAV: AccountNavItem[] = [
   { label: 'Ringkasan', to: '/akun', icon: IconHome },

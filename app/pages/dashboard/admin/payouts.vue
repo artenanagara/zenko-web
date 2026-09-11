@@ -140,7 +140,7 @@ function clearNotices() {
 
 /** 409 = another admin decided first; the list refetch is the truth. */
 const CONFLICT_NOTICE = 'Item ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
-const DECISION_FALLBACK = 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.'
+const DECISION_FALLBACK = 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.'
 
 function isConflict(cause: unknown): boolean {
   return (cause as { statusCode?: number } | null)?.statusCode === 409
@@ -326,14 +326,14 @@ async function confirmReject(reason: string) {
              filter came up empty, and Reset is the way out. -->
         <AppEmptyState
           v-if="rows.length === 0 && !isActive"
-          title="Tidak ada pencairan menunggu"
+          title="Tidak ada pencairan yang menunggu"
           description="Permintaan pencairan baru dari tutor akan muncul di sini."
         />
 
         <AppEmptyState
           v-else-if="rows.length === 0"
-          title="Tidak ada hasil"
-          description="Tidak ada pencairan yang cocok dengan pencarian atau filter ini."
+          title="Hasil tidak ditemukan"
+          description="Tidak ada pencairan yang cocok dengan pencarian atau filter yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />

@@ -381,7 +381,7 @@ watch(() => form.sectionTitle, (title) => {
 })
 
 const PRODUCT_TYPE_OPTIONS: { value: ProductType, label: string }[] = [
-  { value: 'single', label: 'Try-out tunggal' },
+  { value: 'single', label: 'Tryout tunggal' },
   { value: 'bundle', label: 'Bundling' },
 ]
 
@@ -658,7 +658,7 @@ async function persist(): Promise<boolean> {
   }
   catch (cause) {
     saveState.value = 'error'
-    saveError.value = tutorApiMessage(cause, 'Gagal menyimpan draft. Coba lagi.')
+    saveError.value = tutorApiMessage(cause, 'Draft belum berhasil disimpan. Coba lagi.')
     return false
   }
 }
@@ -832,7 +832,7 @@ async function createAndContinue() {
   }
   catch (cause) {
     saveState.value = 'error'
-    saveError.value = tutorApiMessage(cause, 'Gagal membuat draft produk. Coba lagi.')
+    saveError.value = tutorApiMessage(cause, 'Draft produk belum berhasil dibuat. Coba lagi.')
   }
   finally {
     creating.value = false
@@ -1031,6 +1031,31 @@ const submitProblems = ref<string[]>([])
 const submitError = ref('')
 const isBimbelPrivateProduct = computed(() => Boolean(props.bimbelId) && detail.value?.visibility !== 'public')
 
+/** Label tombol ajukan di footer; dipakai ulang oleh modal hak cipta. */
+const submitLabel = computed(() =>
+  isLiveProduct.value
+    ? 'Ajukan ulang untuk ditinjau'
+    : isBimbelPrivateProduct.value
+      ? 'Tayangkan ke bank soal'
+      : 'Ajukan untuk tayang',
+)
+
+/**
+ * Tombol footer tidak langsung submit: ia membuka modal pernyataan hak cipta
+ * (TutorSubmitCopyrightModal) yang baru bisa disetujui setelah digulir sampai
+ * bawah. Submit sebenarnya berjalan dari `confirm` modal itu.
+ */
+const copyrightModalOpen = ref(false)
+
+function openCopyrightModal() {
+  if (!props.productId) return
+  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
+    toast.info('Produk sudah tayang.', 'Pengajuan ulang belum tersedia di environment ini.')
+    return
+  }
+  copyrightModalOpen.value = true
+}
+
 async function submitForReview() {
   if (!props.productId) return
   if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
@@ -1041,7 +1066,10 @@ async function submitForReview() {
   submitProblems.value = []
 
   // Harga yang baru diketik harus sampai ke server sebelum divalidasi.
-  if (!(await persist())) return
+  if (!(await persist())) {
+    copyrightModalOpen.value = false
+    return
+  }
 
   submitting.value = true
   try {
@@ -1058,11 +1086,14 @@ async function submitForReview() {
   catch (cause) {
     submitProblems.value = tutorSubmitProblems(cause)
     if (submitProblems.value.length === 0) {
-      submitError.value = tutorApiMessage(cause, 'Gagal mengajukan produk. Coba lagi sebentar lagi.')
+      submitError.value = tutorApiMessage(cause, 'Produk belum berhasil diajukan. Coba lagi sebentar lagi.')
     }
   }
   finally {
     submitting.value = false
+    // Hasilnya (sukses maupun daftar masalah validasi) tampil di panel
+    // langkah 5, jadi modal ditutup apa pun hasilnya.
+    copyrightModalOpen.value = false
   }
 }
 
@@ -1099,7 +1130,7 @@ const priceHintBlocking = computed(() =>
   <div class="grid gap-6 pb-24">
     <AppPageHeader
       :title="isEdit ? 'Edit produk' : 'Buat produk'"
-      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah tayang, paket langsung terbuka untuk seluruh siswa bimbel.' : 'Susun try-out, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
+      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah tayang, paket langsung terbuka untuk seluruh siswa bimbel.' : 'Susun tryout, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
     >
       <template #actions>
         <p
@@ -1120,7 +1151,7 @@ const priceHintBlocking = computed(() =>
         Memuat produk...
       </p>
       <div v-else class="rounded-lg border border-hairline bg-surface px-6 py-10 text-center shadow-xs">
-        <p class="text-muted">{{ detailError || 'Gagal memuat produk.' }}</p>
+        <p class="text-muted">{{ detailError || 'Produk belum berhasil dimuat.' }}</p>
         <button type="button" class="mt-3 font-semibold text-primary hover:underline" @click="refreshDetail">
           Coba lagi
         </button>
@@ -1154,7 +1185,7 @@ const priceHintBlocking = computed(() =>
 
     <template v-else>
       <AppAlert v-if="isEdit && detail?.status === 'rejected' && detail.rejectReason" variant="warning" title="Paket soal memerlukan revisi">
-        {{ detail.rejectReason }}. Silakan sesuaikan materi soal, lalu ajukan kembali.
+        {{ detail.rejectReason }}. Sesuaikan materi soalnya, lalu ajukan kembali.
       </AppAlert>
 
       <!-- Kenapa field-field di bawah tampil abu-abu dan tidak bisa diisi.
@@ -1234,7 +1265,7 @@ const priceHintBlocking = computed(() =>
             <template v-if="isSingle">
               <p v-if="examTypesPending" class="text-[0.9rem] text-muted">Memuat pilihan ujian...</p>
               <p v-else-if="examTypesError" class="text-[0.9rem] text-muted">
-                Gagal memuat pilihan ujian. Muat ulang halaman untuk mencoba lagi.
+                Pilihan ujian belum berhasil dimuat. Muat ulang halaman untuk mencoba lagi.
               </p>
               <div v-else ref="examTypeBlockRef" class="scroll-mt-24">
                 <ProductIdentityPicker
@@ -1257,9 +1288,9 @@ const priceHintBlocking = computed(() =>
               <div>
                 <h3 class="text-[0.9rem] font-semibold text-ink">Tipe paket</h3>
                 <p class="mt-1">
-                  <strong class="font-semibold text-ink">Try-out tunggal</strong> adalah satu paket utuh dengan
+                  <strong class="font-semibold text-ink">Tryout tunggal</strong> adalah satu paket utuh dengan
                   bagian dan soal yang kamu susun sendiri.
-                  <strong class="font-semibold text-ink">Bundling</strong> menggabungkan beberapa try-out tunggal
+                  <strong class="font-semibold text-ink">Bundling</strong> menggabungkan beberapa tryout tunggal
                   milikmu yang sudah tayang menjadi satu harga; anggotanya dipilih di langkah Soal.
                 </p>
               </div>
@@ -1367,7 +1398,7 @@ const priceHintBlocking = computed(() =>
                 Acak urutan soal saat dikerjakan siswa
               </label>
               <p class="mt-1 text-[0.82rem] text-muted">
-                Tiap siswa mendapat urutan soal berbeda saat mengerjakan try-out, tapi tetap sama
+                Tiap siswa mendapat urutan soal berbeda saat mengerjakan tryout, tapi tetap sama
                 selama satu kali pengerjaan (reload halaman tidak mengacak ulang). Urutan di editor
                 soal ini tidak berubah.
               </p>
@@ -1421,7 +1452,7 @@ const priceHintBlocking = computed(() =>
                 id="product-description"
                 v-model="form.description"
                 rows="4"
-                placeholder="Jelaskan isi try-out, untuk siapa, dan apa yang membedakannya."
+                placeholder="Jelaskan isi tryout, untuk siapa, dan apa yang membedakannya."
                 class="resize-y"
                 :class="FIELD_CLASS"
                 :disabled="!isFieldEditable('details')"
@@ -1800,18 +1831,19 @@ const priceHintBlocking = computed(() =>
             v-else-if="step === 5"
             type="button"
             :disabled="submitting"
-            @click="submitForReview"
+            @click="openCopyrightModal"
           >
-            {{ submitting
-              ? 'Mengajukan...'
-              : isLiveProduct
-                ? 'Ajukan ulang untuk ditinjau'
-                : isBimbelPrivateProduct
-                  ? 'Tayangkan ke bank soal'
-                  : 'Ajukan untuk tayang' }}
+            {{ submitting ? 'Mengajukan...' : submitLabel }}
           </AppButton>
         </div>
       </div>
+
+      <TutorSubmitCopyrightModal
+        v-model:open="copyrightModalOpen"
+        :confirmLabel="isBimbelPrivateProduct ? 'Setuju & tayangkan' : 'Setuju & ajukan'"
+        :submitting="submitting"
+        @confirm="submitForReview"
+      />
     </template>
   </div>
 </template>

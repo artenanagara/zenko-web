@@ -227,7 +227,7 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
              widening them is the way out. -->
         <AppEmptyState
           v-else-if="rows.length === 0 && hasFilter"
-          title="Tidak ada hasil"
+          title="Hasil tidak ditemukan"
           description="Belum ada transaksi yang cocok dengan pencarian, periode, atau filter produk ini."
           action-label="Tampilkan semua transaksi"
           @action="showEverything"

@@ -100,7 +100,7 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
       ?? (cause as { status?: number })?.status
     quotaFullError.value = status === 'active'
       && (statusCode === 422 || /kuota|kursi penuh/i.test(message))
-    if (!quotaFullError.value) toast.error('Perubahan gagal.', message)
+    if (!quotaFullError.value) toast.error('Perubahan belum tersimpan.', message)
   }
   finally { busyId.value = '' }
 }
@@ -147,7 +147,7 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
           :total-count="total" item-noun="siswa" :actionable-count="pendingCount" actionable-label="menunggu diaktifkan"
           :active="isActive" @reset="reset"
         />
-        <AppEmptyState v-if="rows.length === 0" title="Tidak ada hasil" description="Tidak ada siswa yang cocok dengan pencarian atau status yang dipilih." action-label="Reset pencarian" @action="reset" />
+        <AppEmptyState v-if="rows.length === 0" title="Hasil tidak ditemukan" description="Tidak ada siswa yang cocok dengan pencarian atau status yang dipilih." action-label="Hapus pencarian" @action="reset" />
         <DashboardTable v-else :columns="columns" :data="rows" primary-key="accountId" action-key="aksi">
           <template #cell(name)="{ item }"><span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span><span class="block text-[0.82rem] text-muted">{{ item.email }}</span></template>
           <template #cell(status)="{ item }"><DashboardBadge :tone="STATUS_TONE[item.status as BimbelMemberStatus]">{{ STATUS_LABEL[item.status as BimbelMemberStatus] }}</DashboardBadge></template>

@@ -59,7 +59,7 @@ export function useAdminProductsAll() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat daftar produk.')
+      error.value = tutorApiMessage(cause, 'Daftar produk belum berhasil dimuat.')
     }
     finally {
       pending.value = false

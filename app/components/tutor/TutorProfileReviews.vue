@@ -106,7 +106,7 @@ const emptyDescription = computed(() =>
     <TutorProfileEmpty
       v-if="!hasRatings && !failed"
       icon="chat-circle-text"
-      title="Belum ada ulasan"
+      title="Ulasannya masih kosong"
       :description="emptyDescription"
     />
 
@@ -201,7 +201,7 @@ const emptyDescription = computed(() =>
         <span aria-hidden="true" class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-danger-soft text-danger-ink">
           <AppIcon name="warning-circle" :size="26" />
         </span>
-        <p class="mt-4 font-bold tracking-[-0.02em]">Gagal memuat ulasan</p>
+        <p class="mt-4 font-bold tracking-[-0.02em]">Ulasan belum berhasil dimuat</p>
         <p class="mt-1.5 text-[0.92rem] text-muted">Periksa koneksimu lalu coba lagi.</p>
         <AppButton variant="outline" size="sm" class="mt-5 min-h-11 bg-surface" @click="emit('retry')">
           <AppIcon name="arrow-clockwise" :size="17" />
@@ -286,7 +286,7 @@ const emptyDescription = computed(() =>
         <!-- Only reachable if the list changed under an active filter; the
              zero buckets are not clickable in the first place. -->
         <div v-else class="mt-4 rounded-lg border border-dashed border-line bg-surface px-6 py-10 text-center">
-          <p class="font-bold tracking-[-0.02em]">Tidak ada ulasan {{ activeStar }} bintang.</p>
+          <p class="font-bold tracking-[-0.02em]">Ulasan {{ activeStar }} bintang belum tersedia.</p>
           <AppButton variant="outline" size="sm" class="mt-4 min-h-11 bg-surface" @click="clearFilter">
             Tampilkan semua ulasan
           </AppButton>
@@ -305,7 +305,7 @@ const emptyDescription = computed(() =>
       <TutorProfileEmpty
         v-else
         icon="chat-circle-text"
-        title="Belum ada ulasan"
+        title="Ulasannya masih kosong"
         :description="emptyDescription"
       />
       </div>

@@ -13,7 +13,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Profil & Pengaturan Akun | Zenko',
+  title: 'Akun Saya | Zenko',
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 
@@ -34,17 +34,37 @@ const ROLE_TONE: Record<Role, 'neutral' | 'brand'> = {
 }
 
 /* --------------------------------------------------------------------------
- * Tab — dua bagian yang tadinya ditumpuk (Profil, Kata sandi) sekarang
- * dipisah tab supaya halamannya tidak sepanjang gulungan.
+ * Tab — tiga ruang: siapa kamu (Profil), cara masuk dan pintu darurat
+ * (Keamanan), dan tempat bertanya (Bantuan). Keamanan bukan tumpukan form:
+ * tiap tindakannya satu baris menu yang membuka modal atau dialog sendiri.
+ * Hapus akun ikut di sana — ia tindakan keamanan/akses, bukan tab sendiri.
  * ------------------------------------------------------------------------ */
 
 const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 
-const TABS = [
+type TabId = 'profil' | 'keamanan' | 'bantuan'
+const TABS: { id: TabId, label: string }[] = [
   { id: 'profil', label: 'Profil' },
-  { id: 'kata-sandi', label: 'Kata sandi' },
+  { id: 'keamanan', label: 'Keamanan' },
+  { id: 'bantuan', label: 'Bantuan' },
 ]
-const activeTab = ref('profil')
+const DEFAULT_TAB: TabId = 'profil'
+
+function normalizeTab(value: unknown): TabId {
+  return TABS.some(tab => tab.id === value) ? value as TabId : DEFAULT_TAB
+}
+
+// Dibaca saat setup, bukan onMounted, supaya tautan `?tab=bantuan` (mis. dari
+// artikel Pusat Bantuan) langsung merender panel yang benar tanpa berkedip
+// Profil dulu. `replace` menjaga pindah tab tidak menumpuk riwayat back.
+const activeTab = ref<TabId>(normalizeTab(route.query.tab))
+watch(() => route.query.tab, value => (activeTab.value = normalizeTab(value)))
+watch(activeTab, (tab) => {
+  if (normalizeTab(route.query.tab) === tab) return
+  void router.replace({ query: { ...route.query, tab: tab === DEFAULT_TAB ? undefined : tab } })
+})
 
 /* --------------------------------------------------------------------------
  * Profil — baca-saja sampai "Edit profil" ditekan. Nama, foto, dan email
@@ -126,7 +146,7 @@ async function saveProfile() {
     }
   }
   catch (cause) {
-    toast.error('Gagal menyimpan profil.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Profil belum berhasil disimpan.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     profileSaving.value = false
@@ -157,7 +177,7 @@ async function onAvatarSelected(event: Event) {
     toast.success('Foto profil diperbarui.')
   }
   catch (cause) {
-    toast.error('Gagal mengunggah foto.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Foto belum berhasil diunggah.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     avatarUploading.value = false
@@ -240,7 +260,7 @@ async function resendEmailCode() {
     startResendCooldown()
   }
   catch (cause) {
-    emailConfirmError.value = accountApiMessage(cause, 'Gagal mengirim ulang kode.')
+    emailConfirmError.value = accountApiMessage(cause, 'Kode belum berhasil dikirim ulang.')
   }
 }
 
@@ -258,80 +278,43 @@ function cancelEmailStep() {
 }
 
 /* --------------------------------------------------------------------------
- * Kata sandi — tidak berubah dari sebelumnya, cuma pindah ke tabnya sendiri.
+ * Peran & akses — apa yang bisa dibuka akun ini, dan pintu ke sana. Siswa
+ * yang belum jadi tutor melihat status pengajuannya (atau ajakan mengajukan);
+ * tutor/admin melihat dashboard-nya; semua melihat bimbel yang diikuti.
  * ------------------------------------------------------------------------ */
 
-const { state, error, change, reset } = useAccountPassword()
+const { data: memberships, ensure: ensureMemberships } = useBimbelMemberships()
+const activeMemberships = computed(() => memberships.value.filter(m => m.status === 'active'))
 
-const form = reactive({
-  current: '',
-  next: '',
-  confirm: '',
+const BIMBEL_ROLE_LABEL = { owner: 'Owner', admin: 'Admin', teacher: 'Pengajar', student: 'Siswa' } as const
+
+const tutorApplication = useMyTutorApplication()
+
+onMounted(() => {
+  void ensureMemberships()
+  // Hanya siswa yang punya pengajuan untuk dipantau; tutor sudah lewat, admin
+  // tidak pernah mengajukan.
+  watch(() => user.value?.role, (role) => {
+    if (role === 'student') void tutorApplication.refresh()
+  }, { immediate: true })
 })
 
-const errors = reactive<{ current?: string, next?: string, confirm?: string }>({})
-
-// Same strength grading as /daftar and /password-baru: one password must
-// never be graded differently on different screens.
-const strength = usePasswordStrength(toRef(form, 'next'))
-
-const isSubmitting = computed(() => state.value === 'submitting')
-
-function validate() {
-  for (const key of Object.keys(errors) as (keyof typeof errors)[]) delete errors[key]
-
-  if (!form.current) errors.current = 'Kata sandi saat ini wajib diisi.'
-
-  if (!form.next) errors.next = 'Kata sandi baru wajib diisi.'
-  else if (form.next.length < MIN_PASSWORD_LENGTH) {
-    errors.next = `Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter.`
+const roleDescription = computed(() => {
+  switch (user.value?.role) {
+    case 'admin': return 'Mengelola moderasi, pembayaran tutor, dan operasional Zenko.'
+    case 'tutor': return 'Bisa membuat, menjual, dan memantau paket tryout — sekaligus tetap bisa membeli paket seperti siswa.'
+    default: return 'Mencari, membeli, dan mengerjakan paket tryout.'
   }
-  else if (form.next === form.current) {
-    errors.next = 'Kata sandi baru harus berbeda dari yang sekarang.'
-  }
+})
 
-  if (!form.confirm) errors.confirm = 'Ulangi kata sandi baru.'
-  else if (form.confirm !== form.next) errors.confirm = 'Kedua kata sandi belum sama.'
+/* --------------------------------------------------------------------------
+ * Keamanan — kata sandi dan hapus akun masing-masing di modalnya sendiri
+ * (AccountPasswordModal, AccountDeleteModal); keluar dari semua perangkat
+ * cukup dialog konfirmasi karena tidak ada yang perlu diisi.
+ * ------------------------------------------------------------------------ */
 
-  return Object.keys(errors).length === 0
-}
-
-/** Field ids in the order they appear, so the first invalid one gets the caret. */
-const PASSWORD_FIELD_IDS: Record<keyof typeof errors, string> = {
-  current: 'current-password',
-  next: 'new-password',
-  confirm: 'confirm-password',
-}
-
-async function onSubmit() {
-  reset()
-  if (!validate()) {
-    const firstInvalid = (Object.keys(PASSWORD_FIELD_IDS) as (keyof typeof errors)[])
-      .find(key => errors[key])
-    if (firstInvalid) {
-      focusField(PASSWORD_FIELD_IDS[firstInvalid])
-      toast.error('Ada kolom yang belum benar.', errors[firstInvalid])
-    }
-    return
-  }
-
-  await change(form.current, form.next)
-
-  if (state.value === 'success') {
-    form.current = ''
-    form.next = ''
-    form.confirm = ''
-    toast.success('Kata sandi berhasil diganti.', 'Pakai yang baru saat masuk berikutnya.')
-  }
-  // "Belum tersambung" is the password-change endpoint being switched off, not
-  // a failure the person did anything to cause — an amber toast, not a red one.
-  else if (state.value === 'not-connected') {
-    toast.warning('Ganti kata sandi belum tersambung.', error.value)
-  }
-  else if (state.value === 'error') {
-    toast.error('Gagal mengganti kata sandi.', error.value)
-  }
-}
+const passwordOpen = ref(false)
+const deleteOpen = ref(false)
 
 /* --------------------------------------------------------------------------
  * Keluar dari semua perangkat — server mem-bump session_version, jadi semua
@@ -369,12 +352,13 @@ async function onSignOutAllDevices() {
   <div class="grid gap-6">
     <header>
       <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Akun saya</h1>
-      <p class="mt-1.5 text-muted">Data akun dan keamanan masuk ke Zenko.</p>
+      <p class="mt-1.5 text-muted">Data akun, keamanan masuk, dan bantuan.</p>
     </header>
 
     <AppTabs v-model="activeTab" :tabs="TABS" aria-label="Bagian akun" />
 
-    <div v-show="activeTab === 'profil'" id="panel-profil" role="tabpanel" aria-labelledby="tab-profil">
+    <!-- ============================================================ Profil -->
+    <div v-show="activeTab === 'profil'" id="panel-profil" class="grid gap-6" role="tabpanel" aria-labelledby="tab-profil">
       <DashboardPanel title="Profil" description="Foto, nama, email, dan status verifikasi akunmu.">
         <!-- "Edit profil" adalah aksi tingkat bagian, jadi tempatnya di
              header panel bersebelahan dengan judulnya — bukan sebagai baris
@@ -560,112 +544,99 @@ async function onSignOutAllDevices() {
           </div>
         </div>
       </DashboardPanel>
-    </div>
 
-    <div v-show="activeTab === 'kata-sandi'" id="panel-kata-sandi" class="grid gap-6" role="tabpanel" aria-labelledby="tab-kata-sandi">
-      <DashboardPanel
-        title="Kata sandi"
-        description="Ganti kata sandi yang kamu pakai untuk masuk dengan email."
-      >
-        <form class="grid max-w-100 gap-5" novalidate @submit.prevent="onSubmit">
-          <FormField
-            id="current-password"
-            v-model="form.current"
-            label="Kata sandi saat ini"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Kata sandi yang sekarang"
-            :error="errors.current"
+      <DashboardPanel title="Peran & akses" description="Apa yang bisa dibuka akun ini di Zenko.">
+        <div v-if="user" class="divide-y divide-hairline">
+          <AccountSettingRow
+            :icon="user.role === 'admin' ? 'shield-check' : user.role === 'tutor' ? 'chalkboard-teacher' : 'student'"
+            :title="`Peran: ${ROLE_LABEL[user.role]}`"
+            :description="roleDescription"
           >
             <template #action>
-              <NuxtLink
-                to="/lupa-password"
-                class="text-[0.82rem] font-semibold text-primary transition-colors hover:text-primary-light"
-              >
-                Lupa kata sandi?
-              </NuxtLink>
+              <AppButton v-if="user.role === 'admin'" to="/dashboard/admin" variant="outline" size="sm">
+                Dashboard admin
+              </AppButton>
+              <AppButton v-else-if="user.role === 'tutor'" to="/dashboard/tutor" variant="outline" size="sm">
+                Dashboard tutor
+              </AppButton>
+              <DashboardBadge v-else-if="tutorApplication.data.value?.status === 'pending'" tone="warning">
+                Pengajuan tutor sedang ditinjau
+              </DashboardBadge>
+              <AppButton v-else to="/jadi-tutor" variant="outline" size="sm">
+                {{ tutorApplication.data.value?.status === 'rejected' ? 'Ajukan tutor lagi' : 'Jadi tutor' }}
+              </AppButton>
             </template>
-          </FormField>
+          </AccountSettingRow>
 
-          <FormField
-            id="new-password"
-            v-model="form.next"
-            label="Kata sandi baru"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Minimal 8 karakter"
-            :error="errors.next"
+          <AccountSettingRow
+            icon="buildings"
+            title="Bimbel"
+            :description="activeMemberships.length
+              ? activeMemberships.map(m => `${m.bimbelName} (${BIMBEL_ROLE_LABEL[m.role]})`).join(', ')
+              : 'Belum tergabung di bimbel mana pun.'"
           >
-            <template #below>
-              <div v-if="form.next" class="mt-2.5 flex items-center gap-3">
-                <div class="flex flex-1 gap-1.5" aria-hidden="true">
-                  <span
-                    v-for="level in 3"
-                    :key="level"
-                    class="h-1 flex-1 rounded-pill transition-colors duration-200"
-                    :class="level <= strength.score ? strength.tone : 'bg-line'"
-                  />
-                </div>
-                <span class="text-[0.78rem] font-semibold text-muted">{{ strength.label }}</span>
-              </div>
+            <template #action>
+              <AppButton to="/akun/bimbel" variant="outline" size="sm">
+                {{ activeMemberships.length ? 'Bimbel saya' : 'Lihat cara gabung' }}
+              </AppButton>
             </template>
-          </FormField>
-
-          <FormField
-            id="confirm-password"
-            v-model="form.confirm"
-            label="Ulangi kata sandi baru"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Ketik ulang kata sandi baru"
-            :error="errors.confirm"
-          />
-
-          <div>
-            <AppButton type="submit" size="sm" :disabled="isSubmitting">
-              {{ isSubmitting ? 'Menyimpan…' : 'Simpan kata sandi' }}
-            </AppButton>
-          </div>
-
-          <p class="text-[0.82rem] text-muted">
-            Jika kamu mendaftar atau selalu masuk menggunakan akun Google, kamu bisa mengatur kata sandi baru melalui <NuxtLink to="/lupa-password" class="font-semibold text-primary hover:text-primary-light">tautan pemulihan kata sandi</NuxtLink>.
-          </p>
-        </form>
-      </DashboardPanel>
-
-      <!-- Keamanan lintas perangkat: akhiri semua sesi sekaligus, termasuk
-           perangkat ini. Ditaruh di tab yang sama dengan kata sandi karena
-           keduanya soal mengamankan akses masuk. -->
-      <DashboardPanel
-        title="Perangkat lain"
-        description="Akhiri semua sesi yang masih masuk ke akun Zenko-mu sekaligus."
-      >
-        <div class="grid max-w-125 gap-4">
-          <div class="flex items-start gap-3">
-            <span
-              aria-hidden="true"
-              class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-alt text-muted"
-            >
-              <AppIcon name="devices" :size="20" />
-            </span>
-            <p class="text-[0.9rem] text-muted">
-              Kalau kamu pernah masuk di perangkat umum atau merasa akunmu dipakai orang lain, keluarkan akun dari semua tempat sekaligus. Tindakan ini <strong class="font-semibold text-ink">mengeluarkan akun dari semua perangkat, termasuk yang sedang kamu pakai sekarang</strong> — kamu perlu masuk lagi setelahnya.
-            </p>
-          </div>
-
-          <div>
-            <AppButton
-              variant="danger"
-              size="sm"
-              :disabled="signingOutAll"
-              @click="onSignOutAllDevices"
-            >
-              <AppIcon name="sign-out" :size="16" />
-              {{ signingOutAll ? 'Mengeluarkan…' : 'Keluar dari semua perangkat' }}
-            </AppButton>
-          </div>
+          </AccountSettingRow>
         </div>
       </DashboardPanel>
     </div>
+
+    <!-- ========================================================== Keamanan -->
+    <div v-show="activeTab === 'keamanan'" id="panel-keamanan" class="grid gap-6" role="tabpanel" aria-labelledby="tab-keamanan">
+      <DashboardPanel title="Cara masuk" description="Kata sandi dan sesi yang sedang aktif di akunmu.">
+        <div class="divide-y divide-hairline">
+          <AccountSettingRow
+            icon="key"
+            title="Kata sandi"
+            description="Ganti kata sandi yang kamu pakai untuk masuk dengan email."
+          >
+            <template #action>
+              <AppButton variant="outline" size="sm" @click="passwordOpen = true">
+                Ganti kata sandi
+              </AppButton>
+            </template>
+          </AccountSettingRow>
+
+          <AccountSettingRow
+            icon="devices"
+            title="Keluar dari semua perangkat"
+            description="Akhiri semua sesi sekaligus, termasuk perangkat ini — kamu perlu masuk lagi setelahnya."
+          >
+            <template #action>
+              <AppButton variant="outline" size="sm" :disabled="signingOutAll" @click="onSignOutAllDevices">
+                {{ signingOutAll ? 'Mengeluarkan…' : 'Keluar semua' }}
+              </AppButton>
+            </template>
+          </AccountSettingRow>
+        </div>
+      </DashboardPanel>
+
+      <DashboardPanel title="Zona berbahaya" description="Tindakan yang tidak bisa dibatalkan.">
+        <AccountSettingRow
+          icon="trash"
+          tone="danger"
+          title="Hapus akun"
+          description="Menghapus akun Zenko-mu secara permanen beserta akses paket dan riwayat tryout."
+        >
+          <template #action>
+            <AppButton variant="danger" size="sm" @click="deleteOpen = true">
+              Hapus akun…
+            </AppButton>
+          </template>
+        </AccountSettingRow>
+      </DashboardPanel>
+    </div>
+
+    <!-- =========================================================== Bantuan -->
+    <div v-show="activeTab === 'bantuan'" id="panel-bantuan" role="tabpanel" aria-labelledby="tab-bantuan">
+      <AccountHelpPanel />
+    </div>
+
+    <AccountPasswordModal v-model:open="passwordOpen" />
+    <AccountDeleteModal v-model:open="deleteOpen" />
   </div>
 </template>

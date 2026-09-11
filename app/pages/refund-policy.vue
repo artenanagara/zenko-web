@@ -5,11 +5,11 @@ definePageMeta({ path: '/kebijakan-refund' })
 useSeoMeta({
   title: 'Kebijakan Refund | Zenko',
   description:
-    'Kebijakan pengembalian dana Zenko untuk pembelian paket try out: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
+    'Kebijakan pengembalian dana Zenko untuk pembelian paket tryout: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
   ogTitle: 'Kebijakan Refund | Zenko',
   ogDescription:
-    'Kebijakan pengembalian dana Zenko untuk pembelian paket try out: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+    'Kebijakan pengembalian dana Zenko untuk pembelian paket tryout: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/kebijakan-refund',
   twitterCard: 'summary_large_image',
 })
@@ -23,7 +23,7 @@ useHead({
   <LegalDocument lead="Kebijakan" accent="Refund" updated="25 Agustus 2026">
     <p>
       Kebijakan Refund ini menjelaskan kapan dan bagaimana kamu dapat
-      mengajukan pengembalian dana atas pembelian paket try out di Zenko.
+      mengajukan pengembalian dana atas pembelian paket tryout di Zenko.
       Kebijakan ini merupakan bagian dari
       <NuxtLink to="/ketentuan-layanan">Ketentuan Layanan</NuxtLink> Zenko dan
       dibaca bersama Bagian 8 (Pembatalan dan Pengembalian Dana) di dalamnya.
@@ -34,7 +34,7 @@ useHead({
 
     <h2 id="kebijakan-umum">1. Kebijakan Umum</h2>
     <p>
-      Paket try out berbayar di Zenko memberikan akses digital secara instan
+      Paket tryout berbayar di Zenko memberikan akses digital secara instan
       begitu pembayaran berhasil dikonfirmasi. Karena akses diberikan langsung
       dan dapat langsung dikerjakan, pembelian pada dasarnya bersifat final
       setelah diakses dan tidak dapat dibatalkan hanya karena perubahan

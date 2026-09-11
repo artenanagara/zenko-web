@@ -48,7 +48,7 @@ async function refresh() {
     })
   }
   catch (cause) {
-    error.value = tutorApiMessage(cause, 'Gagal memuat pengajuan perubahan rekening.')
+    error.value = tutorApiMessage(cause, 'Pengajuan perubahan rekening belum berhasil dimuat.')
   }
   finally {
     pending.value = false
@@ -161,7 +161,7 @@ function clearNotices() {
 }
 
 const CONFLICT_NOTICE = 'Item ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
-const DECISION_FALLBACK = 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.'
+const DECISION_FALLBACK = 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.'
 
 /**
  * Decided-race on a change request surfaces as 404 ("…tidak ditemukan atau
@@ -315,14 +315,14 @@ async function confirmReject(reason: string) {
              filter came up empty, and Reset is the way out. -->
         <AppEmptyState
           v-if="rows.length === 0 && !isActive"
-          title="Tidak ada pengajuan perubahan"
+          title="Tidak ada pengajuan perubahan rekening"
           description="Pengajuan perubahan rekening dari tutor akan muncul di sini."
         />
 
         <AppEmptyState
           v-else-if="rows.length === 0"
-          title="Tidak ada hasil"
-          description="Tidak ada pengajuan yang cocok dengan pencarian atau filter ini."
+          title="Hasil tidak ditemukan"
+          description="Tidak ada pengajuan yang cocok dengan pencarian atau filter yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />

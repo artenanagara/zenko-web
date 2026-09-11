@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import type { SortKey } from '#shared/types/catalog'
 
+// Beranda ditutup dengan ajakan untuk siswa di dalam footer (lihat AppFooter).
+definePageMeta({ footerCta: true })
+
 const sort = ref<SortKey>('featured')
 
 const { data: packages, pending, error } = usePackages(sort)
 const { data: testimonials } = useTestimonials()
 
 useSeoMeta({
-  title: 'Paket Try Out Online SKD dan TKA | Zenko',
+  title: 'Paket Tryout Online untuk Berbagai Ujian | Zenko',
   description:
-    'Latihan try out online untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
-  ogTitle: 'Paket Try Out Online SKD dan TKA | Zenko',
+    'Temukan latihan SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan ujian lainnya. Kerjakan simulasi CBT, pahami hasilnya, lalu belajar lebih terarah.',
+  ogTitle: 'Paket Tryout Online untuk Berbagai Ujian | Zenko',
   ogDescription:
-    'Latihan try out online untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+    'Temukan latihan SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan ujian lainnya. Kerjakan simulasi CBT, pahami hasilnya, lalu belajar lebih terarah.',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/',
   twitterCard: 'summary_large_image',
 })
@@ -40,6 +43,5 @@ useHead({
 
     <FeatureSection />
     <TestimonialSection :items="testimonials" />
-    <TutorCta />
   </main>
 </template>

@@ -22,7 +22,7 @@ function clear() {
   >
     <IconSearch class="h-4.5 w-4.5 shrink-0 text-placeholder" />
 
-    <label class="sr-only" for="search-input">Cari paket try out</label>
+    <label class="sr-only" for="search-input">Cari paket tryout</label>
     <!-- id is what the header's search button focuses; keep it unique per page. -->
     <input
       id="search-input"

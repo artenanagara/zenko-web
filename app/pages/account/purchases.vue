@@ -32,7 +32,7 @@ const totalSpent = computed(() =>
   <div class="grid gap-6">
     <AppPageHeader
       title="Riwayat pembelian"
-      description="Daftar seluruh transaksi pembelian paket try out dan invoice resmimu."
+      description="Daftar seluruh transaksi pembelian paket tryout dan invoice resmimu."
     />
 
     <!-- Memuat: kerangka tabel, bukan halaman kosong. -->
@@ -152,7 +152,7 @@ const totalSpent = computed(() =>
       </div>
 
       <p v-else class="text-[0.9rem] text-muted">
-        Belum ada transaksi. Paket yang kamu beli akan tercatat di sini.
+        Riwayatmu masih kosong. Setelah membeli paket, transaksinya akan tercatat di sini.
       </p>
     </DashboardPanel>
   </div>

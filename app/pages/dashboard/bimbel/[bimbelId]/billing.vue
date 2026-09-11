@@ -166,7 +166,7 @@ async function orderSubscription() {
     toast.success('Tagihan dibuat.', 'Selesaikan pembayaran sesuai instruksi.')
     await navigateTo(paymentPath(order.id))
   }
-  catch (cause) { toast.error('Gagal membuat tagihan.', tutorApiMessage(cause, 'Coba lagi.')) }
+  catch (cause) { toast.error('Tagihan belum berhasil dibuat.', tutorApiMessage(cause, 'Coba lagi.')) }
   finally { ordering.value = false }
 }
 
@@ -266,7 +266,7 @@ async function onSeatOrderCreated(order: BimbelOrder) {
           <div class="mt-6 grid gap-5 xl:grid-cols-3" role="radiogroup" aria-label="Tingkat langganan">
             <BimbelPlanCard
               v-for="plan in plans.data.value" :key="plan.plan" :name="bimbelPlanLabel(plan.plan, plan.name)"
-              price-lead="Mulai dari" :price="formatRupiah(plan.pricePerMonth)" price-note="per bulan"
+              price-lead="Mulai dari" :price="formatRupiah(period === 12 ? plan.pricePerYear : plan.pricePerMonth)" :price-note="period === 12 ? 'per tahun' : 'per bulan'"
               :price-footnote="periodFootnote" :features="planFeatures(plan)" :badge="planBadge(plan.plan)" badge-tone="brand"
               :marketplace-share-percent="plan.marketplaceSharePercent"
               :selected="selectedPlan === plan.plan" :action-label="selectedPlan === plan.plan ? 'Lihat ringkasan' : 'Pilih tingkat ini'"

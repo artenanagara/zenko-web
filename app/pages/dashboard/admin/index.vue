@@ -123,7 +123,7 @@ const headcountStats = computed(() => [
 
     <template v-else>
       <div v-if="error && !summary" class="flex flex-wrap items-center gap-3">
-        <AppInlineMessage type="error">Gagal memuat jumlah antrean.</AppInlineMessage>
+        <AppInlineMessage type="error">Jumlah antrean belum berhasil dimuat.</AppInlineMessage>
         <button
           type="button"
           class="text-[0.82rem] font-semibold text-primary hover:underline"
@@ -155,7 +155,7 @@ const headcountStats = computed(() => [
       <AppEmptyState
         v-if="allClear"
         title="Semua antrean selesai"
-        description="Kerja bagus! Belum ada tugas moderasi yang menunggu saat ini. Silakan kembali nanti."
+        description="Semua antrean sudah tertangani. Periksa kembali nanti untuk tugas baru."
       />
     </template>
   </div>

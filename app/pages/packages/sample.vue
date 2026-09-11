@@ -26,7 +26,7 @@ const session = useTryoutSession(`${slug}--coba`, blueprint, {
 })
 
 useHead({
-  title: `Coba Gratis ${detail.value.title} | Zenko`,
+  title: `Coba gratis ${detail.value.title} | Zenko`,
   meta: [{ name: 'robots', content: 'noindex' }],
 })
 

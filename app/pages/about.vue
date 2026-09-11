@@ -5,11 +5,11 @@ definePageMeta({ path: '/tentang' })
 useSeoMeta({
   title: 'Tentang Kami | Zenko',
   description:
-    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
+    'Zenko adalah tempat menemukan latihan untuk berbagai tujuan ujian. Pilih paket terkurasi dari tutor dan bimbel, kerjakan simulasi CBT, lalu pahami hasil belajarmu.',
   ogTitle: 'Tentang Kami | Zenko',
   ogDescription:
-    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+    'Zenko adalah tempat menemukan latihan untuk berbagai tujuan ujian. Pilih paket terkurasi dari tutor dan bimbel, kerjakan simulasi CBT, lalu pahami hasil belajarmu.',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/tentang',
   twitterCard: 'summary_large_image',
 })
@@ -94,8 +94,8 @@ const audiences = [
     description:
       'Berlatih terarah untuk ujian yang kamu tuju, tanpa mengumpulkan materi ke sana ke mari.',
     points: [
-      'Simulasi SKD (CPNS & Kedinasan) dan TKA (SD–SMK)',
-      'Skor, ambang kelulusan, dan pembahasan tiap soal',
+      'Pilihan latihan untuk berbagai tujuan ujian',
+      'Skor, analisis hasil, dan pembahasan tiap soal',
       'Riwayat pengerjaan tersimpan di akunmu',
     ],
     to: '/paket',
@@ -120,7 +120,7 @@ const audiences = [
     label: 'Bimbel',
     title: 'Mengelola banyak siswa',
     description:
-      'Punya ruang try out sendiri untuk siswa bimbelmu, terpisah dari katalog publik.</br>',
+      'Punya ruang tryout sendiri untuk siswa bimbelmu, terpisah dari katalog publik.</br>',
     points: [
       'Kelas dan roster siswa dalam satu dashboard',
       'Bank soal privat yang hanya untuk siswamu',
@@ -186,7 +186,7 @@ const faqs = [
   {
     question: 'Ujian apa saja yang tersedia?',
     answer:
-      'SKD untuk CPNS dan Sekolah Kedinasan, serta TKA untuk jenjang SD, SMP, SMA, dan SMK — tersedia sebagai simulasi penuh maupun mini try out satu subtes atau satu mata pelajaran.',
+      'Zenko menyediakan latihan SKD untuk CPNS dan Sekolah Kedinasan, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, serta kategori lain yang terus bertambah. Pilihan terbaru selalu bisa kamu lihat di katalog.',
   },
   {
     question: 'Bisakah mencoba dulu sebelum mengambil paket?',
@@ -199,9 +199,9 @@ const faqs = [
       'Tidak. Semua paket dikerjakan langsung di sistem CBT Zenko, sehingga karya tutor tidak beredar sebagai berkas yang mudah disebar ulang.',
   },
   {
-    question: 'Siapa yang menghitung skor saya?',
+    question: 'Bagaimana skor tryout dihitung?',
     answer:
-      'Server Zenko, dari rekaman jawabanmu sendiri. Simulasi SKD dinilai pada skala 550 beserta ambang batas tiap subtes, sedangkan TKA memakai skala 0–100 per mata pelajaran.',
+      'Skor dihitung oleh server Zenko berdasarkan jawaban dan aturan setiap jenis ujian. Karena sistem penilaiannya bisa berbeda, hasil akan menampilkan rincian yang sesuai dengan paket yang kamu kerjakan.',
   },
   {
     question: 'Saya tutor atau punya bimbel — bagaimana cara bergabung?',
@@ -225,22 +225,22 @@ const faqs = [
             class="mb-5 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-2 pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
           >
             <span class="h-2 w-2 rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
-            Marketplace try out SKD &amp; TKA
+            Teman belajar untuk berbagai ujian
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
-            Satu tempat untuk latihan
-            <span class="text-accent mt-1 block">ujian yang kamu tuju</span>
+            Banyak tujuan ujian
+            <span class="text-accent mt-1 block">satu tempat untuk maju</span>
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Zenko mempertemukan tutor yang menyusun paket try out dengan siswa yang
-            membutuhkannya. Tiap paket dikurasi lebih dulu, lalu dikerjakan sebagai
-            simulasi CBT dengan skor dan pembahasan yang keluar otomatis.
+            Zenko mempertemukan siswa dengan latihan dari tutor dan bimbel terpercaya.
+            Pilih paket yang sesuai targetmu, kerjakan simulasi CBT, lalu gunakan
+            hasilnya untuk menentukan langkah belajar berikutnya.
           </p>
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <AppButton to="/paket" size="lg">Cari paket try out</AppButton>
+            <AppButton to="/paket" size="lg">Temukan latihan</AppButton>
             <AppButton to="/jadi-tutor" size="lg" variant="outline">Jadi tutor</AppButton>
           </div>
         </div>
@@ -321,7 +321,7 @@ const faqs = [
             Cara kerja
           </p>
           <h2 id="cara-kerja-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter text-balance">
-            Dari bank soal tutor sampai <span class="text-accent">layar ujianmu</span>
+            Dari bank soal tutor sampai <span class="text-accent">progres belajarmu</span>
           </h2>
         </div>
 
@@ -392,9 +392,8 @@ const faqs = [
 
             <h3 class="mb-2.5 text-[1.2rem] font-bold tracking-[-0.03em]">Simulasi yang mengikuti aturan aslinya</h3>
             <p class="leading-[1.62] text-muted">
-              Jumlah soal, durasi, dan cara berpindah antar subtes disetel mengikuti
-              ujian yang ditiru — SKD berjalan dengan satu timer untuk 110 soal, TKA
-              per mata pelajaran.
+              Jumlah soal, durasi, urutan subtes, dan cara penilaian disesuaikan dengan
+              jenis ujian pada paket yang kamu pilih.
             </p>
           </article>
 
@@ -440,8 +439,8 @@ const faqs = [
 
             <h3 class="mt-6 mb-2.5 text-[1.2rem] font-bold tracking-[-0.03em]">Skor dan pembahasan otomatis</h3>
             <p class="leading-[1.62] text-muted">
-              Begitu ujian selesai, server menghitung skor tiap subtes beserta ambang
-              kelulusannya, lalu membuka pembahasan soal demi soal.
+              Begitu ujian selesai, server menghitung hasil sesuai aturan paket dan
+              membuka pembahasan soal demi soal.
             </p>
           </article>
 
@@ -720,12 +719,12 @@ const faqs = [
           Mulai dari paket yang paling kamu butuhkan
         </h2>
         <p class="mx-auto mt-4 max-w-[52ch] text-[1.02rem] text-white/80">
-          Cari simulasi untuk ujian yang kamu tuju, atau bagikan bank soalmu
-          sendiri sebagai tutor.
+          Temukan latihan untuk targetmu, atau bagikan bank soal dan keahlianmu
+          sebagai tutor.
         </p>
 
         <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
-          <AppButton to="/paket" variant="light" size="lg">Cari paket try out</AppButton>
+          <AppButton to="/paket" variant="light" size="lg">Temukan latihan</AppButton>
           <NuxtLink
             to="/jadi-tutor"
             class="inline-flex min-h-13 items-center justify-center rounded-xs border border-white/40 px-8 font-semibold text-white transition-[transform,background] duration-200 ease-smooth hover:-translate-y-px hover:bg-white/10 focus-visible:-translate-y-px"

@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.22.0](https://github.com/artenanagara/zenko-web/compare/v0.21.0...v0.22.0) (2026-09-11)
+
+
+### Features
+
+* **account:** "Hapus akun" as its own tab for every role, with the consequences up front ([5c84c91](https://github.com/artenanagara/zenko-web/commit/5c84c914e6ea71848727b667c5ee101043925fc2))
+* **account:** Akun saya tabs, copyright gate on submit, Lenis smooth scroll ([e86173c](https://github.com/artenanagara/zenko-web/commit/e86173c3f3097f92862af1f10a586e19d6e671e1))
+* **account:** delete account for students; plainer verification table; help link everywhere ([d95b963](https://github.com/artenanagara/zenko-web/commit/d95b963eff0e230fd83fe58ef9811c95e04fc427))
+* **account:** reorganise Akun saya into Profil, Keamanan, and Bantuan tabs ([e3f3827](https://github.com/artenanagara/zenko-web/commit/e3f3827541dc1b9997d18cb5650cc624a8fc6325))
+* **copy:** apply updated Zenko voice across product ([5b3326d](https://github.com/artenanagara/zenko-web/commit/5b3326d74e6f18f50571eac2da9d951bd7d78b89))
+* **dashboard:** quieter chrome — static context card, help center without site nav, team action in panel header ([fc8a4f4](https://github.com/artenanagara/zenko-web/commit/fc8a4f499f96c7d993daec5657b18b7ee44db612))
+* **dashboard:** read-only tutor profile and a payment queue that opens on all rows ([226f3be](https://github.com/artenanagara/zenko-web/commit/226f3be63164550eab46094531c917fc90d930f5))
+* **editor:** gate product submission behind a copyright declaration modal ([a838dcf](https://github.com/artenanagara/zenko-web/commit/a838dcf54e651d71021905fa0c26fd65b241bde1))
+* **editor:** offer to overwrite a section on CSV import, and a delete-all for the question grid ([7d2b883](https://github.com/artenanagara/zenko-web/commit/7d2b883c009e2064fc71bfd918a746d16cac2214))
+* **footer:** merge the home closing CTA into the footer ([4850f53](https://github.com/artenanagara/zenko-web/commit/4850f5339b48e8a71796177243d78f2e9c298057))
+* **ui:** Lenis smooth scrolling and a subtle page transition ([debf68a](https://github.com/artenanagara/zenko-web/commit/debf68ae45533b7a82281287f27c9615dabcd790))
+
+
+### Bug Fixes
+
+* **bimbel:** yearly tier price on the billing cards, and a CSV hint that stays inside its modal ([4a10fe3](https://github.com/artenanagara/zenko-web/commit/4a10fe3f793928e3169de5fcbe6e3e7f589206be))
+* **editor:** stop double-escaping sanitized plain text when loading prompt/explanation ([77f6caf](https://github.com/artenanagara/zenko-web/commit/77f6cafad965ceba4653c6ccb1d2d770be397594))
+* **faq:** align category headings with their question cards ([3ef212d](https://github.com/artenanagara/zenko-web/commit/3ef212de52abb0a0c2a4610f5aec968b140f5bdb))
+* **footer:** replace the tagline that contradicted bimbel subscriptions ([eae0f2d](https://github.com/artenanagara/zenko-web/commit/eae0f2dc2e04e7785d94f8e500c5179c726bb49d))
+* **header:** hamburger left of the logo on narrow screens, profile on the right ([041746e](https://github.com/artenanagara/zenko-web/commit/041746e5957303952c5e2328f24c1986a3f1ec6a))
+* **help-center:** correct inaccurate help content and add help entry points ([880a390](https://github.com/artenanagara/zenko-web/commit/880a390cc611da87d4fd6e0caed639c752ea0853))
+
 ## [0.21.0](https://github.com/artenanagara/zenko-web/compare/v0.20.0...v0.21.0) (2026-09-10)
 
 

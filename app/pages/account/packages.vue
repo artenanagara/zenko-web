@@ -53,7 +53,7 @@ function matches(item: typeof items.value[number]): boolean {
   <div class="grid gap-6">
     <header>
       <h1 class="text-[1.6rem] font-bold tracking-[-0.04em]">Paket saya</h1>
-      <p class="mt-1.5 text-muted">Setiap paket adalah satu try out yang bisa kamu kerjakan berulang.</p>
+      <p class="mt-1.5 text-muted">Semua paket dan progres tryout-mu tersimpan di sini.</p>
     </header>
 
     <!-- Memuat: kerangka statistik dan kartu, bukan halaman kosong. -->
@@ -104,14 +104,14 @@ function matches(item: typeof items.value[number]): boolean {
            dari pencariannya, bukan jalan ke katalog. -->
       <AppEmptyState
         v-else-if="items.length"
-        title="Tidak ada paket yang cocok"
-        :description="`Tidak ada paket yang cocok dengan &quot;${search.trim()}&quot;. Coba kata kunci lain.`"
+        title="Paketnya belum ketemu"
+        :description="`Belum ada paket yang cocok dengan &quot;${search.trim()}&quot;. Coba kata kunci lain.`"
         action-label="Hapus pencarian"
         @action="search = ''"
       />
 
       <!-- An empty state is not an empty page: there is one way out of it. -->
-      <DashboardPanel v-else title="Belum ada paket" description="Kamu belum membeli paket apa pun.">
+      <DashboardPanel v-else title="Paketmu masih kosong" description="Mulai dari satu paket yang paling sesuai dengan targetmu.">
         <div class="flex items-start gap-3">
           <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-surface-alt text-muted">
             <IconGrid class="h-5 w-5" />
@@ -121,7 +121,7 @@ function matches(item: typeof items.value[number]): boolean {
           </p>
         </div>
         <div class="mt-4">
-          <AppButton to="/paket" size="sm">Jelajahi katalog</AppButton>
+          <AppButton to="/paket" size="sm">Cari paket</AppButton>
         </div>
       </DashboardPanel>
 

@@ -140,7 +140,7 @@ async function answer(item: BimbelMembership, accept: boolean) {
     await Promise.all([invitations.refresh(), refresh(), packages.refresh()])
   }
   catch (cause) {
-    toast.error('Undangan gagal dijawab.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
+    toast.error('Jawaban undangan belum terkirim.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
   }
   finally {
     answering.value = ''
@@ -284,7 +284,7 @@ async function answer(item: BimbelMembership, accept: boolean) {
 
       <AppEmptyState
         v-else
-        title="Belum ada paket bimbel"
+        title="Paket bimbelnya masih kosong"
         description="Bank soal bimbel muncul di sini setelah keanggotaanmu aktif. Gabung dengan kode dari pengelola bimbelmu."
         :action-label="activeMemberships.length ? undefined : 'Gabung bimbel'"
         @action="activeMemberships.length ? undefined : openJoin()"

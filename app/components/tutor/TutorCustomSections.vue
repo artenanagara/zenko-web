@@ -151,7 +151,7 @@ async function save() {
     toast.success('Subtes tersimpan.')
   }
   catch (cause) {
-    toast.error('Gagal menyimpan subtes.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Subtes belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     saving.value = false
@@ -162,7 +162,7 @@ async function save() {
 <template>
   <DashboardPanel
     title="Subtes"
-    description="Exam type custom: susun sendiri subtes try-out ini sebelum mengisi soalnya."
+    description="Tipe ujian kustom: susun subtes tryout ini sebelum mengisi soalnya."
   >
     <div class="grid gap-4">
       <p v-if="rows.length === 0" class="text-[0.9rem] text-muted">

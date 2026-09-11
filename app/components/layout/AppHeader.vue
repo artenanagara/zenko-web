@@ -133,7 +133,24 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
     :class="isScrolled ? 'border-line shadow-[0_8px_24px_rgba(15,23,42,0.04)]' : 'border-transparent'"
   >
     <nav class="container-page flex min-h-16 items-center justify-between gap-2 md:min-h-20" aria-label="Navigasi utama">
-      <div class="flex min-w-0 items-center gap-9">
+      <div class="flex min-w-0 items-center gap-3 lg:gap-9">
+        <!-- Hamburger di KIRI logo pada layar sempit, mengikuti kebiasaan
+             aplikasi mobile: menu di pojok kiri, identitas/profil di kanan.
+             Sebelumnya ia menempel di kanan bersama profil, dan dua kontrol
+             ikon berdampingan di sana membuat keduanya sama-sama sulit
+             ditebak. -->
+        <button
+          ref="hamburger"
+          type="button"
+          class="-ml-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm text-muted transition-colors duration-200 ease-smooth hover:bg-surface-alt hover:text-ink lg:hidden"
+          :aria-expanded="menuOpen"
+          :aria-controls="menuId"
+          aria-label="Buka menu navigasi"
+          @click="menuOpen ? closeMenu() : openMenu()"
+        >
+          <IconMenu class="h-5 w-5" />
+        </button>
+
         <!-- 80% dari 36/44/48px sebelumnya. Nilai px eksplisit karena 20% tidak
              mendarat di skala Tailwind mana pun; membulatkannya ke h-7/h-9
              akan meleset sampai 4px di breakpoint md. Tinggi header sendiri
@@ -189,18 +206,6 @@ onBeforeUnmount(() => viewport?.removeEventListener('change', onViewportChange))
           </NuxtLink>
           <AppButton to="/daftar" size="sm">Daftar</AppButton>
         </template>
-
-        <button
-          ref="hamburger"
-          type="button"
-          class="-mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm text-muted transition-colors duration-200 ease-smooth hover:bg-surface-alt hover:text-ink lg:hidden"
-          :aria-expanded="menuOpen"
-          :aria-controls="menuId"
-          aria-label="Buka menu navigasi"
-          @click="menuOpen ? closeMenu() : openMenu()"
-        >
-          <IconMenu class="h-5 w-5" />
-        </button>
       </div>
     </nav>
 

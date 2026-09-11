@@ -24,9 +24,12 @@ import type { TableControlOption } from '~/composables/useTableControls'
  * sini hanyalah pembayar yang bilang "saya sudah transfer" — sinyal untuk
  * memeriksa, bukan buktinya sendiri.
  *
- * Berbeda dari antrean lain yang berbentuk tabel, satu keputusan di sini
- * dibuat dengan membandingkan beberapa angka berdampingan. Jadi tiap baris
- * tampil sebagai kartu, bukan baris yang harus diklik dulu.
+ * Antreannya tabel, satu baris satu konfirmasi, dan dibuka pada "Semua":
+ * halaman yang kosong hanya karena tidak ada yang menunggu terbaca seperti
+ * belum ada konfirmasi sama sekali, padahal riwayat keputusannya justru yang
+ * admin cari saat pembeli bertanya. Jumlah yang masih perlu diperiksa selalu
+ * disebut di header — termasuk ketika nol, karena "nol" adalah jawaban yang
+ * ingin dibaca admin, bukan ketiadaan angka.
  */
 definePageMeta({
   layout: 'dashboard',
@@ -54,6 +57,12 @@ function proofImageUrl(proof: VerificationItem): string {
 function proofKindLabel(proof: VerificationItem): string {
   if (proof.kind === 'package') return 'Pembelian paket'
   return proof.orderKind === 'seat_addon' ? 'Tambah kursi bimbel' : 'Langganan bimbel'
+}
+
+/** Versi pendek untuk kolom Jenis — kolom Paket sudah menyebut bimbel/paketnya. */
+function proofKindShort(proof: VerificationItem): string {
+  if (proof.kind === 'package') return 'Paket'
+  return proof.orderKind === 'seat_addon' ? 'Kursi' : 'Langganan'
 }
 
 /** Siapa yang membayar, dibaca dari cabang union masing-masing. */
@@ -118,7 +127,7 @@ const {
     newest: (a, b) => b.createdAt - a.createdAt,
     'amount-desc': (a, b) => b.amountDue - a.amountDue,
   },
-  defaultFilter: 'queue',
+  defaultFilter: 'all',
   defaultSort: 'oldest',
 })
 
@@ -139,7 +148,7 @@ function clearNotices() {
 }
 
 const CONFLICT_NOTICE = 'Konfirmasi ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
-const DECISION_FALLBACK = 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.'
+const DECISION_FALLBACK = 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.'
 
 function isConflict(cause: unknown): boolean {
   return (cause as { statusCode?: number } | null)?.statusCode === 409
@@ -278,7 +287,7 @@ async function confirmReject(reason: string) {
  * ------------------------------------------------------------------------ */
 
 const PROOF_STATUS_LABEL: Record<VerificationItem['status'], string> = {
-  submitted: 'Menunggu diperiksa',
+  submitted: 'Perlu diperiksa',
   approved: 'Disetujui',
   rejected: 'Ditolak',
 }
@@ -292,19 +301,19 @@ const PROOF_STATUS_TONE: Record<VerificationItem['status'], 'warning' | 'success
 type ProofStatus = VerificationItem['status']
 
 /**
- * Kolom antrean. Nominal menggabungkan tagihan dan yang diklaim dalam satu
- * sel karena selisih keduanya adalah keputusan yang sedang diambil; memisah
- * jadi dua kolom memaksa mata melompat untuk membandingkan angka yang
- * seharusnya berdampingan.
+ * Kolom antrean — satu kolom satu fakta, seperti tabel admin lainnya.
+ * Tagihan dan yang diklaim bersebelahan sebagai dua kolom angka, bukan satu
+ * sel bertumpuk, supaya mata membandingkannya mendatar seperti membaca
+ * mutasi bank; kode unik kolom sendiri karena ia yang dicari di mutasi.
  */
 const COLUMNS = [
   { key: 'invoice', label: 'Invoice' },
-  { key: 'pembayar', label: 'Pembayar' },
-  { key: 'nominal', label: 'Tagihan / diklaim', align: 'right' as const },
-  // Waktu tunggu hanya berguna dibandingkan antarbaris; pada kartu HP ia
-  // cuma menambah keramaian, dan tanggalnya sudah ada di modal keputusan.
-  { key: 'menunggu', label: 'Menunggu', hideOnMobile: true },
-  { key: 'bukti', label: 'Bukti' },
+  { key: 'jenis', label: 'Jenis' },
+  { key: 'nama', label: 'Nama' },
+  { key: 'paket', label: 'Paket' },
+  { key: 'tagihan', label: 'Tagihan', align: 'right' as const },
+  { key: 'kodeUnik', label: 'Kode unik', align: 'right' as const, hideOnMobile: true },
+  { key: 'diklaim', label: 'Diklaim', align: 'right' as const },
   { key: 'status', label: 'Status' },
   { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
@@ -317,13 +326,16 @@ const COLUMNS = [
  */
 const tableRows = computed(() => rows.value.map(proof => ({
   invoice: proof.invoice,
-  pembayar: payerName(proof),
-  subject: proof.kind === 'package'
+  jenis: proofKindShort(proof),
+  nama: payerName(proof),
+  paket: proof.kind === 'package'
     ? proof.items[0]?.title ?? 'Paket tidak ditemukan'
     : proof.orderKind === 'seat_addon'
       ? `+${proof.additionalSeats} kursi · kuota menjadi ${proof.seatQuota}`
       : `${bimbelPlanLabel(proof.plan)} · ${proof.months} bulan · ${proof.seatQuota} kursi`,
-  payer: payerName(proof),
+  tagihan: proof.amountDue,
+  kodeUnik: proof.kind === 'package' && proof.uniqueCode > 0 ? proof.uniqueCode : null,
+  diklaim: proof.paidAmount,
   proof,
 })))
 
@@ -336,10 +348,10 @@ const tableRows = computed(() => rows.value.map(proof => ({
  */
 function waitedSince(unixSeconds: number): string {
   const minutes = Math.max(0, Math.floor((Date.now() / 1000 - unixSeconds) / 60))
-  if (minutes < 60) return `menunggu ${minutes} menit`
+  if (minutes < 60) return `${minutes} menit`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `menunggu ${hours} jam`
-  return `menunggu ${Math.floor(hours / 24)} hari`
+  if (hours < 24) return `${hours} jam`
+  return `${Math.floor(hours / 24)} hari`
 }
 
 /** Selisih nominal ditandai, karena itu alasan penolakan yang paling sering. */
@@ -365,8 +377,11 @@ const zoomed = ref<VerificationItem | null>(null)
           berbeda.
         </p>
       </div>
-      <DashboardBadge v-if="queueCount > 0" tone="warning">
-        {{ queueCount }} perlu diperiksa
+      <!-- Selalu tampil, juga saat nol: admin membuka halaman ini untuk
+           menjawab "ada yang harus saya periksa?", dan badge yang hilang
+           bukan jawaban. -->
+      <DashboardBadge v-if="loaded" :tone="queueCount > 0 ? 'warning' : 'success'">
+        {{ queueCount > 0 ? `${queueCount} perlu diperiksa` : 'Tidak ada yang perlu diperiksa' }}
       </DashboardBadge>
     </header>
 
@@ -422,18 +437,12 @@ const zoomed = ref<VerificationItem | null>(null)
     </p>
 
     <p v-else-if="rows.length === 0" class="mt-10 text-center text-[0.92rem] text-muted">
-      {{ isActive ? 'Tidak ada konfirmasi yang cocok dengan filter ini.' : 'Belum ada konfirmasi pembayaran yang menunggu.' }}
+      {{ isActive ? 'Tidak ada konfirmasi yang cocok dengan filter ini.' : 'Belum ada konfirmasi pembayaran yang masuk.' }}
     </p>
 
-    <!-- Antrean sebagai tabel: satu baris satu konfirmasi.
-         Sebelumnya tiap konfirmasi adalah kartu setinggi ~340px dengan
-         pratinjau bukti 160px di dalamnya, jadi antrean sepuluh butuh
-         belasan layar untuk dilewati dan tidak ada dua baris pun yang
-         nominalnya bisa dibandingkan berdampingan. Padahal pekerjaannya
-         justru membandingkan: tagihan lawan yang diklaim, satu baris lawan
-         mutasi bank. Buktinya turun jadi tautan kecil yang membuka modal
-         perbesaran yang sudah ada — dibuka saat diperlukan, bukan dimuat
-         untuk semua baris sekaligus. -->
+    <!-- Antrean sebagai tabel biasa: satu baris satu konfirmasi, satu kolom
+         satu fakta. Buktinya tautan kecil yang membuka modal perbesaran —
+         dibuka saat diperlukan, bukan dimuat untuk semua baris sekaligus. -->
     <DashboardTable
       v-else
       class="mt-6"
@@ -441,90 +450,83 @@ const zoomed = ref<VerificationItem | null>(null)
       :data="tableRows"
       primary-key="invoice"
       action-key="aksi"
+      compact
     >
-      <!-- Jenis di atas invoice, bukan di sampingnya: ia yang menentukan
-           bagaimana sisa baris ini dibaca, jadi mata harus menemukannya lebih
-           dulu — dan berdampingan, nomor invoice terpaksa patah dua baris. -->
-      <template #cell(invoice)="{ item }">
+      <template #cell(invoice)="{ value }">
+        <span class="font-semibold tracking-[-0.02em] whitespace-nowrap text-ink tabular-nums">{{ value }}</span>
+      </template>
+
+      <template #cell(jenis)="{ item }">
         <span
-          class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.68rem] font-bold tracking-wide uppercase"
-          :class="item.proof.kind === 'package'
-            ? 'bg-primary-soft text-primary'
-            : 'bg-amber-100 text-amber-800'"
-        >{{ proofKindLabel(item.proof) }}</span>
-        <span class="mt-1 block font-bold tracking-[-0.02em] whitespace-nowrap tabular-nums">
-          {{ item.proof.invoice }}
-        </span>
-        <span class="mt-0.5 block truncate text-[0.84rem] text-muted">{{ item.subject }}</span>
+          class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.72rem] font-bold tracking-wide whitespace-nowrap uppercase"
+          :class="item.proof.kind === 'package' ? 'bg-primary-soft text-primary' : 'bg-amber-100 text-amber-800'"
+        >{{ item.jenis }}</span>
       </template>
 
-      <template #cell(pembayar)="{ item }">
-        <span class="block truncate">{{ item.payer }}</span>
-        <span class="mt-0.5 block truncate text-[0.84rem] text-muted">
-          a.n. {{ item.proof.senderName }}
-        </span>
+      <!-- Nama pembeli/bimbel; nama pengirim transfer (yang tertulis di
+           mutasi) ada di tooltip dan di modal bukti — bukan kolom sendiri,
+           supaya tabelnya muat tanpa menggulung ke samping. -->
+      <template #cell(nama)="{ item }">
+        <span class="whitespace-nowrap" :title="`Pengirim transfer: ${item.proof.senderName}`">{{ item.nama }}</span>
       </template>
 
-      <!-- Tagihan dan yang diklaim dalam satu sel, bertumpuk: selisihnya
-           adalah keputusannya, dan dua kolom terpisah membuat mata harus
-           melompat untuk membandingkan angka yang seharusnya berdampingan. -->
-      <template #cell(nominal)="{ item }">
-        <span class="block font-semibold tabular-nums">{{ formatRupiah(item.proof.amountDue) }}</span>
+      <template #cell(paket)="{ value }">
+        <span class="block max-w-[13rem] truncate" :title="value">{{ value }}</span>
+      </template>
+
+      <template #cell(tagihan)="{ value }">
+        <span class="font-semibold whitespace-nowrap tabular-nums">{{ formatRupiah(value) }}</span>
+      </template>
+
+      <template #cell(kodeUnik)="{ value }">
+        <span v-if="value" class="tabular-nums">{{ value }}</span>
+        <span v-else class="text-muted">—</span>
+      </template>
+
+      <!-- Selisih dari tagihan ditandai: itu alasan penolakan yang paling sering. -->
+      <template #cell(diklaim)="{ item }">
         <span
-          class="mt-0.5 block text-[0.84rem] tabular-nums"
-          :class="amountMismatch(item.proof) ? 'font-semibold text-danger-ink' : 'text-muted'"
-        >
-          diklaim {{ formatRupiah(item.proof.paidAmount) }}
-          <template v-if="amountMismatch(item.proof)"> · tidak cocok</template>
-        </span>
-        <span
-          v-if="item.proof.kind === 'package' && item.proof.uniqueCode > 0"
-          class="mt-0.5 block text-[0.78rem] text-faint tabular-nums"
-        >kode unik {{ item.proof.uniqueCode }}</span>
-      </template>
-
-      <template #cell(menunggu)="{ item }">
-        <span class="block whitespace-nowrap">{{ waitedSince(item.proof.orderDate) }}</span>
-        <span class="mt-0.5 block text-[0.84rem] whitespace-nowrap text-muted">
-          {{ formatDateLong(item.proof.orderDate) }}
-        </span>
-      </template>
-
-      <template #cell(bukti)="{ item }">
-        <button
-          v-if="item.proof.hasImage"
-          type="button"
-          class="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          @click="zoomed = item.proof"
-        >
-          <AppIcon name="image" :size="15" aria-hidden="true" />
-          Lihat
-        </button>
-        <span v-else class="text-[0.84rem] whitespace-nowrap text-muted">Lewat mutasi</span>
+          class="whitespace-nowrap tabular-nums"
+          :class="amountMismatch(item.proof) ? 'font-semibold text-danger-ink' : ''"
+          :title="amountMismatch(item.proof) ? 'Tidak cocok dengan tagihan' : undefined"
+        >{{ formatRupiah(item.proof.paidAmount) }}</span>
       </template>
 
       <template #cell(status)="{ item }">
-        <DashboardBadge :tone="PROOF_STATUS_TONE[item.proof.status as ProofStatus]">
-          {{ PROOF_STATUS_LABEL[item.proof.status as ProofStatus] }}
+        <!-- Lama menunggu menempel di badge antrean, bukan kolom sendiri:
+             ia hanya berarti untuk yang belum diputuskan, dan urutan
+             "Paling lama menunggu" sudah menyusunnya. -->
+        <DashboardBadge
+          class="whitespace-nowrap"
+          :tone="PROOF_STATUS_TONE[item.proof.status as ProofStatus]"
+          :title="item.proof.status === 'rejected' && item.proof.rejectReason ? item.proof.rejectReason : formatDateLong(item.proof.orderDate)"
+        >
+          {{ PROOF_STATUS_LABEL[item.proof.status as ProofStatus] }}<template v-if="item.proof.status === 'submitted'"> · {{ waitedSince(item.proof.orderDate) }}</template>
         </DashboardBadge>
-        <span
-          v-if="item.proof.status === 'rejected' && item.proof.rejectReason"
-          class="mt-1 block text-[0.8rem] leading-[1.45] text-muted"
-        >{{ item.proof.rejectReason }}</span>
-        <span
-          v-if="item.proof.note"
-          class="mt-1 block text-[0.8rem] leading-[1.45] text-muted"
-        >Catatan: {{ item.proof.note }}</span>
       </template>
 
+      <!-- Bukti transfer ikut di Aksi sebagai tombol ikon: ia dibuka
+           sebelum memutuskan, jadi tempatnya persis di sebelah keputusan. -->
       <template #cell(aksi)="{ item }">
-        <div v-if="item.proof.status === 'submitted'" class="flex flex-wrap gap-2">
-          <AppButton size="sm" @click="openApprove(item.proof)">Setujui</AppButton>
-          <!-- outline, bukan secondary: dua tombol gelap berdampingan
-               membuat menolak terbaca sepenting menyetujui. -->
-          <AppButton variant="outline" size="sm" @click="openReject(item.proof)">Tolak…</AppButton>
+        <div class="flex flex-nowrap items-center justify-end gap-2 whitespace-nowrap">
+          <button
+            v-if="item.proof.hasImage"
+            type="button"
+            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-primary transition-colors hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            title="Lihat bukti transfer"
+            aria-label="Lihat bukti transfer"
+            @click="zoomed = item.proof"
+          >
+            <AppIcon name="image" :size="18" aria-hidden="true" />
+          </button>
+          <template v-if="item.proof.status === 'submitted'">
+            <AppButton size="sm" @click="openApprove(item.proof)">Setujui</AppButton>
+            <!-- outline, bukan secondary: dua tombol gelap berdampingan
+                 membuat menolak terbaca sepenting menyetujui. -->
+            <AppButton variant="outline" size="sm" @click="openReject(item.proof)">Tolak…</AppButton>
+          </template>
+          <span v-else-if="!item.proof.hasImage" class="text-[0.84rem] text-muted">—</span>
         </div>
-        <span v-else class="text-[0.84rem] text-muted">—</span>
       </template>
     </DashboardTable>
 
@@ -534,7 +536,7 @@ const zoomed = ref<VerificationItem | null>(null)
       v-if="zoomed"
       :model-value="Boolean(zoomed)"
       title="Bukti transfer"
-      :description="`${proofKindLabel(zoomed)} · ${zoomed.invoice} · tagihan ${formatRupiah(zoomed.amountDue)}`"
+      :description="`${proofKindLabel(zoomed)} · ${zoomed.invoice} · tagihan ${formatRupiah(zoomed.amountDue)} · pengirim ${zoomed.senderName}`"
       @update:model-value="zoomed = null"
     >
       <img

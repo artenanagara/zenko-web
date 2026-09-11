@@ -297,6 +297,8 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
         </div>
 
         <div class="mt-1.5 border-t border-hairline pt-1.5">
+          <!-- Bantuan tidak lagi di sini: ia tab di dalam "Akun saya" di
+               atas (/akun/profil?tab=bantuan), sudah disaring per peran. -->
           <button
             type="button"
             role="menuitem"

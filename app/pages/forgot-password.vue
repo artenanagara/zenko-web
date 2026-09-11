@@ -76,10 +76,10 @@ function editAddress() {
        invites repeat submissions. -->
   <AuthPanel
     v-if="!sentTo"
-    title="Lupa kata sandi?"
+    title="Lupa kata sandi? Tenang."
   >
     <template #description>
-      Kami kirimkan tautan untuk menyetel kata sandi baru.
+      Masukkan emailmu. Kami akan mengirim tautan untuk membuat kata sandi baru.
     </template>
 
     <form class="grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -103,12 +103,12 @@ function editAddress() {
     <template #footer>
       Ingat kata sandimu?
       <NuxtLink to="/masuk" class="font-semibold text-primary hover:underline">
-        Kembali ke halaman masuk
+        Masuk ke akun
       </NuxtLink>
     </template>
   </AuthPanel>
 
-  <AuthPanel v-else title="Cek email kamu" tone="pending">
+  <AuthPanel v-else title="Cek emailmu" tone="pending">
     <template #description>
       Kalau <span class="font-semibold text-ink">{{ sentTo }}</span> terdaftar,
       tautannya sudah dikirim dan berlaku 1 jam.
@@ -118,7 +118,7 @@ function editAddress() {
       <AuthNotice v-if="notice" :tone="noticeTone">{{ notice }}</AuthNotice>
 
       <div class="rounded-sm bg-surface-alt px-4 py-4 text-[0.88rem] text-muted">
-        <p class="font-semibold text-ink">Belum ada emailnya?</p>
+        <p class="font-semibold text-ink">Emailnya belum terlihat?</p>
         <ul class="mt-2 grid gap-1.5">
           <li>• Cek folder spam.</li>
           <li>• Pastikan alamatnya benar.</li>
@@ -157,7 +157,7 @@ function editAddress() {
 
     <template #footer>
       <NuxtLink to="/masuk" class="font-semibold text-primary hover:underline">
-        Kembali ke halaman masuk
+        Masuk ke akun
       </NuxtLink>
     </template>
   </AuthPanel>

@@ -207,7 +207,7 @@ function barTone(percent: number) {
             Lihat pembahasan
           </AppButton>
           <AppButton :to="`/akun/paket/${item.slug}/kerjakan`" size="md">
-            {{ stats.attemptCount === 0 ? 'Mulai try out' : 'Kerjakan lagi' }}
+            {{ stats.attemptCount === 0 ? 'Mulai tryout' : 'Kerjakan lagi' }}
           </AppButton>
         </div>
       </header>
@@ -221,9 +221,9 @@ function barTone(percent: number) {
         <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
           <IconTarget class="h-6 w-6" />
         </span>
-        <h2 class="text-[1.1rem] font-bold tracking-[-0.03em]">Paket ini belum pernah kamu kerjakan</h2>
+        <h2 class="text-[1.1rem] font-bold tracking-[-0.03em]">Siap mulai tryout pertamamu?</h2>
         <p class="max-w-md text-[0.9rem] text-muted">
-          Kerjakan simulasi try out pertamamu. Skor, analisis per subtes, dan riwayat latihan akan tercatat rapi di sini.
+          Setelah selesai, skor, analisis per subtes, dan riwayat latihanmu akan tersimpan rapi di sini.
         </p>
       </section>
 
@@ -427,7 +427,7 @@ function barTone(percent: number) {
            sama dengan panel di atas — satu sumber, dua tempat munculnya. -->
       <AppModal
         v-model="reviewModalOpen"
-        :title="hasReviewed ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman try out ini?'"
+        :title="hasReviewed ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman tryout ini?'"
         :description="hasReviewed
           ? 'Ulasan yang tersimpan akan menggantikan versi sebelumnya.'
           : 'Bantu tutor dan rekan pejuang lainnya dengan memberikan ulasan singkat.'"

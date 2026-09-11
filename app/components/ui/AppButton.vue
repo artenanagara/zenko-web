@@ -9,7 +9,7 @@
  */
 import { NuxtLink } from '#components'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     /** Internal route — renders a NuxtLink. */
     to?: string
@@ -19,9 +19,19 @@ withDefaults(
     /** 'xs' is for cramped spots — toolbar popovers — not general UI. */
     size?: 'xs' | 'sm' | 'md' | 'lg'
     type?: 'button' | 'submit'
+    disabled?: boolean
+    /**
+     * A request is in flight: the button is disabled and announced busy.
+     * Callers already swap the label ("Menyimpan…"), so no spinner here.
+     * Before this was a prop it fell through as a meaningless DOM attribute
+     * and the button stayed clickable mid-request.
+     */
+    loading?: boolean
   }>(),
-  { variant: 'primary', size: 'md', type: 'button' },
+  { variant: 'primary', size: 'md', type: 'button', disabled: false, loading: false },
 )
+
+const inert = computed(() => props.disabled || props.loading)
 
 // Lebar batas ada di sini, warnanya tidak. `border-transparent` dulu ikut di
 // baris ini, dan itu diam-diam melumpuhkan setiap variant yang mencoba memberi
@@ -32,8 +42,10 @@ withDefaults(
 //
 // Sekarang tiap variant menyebut warnanya sendiri, tepat satu kali, termasuk
 // `ghost` yang memang transparan.
+// disabled:* — a disabled button that still looks pressable is a trap; dim
+// it and drop the hover lift. pointer-events-none also mutes hover styles.
 const base =
-  'inline-flex items-center justify-center gap-2 border font-semibold transition-[transform,box-shadow,background] duration-200 ease-smooth hover:-translate-y-px focus-visible:-translate-y-px cursor-pointer'
+  'inline-flex items-center justify-center gap-2 border font-semibold transition-[transform,box-shadow,background] duration-200 ease-smooth hover:-translate-y-px focus-visible:-translate-y-px cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:pointer-events-none'
 
 const variants = {
   primary:
@@ -77,6 +89,9 @@ const sizes = {
     :to="to"
     :href="href"
     :type="to || href ? undefined : type"
+    :disabled="to || href ? undefined : inert"
+    :aria-disabled="inert || undefined"
+    :aria-busy="loading || undefined"
     :class="[base, variants[variant], sizes[size], 'rounded-xs']"
   >
     <slot />

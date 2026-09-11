@@ -232,7 +232,7 @@ function findBimbel(id: string): Bimbel | undefined {
 
         <AppEmptyState
           v-if="rows.length === 0"
-          title="Tidak ada hasil"
+          title="Hasil tidak ditemukan"
           description="Tidak ada bimbel yang cocok dengan kata kunci atau status yang dipilih."
           action-label="Reset pencarian"
           @action="reset"

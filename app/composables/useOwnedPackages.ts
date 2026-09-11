@@ -185,7 +185,7 @@ export function useOwnedPackage(slug: string): AsyncResource<OwnedPackage | null
 export function useTryoutBlueprint(slug: string): AsyncResource<TryoutBlueprint | null> {
   return useSessionItem<TryoutBlueprint>(
     `/me/packages/${slug}/tryout`,
-    'Try out ini tidak ada di akunmu',
+    'Tryout ini tidak ada di akunmu',
   )
 }
 

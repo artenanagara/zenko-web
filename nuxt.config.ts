@@ -63,9 +63,18 @@ export default defineNuxtConfig({
     '/dashboard/**': { ssr: false },
     '/pembayaran': { ssr: false },
     '/pembayaran/**': { ssr: false },
+    // Artikel Pusat Bantuan yang dipensiunkan; tautan lama (mesin pencari,
+    // pesan yang pernah dibagikan) tetap mendarat di penggantinya.
+    '/pusat-bantuan/aktivasi-kode-akses-bimbel': {
+      redirect: { to: '/pusat-bantuan/gabung-bimbel-dengan-kode', statusCode: 301 },
+    },
+    '/pusat-bantuan/peringatan-anti-kecurangan': {
+      redirect: { to: '/pusat-bantuan/tampilan-soal-disembunyikan', statusCode: 301 },
+    },
   },
 
-  css: ['~/assets/css/main.css'],
+  // lenis.css: tinggi html/body auto + overflow clip saat Lenis dihentikan.
+  css: ['lenis/dist/lenis.css', '~/assets/css/main.css'],
 
   // Components are grouped into folders by domain (ui, layout, home, …) purely
   // for navigation. pathPrefix: false keeps the folder out of the tag name, so
@@ -193,16 +202,20 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // Transisi halaman tipis (lihat .page-* di assets/css/main.css). `out-in`
+    // supaya halaman lama pudar dulu, baru yang baru masuk — dan scroll ke
+    // atas terjadi di antara keduanya, tidak terlihat sebagai lompatan.
+    pageTransition: { name: 'page', mode: 'out-in' },
     head: {
       htmlAttrs: { lang: 'id' },
-      title: 'Zenko — Marketplace Try Out',
+      title: 'Zenko — Belajar Lebih Terarah',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
           content:
-            'Zenko membantu kamu menemukan dan membeli paket try out SKD/CPNS, BUMN, SNBT, dan TKA dengan harga terjangkau.',
+            'Zenko membantu kamu menemukan latihan untuk SKD, PPPK, UTBK-SNBT, TKA, rekrutmen BUMN, dan berbagai ujian lainnya.',
         },
       ],
       link: [

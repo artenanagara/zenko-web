@@ -5,6 +5,7 @@ import IconEye from '~/components/icons/IconEye.vue'
 import IconGrid from '~/components/icons/IconGrid.vue'
 import IconHandshake from '~/components/icons/IconHandshake.vue'
 import IconHome from '~/components/icons/IconHome.vue'
+import IconLifebuoy from '~/components/icons/IconLifebuoy.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
 import IconRepeat from '~/components/icons/IconRepeat.vue'
 import IconSettings from '~/components/icons/IconSettings.vue'
@@ -131,6 +132,8 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // menunggu persetujuan, jadi tidak ada satu baris pun di sana yang
       // menunggu admin — yang tersisa daftar bacaan, dan tempatnya di sini.
       { label: 'Daftar bimbel', to: '/dashboard/admin/bimbels', icon: IconHandshake, section: 'Direktori' },
+
+      { label: 'Pusat Bantuan', to: '/pusat-bantuan', icon: IconLifebuoy, section: 'Bantuan' },
     ],
   },
   tutor: {
@@ -143,6 +146,9 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       { label: 'Penjualan', to: '/dashboard/tutor/sales', icon: IconReceipt, section: 'Pendapatan' },
       { label: 'Pencairan', to: '/dashboard/tutor/payouts', icon: IconWallet, section: 'Pendapatan' },
 
+      // Pusat Bantuan sengaja tidak ada di sini (juga di sidebar bimbel dan
+      // dropdown profil): pintunya satu, tab Bantuan di Akun saya
+      // (/akun/profil?tab=bantuan), yang isinya sudah disaring per peran.
       { label: 'Pengaturan', to: '/dashboard/tutor/settings', icon: IconSettings, section: 'Akun' },
     ],
   },

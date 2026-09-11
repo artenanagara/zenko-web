@@ -26,21 +26,31 @@ const router = useRouter()
  * membuka Rekening bank, dan pilihan tab bisa dibagikan atau dimuat ulang.
  * ------------------------------------------------------------------------ */
 
+// Nama dan foto akun (login, email) tidak ada di sini: itu urusan
+// /akun/profil bersama akun siswa. Dashboard tutor hanya mengurus apa yang
+// tampil ke siswa dan ke mana uangnya dicairkan.
 const SETTINGS_TABS = [
-  { id: 'profil', label: 'Identitas akun' },
   { id: 'publik', label: 'Profil publik' },
   { id: 'ulasan', label: 'Ulasan siswa' },
   { id: 'rekening', label: 'Rekening bank' },
 ]
-const activeTab = ref(route.hash === '#rekening' ? 'rekening' : route.hash === '#publik' ? 'publik' : route.hash === '#ulasan' ? 'ulasan' : 'profil')
+type SettingsTab = 'publik' | 'ulasan' | 'rekening'
+
+function tabFromHash(hash: string): SettingsTab {
+  if (hash === '#rekening') return 'rekening'
+  if (hash === '#ulasan') return 'ulasan'
+  return 'publik'
+}
+
+const activeTab = ref<SettingsTab>(tabFromHash(route.hash))
 
 watch(() => route.hash, (hash) => {
-  const nextTab = hash === '#rekening' ? 'rekening' : hash === '#publik' ? 'publik' : hash === '#ulasan' ? 'ulasan' : 'profil'
+  const nextTab = tabFromHash(hash)
   if (activeTab.value !== nextTab) activeTab.value = nextTab
 })
 
 watch(activeTab, (tab) => {
-  const nextHash = tab === 'rekening' ? '#rekening' : tab === 'publik' ? '#publik' : tab === 'ulasan' ? '#ulasan' : ''
+  const nextHash = tab === 'publik' ? '' : `#${tab}`
   if (route.hash !== nextHash) void router.replace({ hash: nextHash })
 })
 
@@ -93,15 +103,20 @@ async function replyToReview(reviewId: string) {
     toast.success('Balasan terkirim.', 'Balasanmu tampil di bawah ulasan siswa itu.')
   }
   catch (cause) {
-    toast.error('Gagal mengirim balasan.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
+    toast.error('Balasan belum berhasil dikirim.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
   }
 }
 
 /* --------------------------------------------------------------------------
- * Profil publik tutor — bio, pengalaman, spesialisasi, pendidikan, tautan.
- * Terpisah dari nama/foto (lihat panel "Profil tutor" di template), yang
- * diedit lewat /akun/profil bareng akun student — field di bawah ini
- * khusus tutor.
+ * Profil publik tutor — nama tampilan, foto, username, bio, pengalaman,
+ * spesialisasi, pendidikan, tautan. Terpisah dari nama/foto akun, yang
+ * diedit lewat /akun/profil bareng akun siswa.
+ *
+ * Dibuka sebagai tampilan baca dulu, bukan form: yang paling sering
+ * dilakukan tutor di sini adalah memastikan profilnya sudah benar, bukan
+ * mengubahnya, dan sebelas kolom input yang selalu terbuka membuat "sudah
+ * benar" sulit dibaca sekilas. Tombol Edit membuka form; Batal
+ * mengembalikan draft ke data tersimpan.
  * ------------------------------------------------------------------------ */
 
 const profileForm = reactive({
@@ -120,18 +135,45 @@ const profileForm = reactive({
   websiteUrl: '',
 })
 const profileSaving = ref(false)
+const profileEditing = ref(false)
 const specializationInput = ref('')
 
-/** Username hanya bisa ditetapkan sekali dari sisi UI setelah tersimpan. */
-const usernameLocked = computed(() => Boolean(tutorProfile.value?.username.trim()))
-const usernameHint = computed(() => usernameLocked.value
-  ? 'Username sudah ditetapkan dan tidak dapat diubah lagi.'
-  : '3–30 karakter, huruf kecil, angka, atau tanda hubung. Username hanya dapat ditetapkan satu kali.')
+/**
+ * Username diisi server dari nama depan tutor begitu profil pertama kali
+ * dibuka, jadi kolom ini tidak pernah kosong dan selalu boleh diubah. Yang
+ * dibatasi server hanya frekuensinya: satu kali per 30 hari setelah tutor
+ * sendiri menggantinya (default dari server tidak menghitung).
+ */
+const USERNAME_HINT = '3–30 karakter, huruf kecil, angka, atau tanda hubung. Diambil dari nama depanmu; boleh diganti, sekali per 30 hari.'
 
-// Salin ke form lokal begitu profil tersimpan tiba — bukan binding langsung,
-// supaya draft yang sedang diketik tidak ketimpa kalau refresh datang lagi.
-watch(tutorProfile, (profile) => {
+/** Nama dan foto yang benar-benar tampil ke siswa, dengan fallback akun. */
+const publicName = computed(() => tutorProfile.value?.displayName.trim() || user.value?.name || '')
+const publicAvatar = computed(() => tutorProfile.value?.avatarUrl || user.value?.avatarUrl || '')
+
+const PROFILE_LINKS = [
+  { key: 'portfolioUrl', label: 'Portofolio' },
+  { key: 'instagramUrl', label: 'Instagram' },
+  { key: 'tiktokUrl', label: 'TikTok' },
+  { key: 'linkedinUrl', label: 'LinkedIn' },
+  { key: 'youtubeUrl', label: 'YouTube' },
+  { key: 'websiteUrl', label: 'Website' },
+] as const
+
+const publicLinks = computed(() => {
+  const profile = tutorProfile.value
+  if (!profile) return []
+  return PROFILE_LINKS
+    .map(link => ({ label: link.label, url: profile[link.key] }))
+    .filter(link => link.url)
+})
+
+/** Salin profil tersimpan ke draft — dipakai saat data tiba dan saat Batal. */
+function resetProfileForm() {
+  const profile = tutorProfile.value
   if (!profile) return
+  profileForm.displayName = profile.displayName
+  profileForm.avatarUrl = profile.avatarUrl
+  profileForm.username = profile.username
   profileForm.bio = profile.bio
   profileForm.experience = profile.experience
   profileForm.specializations = [...profile.specializations]
@@ -142,7 +184,25 @@ watch(tutorProfile, (profile) => {
   profileForm.linkedinUrl = profile.linkedinUrl
   profileForm.youtubeUrl = profile.youtubeUrl
   profileForm.websiteUrl = profile.websiteUrl
+}
+
+// Bukan binding langsung, supaya draft yang sedang diketik tidak ketimpa
+// kalau refresh datang lagi selagi form terbuka.
+watch(tutorProfile, () => {
+  if (!profileEditing.value) resetProfileForm()
 }, { immediate: true })
+
+function startEditingProfile() {
+  resetProfileForm()
+  specializationInput.value = ''
+  profileEditing.value = true
+}
+
+function cancelEditingProfile() {
+  resetProfileForm()
+  specializationInput.value = ''
+  profileEditing.value = false
+}
 
 const publicAvatarInputRef = useTemplateRef('publicAvatarInputRef')
 const publicAvatarUploading = ref(false)
@@ -161,7 +221,7 @@ async function onPublicAvatarSelected(event: Event) {
     toast.success('Foto publik terunggah.', 'Tekan Simpan profil supaya perubahannya berlaku.')
   }
   catch (cause) {
-    toast.error('Gagal mengunggah foto publik.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Foto publik belum berhasil diunggah.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     publicAvatarUploading.value = false
@@ -194,14 +254,25 @@ function onSpecializationKeydown(event: KeyboardEvent) {
 }
 
 async function saveProfile() {
+  addSpecialization()
   profileSaving.value = true
   try {
     await saveTutorProfile({ ...profileForm })
+    profileEditing.value = false
     await refreshTutorProfile()
     toast.success('Profil tersimpan.', 'Perubahannya sudah tampil di halaman profil publikmu.')
   }
   catch (cause) {
-    toast.error('Gagal menyimpan profil.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    // Username tabrakan: server (409) sudah menyiapkan alternatif — nama
+    // yang sama plus angka acak. Taruh langsung di kolomnya supaya tutor
+    // tinggal menekan Simpan lagi, atau mengetik yang lain.
+    const suggestion = (cause as { data?: { suggestion?: string } })?.data?.suggestion
+    if (suggestion) {
+      profileForm.username = suggestion
+      toast.error('Username sudah dipakai.', `Kami sarankan ${suggestion} — sudah diisi di kolom username. Simpan lagi, atau ganti sesukamu.`)
+      return
+    }
+    toast.error('Profil belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     profileSaving.value = false
@@ -248,7 +319,7 @@ async function saveBankAccount() {
     toast.success('Rekening tersimpan.', 'Pencairan berikutnya dikirim ke rekening ini.')
   }
   catch (cause) {
-    toast.error('Gagal menyimpan rekening.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Rekening belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     bankSaving.value = false
@@ -308,7 +379,7 @@ async function submitChangeRequest() {
     toast.success('Pengajuan terkirim.', 'Admin akan meninjau perubahan rekeningmu.')
   }
   catch (cause) {
-    toast.error('Gagal mengirim pengajuan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Pengajuan belum berhasil dikirim.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     changeSaving.value = false
@@ -326,55 +397,69 @@ async function submitChangeRequest() {
     <AppTabs v-model="activeTab" :tabs="SETTINGS_TABS" aria-label="Bagian pengaturan tutor" />
 
     <div
-      v-show="activeTab === 'profil'"
-      id="panel-profil"
-      role="tabpanel"
-      aria-labelledby="tab-profil"
-      class="grid gap-6"
-    >
-      <DashboardPanel title="Identitas akun" description="Nama dan foto akun dipakai untuk login, komunikasi internal, dan area privat.">
-        <div v-if="user" class="flex items-center gap-4">
-          <img
-            v-if="user.avatarUrl"
-            :src="user.avatarUrl"
-            alt=""
-            referrerpolicy="no-referrer"
-            class="h-14 w-14 shrink-0 rounded-full object-cover"
-          >
-          <span
-            v-else
-            aria-hidden="true"
-            class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-alt text-[1.2rem] font-bold text-muted"
-          >{{ user.name.trim().charAt(0).toUpperCase() || '?' }}</span>
-
-          <div class="min-w-0">
-            <p class="truncate font-semibold tracking-[-0.02em]">{{ user.name }}</p>
-            <p class="mt-0.5 truncate text-[0.88rem] text-muted">{{ user.email }}</p>
-          </div>
-        </div>
-
-        <AppSectionMessage appearance="information" class="mt-5">
-          Nama dan foto akun diubah lewat
-          <NuxtLink to="/akun/profil" class="font-semibold underline">Akun saya</NuxtLink>. Identitas ini
-          berbeda dari nama dan foto yang tampil di halaman publik tutor.
-        </AppSectionMessage>
-      </DashboardPanel>
-
-    </div>
-
-    <div
       v-show="activeTab === 'publik'"
       id="panel-publik"
       role="tabpanel"
       aria-labelledby="tab-publik"
       class="grid gap-6"
     >
-
       <DashboardPanel
         title="Profil publik tutor"
         description="Ditampilkan di halaman paket dan katalogmu."
       >
+        <!-- Sejajar judul panel, bukan di dasar tampilan baca: satu aksi
+             untuk seluruh panel tempatnya di header panel. -->
+        <template v-if="!profileEditing && tutorProfile" #action>
+          <AppButton size="sm" variant="outline" @click="startEditingProfile">Edit profil</AppButton>
+        </template>
+
         <DashboardSkeleton v-if="tutorProfilePending && !tutorProfile" :count="4" label="Memuat profil..." />
+
+        <!-- Tampilan baca: apa yang siswa lihat, tanpa kolom input. -->
+        <div v-else-if="!profileEditing" class="grid gap-6">
+          <div class="flex items-center gap-4">
+            <img v-if="publicAvatar" :src="publicAvatar" alt="" referrerpolicy="no-referrer" class="h-20 w-20 shrink-0 rounded-full object-cover">
+            <span v-else aria-hidden="true" class="inline-flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary-soft text-2xl font-bold text-primary">{{ publicName.trim().charAt(0).toUpperCase() || '?' }}</span>
+            <div class="min-w-0">
+              <p class="truncate text-[1.05rem] font-semibold tracking-[-0.02em]">{{ publicName || 'Belum ada nama tampilan' }}</p>
+              <p v-if="tutorProfile?.username" class="mt-0.5 truncate text-[0.88rem] text-muted">
+                zenkoedu.id/tutor/<span class="font-semibold text-ink">{{ tutorProfile.username }}</span>
+              </p>
+            </div>
+          </div>
+
+          <dl class="grid gap-5">
+            <div>
+              <dt :class="FIELD_LABEL_CLASS">Bio singkat</dt>
+              <dd class="leading-[1.6] whitespace-pre-line" :class="tutorProfile?.bio ? '' : 'text-muted'">{{ tutorProfile?.bio || 'Belum diisi.' }}</dd>
+            </div>
+            <div>
+              <dt :class="FIELD_LABEL_CLASS">Pengalaman mengajar</dt>
+              <dd class="leading-[1.6] whitespace-pre-line" :class="tutorProfile?.experience ? '' : 'text-muted'">{{ tutorProfile?.experience || 'Belum diisi.' }}</dd>
+            </div>
+            <div>
+              <dt :class="FIELD_LABEL_CLASS">Spesialisasi</dt>
+              <dd v-if="tutorProfile?.specializations.length" class="flex flex-wrap gap-2">
+                <span v-for="tag in tutorProfile.specializations" :key="tag" class="inline-flex items-center rounded-pill bg-primary-soft px-3 py-1 text-[0.82rem] font-semibold text-primary">{{ tag }}</span>
+              </dd>
+              <dd v-else class="text-muted">Belum diisi.</dd>
+            </div>
+            <div>
+              <dt :class="FIELD_LABEL_CLASS">Pendidikan</dt>
+              <dd :class="tutorProfile?.education ? '' : 'text-muted'">{{ tutorProfile?.education || 'Belum diisi.' }}</dd>
+            </div>
+            <div>
+              <dt :class="FIELD_LABEL_CLASS">Tautan</dt>
+              <dd v-if="publicLinks.length" class="grid gap-1.5">
+                <a v-for="link in publicLinks" :key="link.label" :href="link.url" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-[0.9rem] font-semibold text-primary hover:underline">
+                  <AppIcon name="arrow-square-out" :size="15" aria-hidden="true" />
+                  {{ link.label }}
+                </a>
+              </dd>
+              <dd v-else class="text-muted">Belum ada tautan.</dd>
+            </div>
+          </dl>
+        </div>
 
         <form v-else class="grid gap-5" @submit.prevent="saveProfile">
         <div class="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
@@ -399,12 +484,10 @@ async function submitChangeRequest() {
             v-model="profileForm.username"
             label="Username profil publik"
             placeholder="kakbudiskd"
-            :hint="usernameHint"
-            :disabled="usernameLocked"
+            :hint="USERNAME_HINT"
           />
           <p v-if="profileForm.username" class="mt-2 text-[0.82rem] text-muted">Link publik: <span class="font-semibold text-ink">zenkoedu.id/tutor/{{ profileForm.username.toLowerCase() }}</span></p>
         </div>
-
         <div>
           <label for="tutor-bio" class="mb-2 block text-[0.9rem] font-semibold">Bio singkat</label>
           <textarea
@@ -485,9 +568,12 @@ async function submitChangeRequest() {
         <FormField id="tutor-website" v-model="profileForm.websiteUrl" type="url" label="Website" placeholder="https://..." />
 
 
-        <div>
+        <div class="flex items-center gap-3">
           <AppButton type="submit" size="sm" :disabled="profileSaving" :loading="profileSaving">
             Simpan profil
+          </AppButton>
+          <AppButton type="button" variant="outline" size="sm" :disabled="profileSaving" @click="cancelEditingProfile">
+            Batal
           </AppButton>
         </div>
         </form>
@@ -671,6 +757,3 @@ async function submitChangeRequest() {
     </div>
   </div>
 </template>
-  profileForm.displayName = profile.displayName
-  profileForm.avatarUrl = profile.avatarUrl
-  profileForm.username = profile.username

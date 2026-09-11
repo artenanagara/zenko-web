@@ -15,7 +15,7 @@ async function onFileSelected(event: Event) {
     model.value = await uploadTutorImage(file)
   }
   catch (cause) {
-    toast.error('Logo gagal diunggah.', tutorApiMessage(cause, 'Gunakan PNG, JPEG, GIF, atau WebP maksimal 5 MB.'))
+    toast.error('Logo belum berhasil diunggah.', tutorApiMessage(cause, 'Gunakan PNG, JPEG, GIF, atau WebP maksimal 5 MB.'))
   }
   finally {
     uploading.value = false

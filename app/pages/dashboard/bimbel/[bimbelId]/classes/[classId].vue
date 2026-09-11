@@ -64,7 +64,7 @@ async function loadDetail() {
     selected.value = [...(item.memberIds ?? [])]
   }
   catch (cause) {
-    detailError.value = tutorApiMessage(cause, 'Kelas tidak ditemukan atau gagal dimuat.')
+    detailError.value = tutorApiMessage(cause, 'Kelas tidak ditemukan atau belum berhasil dimuat.')
   }
   finally {
     detailPending.value = false
@@ -92,7 +92,7 @@ async function save() {
     await navigateTo(classesPath)
   }
   catch (cause) {
-    toast.error('Gagal menyimpan kelas.', tutorApiMessage(cause, 'Coba lagi.'))
+    toast.error('Kelas belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi.'))
   }
   finally {
     saving.value = false
@@ -202,7 +202,7 @@ async function save() {
           <AppEmptyState
             v-else
             class="mt-4"
-            title="Tidak ada hasil"
+            title="Hasil tidak ditemukan"
             description="Tidak ada siswa aktif yang cocok dengan kata kunci pencarian."
             action-label="Reset pencarian"
             @action="search = ''"
