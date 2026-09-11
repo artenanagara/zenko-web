@@ -277,6 +277,27 @@ async function removeQuestion(section: TutorSection, questionId: string) {
   }
 }
 
+async function removeAllQuestions(section: TutorSection) {
+  const count = section.questions.length
+  if (count === 0) return
+  const ok = await confirm({
+    title: `Hapus semua ${count} soal di ${section.title}?`,
+    description: 'Seluruh soal di subtes ini dihapus permanen dan tidak dapat dikembalikan. Wacana yang sudah dibuat tetap ada. Subtes lain tidak tersentuh.',
+    confirmLabel: `Hapus ${count} soal`,
+  })
+  if (!ok) return
+
+  errorMessage.value = ''
+  try {
+    await deleteAllTutorQuestions(props.productId, section.id, props.workspace)
+    editorFor.value = ''
+    emit('refresh')
+  }
+  catch (cause) {
+    errorMessage.value = tutorApiMessage(cause, 'Soal belum berhasil dihapus. Coba lagi.')
+  }
+}
+
 async function reorderQuestions(section: TutorSection, questionIds: string[]) {
   errorMessage.value = ''
   try {
@@ -495,6 +516,7 @@ const activeSectionDotClass = computed(() =>
           @select="selectQuestion"
           @reorder="ids => reorderQuestions(activeSection!, ids)"
           @remove="id => removeQuestion(activeSection!, id)"
+          @remove-all="removeAllQuestions(activeSection!)"
         />
       </div>
     </div>

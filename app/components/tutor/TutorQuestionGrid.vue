@@ -22,6 +22,8 @@ const emit = defineEmits<{
   select: [id: string]
   reorder: [questionIds: string[]]
   remove: [id: string]
+  /** Kosongkan seluruh subtes — pemanggil yang meminta konfirmasi. */
+  removeAll: []
 }>()
 
 /** Tampilkan semua nomor target; jangan sembunyikan soal ekstra dari server. */
@@ -77,6 +79,23 @@ const EMPTY_SLOT_CLASS = 'border border-line bg-surface text-faint'
         {{ questions.length }}/{{ questionTarget }} soal
       </span>
 
+      <div class="flex items-center gap-1">
+        <!-- Mulai dari nol: satu tindakan untuk subtes yang isinya mau
+             diganti seluruhnya (mis. CSV yang direvisi), bukan tiga puluh
+             klik hapus. Disembunyikan saat editor terbuka — ruangnya
+             sempit, dan menghapus semuanya bukan aksi yang ingin ditemukan
+             di tengah menulis satu soal. -->
+        <button
+          v-if="!compact && questions.length > 0"
+          type="button"
+          class="inline-flex h-8 items-center gap-1 rounded-pill px-2 text-[0.8rem] font-semibold text-faint transition-colors hover:bg-danger-soft hover:text-danger"
+          title="Hapus semua soal di subtes ini"
+          @click="emit('removeAll')"
+        >
+          <AppIcon name="trash" :size="14" aria-hidden="true" />
+          Hapus semua
+        </button>
+
       <!-- Keterangan warna tetap bisa dibuka tanpa memenuhi ruang editor. -->
       <RteDropdown v-if="!compact" v-model="legendOpen" title="Keterangan kotak" :width="230">
         <template #trigger>
@@ -99,6 +118,7 @@ const EMPTY_SLOT_CLASS = 'border border-line bg-surface text-faint'
           </div>
         </template>
       </RteDropdown>
+      </div>
     </div>
 
     <div

@@ -201,17 +201,47 @@ async function rollbackCreatedPassages(created: CreatedPassage[]): Promise<void>
 
 const rowCount = computed(() => mode.value === 'combined' ? combinedParsed.value.length : parsed.value.length)
 
-const overTarget = computed(() => {
-  if (mode.value === 'combined') return false
-  const room = props.section.questionTarget - props.section.questions.length
-  return parsed.value.length > room
-})
+/**
+ * Tiga keadaan untuk mode per subtes, dihitung dari sisa target:
+ * - muat di sisa: impor biasa, soal ditambahkan di belakang;
+ * - tidak muat di sisa tapi muat di target: impor hanya bisa jalan dengan
+ *   MENIMPA semua soal yang ada — ditawarkan, dengan konfirmasi eksplisit;
+ * - lebih besar dari target itu sendiri: diblokir, karena menimpa pun tidak
+ *   cukup dan server pasti menolak seluruh batch (400).
+ */
+const existingCount = computed(() => props.section.questions.length)
+const room = computed(() => Math.max(props.section.questionTarget - existingCount.value, 0))
+const needsReplace = computed(() =>
+  mode.value === 'section'
+  && parsed.value.length > room.value
+  && parsed.value.length <= props.section.questionTarget,
+)
+const overTarget = computed(() =>
+  mode.value === 'section' && parsed.value.length > props.section.questionTarget,
+)
+
+/**
+ * Konfirmasi timpa dirender di panel ini, bukan lewat useConfirm(): dialog
+ * global itu di-mount di app.vue, sebelum modal impor, jadi ketika keduanya
+ * terbuka ia tergambar DI BAWAH modal impor dan tidak pernah terlihat.
+ */
+const confirmingReplace = ref(false)
 
 async function importQuestions() {
   // overTarget diblokir di sini juga (tombolnya sudah disabled): batch per
   // subtes bersifat all-or-nothing di server — mengirimkannya pasti 400,
   // dan wacana yang terlanjur dibuat sebelum 400 itu akan jadi yatim.
   if (rowCount.value === 0 || overTarget.value) return
+
+  // Menimpa itu permanen dan menyapu soal yang mungkin ditulis tangan, jadi
+  // klik pertama hanya membuka konfirmasi dengan angkanya; klik kedua (dari
+  // blok konfirmasi) yang benar-benar mengirim.
+  const replace = needsReplace.value
+  if (replace && !confirmingReplace.value) {
+    confirmingReplace.value = true
+    return
+  }
+  confirmingReplace.value = false
 
   importing.value = true
   let createdPassages: CreatedPassage[] = []
@@ -225,7 +255,7 @@ async function importQuestions() {
     }
     else {
       if (passageGroups.value.length) createdPassages = await createGroupedPassages(parsed.value)
-      await createTutorQuestionBatch(props.productId, props.section.id, parsed.value, props.workspace)
+      await createTutorQuestionBatch(props.productId, props.section.id, parsed.value, props.workspace, { replace })
       imported = parsed.value.length
     }
     // Baris yang dilewati dihitung dari KEDUA daftar. Sebagian gugur di
@@ -236,7 +266,7 @@ async function importQuestions() {
     clearFileSelection()
     emit('refresh')
     toast.success(
-      `${imported} soal terimpor.`,
+      replace ? `${imported} soal terimpor, menggantikan soal sebelumnya.` : `${imported} soal terimpor.`,
       skipped ? `${skipped} baris dilewati — lihat daftarnya di panel impor.` : undefined,
     )
     // Menutup dialog hanya saat tidak ada yang perlu dibaca lagi. Daftar baris
@@ -265,6 +295,7 @@ async function importQuestions() {
  * daftar baris yang dilewati baru berguna justru setelah impor selesai.
  */
 function clearFileSelection() {
+  confirmingReplace.value = false
   parsed.value = []
   combinedParsed.value = []
   passageGroups.value = []
@@ -352,11 +383,39 @@ function reset() {
       — baris berurutan dengan teks wacana sama menjadi satu grup (maksimal 5 soal per wacana).
     </AppInlineMessage>
 
-    <div v-if="rowCount > 0" class="flex flex-wrap items-center gap-3">
+    <!-- Langkah kedua timpa: pertanyaan dengan angkanya, di tempat yang
+         sama, menggantikan tombol impor sampai dijawab. -->
+    <AppSectionMessage
+      v-if="confirmingReplace"
+      appearance="error"
+      :title="`Timpa ${existingCount} soal di ${section.title}?`"
+    >
+      <p>
+        Semua {{ existingCount }} soal yang sudah ada di subtes ini akan dihapus dan diganti
+        dengan {{ parsed.length }} soal dari {{ fileName }} — permanen, tidak bisa dibatalkan.
+        Subtes lain tidak tersentuh.
+      </p>
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <AppButton type="button" size="sm" variant="danger" :disabled="importing" @click="importQuestions">
+          {{ importing ? 'Mengimpor...' : `Ya, timpa & impor ${parsed.length} soal` }}
+        </AppButton>
+        <AppButton type="button" size="sm" variant="outline" :disabled="importing" @click="confirmingReplace = false">
+          Batal
+        </AppButton>
+      </div>
+    </AppSectionMessage>
+
+    <div v-else-if="rowCount > 0" class="flex flex-wrap items-center gap-3">
       <!-- Diblokir saat melebihi target: server menolak seluruh batch (400),
            jadi mengizinkan klik hanya menjanjikan impor yang pasti gagal. -->
-      <AppButton type="button" size="sm" :disabled="importing || overTarget" @click="importQuestions">
-        {{ importing ? 'Mengimpor...' : `Impor ${rowCount} soal` }}
+      <AppButton
+        type="button"
+        size="sm"
+        :variant="needsReplace ? 'danger' : 'primary'"
+        :disabled="importing || overTarget"
+        @click="importQuestions"
+      >
+        {{ importing ? 'Mengimpor...' : needsReplace ? `Timpa & impor ${rowCount} soal` : `Impor ${rowCount} soal` }}
       </AppButton>
       <span class="text-[0.84rem] text-muted">dari {{ fileName }}</span>
       <button
@@ -368,11 +427,16 @@ function reset() {
       </button>
     </div>
 
-    <AppInlineMessage v-if="overTarget" type="warning">
-      Impor diblokir: file ini berisi {{ parsed.length }} soal, melebihi sisa target subtes
-      ({{ Math.max(section.questionTarget - section.questions.length, 0) }} dari
-      {{ section.questionTarget }}). Server menolak seluruh batch yang melebihi target —
-      kurangi barisnya dulu, atau hapus soal yang sudah ada.
+    <AppInlineMessage v-if="needsReplace && !confirmingReplace" type="warning">
+      File ini berisi {{ parsed.length }} soal, tetapi sisa target subtes tinggal {{ room }}
+      dari {{ section.questionTarget }}. Impor hanya bisa dilanjutkan dengan
+      <strong class="font-semibold">menimpa semua {{ existingCount }} soal yang sudah ada</strong>
+      di subtes ini — kamu akan diminta konfirmasi dulu.
+    </AppInlineMessage>
+
+    <AppInlineMessage v-else-if="overTarget" type="warning">
+      Impor diblokir: file ini berisi {{ parsed.length }} soal, lebih banyak dari target subtes
+      ({{ section.questionTarget }}). Menimpa pun tidak cukup — kurangi barisnya dulu.
     </AppInlineMessage>
   </div>
 </template>
