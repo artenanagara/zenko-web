@@ -165,7 +165,7 @@ const year = new Date().getFullYear()
             aria-label="Zenko"
           />
           <p class="mt-4 text-[0.88rem] leading-[1.7] text-white/60 md:mt-5 md:text-[0.9rem]">
-            Platform try out interaktif terkurasi untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Beli per paket, akses langsung, tanpa langganan.
+            Marketplace try out SKD dan TKA. Siswa berlatih lewat simulasi ujian, tutor dan bimbel menerbitkan paket soalnya.
           </p>
 
           <!-- Kontak ditulis terang-terangan, bukan disembunyikan di balik
