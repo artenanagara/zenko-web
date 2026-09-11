@@ -711,7 +711,7 @@
   }
 
   .exam-locked body::after {
-    content: "Soal try out Zenko tidak dapat dicetak.";
+    content: "Soal tryout Zenko tidak dapat dicetak.";
     display: block;
     padding: 4rem 2rem;
     font-family: inherit;

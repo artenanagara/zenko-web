@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
           class="shrink-0 border-t border-hairline px-5 pt-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))]"
         >
           <AppButton size="sm" class="w-full" @click="emit('endSection')">
-            {{ isLastSection ? 'Selesaikan Ujian' : 'Akhiri Subtes' }}
+            {{ isLastSection ? 'Selesaikan ujian' : 'Akhiri subtes' }}
           </AppButton>
         </div>
       </div>

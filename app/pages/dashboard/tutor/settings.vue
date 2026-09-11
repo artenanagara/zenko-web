@@ -93,7 +93,7 @@ async function replyToReview(reviewId: string) {
     toast.success('Balasan terkirim.', 'Balasanmu tampil di bawah ulasan siswa itu.')
   }
   catch (cause) {
-    toast.error('Gagal mengirim balasan.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
+    toast.error('Balasan belum berhasil dikirim.', tutorApiMessage(cause, 'Coba lagi sebentar.'))
   }
 }
 
@@ -161,7 +161,7 @@ async function onPublicAvatarSelected(event: Event) {
     toast.success('Foto publik terunggah.', 'Tekan Simpan profil supaya perubahannya berlaku.')
   }
   catch (cause) {
-    toast.error('Gagal mengunggah foto publik.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Foto publik belum berhasil diunggah.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     publicAvatarUploading.value = false
@@ -201,7 +201,7 @@ async function saveProfile() {
     toast.success('Profil tersimpan.', 'Perubahannya sudah tampil di halaman profil publikmu.')
   }
   catch (cause) {
-    toast.error('Gagal menyimpan profil.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Profil belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     profileSaving.value = false
@@ -248,7 +248,7 @@ async function saveBankAccount() {
     toast.success('Rekening tersimpan.', 'Pencairan berikutnya dikirim ke rekening ini.')
   }
   catch (cause) {
-    toast.error('Gagal menyimpan rekening.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Rekening belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     bankSaving.value = false
@@ -308,7 +308,7 @@ async function submitChangeRequest() {
     toast.success('Pengajuan terkirim.', 'Admin akan meninjau perubahan rekeningmu.')
   }
   catch (cause) {
-    toast.error('Gagal mengirim pengajuan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Pengajuan belum berhasil dikirim.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     changeSaving.value = false

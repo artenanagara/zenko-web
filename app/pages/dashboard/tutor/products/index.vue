@@ -171,7 +171,7 @@ async function submitProduct(product: TutorProductSummary) {
       toast.error('Produk belum bisa diajukan.', `${problems.length} hal masih perlu dibereskan — daftarnya ada di atas tabel.`)
     }
     else {
-      toast.error('Gagal mengajukan produk.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+      toast.error('Produk belum berhasil diajukan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
     }
   }
   finally {
@@ -195,7 +195,7 @@ async function archiveProduct(product: TutorProductSummary) {
     toast.success('Produk diarsipkan.', 'Paket ini tidak tampil lagi di katalog publik.')
   }
   catch (cause) {
-    toast.error('Gagal mengarsipkan produk.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Produk belum berhasil diarsipkan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     busyId.value = ''
@@ -218,7 +218,7 @@ async function deleteProduct(product: TutorProductSummary) {
     toast.success('Produk dihapus permanen.')
   }
   catch (cause) {
-    toast.error('Gagal menghapus produk.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Produk belum berhasil dihapus.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     busyId.value = ''
@@ -228,7 +228,7 @@ async function deleteProduct(product: TutorProductSummary) {
 
 <template>
   <div class="grid gap-6">
-    <AppPageHeader title="Produk saya" description="Kelola paket try out mandiri dan bundling yang kamu sediakan untuk siswa.">
+    <AppPageHeader title="Produk saya" description="Kelola paket tryout mandiri dan bundling yang kamu sediakan untuk siswa.">
       <template #actions>
         <AppButton to="/dashboard/tutor/products/new" size="sm">Buat paket baru</AppButton>
       </template>
@@ -265,7 +265,7 @@ async function deleteProduct(product: TutorProductSummary) {
       <AppEmptyState
         v-else-if="products.length === 0"
         title="Belum ada paket soal"
-        description="Mulai dengan membuat try out mandiri: tentukan kategori ujian, susun soal per subtes, lalu ajukan ke tim kurasi agar tayang di katalog Zenko."
+        description="Mulai dengan membuat tryout mandiri: tentukan kategori ujian, susun soal per subtes, lalu ajukan ke tim kurasi agar tayang di katalog Zenko."
         action-label="Buat paket baru"
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />
@@ -293,7 +293,7 @@ async function deleteProduct(product: TutorProductSummary) {
              search or filter came up empty — Reset is the way out. -->
         <AppEmptyState
           v-if="rows.length === 0"
-          title="Tidak ada hasil"
+          title="Hasil tidak ditemukan"
           description="Tidak ada paket soal yang sesuai dengan kata kunci pencarian atau filter status yang dipilih."
           action-label="Reset pencarian"
           @action="reset"

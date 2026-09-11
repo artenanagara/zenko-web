@@ -149,7 +149,7 @@ function formatRupiahShort(value: number): string {
   <div class="grid gap-6">
     <AppPageHeader
       title="Ringkasan"
-      description="Pantau performa paket try out dan perkembangan penghasilanmu."
+      description="Pantau performa paket tryout dan perkembangan penghasilanmu."
     />
 
     <!-- Perlu perhatian: rejected is loud (needs action), review is quiet
@@ -157,7 +157,7 @@ function formatRupiahShort(value: number): string {
          saya, this only makes sure it gets seen. -->
     <div v-if="rejectedCount > 0 || reviewCount > 0" class="grid gap-3">
       <AppAlert v-if="rejectedCount > 0" variant="warning" :title="`${rejectedCount} produk memerlukan revisi`">
-        Silakan periksa catatan revisi agar paketmu bisa segera diajukan kembali.
+        Periksa catatan revisinya, lalu perbaiki paket sebelum mengajukan kembali.
         <NuxtLink to="/dashboard/tutor/products" class="font-semibold underline underline-offset-2">
           Lihat produk
         </NuxtLink>
@@ -217,7 +217,7 @@ function formatRupiahShort(value: number): string {
       <AppEmptyState
         v-else-if="products.length === 0"
         title="Belum ada paket soal"
-        description="Yuk buat paket try out pertamamu dan bantu siswa mempersiapkan ujian impian mereka."
+        description="Buat paket tryout pertamamu dan bantu siswa belajar lebih terarah."
         action-label="Buat paket baru"
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />

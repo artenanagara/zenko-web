@@ -57,5 +57,5 @@ function messageFor(cause: unknown): string {
   if (status === 401 || status === 403) return 'Kata sandi saat ini tidak cocok.'
 
   const message = (cause as { data?: { error?: string } })?.data?.error
-  return message || 'Gagal menghubungi server. Coba lagi sebentar lagi.'
+  return message || 'Server belum bisa dihubungi. Coba lagi sebentar lagi.'
 }

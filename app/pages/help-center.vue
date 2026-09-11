@@ -167,7 +167,7 @@ const quickLinks = [
                 </NuxtLink>
               </template>
               <p v-else class="px-3 py-2.5 text-[0.9rem] text-muted">
-                Belum ada panduan yang cocok. Coba kata yang lebih umum seperti “bayar”, “ujian”, atau “saldo”,
+                Panduannya belum ketemu. Coba kata yang lebih umum seperti “bayar”, “ujian”, atau “saldo”,
                 atau <a href="#kontak-heading" class="font-semibold text-primary hover:underline">hubungi tim Zenko</a>.
               </p>
             </div>

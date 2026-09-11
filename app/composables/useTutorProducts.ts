@@ -78,7 +78,7 @@ export function useTutorProducts(workspace?: ProductWorkspace) {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat daftar produk.')
+      error.value = tutorApiMessage(cause, 'Daftar produk belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -106,7 +106,7 @@ export function useTutorProductDetail(id: string, workspace?: ProductWorkspace) 
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat produk.')
+      error.value = tutorApiMessage(cause, 'Produk belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -143,7 +143,7 @@ export function useTutorPricingEligibility(workspace?: ProductWorkspace) {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat aturan harga.')
+      error.value = tutorApiMessage(cause, 'Aturan harga belum berhasil dimuat.')
     }
     finally {
       pending.value = false

@@ -12,12 +12,12 @@ definePageMeta({ path: '/jadi-tutor' })
  * every cycle.
  */
 useSeoMeta({
-  title: 'Jadi Tutor Zenko | Jual Paket Try Out Online',
+  title: 'Jadi Tutor Zenko | Jual Paket Tryout Online',
   description:
-    'Daftar menjadi tutor Zenko dan jual paket try out SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
-  ogTitle: 'Jadi Tutor Zenko | Jual Paket Try Out Online',
+    'Daftar menjadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+  ogTitle: 'Jadi Tutor Zenko | Jual Paket Tryout Online',
   ogDescription:
-    'Daftar menjadi tutor Zenko dan jual paket try out SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
+    'Daftar menjadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/jadi-tutor',
   twitterCard: 'summary_large_image',
@@ -37,7 +37,7 @@ const steps = [
     description: 'Kami menilai pengajuanmu, lalu mengabari hasilnya lewat email atau WhatsApp.',
   },
   {
-    title: 'Unggah paket try out',
+    title: 'Unggah paket tryout',
     description:
       'Setelah disetujui, unggah paket pertamamu dan dapatkan penghasilan dari setiap penjualan.',
   },
@@ -62,12 +62,12 @@ const faqs = [
   {
     question: 'Siapa yang menentukan harga paket soal?',
     answer:
-      'Kamu yang menentukan harga setiap paket try out: gratis (Rp0) atau minimal Rp1.000, dan harganya tetap bisa kamu sesuaikan setelah paket tayang. Selama pembayaran di Zenko masih dalam proses aktivasi, isian harga dikunci dan semua paket tayang gratis.',
+      'Kamu yang menentukan harga setiap paket tryout: gratis (Rp0) atau minimal Rp1.000, dan harganya tetap bisa kamu sesuaikan setelah paket tayang. Selama pembayaran di Zenko masih dalam proses aktivasi, isian harga dikunci dan semua paket tayang gratis.',
   },
   {
     question: 'Kategori paket apa saja yang bisa saya buat?',
     answer:
-      'Saat ini kamu bisa menjual paket try out untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Jika ingin membuat kategori baru, kamu bisa mendiskusikannya dengan tim kami.',
+      'Saat ini kamu bisa menjual paket tryout untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Jika ingin membuat kategori baru, kamu bisa mendiskusikannya dengan tim kami.',
   },
   {
     question: 'Berapa lama proses peninjauan pengajuan tutor?',
@@ -77,7 +77,7 @@ const faqs = [
   {
     question: 'Bagaimana keamanan soal buatan saya dari pembajakan?',
     answer:
-      'Seluruh paket try out dikerjakan langsung di dalam sistem CBT Zenko dengan proteksi anti-salin, bukan berupa file PDF yang bisa diunduh dan disebarluaskan. Hak cipta materi tetap sepenuhnya menjadi milikmu.',
+      'Seluruh paket tryout dikerjakan langsung di dalam sistem CBT Zenko dengan proteksi anti-salin, bukan berupa file PDF yang bisa diunduh dan disebarluaskan. Hak cipta materi tetap sepenuhnya menjadi milikmu.',
   },
   {
     question: 'Kapan penghasilan saya bisa dicairkan?',
@@ -270,12 +270,12 @@ const formState = computed<FormState>(() => {
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
-            Jual paket try out
+            Jual paket tryout
             <span class="text-accent mt-1 block">dari keahlianmu</span>
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Jadi tutor Zenko dan jual paket try out SKD (CPNS & Kedinasan) atau TKA
+            Jadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA
             buatanmu. Kamu menyiapkan soal dan pembahasan, Zenko membantu urusan
             platform, pembayaran, serta penilaian otomatis.
           </p>
@@ -305,7 +305,7 @@ const formState = computed<FormState>(() => {
             Yang kamu dapat sebagai <span class="text-accent">tutor Zenko</span>
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
-            Zenko membantu kamu menjual paket try out, menerima pembayaran, dan
+            Zenko membantu kamu menjual paket tryout, menerima pembayaran, dan
             memantau hasil penjualan dari satu tempat.
           </p>
         </div>
@@ -438,7 +438,7 @@ const formState = computed<FormState>(() => {
               Jangkau siswa yang sedang mencari
             </h3>
             <p class="text-center leading-[1.62] text-muted">
-              Paketmu dapat ditemukan oleh siswa yang sedang mencari latihan try out
+              Paketmu dapat ditemukan oleh siswa yang sedang mencari latihan tryout
               sesuai target ujiannya.
             </p>
           </article>
@@ -598,7 +598,7 @@ const formState = computed<FormState>(() => {
           </h2>
           <p class="mt-3.5 text-[1.02rem] text-muted">
             Website, pembayaran, penilaian otomatis, dan pencatatan penjualan sudah
-            disiapkan agar kamu dapat fokus membuat paket try out.
+            disiapkan agar kamu dapat fokus membuat paket tryout.
           </p>
         </div>
 
@@ -751,7 +751,7 @@ const formState = computed<FormState>(() => {
             Cara kerja
           </p>
           <h2 id="cara-kerja-tutor-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-            Tiga langkah untuk <span class="text-accent">mulai menjual paket try out</span>
+            Tiga langkah untuk <span class="text-accent">mulai menjual paket tryout</span>
           </h2>
         </div>
 

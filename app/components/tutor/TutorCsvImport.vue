@@ -252,7 +252,7 @@ async function importQuestions() {
       await rollbackCreatedPassages(createdPassages)
       emit('refresh')
     }
-    toast.error('Gagal mengimpor soal.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Soal belum berhasil diimpor.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     importing.value = false

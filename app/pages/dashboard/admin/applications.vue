@@ -104,7 +104,7 @@ function findApplication(id: string): TutorApplication | undefined {
 }
 
 const loadErrorMessage = computed(() =>
-  error.value ? tutorApiMessage(error.value, 'Gagal memuat data. Coba muat ulang.') : '',
+  error.value ? tutorApiMessage(error.value, 'Data belum berhasil dimuat. Coba muat ulang.') : '',
 )
 
 /* --------------------------------------------------------- detail modal -- */
@@ -207,7 +207,7 @@ async function submitDecision() {
     }
     else {
       // Modal stays open with the message in its body.
-      decisionError.value = tutorApiMessage(cause, 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.')
+      decisionError.value = tutorApiMessage(cause, 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.')
     }
   }
   finally {
@@ -277,14 +277,14 @@ async function submitDecision() {
              filter came up empty, and Reset is the way out. -->
         <AppEmptyState
           v-if="rows.length === 0 && !isActive"
-          title="Tidak ada pengajuan menunggu"
+          title="Tidak ada pengajuan yang menunggu"
           description="Pengajuan baru dari /jadi-tutor akan muncul di sini."
         />
 
         <AppEmptyState
           v-else-if="rows.length === 0"
-          title="Tidak ada hasil"
-          description="Tidak ada pengajuan yang cocok dengan pencarian atau filter ini."
+          title="Hasil tidak ditemukan"
+          description="Tidak ada pengajuan yang cocok dengan pencarian atau filter yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />

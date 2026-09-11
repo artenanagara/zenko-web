@@ -235,7 +235,7 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menyimpan soal. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Soal belum berhasil disimpan. Coba lagi.')
   }
   finally {
     saving.value = false
@@ -273,7 +273,7 @@ async function removeQuestion(section: TutorSection, questionId: string) {
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menghapus soal. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Soal belum berhasil dihapus. Coba lagi.')
   }
 }
 
@@ -284,7 +284,7 @@ async function reorderQuestions(section: TutorSection, questionIds: string[]) {
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal mengubah urutan soal. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Urutan soal belum berhasil diubah. Coba lagi.')
   }
 }
 

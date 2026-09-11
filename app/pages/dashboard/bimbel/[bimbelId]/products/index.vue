@@ -210,7 +210,7 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
 
         <AppEmptyState
           v-if="rows.length === 0"
-          title="Tidak ada hasil"
+          title="Hasil tidak ditemukan"
           description="Tidak ada paket yang sesuai dengan kata kunci atau filter status yang dipilih."
           action-label="Reset pencarian"
           @action="reset"

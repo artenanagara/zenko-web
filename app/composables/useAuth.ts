@@ -165,6 +165,6 @@ function emailAuthFailure(cause: unknown): {
   return {
     ok: false,
     reason: 'error',
-    message: serverMessage || 'Gagal menghubungi server. Coba lagi sebentar lagi.',
+    message: serverMessage || 'Server belum bisa dihubungi. Coba lagi sebentar lagi.',
   }
 }

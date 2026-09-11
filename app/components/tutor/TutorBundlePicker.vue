@@ -53,7 +53,7 @@ const total = computed(() =>
 <template>
   <DashboardPanel
     title="Isi bundling"
-    description="Pilih minimal 2 produk try-out tunggal milikmu yang sudah tayang."
+    description="Pilih minimal 2 produk tryout tunggal milikmu yang sudah tayang."
   >
     <p v-if="pending" class="py-6 text-center text-muted">Memuat produkmu...</p>
     <AppInlineMessage v-else-if="error" type="error">{{ error }}</AppInlineMessage>
@@ -61,7 +61,7 @@ const total = computed(() =>
     <AppEmptyState
       v-else-if="eligible.length === 0"
       title="Belum ada produk yang bisa dibundel"
-      description="Bundling berisi produk try-out tunggal berstatus Tayang. Terbitkan minimal dua produk tunggal dulu, lalu kembali ke sini."
+      description="Bundling berisi produk tryout tunggal berstatus Tayang. Terbitkan minimal dua produk tunggal dulu, lalu kembali ke sini."
     />
 
     <div v-else class="grid gap-6">

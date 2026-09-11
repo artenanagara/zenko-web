@@ -388,7 +388,7 @@ async function onImageFileSelected(event: Event) {
     refocusEditor()
   }
   catch (cause) {
-    imageError.value = tutorApiMessage(cause, 'Gagal mengunggah gambar.')
+    imageError.value = tutorApiMessage(cause, 'Gambar belum berhasil diunggah.')
   }
   finally {
     imageUploading.value = false

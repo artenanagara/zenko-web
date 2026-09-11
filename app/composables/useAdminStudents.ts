@@ -26,7 +26,7 @@ export function useAdminStudents() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat daftar siswa.')
+      error.value = tutorApiMessage(cause, 'Daftar siswa belum berhasil dimuat.')
     }
     finally {
       pending.value = false

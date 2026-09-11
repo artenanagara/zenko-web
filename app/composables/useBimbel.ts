@@ -38,7 +38,7 @@ export function useBimbelMemberships() {
     pending.value = true
     error.value = ''
     try { data.value = await bimbelRequest<BimbelMembership[]>('/me/bimbels') }
-    catch (cause) { error.value = tutorApiMessage(cause, 'Gagal memuat bimbel.') }
+    catch (cause) { error.value = tutorApiMessage(cause, 'Bimbel belum berhasil dimuat.') }
     finally {
       pending.value = false
       loaded.value = true
@@ -81,13 +81,13 @@ function resource<T>(loader: () => Promise<T>, fallback: T, message: string) {
 }
 
 export const useBimbelDetail = (id: string) => resource(
-  () => bimbelRequest<Bimbel>(bimbelPath(id)), null as unknown as Bimbel, 'Gagal memuat profil bimbel.',
+  () => bimbelRequest<Bimbel>(bimbelPath(id)), null as unknown as Bimbel, 'Profil bimbel belum berhasil dimuat.',
 )
 export const useBimbelMembers = (id: string) => resource(
-  () => bimbelRequest<BimbelMember[]>(bimbelPath(id, '/members')), [], 'Gagal memuat daftar siswa.',
+  () => bimbelRequest<BimbelMember[]>(bimbelPath(id, '/members')), [], 'Daftar siswa belum berhasil dimuat.',
 )
 export const useBimbelClasses = (id: string) => resource(
-  () => bimbelRequest<BimbelClass[]>(bimbelPath(id, '/classes')), [], 'Gagal memuat kelas.',
+  () => bimbelRequest<BimbelClass[]>(bimbelPath(id, '/classes')), [], 'Kelas belum berhasil dimuat.',
 )
 /**
  * Paket yang terbuka lewat keanggotaan bimbel. Daftar kosong untuk akun yang
@@ -95,10 +95,10 @@ export const useBimbelClasses = (id: string) => resource(
  * membedakan "kosong" dari "gagal".
  */
 export const useMyBimbelPackages = () => resource(
-  () => bimbelRequest<BimbelStudentPackage[]>('/me/bimbel-packages'), [], 'Gagal memuat paket bimbel.',
+  () => bimbelRequest<BimbelStudentPackage[]>('/me/bimbel-packages'), [], 'Paket bimbel belum berhasil dimuat.',
 )
 export const useMyBimbelApplication = () => resource(
-  () => bimbelRequest<BimbelApplication | null>('/bimbel-applications/me'), null, 'Gagal memuat pengajuan.',
+  () => bimbelRequest<BimbelApplication | null>('/bimbel-applications/me'), null, 'Pengajuan belum berhasil dimuat.',
 )
 /**
  * Undangan yang menunggu jawaban akun ini — bukan permintaan bergabung yang
@@ -107,14 +107,14 @@ export const useMyBimbelApplication = () => resource(
  * menu profil.
  */
 export const useBimbelInvitations = () => resource(
-  () => bimbelRequest<BimbelMembership[]>('/me/bimbel-invitations'), [], 'Gagal memuat undangan bimbel.',
+  () => bimbelRequest<BimbelMembership[]>('/me/bimbel-invitations'), [], 'Undangan bimbel belum berhasil dimuat.',
 )
 export const useBimbelOrders = (id: string) => resource(
-  () => bimbelRequest<BimbelOrder[]>(bimbelPath(id, '/billing/orders')), [], 'Gagal memuat tagihan.',
+  () => bimbelRequest<BimbelOrder[]>(bimbelPath(id, '/billing/orders')), [], 'Tagihan belum berhasil dimuat.',
 )
 /** Tingkat langganan yang bisa dibeli. Katalog tingkat milik server, bukan konstanta klien. */
 export const useBimbelPlans = (id: string) => resource(
-  () => bimbelRequest<BimbelPlanOption[]>(bimbelPath(id, '/billing/plans')), [], 'Gagal memuat tingkat langganan.',
+  () => bimbelRequest<BimbelPlanOption[]>(bimbelPath(id, '/billing/plans')), [], 'Tingkat langganan belum berhasil dimuat.',
 )
 
 export const joinBimbel = (code: string) => bimbelRequest<{ bimbelId: string, bimbelName: string, status: string }>('/bimbel/join', { method: 'POST', body: { code } })
@@ -201,10 +201,10 @@ export const submitBimbelProductPublic = (id: string, productId: string) => bimb
  * di tingkat apa, dan langganannya masih hidup atau tidak.
  */
 export const useAdminBimbels = () => resource(
-  () => bimbelRequest<Bimbel[]>('/admin/bimbels'), [], 'Gagal memuat daftar bimbel.',
+  () => bimbelRequest<Bimbel[]>('/admin/bimbels'), [], 'Daftar bimbel belum berhasil dimuat.',
 )
 export const useAdminBimbelApplications = (status = 'pending') => resource(
-  () => bimbelRequest<BimbelApplication[]>('/admin/bimbel-applications', { query: { status } }), [], 'Gagal memuat pengajuan bimbel.',
+  () => bimbelRequest<BimbelApplication[]>('/admin/bimbel-applications', { query: { status } }), [], 'Pengajuan bimbel belum berhasil dimuat.',
 )
 export const decideBimbelApplication = (id: string, status: 'approved' | 'rejected', reason = '') => bimbelRequest<BimbelApplication>(`/admin/bimbel-applications/${id}/decision`, { method: 'POST', body: { status, reason } })
 /**
@@ -221,7 +221,7 @@ export const decideBimbelApplication = (id: string, status: 'approved' | 'reject
  * tagihannya kecil dan berpindah filter tidak boleh berarti menunggu jaringan.
  */
 export const useAdminBimbelOrders = () => resource(
-  () => bimbelRequest<BimbelOrder[]>('/admin/bimbel-orders', { query: { status: 'all' } }), [], 'Gagal memuat tagihan bimbel.',
+  () => bimbelRequest<BimbelOrder[]>('/admin/bimbel-orders', { query: { status: 'all' } }), [], 'Tagihan bimbel belum berhasil dimuat.',
 )
 /**
  * Aktivasi manual: mengakui pembayaran yang tidak pernah dilihat sistem.
@@ -246,7 +246,7 @@ export const remindBimbelOrder = (id: string) => bimbelRequest<BimbelOrder>(`/ad
 export const useAdminBimbelProofs = (status = 'all') => resource(
   () => bimbelRequest<AdminBimbelPaymentProof[]>('/admin/bimbel-payment-proofs', { query: { status } }),
   [],
-  'Gagal memuat bukti pembayaran bimbel.',
+  'Bukti pembayaran bimbel belum berhasil dimuat.',
 )
 /**
  * Sengaja `void`, bukan bukti yang diperbarui: server menjawab dengan hal yang

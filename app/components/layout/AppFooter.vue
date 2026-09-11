@@ -96,7 +96,7 @@ const year = new Date().getFullYear()
 
         <div class="flex flex-col items-start gap-3 lg:row-span-2 lg:items-end lg:self-end">
           <AppButton to="/paket" size="lg">
-            Lihat Paket Try Out
+            Cari paket tryout
             <IconArrowRight class="h-4 w-4" />
           </AppButton>
           <p class="text-[0.85rem] text-white/52">
@@ -165,7 +165,7 @@ const year = new Date().getFullYear()
             aria-label="Zenko"
           />
           <p class="mt-4 text-[0.88rem] leading-[1.7] text-white/60 md:mt-5 md:text-[0.9rem]">
-            Marketplace try out SKD dan TKA. Siswa berlatih lewat simulasi ujian, tutor dan bimbel menerbitkan paket soalnya.
+            Marketplace tryout SKD dan TKA. Siswa berlatih lewat simulasi ujian, tutor dan bimbel menerbitkan paket soalnya.
           </p>
 
           <!-- Kontak ditulis terang-terangan, bukan disembunyikan di balik

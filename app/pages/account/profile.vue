@@ -126,7 +126,7 @@ async function saveProfile() {
     }
   }
   catch (cause) {
-    toast.error('Gagal menyimpan profil.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Profil belum berhasil disimpan.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     profileSaving.value = false
@@ -157,7 +157,7 @@ async function onAvatarSelected(event: Event) {
     toast.success('Foto profil diperbarui.')
   }
   catch (cause) {
-    toast.error('Gagal mengunggah foto.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Foto belum berhasil diunggah.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     avatarUploading.value = false
@@ -240,7 +240,7 @@ async function resendEmailCode() {
     startResendCooldown()
   }
   catch (cause) {
-    emailConfirmError.value = accountApiMessage(cause, 'Gagal mengirim ulang kode.')
+    emailConfirmError.value = accountApiMessage(cause, 'Kode belum berhasil dikirim ulang.')
   }
 }
 
@@ -329,7 +329,7 @@ async function onSubmit() {
     toast.warning('Ganti kata sandi belum tersambung.', error.value)
   }
   else if (state.value === 'error') {
-    toast.error('Gagal mengganti kata sandi.', error.value)
+    toast.error('Kata sandi belum berhasil diganti.', error.value)
   }
 }
 

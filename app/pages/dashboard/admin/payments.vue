@@ -139,7 +139,7 @@ function clearNotices() {
 }
 
 const CONFLICT_NOTICE = 'Konfirmasi ini baru saja diputuskan (mungkin oleh admin lain). Daftar dimuat ulang.'
-const DECISION_FALLBACK = 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.'
+const DECISION_FALLBACK = 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.'
 
 function isConflict(cause: unknown): boolean {
   return (cause as { statusCode?: number } | null)?.statusCode === 409

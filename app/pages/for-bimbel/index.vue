@@ -20,12 +20,12 @@ definePageMeta({ path: '/untuk-bimbel' })
  * pembayaran otomatis — tidak disebut sebagai fitur.
  */
 useSeoMeta({
-  title: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
+  title: 'Zenko untuk Bimbel | Kelola Kelas dan Tryout Siswa',
   description:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
-  ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Try Out Siswa',
+    'Kelola siswa, kelas, dan bank soal tryout bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
+  ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Tryout Siswa',
   ogDescription:
-    'Kelola siswa, kelas, dan bank soal try out bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
+    'Kelola siswa, kelas, dan bank soal tryout bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/untuk-bimbel',
   twitterCard: 'summary_large_image',
@@ -110,7 +110,7 @@ const faqs = [
   {
     question: 'Apakah ada masa uji coba?',
     answer:
-      'Ada. Begitu formulirnya terkirim, bimbelmu langsung mendapat 7 hari uji coba dengan kemampuan Kelas Pro untuk 25 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu try out dengan satu rombel yang sebenarnya.',
+      'Ada. Begitu formulirnya terkirim, bimbelmu langsung mendapat 7 hari uji coba dengan kemampuan Kelas Pro untuk 25 siswa, tanpa biaya dan tanpa kartu kredit — cukup untuk menjalankan satu tryout dengan satu rombel yang sebenarnya.',
   },
   {
     question: 'Bagaimana cara membayar tagihannya?',
@@ -168,12 +168,12 @@ void stepRef
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
-            Ruang try out
+            Ruang tryout
             <span class="text-accent mt-1 block">untuk bimbelmu sendiri</span>
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Kelola siswa, bagi mereka ke dalam kelas, dan buka bank soal try out
+            Kelola siswa, bagi mereka ke dalam kelas, dan buka bank soal tryout
             yang dinilai otomatis. Bimbelmu memakai mesin CBT yang sama dengan
             yang dipakai siswa Zenko, tanpa perlu membangun sistem sendiri.
           </p>

@@ -4,7 +4,7 @@
  * Setiap langkah, label tombol, dan angka di sini harus cocok dengan perilaku
  * aplikasi yang sebenarnya — artikel yang salah lebih merugikan daripada
  * artikel yang tidak ada. Karena itu:
- * - label tombol dikutip persis seperti di UI ("Mulai try out", "Tarik Saldo");
+ * - label tombol dikutip persis seperti di UI ("Mulai tryout", "Tarik saldo");
  * - fitur yang belum dibangun tidak diterbitkan sebagai artikel;
  * - tidak ada placeholder tangkapan layar — gambar hanya ditambahkan kalau
  *   gambarnya benar-benar ada.
@@ -75,7 +75,7 @@ export const helpCategories: HelpCategory[] = [
   {
     slug: 'ujian-cbt-pembahasan',
     title: 'Ujian CBT dan Analisis Pembahasan',
-    description: 'Mengerjakan try out, navigasi soal, aturan waktu, skor, dan pembahasan.',
+    description: 'Mengerjakan tryout, navigasi soal, aturan waktu, skor, dan pembahasan.',
     icon: 'target',
   },
   {
@@ -245,7 +245,7 @@ export const helpArticles: HelpArticle[] = [
   {
     slug: 'coba-gratis-5-soal',
     categorySlug: 'pembayaran-kode-akses',
-    title: 'Coba Gratis 5 Soal',
+    title: 'Coba 5 Soal Gratis',
     roles: ['siswa'],
     updated: '11 September 2026',
     readMinutes: 2,
@@ -254,11 +254,11 @@ export const helpArticles: HelpArticle[] = [
     steps: [
       {
         title: 'Buka katalog paket',
-        body: 'Kunjungi halaman /paket dan pilih paket try out yang ingin dicoba.',
+        body: 'Kunjungi halaman /paket dan pilih paket tryout yang ingin dicoba.',
       },
       {
-        title: 'Klik "Coba Gratis 5 Soal"',
-        body: 'Di halaman detail paket, klik "Coba Gratis 5 Soal" untuk membuka /paket/[slug]/coba.',
+        title: 'Klik "Coba 5 soal gratis"',
+        body: 'Di halaman detail paket, klik "Coba 5 soal gratis" untuk membuka /paket/[slug]/coba.',
       },
       {
         title: 'Kerjakan lima soalnya',
@@ -288,8 +288,8 @@ export const helpArticles: HelpArticle[] = [
     prerequisites: ['Sudah masuk ke akun Zenko.'],
     steps: [
       {
-        title: 'Klik "Beli Sekarang"',
-        body: 'Di halaman detail paket (/paket/[slug]), klik "Beli Sekarang".',
+        title: 'Klik "Beli paket"',
+        body: 'Di halaman detail paket (/paket/[slug]), klik "Beli paket".',
       },
       {
         title: 'Tinjau ringkasan checkout',
@@ -369,24 +369,24 @@ export const helpArticles: HelpArticle[] = [
   {
     slug: 'mulai-tryout',
     categorySlug: 'ujian-cbt-pembahasan',
-    title: 'Memulai Try Out CBT',
+    title: 'Memulai Tryout CBT',
     roles: ['siswa'],
     updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Buka paket dan mulai mengerjakan try out langkah demi langkah.',
+    summary: 'Buka paket dan mulai mengerjakan tryout langkah demi langkah.',
     prerequisites: ['Sudah masuk ke akun Zenko.', 'Paketnya sudah ada di "Paket saya".'],
     steps: [
       {
-        title: 'Buka Paket saya',
-        body: 'Buka /akun/paket dan pilih try out yang ingin dikerjakan.',
+        title: 'Buka paket saya',
+        body: 'Buka /akun/paket dan pilih tryout yang ingin dikerjakan.',
       },
       {
-        title: 'Klik "Mulai try out"',
-        body: 'Di halaman detail paket, klik "Mulai try out". Kalau kamu pernah mengerjakan paket ini, tombolnya bertuliskan "Kerjakan lagi".',
+        title: 'Klik "Mulai tryout"',
+        body: 'Di halaman detail paket, klik "Mulai tryout". Kalau kamu pernah mengerjakan paket ini, tombolnya bertuliskan "Kerjakan lagi".',
       },
       {
-        title: 'Baca aturan, lalu klik "Mulai Ujian"',
-        body: 'Layar pembuka menampilkan "Aturan pengerjaan" untuk paket ini, termasuk cara kerja waktunya. Waktu mulai berjalan begitu kamu klik "Mulai Ujian".',
+        title: 'Baca aturan, lalu klik "Mulai ujian"',
+        body: 'Layar pembuka menampilkan "Aturan pengerjaan" untuk paket ini, termasuk cara kerja waktunya. Waktu mulai berjalan begitu kamu klik "Mulai ujian".',
         note: {
           appearance: 'warning',
           body: 'Kerjakan di satu tab dan jangan tutup tab itu sampai selesai. Jawabanmu tersimpan di tab tersebut, dan waktu tetap berjalan meskipun kamu berpindah tab.',
@@ -404,7 +404,7 @@ export const helpArticles: HelpArticle[] = [
         answer: 'Tidak. Paket yang sudah kamu miliki bisa dikerjakan selama akunmu aktif.',
       },
     ],
-    keywords: ['mulai try out', 'kerjakan ujian', 'cbt', 'mulai ujian', 'kerjakan lagi'],
+    keywords: ['mulai tryout', 'kerjakan ujian', 'cbt', 'mulai ujian', 'kerjakan lagi'],
   },
   {
     slug: 'navigasi-ujian-dan-tanda-ragu-ragu',
@@ -448,7 +448,7 @@ export const helpArticles: HelpArticle[] = [
     roles: ['siswa'],
     updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Pahami dua cara kerja waktu try out supaya tidak kehabisan waktu.',
+    summary: 'Pahami dua cara kerja waktu tryout supaya tidak kehabisan waktu.',
     prerequisites: [],
     steps: [
       {
@@ -467,13 +467,13 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Cek aturan sebelum mulai',
-        body: 'Layar pembuka setiap try out mencantumkan "Aturan pengerjaan" yang berlaku untuk paket itu. Sisa waktu terlihat di bagian atas ruang ujian.',
+        body: 'Layar pembuka setiap tryout mencantumkan "Aturan pengerjaan" yang berlaku untuk paket itu. Sisa waktu terlihat di bagian atas ruang ujian.',
       },
     ],
     troubleshooting: [
       {
         question: 'Bagaimana cara tahu paket saya memakai satu timer atau timer per subtes?',
-        answer: 'Baca bagian "Aturan pengerjaan" di layar pembuka sebelum kamu klik "Mulai Ujian".',
+        answer: 'Baca bagian "Aturan pengerjaan" di layar pembuka sebelum kamu klik "Mulai ujian".',
       },
     ],
     keywords: ['mode waktu', 'flat', 'sequential', 'timer ujian', 'subtes terkunci', 'akhiri subtes'],
@@ -523,12 +523,12 @@ export const helpArticles: HelpArticle[] = [
     roles: ['siswa'],
     updated: '11 September 2026',
     readMinutes: 3,
-    summary: 'Akhiri try out, lalu baca skor yang dihitung server Zenko.',
-    prerequisites: ['Sedang mengerjakan try out.'],
+    summary: 'Akhiri tryout, lalu baca skor yang dihitung server Zenko.',
+    prerequisites: ['Sedang mengerjakan tryout.'],
     steps: [
       {
-        title: 'Klik "Selesaikan Ujian"',
-        body: 'Di subtes terakhir, klik "Selesaikan Ujian". Kalau waktu habis, ujian berakhir otomatis.',
+        title: 'Klik "Selesaikan ujian"',
+        body: 'Di subtes terakhir, klik "Selesaikan ujian". Kalau waktu habis, ujian berakhir otomatis.',
       },
       {
         title: 'Periksa jendela konfirmasi',
@@ -543,7 +543,7 @@ export const helpArticles: HelpArticle[] = [
     ],
     troubleshooting: [
       {
-        question: 'Bisakah try out yang sudah selesai dikerjakan ulang?',
+        question: 'Bisakah tryout yang sudah selesai dikerjakan ulang?',
         answer: 'Bisa, tanpa batas. Buka paketnya lagi dan klik "Kerjakan lagi". Setiap percobaan tercatat di riwayat paket.',
       },
       {
@@ -562,7 +562,7 @@ export const helpArticles: HelpArticle[] = [
     updated: '11 September 2026',
     readMinutes: 2,
     summary: 'Buka kunci jawaban dan pembahasan dari tutor untuk setiap percobaan.',
-    prerequisites: ['Sudah menyelesaikan try out.'],
+    prerequisites: ['Sudah menyelesaikan tryout.'],
     steps: [
       {
         title: 'Buka pembahasan percobaan',
@@ -626,7 +626,7 @@ export const helpArticles: HelpArticle[] = [
   {
     slug: 'wizard-buat-paket-tryout',
     categorySlug: 'portal-tutor',
-    title: 'Membuat Paket Try Out: 5 Langkah',
+    title: 'Membuat Paket Tryout: 5 Langkah',
     roles: ['tutor'],
     updated: '11 September 2026',
     readMinutes: 4,
@@ -640,7 +640,7 @@ export const helpArticles: HelpArticle[] = [
       {
         title: 'Langkah 1: Identitas Paket',
         body:
-          'Pilih tipe paket (tunggal atau bundel) dan identitas ujiannya: kategori, jenis ujian, serta mode simulasi (semua subtes) atau mini try out (satu subtes).',
+          'Pilih tipe paket (tunggal atau bundel) dan identitas ujiannya: kategori, jenis ujian, serta mode simulasi (semua subtes) atau mini tryout (satu subtes).',
       },
       {
         title: 'Langkah 2: Konfigurasi Ujian',
@@ -813,7 +813,7 @@ export const helpArticles: HelpArticle[] = [
         body: 'Setiap penjualan ditahan 7 hari sejak pesanannya lunas sebelum masuk ke "Saldo siap dicairkan". Selama masa itu, jumlahnya tampil sebagai "Saldo tertahan".',
       },
       {
-        title: 'Klik "Tarik Saldo"',
+        title: 'Klik "Tarik saldo"',
         body: 'Masukkan jumlah penarikan (minimal Rp100.000 dan paling banyak sebesar saldo siap dicairkan), lalu klik "Ajukan pencairan".',
       },
       {
@@ -1131,7 +1131,7 @@ export const helpArticles: HelpArticle[] = [
     roles: ['siswa'],
     updated: '11 September 2026',
     readMinutes: 2,
-    summary: 'Apa yang tersimpan, apa yang hilang, dan cara melanjutkan try out yang terputus.',
+    summary: 'Apa yang tersimpan, apa yang hilang, dan cara melanjutkan tryout yang terputus.',
     prerequisites: [],
     steps: [
       {
@@ -1150,7 +1150,7 @@ export const helpArticles: HelpArticle[] = [
       {
         title: 'Kalau tab sudah tertutup',
         body:
-          'Menutup tab atau browser menghapus jawaban yang belum dikirim. Buka paketnya lagi dan klik "Mulai try out" atau "Kerjakan lagi" untuk memulai percobaan baru.',
+          'Menutup tab atau browser menghapus jawaban yang belum dikirim. Buka paketnya lagi dan klik "Mulai tryout" atau "Kerjakan lagi" untuk memulai percobaan baru.',
       },
     ],
     troubleshooting: [

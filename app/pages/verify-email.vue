@@ -144,9 +144,9 @@ function readQuery(raw: unknown): string {
 <template>
   <AuthPanel v-if="status === 'success'" title="Email kamu terverifikasi" tone="success">
     <template #description>
-      Akunmu sudah aktif.
+      Sip, akunmu sudah aktif.
       <template v-if="isGoogleFlow">Lanjutkan masuk dengan Google untuk membuka dashboard Zenko.</template>
-      <template v-else>Siap dipakai membeli serta mengerjakan paket try out.</template>
+      <template v-else>Siap dipakai membeli serta mengerjakan paket tryout.</template>
     </template>
 
     <div class="grid gap-5">
@@ -163,7 +163,7 @@ function readQuery(raw: unknown): string {
         to="/paket"
         class="inline-flex min-h-12 w-full items-center justify-center rounded-xs border border-line font-semibold transition-colors duration-200 ease-smooth hover:bg-surface-alt"
       >
-        Lihat paket try out
+        Lihat paket tryout
       </NuxtLink>
     </div>
   </AuthPanel>
@@ -228,7 +228,7 @@ function readQuery(raw: unknown): string {
       </AppButton>
 
       <div class="rounded-sm bg-surface-alt px-4 py-4 text-[0.88rem] text-muted">
-        <p class="font-semibold text-ink">Belum dapat kodenya?</p>
+        <p class="font-semibold text-ink">Kodenya belum sampai?</p>
         <ul class="mt-2 grid gap-1.5">
           <li>• Cek folder spam.</li>
           <li>• Kode berlaku sebentar dan mati kalau salah berkali-kali.</li>

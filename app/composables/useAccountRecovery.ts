@@ -41,7 +41,7 @@ const INVALID_TOKEN_MESSAGE =
 
 const EXPIRED_CODE_MESSAGE = 'Kode verifikasi sudah kedaluwarsa, minta kode baru.'
 
-const GENERIC_ERROR_MESSAGE = 'Gagal menghubungi server. Coba lagi sebentar lagi.'
+const GENERIC_ERROR_MESSAGE = 'Server belum bisa dihubungi. Coba lagi sebentar lagi.'
 
 export function useAccountRecovery() {
   const { public: config } = useRuntimeConfig()

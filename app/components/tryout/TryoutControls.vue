@@ -123,7 +123,7 @@ const TAP = 'inline-flex min-h-11 touch-manipulation items-center justify-center
       </div>
 
       <AppButton size="sm" @click="emit('endSection')">
-        {{ isLastSection ? 'Selesaikan Ujian' : 'Akhiri Subtes' }}
+        {{ isLastSection ? 'Selesaikan ujian' : 'Akhiri subtes' }}
       </AppButton>
     </div>
   </div>

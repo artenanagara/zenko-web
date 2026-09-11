@@ -17,14 +17,13 @@ void target
     <div class="container-page relative z-1">
       <div class="mx-auto mb-11 max-w-160 text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
-          Cara belajar di Zenko
+          Belajar bareng Zenko
         </p>
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-          Latihan try out yang <span class="text-accent">lebih terarah</span>
+          Dari pilih paket sampai <span class="text-accent">tahu yang perlu dikejar</span>
         </h2>
         <p class="mt-3.5 text-[1.02rem] text-muted">
-          Pilih paket yang sesuai, kerjakan simulasi ujian, lalu pelajari hasil
-          dan pembahasannya dalam satu alur.
+          Pilih targetmu, kerjakan simulasi, lalu gunakan hasilnya untuk menentukan langkah belajar berikutnya.
         </p>
       </div>
 
@@ -51,9 +50,9 @@ void target
               </li>
             </ul>
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Pilih paket try out yang pas</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Pilih paket yang paling pas</h3>
           <p class="leading-[1.62] text-muted">
-            Temukan paket soal dari tutor terpercaya yang sesuai dengan target seleksi, tingkat pemahaman, dan gaya belajarmu.
+            Temukan paket dari tutor terpercaya sesuai target ujian dan kebutuhan belajarmu.
           </p>
         </article>
 
@@ -64,9 +63,9 @@ void target
           <div class="mb-8 flex min-h-60 items-center justify-center rounded-[20px] bg-surface-sunken p-7">
             <FeatureExamMock :active="isInView" />
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Simulasi ujian mirip aslinya</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Latihan seperti hari ujian</h3>
           <p class="leading-[1.62] text-muted">
-            Latihan dengan sistem CBT, batasan waktu, dan format soal yang menyerupai ujian resmi agar kamu makin tenang dan siap.
+            Biasakan diri dengan sistem CBT, batas waktu, dan format soal yang menyerupai ujian resmi.
           </p>
         </article>
 
@@ -85,9 +84,9 @@ void target
               </span>
             </div>
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Evaluasi & pembahasan tuntas</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Tahu yang perlu dikejar</h3>
           <p class="leading-[1.62] text-muted">
-            Dapatkan analisis skor per subtes serta pembahasan rinci di setiap soal agar kamu tahu materi mana yang perlu ditingkatkan.
+            Lihat analisis skor per subtes dan pelajari pembahasan setiap soal untuk menyusun fokus belajarmu.
           </p>
         </article>
       </div>

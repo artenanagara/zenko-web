@@ -53,7 +53,7 @@ async function save() {
     toast.success('Profil bimbel disimpan.')
   }
   catch (cause) {
-    toast.error('Gagal menyimpan profil.', tutorApiMessage(cause, 'Coba lagi.'))
+    toast.error('Profil belum berhasil disimpan.', tutorApiMessage(cause, 'Coba lagi.'))
   }
   finally {
     saving.value = false
@@ -67,7 +67,7 @@ async function rotate() {
     toast.success('Kode bergabung diperbarui.', 'Kode lama tidak dapat dipakai lagi.')
   }
   catch (cause) {
-    toast.error('Gagal membuat kode baru.', tutorApiMessage(cause, 'Coba lagi.'))
+    toast.error('Kode baru belum berhasil dibuat.', tutorApiMessage(cause, 'Coba lagi.'))
   }
   finally {
     rotating.value = false

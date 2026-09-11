@@ -26,7 +26,7 @@ const isBlank = computed(() =>
       v-if="isBlank"
       icon="user"
       title="Tutor ini belum melengkapi profilnya"
-      description="Belum ada bio, pendidikan, atau pengalaman yang dibagikan. Kamu masih bisa menilai dari paket dan ulasan di tab lain."
+      description="Tutor ini belum membagikan bio, pendidikan, atau pengalaman. Kamu tetap bisa melihat paket dan ulasannya di tab lain."
     />
 
     <div v-else class="grid gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-12">

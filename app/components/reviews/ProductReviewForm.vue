@@ -81,8 +81,8 @@ async function submit() {
   }
   catch (cause) {
     toast.error(
-      'Gagal menyimpan ulasan.',
-      tutorApiMessage(cause, 'Pastikan kamu sudah menyelesaikan try out ini, lalu coba lagi.'),
+      'Ulasan belum berhasil disimpan.',
+      tutorApiMessage(cause, 'Pastikan kamu sudah menyelesaikan tryout ini, lalu coba lagi.'),
     )
   }
   finally {
@@ -99,8 +99,8 @@ async function submit() {
     @submit.prevent="submit"
   >
     <div v-if="!embedded">
-      <h3 class="font-bold">{{ existing ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman try out ini?' }}</h3>
-      <p class="mt-1 text-[0.88rem] text-muted">Ulasan hanya tersedia setelah kamu menyelesaikan try out. Tidak ada upload gambar.</p>
+      <h3 class="font-bold">{{ existing ? 'Perbarui ulasanmu' : 'Bagaimana pengalaman tryout ini?' }}</h3>
+      <p class="mt-1 text-[0.88rem] text-muted">Kamu bisa memberi ulasan setelah menyelesaikan tryout. Ulasan hanya berupa teks.</p>
     </div>
     <div>
       <p id="product-review-rating-label" class="mb-2 text-[0.9rem] font-semibold">Rating bintang <span class="text-danger-ink">*</span></p>

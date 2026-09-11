@@ -28,7 +28,7 @@ async function onFileSelected(event: Event) {
     model.value = await uploadTutorImage(file)
   }
   catch (cause) {
-    toast.error('Gagal mengunggah gambar.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Gambar belum berhasil diunggah.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     uploading.value = false

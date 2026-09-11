@@ -37,7 +37,7 @@ export interface TryoutPreviewResource {
 function previewErrorMessage(cause: unknown): string {
   switch (apiErrorStatus(cause)) {
     case 400:
-      return 'Simulasi hanya tersedia untuk produk try-out tunggal dengan subtes yang dipilih.'
+      return 'Simulasi hanya tersedia untuk produk tryout tunggal dengan subtes yang dipilih.'
     case 403:
       return 'Kamu tidak punya akses ke simulasi produk ini.'
     case 404:
@@ -45,7 +45,7 @@ function previewErrorMessage(cause: unknown): string {
     case 422:
       return 'Subtes ini belum lengkap — penuhi dulu target soalnya sebelum bisa disimulasikan.'
     default:
-      return tutorApiMessage(cause, 'Gagal memuat simulasi. Coba lagi sebentar lagi.')
+      return tutorApiMessage(cause, 'Simulasi belum berhasil dimuat. Coba lagi sebentar lagi.')
   }
 }
 

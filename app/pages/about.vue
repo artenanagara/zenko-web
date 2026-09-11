@@ -5,10 +5,10 @@ definePageMeta({ path: '/tentang' })
 useSeoMeta({
   title: 'Tentang Kami | Zenko',
   description:
-    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
+    'Zenko adalah marketplace tryout CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
   ogTitle: 'Tentang Kami | Zenko',
   ogDescription:
-    'Zenko adalah marketplace try out CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
+    'Zenko adalah marketplace tryout CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/tentang',
   twitterCard: 'summary_large_image',
@@ -120,7 +120,7 @@ const audiences = [
     label: 'Bimbel',
     title: 'Mengelola banyak siswa',
     description:
-      'Punya ruang try out sendiri untuk siswa bimbelmu, terpisah dari katalog publik.</br>',
+      'Punya ruang tryout sendiri untuk siswa bimbelmu, terpisah dari katalog publik.</br>',
     points: [
       'Kelas dan roster siswa dalam satu dashboard',
       'Bank soal privat yang hanya untuk siswamu',
@@ -186,7 +186,7 @@ const faqs = [
   {
     question: 'Ujian apa saja yang tersedia?',
     answer:
-      'SKD untuk CPNS dan Sekolah Kedinasan, serta TKA untuk jenjang SD, SMP, SMA, dan SMK — tersedia sebagai simulasi penuh maupun mini try out satu subtes atau satu mata pelajaran.',
+      'SKD untuk CPNS dan Sekolah Kedinasan, serta TKA untuk jenjang SD, SMP, SMA, dan SMK — tersedia sebagai simulasi penuh maupun mini tryout satu subtes atau satu mata pelajaran.',
   },
   {
     question: 'Bisakah mencoba dulu sebelum mengambil paket?',
@@ -225,7 +225,7 @@ const faqs = [
             class="mb-5 inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-white/80 py-2 pr-4 pl-3 text-[0.82rem] font-semibold shadow-[0_2px_8px_rgba(47,111,235,0.06)] backdrop-blur-[6px]"
           >
             <span class="h-2 w-2 rounded-full bg-success shadow-[0_0_0_3px_rgba(34,197,94,0.18)]" aria-hidden="true" />
-            Marketplace try out SKD &amp; TKA
+            Marketplace tryout SKD &amp; TKA
           </span>
 
           <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
@@ -234,13 +234,13 @@ const faqs = [
           </h1>
 
           <p class="mx-auto mt-4 max-w-160 text-[1.02rem] text-muted">
-            Zenko mempertemukan tutor yang menyusun paket try out dengan siswa yang
+            Zenko mempertemukan tutor yang menyusun paket tryout dengan siswa yang
             membutuhkannya. Tiap paket dikurasi lebih dulu, lalu dikerjakan sebagai
             simulasi CBT dengan skor dan pembahasan yang keluar otomatis.
           </p>
 
           <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <AppButton to="/paket" size="lg">Cari paket try out</AppButton>
+            <AppButton to="/paket" size="lg">Cari paket tryout</AppButton>
             <AppButton to="/jadi-tutor" size="lg" variant="outline">Jadi tutor</AppButton>
           </div>
         </div>
@@ -725,7 +725,7 @@ const faqs = [
         </p>
 
         <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
-          <AppButton to="/paket" variant="light" size="lg">Cari paket try out</AppButton>
+          <AppButton to="/paket" variant="light" size="lg">Cari paket tryout</AppButton>
           <NuxtLink
             to="/jadi-tutor"
             class="inline-flex min-h-13 items-center justify-center rounded-xs border border-white/40 px-8 font-semibold text-white transition-[transform,background] duration-200 ease-smooth hover:-translate-y-px hover:bg-white/10 focus-visible:-translate-y-px"

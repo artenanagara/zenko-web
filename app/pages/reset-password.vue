@@ -82,8 +82,7 @@ async function onSubmit() {
 <template>
   <AuthPanel v-if="status === 'form'" title="Buat kata sandi baru">
     <template #description>
-      Pilih kata sandi baru. Sesi di
-      perangkat lain akan berakhir setelah ini.
+      Pilih kata sandi baru. Setelah disimpan, sesi di perangkat lain akan berakhir.
     </template>
 
     <form class="grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -130,7 +129,7 @@ async function onSubmit() {
 
     <template #footer>
       <NuxtLink to="/masuk" class="font-semibold text-primary hover:underline">
-        Kembali ke halaman masuk
+        Masuk ke akun
       </NuxtLink>
     </template>
   </AuthPanel>
@@ -157,7 +156,7 @@ async function onSubmit() {
         to="/masuk"
         class="inline-flex min-h-12 w-full items-center justify-center rounded-xs border border-line font-semibold transition-colors duration-200 ease-smooth hover:bg-surface-alt"
       >
-        Kembali ke halaman masuk
+        Masuk ke akun
       </NuxtLink>
     </div>
 
@@ -174,6 +173,6 @@ async function onSubmit() {
       {{ message }}
     </template>
 
-    <AppButton to="/masuk" size="lg" class="w-full">Kembali ke halaman masuk</AppButton>
+    <AppButton to="/masuk" size="lg" class="w-full">Masuk ke akun</AppButton>
   </AuthPanel>
 </template>

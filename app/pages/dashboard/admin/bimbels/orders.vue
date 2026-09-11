@@ -300,7 +300,7 @@ async function confirmActivate() {
 
         <AppEmptyState
           v-if="rows.length === 0"
-          title="Tidak ada hasil"
+          title="Hasil tidak ditemukan"
           description="Tidak ada tagihan yang cocok dengan kata kunci atau status yang dipilih."
           action-label="Reset pencarian"
           @action="reset"

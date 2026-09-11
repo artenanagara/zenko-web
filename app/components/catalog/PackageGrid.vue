@@ -20,9 +20,9 @@ const grid =
 </script>
 
 <template>
-  <section class="@container" aria-label="Daftar paket try out">
+  <section class="@container" aria-label="Daftar paket tryout">
     <p v-if="error" class="rounded-lg bg-surface-sunken px-6 py-10 text-center text-muted">
-      Paket belum berhasil dimuat. Silakan coba beberapa saat lagi.
+      Paket belum berhasil dimuat. Tunggu sebentar, lalu coba lagi.
     </p>
 
     <div v-else-if="pending" :class="grid">
@@ -31,7 +31,7 @@ const grid =
 
     <slot v-else-if="items.length === 0" name="empty">
       <p class="rounded-lg bg-surface-sunken px-6 py-10 text-center text-muted">
-        Belum ada paket yang tersedia.
+        Paketnya belum tersedia. Coba mampir lagi nanti, ya.
       </p>
     </slot>
 

@@ -150,7 +150,7 @@ function loadMore() {
     <div v-if="items.length">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="text-[1.25rem] font-bold tracking-[-0.03em]">Paket try out</h2>
+          <h2 class="text-[1.25rem] font-bold tracking-[-0.03em]">Paket tryout</h2>
           <p class="mt-1 text-[0.92rem] text-muted" aria-live="polite">
             Menampilkan {{ visibleItems.length }} dari {{ filteredItems.length }} paket
             {{ isFiltered ? `kategori ${category}` : `aktif dari ${tutorName}` }}.
@@ -192,7 +192,7 @@ function loadMore() {
            filter itself — an empty grid with the control still set would look
            like the tutor lost their paket. -->
       <div v-else class="mt-5 rounded-lg border border-dashed border-line bg-surface px-6 py-12 text-center">
-        <p class="font-bold tracking-[-0.02em]">Tidak ada paket di kategori {{ category }}.</p>
+        <p class="font-bold tracking-[-0.02em]">Paket di kategori {{ category }} belum tersedia.</p>
         <p class="mx-auto mt-1.5 max-w-100 text-[0.92rem] leading-[1.6] text-muted">
           Kategori lain milik {{ tutorName }} masih ada isinya.
         </p>
@@ -212,8 +212,8 @@ function loadMore() {
     <TutorProfileEmpty
       v-else
       icon="squares-four"
-      title="Belum ada paket yang tayang"
-      :description="`${tutorName} belum menerbitkan paket try out. Jelajahi paket dari tutor lain sambil menunggu.`"
+      title="Paketnya belum tayang"
+      :description="`${tutorName} belum menerbitkan paket tryout. Cari paket dari tutor lain sambil menunggu.`"
     >
       <template #action>
         <AppButton to="/paket" variant="outline" size="sm" class="min-h-11 bg-surface">

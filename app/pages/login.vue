@@ -9,7 +9,7 @@ definePageMeta({ layout: 'auth', path: '/masuk' })
 useHead({
   title: 'Masuk | Zenko',
   meta: [
-    { name: 'description', content: 'Masuk ke akun Zenko untuk mengakses simulasi try out dan melanjutkan latihanmu.' },
+    { name: 'description', content: 'Masuk ke akun Zenko untuk mengakses simulasi tryout dan melanjutkan latihanmu.' },
     // Nothing here is worth indexing, and it should never rank above the app.
     { name: 'robots', content: 'noindex' },
   ],
@@ -21,9 +21,9 @@ const route = useRoute()
 /** The OAuth callback bounces back here with ?error=<reason> on failure. */
 const CALLBACK_ERRORS: Record<string, string> = {
   dibatalkan: 'Login dibatalkan. Kamu bisa mencoba lagi kapan saja.',
-  state_tidak_cocok: 'Sesi login kedaluwarsa. Silakan ulangi dari awal.',
+  state_tidak_cocok: 'Sesi masuk sudah berakhir. Mulai lagi dari awal, ya.',
   kode_kosong: 'Google tidak mengirim kode otorisasi. Coba lagi.',
-  gagal_masuk: 'Gagal menyelesaikan login dengan Google. Coba lagi sebentar lagi.',
+  gagal_masuk: 'Proses masuk dengan Google belum berhasil. Coba lagi sebentar lagi.',
   gagal_verifikasi: 'Kode verifikasi Google belum dapat dikirim. Coba lagi sebentar lagi.',
   verifikasi_tidak_tersedia: 'Verifikasi email belum tersedia. Hubungi admin atau coba lagi nanti.',
 }
@@ -93,10 +93,10 @@ async function onSubmit() {
         <BrandMark img-class="h-10 w-auto object-contain" />
 
         <h1 class="mt-9 text-[clamp(1.7rem,2.6vw,2.1rem)] leading-[1.18] tracking-[-0.04em]">
-          Masuk ke akunmu
+          Yuk, lanjut belajar
         </h1>
         <p class="mt-2.5 text-muted">
-          Lanjutkan latihan dari paket yang kamu beli.
+          Masuk untuk melanjutkan latihanmu dari terakhir.
         </p>
 
         <form class="mt-8 grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -154,7 +154,7 @@ async function onSubmit() {
           </NuxtLink>
 
           <AppButton type="submit" size="lg" class="w-full" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Memproses…' : 'Masuk' }}
+            {{ isSubmitting ? 'Menyiapkan akunmu…' : 'Masuk' }}
           </AppButton>
         </form>
 
@@ -169,7 +169,7 @@ async function onSubmit() {
         <p class="mt-8 text-center text-[0.9rem] text-muted">
           Belum punya akun?
           <NuxtLink to="/daftar" class="font-semibold text-primary hover:underline">
-            Daftar sekarang
+            Buat akun gratis
           </NuxtLink>
         </p>
       </div>

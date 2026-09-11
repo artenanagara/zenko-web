@@ -166,7 +166,7 @@ async function orderSubscription() {
     toast.success('Tagihan dibuat.', 'Selesaikan pembayaran sesuai instruksi.')
     await navigateTo(paymentPath(order.id))
   }
-  catch (cause) { toast.error('Gagal membuat tagihan.', tutorApiMessage(cause, 'Coba lagi.')) }
+  catch (cause) { toast.error('Tagihan belum berhasil dibuat.', tutorApiMessage(cause, 'Coba lagi.')) }
   finally { ordering.value = false }
 }
 

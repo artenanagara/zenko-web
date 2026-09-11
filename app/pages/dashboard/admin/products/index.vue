@@ -220,7 +220,7 @@ async function decide(approve: boolean, reason?: string) {
       await afterDecision()
     }
     else {
-      decisionError.value = tutorApiMessage(cause, 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.')
+      decisionError.value = tutorApiMessage(cause, 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.')
     }
   }
   finally {
@@ -307,8 +307,8 @@ async function decide(approve: boolean, reason?: string) {
 
         <AppEmptyState
           v-else-if="rows.length === 0"
-          title="Tidak ada hasil"
-          description="Tidak ada produk yang cocok dengan pencarian atau filter ini."
+          title="Hasil tidak ditemukan"
+          description="Tidak ada produk yang cocok dengan pencarian atau filter yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />

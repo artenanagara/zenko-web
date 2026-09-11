@@ -163,7 +163,7 @@ function retry() {
     <div v-else-if="blueprintError" class="container-page grid min-h-screen place-items-center py-10">
       <div class="w-full max-w-md">
         <AccountError @retry="blueprintRefresh">
-          Soal try out belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.
+          Soal tryout belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.
         </AccountError>
       </div>
     </div>
@@ -228,7 +228,7 @@ function retry() {
         </ul>
       </div>
 
-      <AppButton size="lg" class="justify-self-start" @click="session.start()">Mulai Ujian</AppButton>
+      <AppButton size="lg" class="justify-self-start" @click="session.start()">Mulai ujian</AppButton>
     </div>
 
     <!-- Sesi berjalan. -->

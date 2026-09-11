@@ -123,8 +123,8 @@ function initial(name: string): string {
 
         <AppEmptyState
           v-else-if="rows.length === 0"
-          title="Tidak ada hasil"
-          description="Tidak ada tutor yang cocok dengan pencarian atau filter ini."
+          title="Hasil tidak ditemukan"
+          description="Tidak ada tutor yang cocok dengan pencarian atau filter yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />

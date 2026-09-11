@@ -187,7 +187,7 @@ useHead({
           <div class="mt-10 grid gap-5">
             <div>
               <h2 class="mb-1 text-[1.35rem] font-bold tracking-[-0.03em]">Ulasan siswa</h2>
-              <p class="text-[0.88rem] text-muted">Rating dan masukan dari siswa yang sudah mengerjakan paket ini.</p>
+              <p class="text-[0.88rem] text-muted">Lihat penilaian dan cerita siswa yang sudah mengerjakan paket ini.</p>
             </div>
             <!-- Di atas daftar, bukan di bawahnya: siswa yang baru selesai
                  mengerjakan datang ke sini untuk menulis, bukan untuk membaca
@@ -210,7 +210,7 @@ useHead({
                 @edit="reviewEditorOpen = true"
               />
             </div>
-            <p v-else class="rounded-md border border-dashed border-line px-4 py-6 text-center text-muted">Belum ada ulasan. Jadilah yang pertama setelah mengerjakan paket ini.</p>
+            <p v-else class="rounded-md border border-dashed border-line px-4 py-6 text-center text-muted">Ulasannya masih kosong. Selesaikan tryout, lalu bagikan pengalamanmu di sini.</p>
 
             <!-- Ulasan siswa ini belum dipublikasikan (masih dimoderasi), jadi
                  tidak ada di daftar di atas dan tidak punya tombol edit di
@@ -262,7 +262,7 @@ useHead({
                 size="lg"
                 class="w-full"
               >
-                {{ ownsPackage ? 'Buka Paket di Akun' : 'Beli Sekarang' }}
+                {{ ownsPackage ? 'Buka paket saya' : 'Beli paket' }}
               </AppButton>
               <AppButton
                 :to="`/paket/${detail.slug}/coba`"
@@ -270,7 +270,7 @@ useHead({
                 size="lg"
                 class="w-full border border-hairline shadow-none"
               >
-                Coba Gratis 5 Soal
+                Coba 5 soal gratis
               </AppButton>
             </div>
 
@@ -295,7 +295,7 @@ useHead({
 
             <p class="mt-6 flex items-start gap-2.5 border-t border-line pt-6 text-[0.85rem] text-muted">
               <IconSeal class="mt-px h-5 w-5 shrink-0" />
-              Disusun oleh tutor terpercaya. Transaksi aman dengan akses instan ke sistem CBT.
+              Disusun oleh tutor terpercaya. Bayar aman, lalu langsung buka latihan di sistem CBT.
             </p>
           </div>
         </aside>

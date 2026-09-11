@@ -84,7 +84,7 @@ async function remove(item: BimbelClass) {
     toast.success('Kelas dihapus.')
   }
   catch (cause) {
-    toast.error('Gagal menghapus kelas.', tutorApiMessage(cause, 'Coba lagi.'))
+    toast.error('Kelas belum berhasil dihapus.', tutorApiMessage(cause, 'Coba lagi.'))
   }
 }
 </script>

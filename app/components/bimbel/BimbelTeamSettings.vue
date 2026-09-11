@@ -55,7 +55,7 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
     toast.success('Data tim diperbarui.')
   }
   catch (cause) {
-    toast.error('Perubahan gagal.', tutorApiMessage(cause, 'Coba lagi.'))
+    toast.error('Perubahan belum tersimpan.', tutorApiMessage(cause, 'Coba lagi.'))
   }
   finally {
     busyId.value = ''
@@ -110,7 +110,7 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
         </template>
       </template>
     </DashboardTable>
-    <AppEmptyState v-else title="Belum ada tim" description="Tambahkan pengajar atau admin untuk membantu mengelola Bimbel." action-label="Tambah tim" @action="inviteOpen = true" />
+    <AppEmptyState v-else title="Tim bimbelmu masih kosong" description="Ajak pengajar atau admin untuk membantu mengelola bimbel." action-label="Tambah anggota" @action="inviteOpen = true" />
   </DashboardPanel>
 
   <AppModal :model-value="inviteOpen" title="Tambah tim" description="Undang akun Zenko sebagai pengajar atau admin." @update:model-value="value => inviteOpen = value">

@@ -11,7 +11,7 @@ export function useProductReviews(slug: string) {
     pending.value = true
     error.value = ''
     try { data.value = await useApiFetch<ProductReview[]>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase }) }
-    catch (cause) { error.value = tutorApiMessage(cause, 'Gagal memuat ulasan.') }
+    catch (cause) { error.value = tutorApiMessage(cause, 'Ulasan belum berhasil dimuat.') }
     finally { pending.value = false }
   }
 

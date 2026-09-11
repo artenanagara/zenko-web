@@ -7,10 +7,10 @@ definePageMeta({ path: '/faq' })
 useSeoMeta({
   title: 'FAQ | Zenko',
   description:
-    'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja try out CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
+    'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja tryout CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
   ogTitle: 'FAQ | Zenko',
   ogDescription:
-    'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja try out CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
+    'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja tryout CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
   ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
   ogUrl: 'https://zenkoedu.id/faq',
   twitterCard: 'summary_large_image',
@@ -40,10 +40,10 @@ const categories: FaqCategory[] = [
       {
         question: 'Apa itu Zenko?',
         answer:
-          'Zenko adalah marketplace try out untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Siswa membeli paket try out dari berbagai tutor, lalu mengerjakannya langsung di sistem CBT (Computer Based Test) Zenko.',
+          'Zenko adalah marketplace tryout untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK). Siswa membeli paket tryout dari berbagai tutor, lalu mengerjakannya langsung di sistem CBT (Computer Based Test) Zenko.',
       },
       {
-        question: 'Bagaimana cara kerja try out CBT-nya?',
+        question: 'Bagaimana cara kerja tryout CBT-nya?',
         answer:
           'Setelah pesanan paketmu lunas, paketnya muncul di "Paket saya". Kamu mengerjakan soal di sistem CBT Zenko dengan waktu sesuai aturan paket, lalu mendapat skor yang dihitung server dan pembahasan begitu selesai atau waktu habis.',
       },
