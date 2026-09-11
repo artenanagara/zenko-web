@@ -14,7 +14,7 @@ useSeoMeta({
   ogTitle: 'Syarat dan Ketentuan Tutor | Zenko',
   ogDescription:
     'Syarat dan Ketentuan Tutor Zenko: kelayakan, kurasi, kepemilikan konten, bagi hasil 70:30, pencairan, standar mutu, dan tanggung jawab tutor.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/syarat-tutor',
   twitterCard: 'summary_large_image',
 })

@@ -9,7 +9,7 @@ useSeoMeta({
   ogTitle: 'Tentang Kami | Zenko',
   ogDescription:
     'Zenko adalah marketplace tryout CBT untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK): katalog paket dari banyak tutor, dikurasi sebelum tayang, dikerjakan sebagai simulasi ujian dengan skor dan pembahasan otomatis.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/tentang',
   twitterCard: 'summary_large_image',
 })

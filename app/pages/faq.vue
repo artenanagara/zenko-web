@@ -11,7 +11,7 @@ useSeoMeta({
   ogTitle: 'FAQ | Zenko',
   ogDescription:
     'Pertanyaan yang sering ditanyakan seputar Zenko: cara kerja tryout CBT, pembayaran QRIS, akun dan login, refund, dan menjadi tutor.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/faq',
   twitterCard: 'summary_large_image',
 })

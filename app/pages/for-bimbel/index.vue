@@ -26,7 +26,7 @@ useSeoMeta({
   ogTitle: 'Zenko untuk Bimbel | Kelola Kelas dan Tryout Siswa',
   ogDescription:
     'Kelola siswa, kelas, dan bank soal tryout bimbelmu dalam satu tempat. Daftar tanpa menunggu persetujuan, coba 7 hari gratis, lalu mulai Rp75.000 per bulan sudah termasuk 25 kursi siswa.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/untuk-bimbel',
   twitterCard: 'summary_large_image',
 })

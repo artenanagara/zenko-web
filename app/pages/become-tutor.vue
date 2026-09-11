@@ -18,7 +18,7 @@ useSeoMeta({
   ogTitle: 'Jadi Tutor Zenko | Jual Paket Tryout Online',
   ogDescription:
     'Daftar menjadi tutor Zenko dan jual paket tryout SKD (CPNS & Kedinasan) atau TKA (SD–SMK). Atur harga sendiri dan dapatkan 70% dari setiap penjualan.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/jadi-tutor',
   twitterCard: 'summary_large_image',
 })

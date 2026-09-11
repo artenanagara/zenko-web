@@ -9,7 +9,7 @@ useSeoMeta({
   ogTitle: 'Kebijakan Refund | Zenko',
   ogDescription:
     'Kebijakan pengembalian dana Zenko untuk pembelian paket tryout: kapan refund berlaku, cara mengajukan, dan lama prosesnya.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/kebijakan-refund',
   twitterCard: 'summary_large_image',
 })

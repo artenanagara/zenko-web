@@ -25,7 +25,7 @@ useSeoMeta({
   ogTitle: 'Pusat Bantuan | Zenko',
   ogDescription:
     'Pusat Bantuan Zenko — panduan langkah demi langkah seputar akun, pembayaran, ujian CBT, portal tutor, dan bimbel, atau hubungi tim kami langsung.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/pusat-bantuan',
   twitterCard: 'summary_large_image',
 })

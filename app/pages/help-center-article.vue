@@ -49,7 +49,7 @@ useSeoMeta({
   description: current.summary,
   ogTitle: pageTitle,
   ogDescription: current.summary,
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: pageUrl,
   twitterCard: 'summary_large_image',
 })

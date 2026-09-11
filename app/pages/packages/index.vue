@@ -9,7 +9,7 @@ useSeoMeta({
   ogTitle: 'Katalog Paket Tryout | Zenko',
   ogDescription:
     'Jelajahi paket latihan tryout SKD (CPNS & Sekolah Kedinasan) dan TKA (SD, SMP, SMA, SMK) di Zenko. Beli per paket, akses langsung, tanpa langganan.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/paket',
   twitterCard: 'summary_large_image',
 })

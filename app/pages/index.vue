@@ -16,7 +16,7 @@ useSeoMeta({
   ogTitle: 'Paket Tryout Online SKD dan TKA | Zenko',
   ogDescription:
     'Latihan tryout online untuk SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Pilih paket dari tutor terverifikasi, kerjakan simulasi, dan pelajari pembahasannya.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/',
   twitterCard: 'summary_large_image',
 })
