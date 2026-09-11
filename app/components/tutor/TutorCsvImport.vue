@@ -281,7 +281,10 @@ function reset() {
 </script>
 
 <template>
-  <div class="grid gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
+  <!-- min-w-0: di dalam modal, daftar header CSV di bawah adalah satu token
+       tanpa spasi yang lebih lebar dari dialognya; tanpa ini grid melebar
+       mengikuti token itu dan seluruh kartu menembus tepi modal. -->
+  <div class="grid min-w-0 gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
     <p v-if="mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
       Satu file CSV bisa berisi soal dari beberapa subtes produk ini sekaligus — kolom
       <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
@@ -291,9 +294,9 @@ function reset() {
     </p>
 
     <div class="flex flex-wrap items-start justify-between gap-3">
-      <p v-if="mode === 'section'" class="max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
+      <p v-if="mode === 'section'" class="min-w-0 max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
         Header yang dikenali:
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem] break-all">tipe,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
         Kolom yang tidak terpakai boleh kosong. Kolom
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> harus
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">{{ TEMPLATE_KIND_CELL[section.defaultKind] }}</code>
@@ -304,7 +307,7 @@ function reset() {
         dipisah ";" untuk isian singkat. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
         dan <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">gambarOpsi*</code> opsional.
       </p>
-      <p v-else class="max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
+      <p v-else class="min-w-0 max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
         Header sama seperti template per subtes, ditambah kolom pertama
         <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code> (wajib diisi).
         Kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> tiap baris

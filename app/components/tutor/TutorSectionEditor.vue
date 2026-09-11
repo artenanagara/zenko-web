@@ -544,7 +544,7 @@ const activeSectionDotClass = computed(() =>
 
       <!-- max-h menahan tinggi dialog saat daftar baris yang dilewati panjang;
            AppModal sendiri tidak membatasi tinggi body-nya. -->
-      <div v-else class="max-h-[min(30rem,60vh)] overflow-y-auto">
+      <div v-else class="max-h-[min(30rem,60vh)] overflow-x-hidden overflow-y-auto">
         <TutorCsvImport
           :product-id="productId"
           :section="activeSection!"
