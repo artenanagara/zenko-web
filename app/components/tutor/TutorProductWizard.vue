@@ -1031,6 +1031,31 @@ const submitProblems = ref<string[]>([])
 const submitError = ref('')
 const isBimbelPrivateProduct = computed(() => Boolean(props.bimbelId) && detail.value?.visibility !== 'public')
 
+/** Label tombol ajukan di footer; dipakai ulang oleh modal hak cipta. */
+const submitLabel = computed(() =>
+  isLiveProduct.value
+    ? 'Ajukan ulang untuk ditinjau'
+    : isBimbelPrivateProduct.value
+      ? 'Tayangkan ke bank soal'
+      : 'Ajukan untuk tayang',
+)
+
+/**
+ * Tombol footer tidak langsung submit: ia membuka modal pernyataan hak cipta
+ * (TutorSubmitCopyrightModal) yang baru bisa disetujui setelah digulir sampai
+ * bawah. Submit sebenarnya berjalan dari `confirm` modal itu.
+ */
+const copyrightModalOpen = ref(false)
+
+function openCopyrightModal() {
+  if (!props.productId) return
+  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
+    toast.info('Produk sudah tayang.', 'Pengajuan ulang belum tersedia di environment ini.')
+    return
+  }
+  copyrightModalOpen.value = true
+}
+
 async function submitForReview() {
   if (!props.productId) return
   if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
@@ -1041,7 +1066,10 @@ async function submitForReview() {
   submitProblems.value = []
 
   // Harga yang baru diketik harus sampai ke server sebelum divalidasi.
-  if (!(await persist())) return
+  if (!(await persist())) {
+    copyrightModalOpen.value = false
+    return
+  }
 
   submitting.value = true
   try {
@@ -1063,6 +1091,9 @@ async function submitForReview() {
   }
   finally {
     submitting.value = false
+    // Hasilnya (sukses maupun daftar masalah validasi) tampil di panel
+    // langkah 5, jadi modal ditutup apa pun hasilnya.
+    copyrightModalOpen.value = false
   }
 }
 
@@ -1800,18 +1831,19 @@ const priceHintBlocking = computed(() =>
             v-else-if="step === 5"
             type="button"
             :disabled="submitting"
-            @click="submitForReview"
+            @click="openCopyrightModal"
           >
-            {{ submitting
-              ? 'Mengajukan...'
-              : isLiveProduct
-                ? 'Ajukan ulang untuk ditinjau'
-                : isBimbelPrivateProduct
-                  ? 'Tayangkan ke bank soal'
-                  : 'Ajukan untuk tayang' }}
+            {{ submitting ? 'Mengajukan...' : submitLabel }}
           </AppButton>
         </div>
       </div>
+
+      <TutorSubmitCopyrightModal
+        v-model:open="copyrightModalOpen"
+        :confirmLabel="isBimbelPrivateProduct ? 'Setuju & tayangkan' : 'Setuju & ajukan'"
+        :submitting="submitting"
+        @confirm="submitForReview"
+      />
     </template>
   </div>
 </template>
