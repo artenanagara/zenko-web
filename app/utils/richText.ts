@@ -47,9 +47,17 @@ export function escapeHtml(text: string): string {
  * Escapes legacy plain text and wraps each line in a paragraph, so content
  * written before the editor existed loads as literal text instead of being
  * misparsed as HTML (a stray "<" from "x < 10" would otherwise open a bogus tag).
+ *
+ * Decoded first, then escaped: a tagless value is not raw text anymore — the
+ * server sanitizes every prompt/explanation on save (internal/richtext), and
+ * bluemonday writes a quote as `&#34;`. Escaping that a second time turns it
+ * into `&amp;#34;`, which is how a CSV-imported explanation showed literal
+ * "&#34;kota bebas banjir&#34;" in the editor. Decoding restores the
+ * characters the tutor wrote; the escape that follows still protects a
+ * literal "<" from being parsed as a tag.
  */
 export function plainTextToEditorHtml(value: string): string {
-  const escaped = escapeHtml(value)
+  const escaped = escapeHtml(decodeHtmlEntities(value))
   const paragraphs = escaped.split(/\n+/).filter(line => line.trim() !== '')
   if (paragraphs.length === 0) return ''
   return paragraphs.map(line => `<p>${line}</p>`).join('')
