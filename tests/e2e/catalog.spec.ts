@@ -12,7 +12,7 @@ test.describe('catalog (/paket)', () => {
   })
 
   test('renders the packages the API returns', async ({ page }) => {
-    const heading = page.getByRole('heading', { name: 'Semua paket' })
+    const heading = page.getByRole('heading', { name: 'Temukan latihanmu' })
     await expect(heading).toBeVisible()
 
     // The counter next to the heading reflects the filtered count; nothing is
