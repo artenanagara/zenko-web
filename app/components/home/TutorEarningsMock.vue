@@ -2,8 +2,8 @@
 /**
  * Decorative earnings panel for the "Penghasilan tambahan" card.
  *
- * Illustration only. The figure and the bar heights are invented, same as the
- * mock in TutorCta. The rupiah amount counts up once per animation cycle, so
+ * Illustration only. The figure and the bar heights are invented. The rupiah
+ * amount counts up once per animation cycle, so
  * the number is still climbing as the columns finish growing.
  */
 const props = withDefaults(defineProps<{ cycleMs?: number }>(), { cycleMs: 8000 })

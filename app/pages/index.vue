@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { SortKey } from '#shared/types/catalog'
 
+// Beranda ditutup dengan ajakan untuk siswa di dalam footer (lihat AppFooter).
+definePageMeta({ footerCta: true })
+
 const sort = ref<SortKey>('featured')
 
 const { data: packages, pending, error } = usePackages(sort)
@@ -40,6 +43,5 @@ useHead({
 
     <FeatureSection />
     <TestimonialSection :items="testimonials" />
-    <TutorCta />
   </main>
 </template>
