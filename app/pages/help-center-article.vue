@@ -19,7 +19,7 @@ import { SUPPORT_CONTACT, supportMailto } from '~/data/support-contact'
 // English file name, Indonesian URL. Kept as a flat file (not
 // pages/help-center/[slug].vue) so it doesn't nest under help-center.vue,
 // which has no <NuxtPage /> outlet for a child route to render into.
-definePageMeta({ path: '/pusat-bantuan/:slug()' })
+definePageMeta({ layout: 'help', path: '/pusat-bantuan/:slug()' })
 
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))

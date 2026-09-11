@@ -16,7 +16,7 @@ import { helpArticles, helpCategories, type HelpArticle, type HelpCategoryIcon, 
 import { SUPPORT_CONTACT } from '~/data/support-contact'
 
 // English file name, Indonesian URL.
-definePageMeta({ path: '/pusat-bantuan' })
+definePageMeta({ layout: 'help', path: '/pusat-bantuan' })
 
 useSeoMeta({
   title: 'Pusat Bantuan | Zenko',

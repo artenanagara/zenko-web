@@ -65,9 +65,12 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
 
 <template>
   <DashboardPanel title="Tim" description="Kelola owner, admin, dan pengajar Bimbel. Siswa dikelola dari menu Siswa.">
-    <div class="mb-4 flex justify-end">
+    <!-- Sejajar judul panel, bukan baris sendiri di atas daftar: aksi
+         tingkat panel tempatnya di header panel, sama seperti "Impor soal"
+         di editor soal. -->
+    <template #action>
       <AppButton size="sm" @click="inviteOpen = true">Tambah tim</AppButton>
-    </div>
+    </template>
     <DashboardSkeleton v-if="pending" :count="4" label="Memuat tim…" />
     <AccountError v-else-if="error" @retry="refresh">{{ error }}</AccountError>
     <DashboardTable v-else-if="team.length" :columns="columns" :data="team" primary-key="name" action-key="aksi">
