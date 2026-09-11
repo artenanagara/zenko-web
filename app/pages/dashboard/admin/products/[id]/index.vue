@@ -42,7 +42,7 @@ async function loadDetail() {
     detail.value = product
   }
   catch (cause) {
-    detailError.value = tutorApiMessage(cause, 'Produk tidak ditemukan atau gagal dimuat.')
+    detailError.value = tutorApiMessage(cause, 'Produk tidak ditemukan atau belum berhasil dimuat.')
   }
   finally {
     detailPending.value = false
@@ -218,7 +218,7 @@ async function decide(approve: boolean, reason?: string) {
       await loadDetail()
     }
     else {
-      decisionError.value = tutorApiMessage(cause, 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.')
+      decisionError.value = tutorApiMessage(cause, 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.')
     }
   }
   finally {
@@ -245,7 +245,7 @@ async function decide(approve: boolean, reason?: string) {
         </template>
       </AppPageHeader>
       <div class="flex flex-wrap items-center gap-3">
-        <AppInlineMessage type="error">Produk tidak ditemukan atau gagal dimuat.</AppInlineMessage>
+        <AppInlineMessage type="error">Produk tidak ditemukan atau belum berhasil dimuat.</AppInlineMessage>
         <NuxtLink
           to="/dashboard/admin/products"
           class="text-[0.86rem] font-semibold text-primary hover:underline"

@@ -55,7 +55,7 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
     toast.success('Data tim diperbarui.')
   }
   catch (cause) {
-    toast.error('Perubahan gagal.', tutorApiMessage(cause, 'Coba lagi.'))
+    toast.error('Perubahan belum tersimpan.', tutorApiMessage(cause, 'Coba lagi.'))
   }
   finally {
     busyId.value = ''
@@ -65,9 +65,12 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
 
 <template>
   <DashboardPanel title="Tim" description="Kelola owner, admin, dan pengajar Bimbel. Siswa dikelola dari menu Siswa.">
-    <div class="mb-4 flex justify-end">
+    <!-- Sejajar judul panel, bukan baris sendiri di atas daftar: aksi
+         tingkat panel tempatnya di header panel, sama seperti "Impor soal"
+         di editor soal. -->
+    <template #action>
       <AppButton size="sm" @click="inviteOpen = true">Tambah tim</AppButton>
-    </div>
+    </template>
     <DashboardSkeleton v-if="pending" :count="4" label="Memuat tim…" />
     <AccountError v-else-if="error" @retry="refresh">{{ error }}</AccountError>
     <DashboardTable v-else-if="team.length" :columns="columns" :data="team" primary-key="name" action-key="aksi">
@@ -110,7 +113,7 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
         </template>
       </template>
     </DashboardTable>
-    <AppEmptyState v-else title="Belum ada tim" description="Tambahkan pengajar atau admin untuk membantu mengelola Bimbel." action-label="Tambah tim" @action="inviteOpen = true" />
+    <AppEmptyState v-else title="Tim bimbelmu masih kosong" description="Ajak pengajar atau admin untuk membantu mengelola bimbel." action-label="Tambah anggota" @action="inviteOpen = true" />
   </DashboardPanel>
 
   <AppModal :model-value="inviteOpen" title="Tambah tim" description="Undang akun Zenko sebagai pengajar atau admin." @update:model-value="value => inviteOpen = value">

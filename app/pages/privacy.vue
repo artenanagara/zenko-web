@@ -9,7 +9,7 @@ useSeoMeta({
   ogTitle: 'Kebijakan Privasi | Zenko',
   ogDescription:
     'Kebijakan Privasi Zenko mengenai data akun, pembelajaran, transaksi, serta pengelolaan siswa dan anggota bimbel.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/kebijakan-privasi',
   twitterCard: 'summary_large_image',
 })

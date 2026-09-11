@@ -121,7 +121,7 @@ function verificationLabel(verifiedAt: number | null | undefined): string {
 
 const successMessage = ref('')
 
-const DECISION_FALLBACK = 'Gagal menyimpan keputusan. Coba lagi sebentar lagi.'
+const DECISION_FALLBACK = 'Keputusan belum berhasil disimpan. Coba lagi sebentar lagi.'
 
 /* --------------------------------------------------------------------------
  * Verifikasi — lewat AdminConfirmModal: tidak bisa dibatalkan.
@@ -222,8 +222,8 @@ async function confirmVerify() {
 
         <AppEmptyState
           v-else-if="rows.length === 0"
-          title="Tidak ada hasil"
-          description="Tidak ada rekening yang cocok dengan pencarian atau filter ini."
+          title="Hasil tidak ditemukan"
+          description="Tidak ada rekening yang cocok dengan pencarian atau filter yang dipilih."
           action-label="Reset pencarian"
           @action="reset"
         />

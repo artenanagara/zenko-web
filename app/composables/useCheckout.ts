@@ -300,5 +300,5 @@ export function useCheckout() {
 /** zenko-api renders every error as { error, requestId }; fall back for the rest. */
 function messageFor(cause: unknown): string {
   const message = (cause as { data?: { error?: string } })?.data?.error
-  return message || 'Gagal memulai pembayaran. Coba lagi sebentar lagi.'
+  return message || 'Pembayaran belum bisa dimulai. Coba lagi sebentar lagi.'
 }

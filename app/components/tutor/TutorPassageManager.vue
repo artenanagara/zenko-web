@@ -82,7 +82,7 @@ async function save() {
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menyimpan wacana. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Wacana belum berhasil disimpan. Coba lagi.')
   }
   finally {
     saving.value = false
@@ -108,7 +108,7 @@ async function remove(passage: TutorPassage) {
     emit('refresh')
   }
   catch (cause) {
-    errorMessage.value = tutorApiMessage(cause, 'Gagal menghapus wacana. Coba lagi.')
+    errorMessage.value = tutorApiMessage(cause, 'Wacana belum berhasil dihapus. Coba lagi.')
   }
 }
 

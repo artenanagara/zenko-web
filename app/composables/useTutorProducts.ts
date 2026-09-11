@@ -78,7 +78,7 @@ export function useTutorProducts(workspace?: ProductWorkspace) {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat daftar produk.')
+      error.value = tutorApiMessage(cause, 'Daftar produk belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -106,7 +106,7 @@ export function useTutorProductDetail(id: string, workspace?: ProductWorkspace) 
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat produk.')
+      error.value = tutorApiMessage(cause, 'Produk belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -143,7 +143,7 @@ export function useTutorPricingEligibility(workspace?: ProductWorkspace) {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat aturan harga.')
+      error.value = tutorApiMessage(cause, 'Aturan harga belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -213,18 +213,39 @@ export async function uploadTutorImage(file: File): Promise<string> {
 }
 
 /** Batch untuk impor CSV: body `{questions: [...]}` di endpoint yang sama. */
+/**
+ * POST a batch into one section. `replace` empties the section first, in the
+ * same server write — the CSV importer's "timpa semua soal" path, atomic so a
+ * batch the server rejects leaves the old questions in place.
+ */
 export async function createTutorQuestionBatch(
   productId: string,
   sectionId: string,
   questions: QuestionDraft[],
   workspace?: ProductWorkspace,
+  options: { replace?: boolean } = {},
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
   await useApiFetch(`${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions`, {
     baseURL: config.apiBase,
     method: 'POST',
-    body: { questions },
+    body: { questions, replace: options.replace === true },
+    credentials: 'include',
+  })
+}
+
+/** DELETE every question in one section; the section and its passages stay. */
+export async function deleteAllTutorQuestions(
+  productId: string,
+  sectionId: string,
+  workspace?: ProductWorkspace,
+): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  await useApiFetch(`${productsRoot(workspace)}/${productId}/sections/${sectionId}/questions`, {
+    baseURL: config.apiBase,
+    method: 'DELETE',
     credentials: 'include',
   })
 }

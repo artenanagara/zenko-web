@@ -267,7 +267,7 @@ watch(isRedirecting, (active, wasActive) => {
                 class="w-full"
                 @click="navigateTo('/akun/paket', { replace: true })"
               >
-                Lihat paket saya
+                Buka paket saya
               </AppButton>
               <p class="text-[0.82rem] text-muted tabular-nums" role="status">
                 Otomatis diarahkan dalam {{ redirectRemaining }} detik…
@@ -371,7 +371,7 @@ watch(isRedirecting, (active, wasActive) => {
               >
                 <IconSpinner v-if="!qrGenerationFailed" class="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
                 <p v-else class="px-2 text-center text-[0.82rem] text-amber-700">
-                  Kode QRIS gagal dibuat. Muat ulang halaman.
+                  Kode QRIS belum berhasil dibuat. Muat ulang halaman.
                 </p>
               </div>
 

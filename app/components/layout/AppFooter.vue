@@ -1,5 +1,16 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+import { SUPPORT_CONTACT, supportMailto } from '~/data/support-contact'
+
+const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+
+/**
+ * Halaman yang ingin ditutup dengan ajakan belajar menyalakan
+ * `definePageMeta({ footerCta: true })`. Ajakan itu tinggal di dalam footer,
+ * bukan section sendiri di atasnya: dua blok berat yang dipisah pita putih
+ * (padding section + margin footer) terbaca sebagai dua akhir halaman.
+ */
+const route = useRoute()
+const showCta = computed(() => !props.compact && route.meta.footerCta === true)
 
 type FooterLink = {
   label: string
@@ -20,28 +31,33 @@ const columns: FooterColumn[] = [
     title: 'Paket',
     links: [
       { label: 'CPNS / SKD', to: '/paket?q=SKD' },
-      { label: 'Kedinasan', to: '/paket?q=Kedinasan' },
-      { label: 'TKA SMA', to: '/paket?q=TKA+SMA' },
-      { label: 'TKA SMP', to: '/paket?q=TKA+SMP' },
+      { label: 'PPPK', to: '/paket?q=PPPK' },
+      { label: 'UTBK-SNBT', to: '/paket?q=UTBK+SNBT' },
       { label: 'TKA', to: '/paket?q=TKA' },
+      { label: 'Rekrutmen BUMN', to: '/paket?q=BUMN' },
+      { label: 'Semua paket', to: '/paket' },
     ],
   },
   {
-    title: 'Tentang Zenko',
+    title: 'Zenko',
     links: [
-      { label: 'Cara Kerja', to: '/#cara-kerja' },
       { label: 'Tentang Kami', to: '/tentang' },
+      { label: 'Cara Kerja', to: '/#cara-kerja' },
+    ],
+  },
+  {
+    // Rekrutmen dipisah dari info perusahaan: pembacanya berbeda.
+    title: 'Mengajar di Zenko',
+    links: [
       { label: 'Jadi Tutor', to: '/jadi-tutor' },
-      { label: 'Untuk Bimbel', to: '/untuk-bimbel' },
       { label: 'Syarat Tutor', to: '/syarat-tutor' },
+      { label: 'Untuk Bimbel', to: '/untuk-bimbel' },
     ],
   },
   {
     title: 'Bantuan',
     links: [
       { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
-      { label: 'Panduan TKA', to: '/tka' },
-      { label: 'Hubungi Kami', to: 'mailto:halo@zenkoedu.id' },
       { label: 'FAQ', to: '/faq' },
       { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
     ],
@@ -54,36 +70,138 @@ const year = new Date().getFullYear()
 <template>
   <footer
     class="flow-root bg-[#07172f] text-white"
-    :class="compact ? 'mt-12' : 'mt-20'"
+    :class="compact ? 'mt-12' : showCta ? '' : 'mt-20'"
   >
+    <!-- Ajakan penutup untuk siswa, menyatu dengan footer. Tanpa margin atas:
+         jarak dari section sebelumnya cukup padding section itu sendiri. -->
+    <div v-if="showCta" class="border-b border-white/12">
+      <!-- Urutan DOM = urutan bertumpuk di layar kecil: pesan, tombol utama,
+           baru ajakan tutor. Di lg tombol pindah ke kanan (dua baris) dan
+           ajakan tutor jatuh ke baris kedua kolom kiri. -->
+      <section
+        class="container-page grid gap-y-7 py-14 md:py-18 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-x-12 lg:gap-y-6"
+        aria-labelledby="footer-cta-heading"
+      >
+        <div>
+          <h2
+            id="footer-cta-heading"
+            class="max-w-[22ch] text-[clamp(1.9rem,3.2vw,2.75rem)] leading-[1.12] tracking-[-0.04em] text-balance text-white"
+          >
+            Sudah tahu ujian yang kamu tuju?
+            <span class="text-accent mt-0.5 block text-[#8fb4ff]">Yuk, mulai latihan.</span>
+          </h2>
+          <p class="mt-4 max-w-[48ch] text-[1rem] leading-[1.7] text-white/68">
+            Temukan latihan yang pas, ukur kemampuanmu, lalu fokus ke materi yang masih perlu dikejar.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-start gap-3 lg:row-span-2 lg:items-end lg:self-end">
+          <AppButton to="/paket" size="lg">
+            Temukan latihan
+            <IconArrowRight class="h-4 w-4" />
+          </AppButton>
+          <p class="text-[0.85rem] text-white/52">
+            Coba 5 soal gratis di halaman paket, tanpa daftar.
+          </p>
+        </div>
+
+        <p class="text-[0.9rem] text-white/52">
+          Punya bank soal sendiri?
+          <NuxtLink
+            to="/jadi-tutor"
+            class="inline-flex items-center gap-1.5 font-semibold text-white/85 underline-offset-4 transition-colors duration-200 hover:text-white hover:underline"
+          >
+            Jadi tutor di Zenko
+            <IconArrowRight class="h-3.5 w-3.5" />
+          </NuxtLink>
+        </p>
+      </section>
+    </div>
+
     <!-- Account pages keep a compact brand row; public pages show the complete
          menu requested for the marketplace. -->
-    <div v-if="compact" class="container-page py-8">
+    <div v-if="compact" class="container-page flex flex-wrap items-center justify-between gap-x-8 gap-y-5 py-8">
       <BrandMark
         theme="dark"
         img-class="h-9 w-auto object-contain"
         aria-label="Zenko"
       />
+      <!-- Halaman akun tidak memuat menu lengkap, tapi jalan ke bantuan
+           tetap harus ada di sini: di sinilah pesanan dan ujian dikerjakan. -->
+      <nav aria-label="Bantuan">
+        <ul class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[0.88rem]">
+          <li>
+            <NuxtLink to="/pusat-bantuan" class="text-white/68 transition-colors duration-200 hover:text-white">
+              Pusat Bantuan
+            </NuxtLink>
+          </li>
+          <li>
+            <NuxtLink to="/faq" class="text-white/68 transition-colors duration-200 hover:text-white">
+              FAQ
+            </NuxtLink>
+          </li>
+          <li>
+            <a
+              :href="SUPPORT_CONTACT.whatsappUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-white/68 transition-colors duration-200 hover:text-white"
+            >
+              WhatsApp {{ SUPPORT_CONTACT.phoneDisplay }}
+            </a>
+          </li>
+        </ul>
+      </nav>
     </div>
 
     <div v-else class="container-page pb-8 md:pb-10">
-      <!-- Brand anchors the left edge; the three menu groups follow with equal
-           rhythm. Future content destinations are reserved now. -->
-      <div class="hidden grid-cols-[1.25fr_repeat(3,minmax(0,1fr))] gap-9 pt-12 md:grid lg:gap-14 lg:pt-14">
-        <div class="max-w-90 pr-4">
+      <!-- Brand dan kontak di kiri; empat grup menu mengikuti dengan ritme
+           sama. Di tablet brand mengambil satu baris penuh supaya empat kolom
+           menu tidak berdesakan di sampingnya. -->
+      <div class="grid gap-8 pt-10 md:grid-cols-4 md:gap-x-9 md:gap-y-10 md:pt-12 lg:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] lg:gap-x-10 lg:pt-14">
+        <div class="max-w-95 md:col-span-4 lg:col-span-1 lg:pr-4">
           <BrandMark
             theme="dark"
-            img-class="h-11 w-auto object-contain"
+            img-class="h-10 w-auto object-contain md:h-11"
             aria-label="Zenko"
           />
-          <p class="mt-5 text-[0.9rem] leading-[1.7] text-white/60">
-            Platform try out interaktif terkurasi untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Beli per paket, akses langsung, tanpa langganan.
+          <p class="mt-4 text-[0.88rem] leading-[1.7] text-white/60 md:mt-5 md:text-[0.9rem]">
+            Tempat menemukan latihan untuk berbagai tujuan ujian. Siswa belajar lewat simulasi, sementara tutor dan bimbel membagikan keahliannya.
+          </p>
+
+          <!-- Kontak ditulis terang-terangan, bukan disembunyikan di balik
+               menu: pembeli dan reviewer merchant sama-sama mencarinya. -->
+          <ul class="mt-6 grid gap-2.5 text-[0.9rem]" aria-label="Kontak Zenko">
+            <li>
+              <a
+                :href="SUPPORT_CONTACT.whatsappUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2.5 text-white/75 transition-colors duration-200 hover:text-white"
+              >
+                <IconWhatsapp class="h-4.5 w-4.5 shrink-0 text-white/50" />
+                WhatsApp {{ SUPPORT_CONTACT.phoneDisplay }}
+              </a>
+            </li>
+            <li>
+              <a
+                :href="supportMailto()"
+                class="inline-flex items-center gap-2.5 text-white/75 transition-colors duration-200 hover:text-white"
+              >
+                <IconMail class="h-4.5 w-4.5 shrink-0 text-white/50" />
+                {{ SUPPORT_CONTACT.email }}
+              </a>
+            </li>
+          </ul>
+          <p class="mt-2.5 text-[0.8rem] text-white/45">
+            Jam layanan {{ SUPPORT_CONTACT.hours }}
           </p>
         </div>
 
         <nav
           v-for="column in columns"
           :key="`desktop-${column.title}`"
+          class="hidden md:block"
           :aria-label="column.title"
         >
           <h2 class="text-[1rem] font-semibold tracking-[-0.02em] text-white/92">
@@ -100,19 +218,8 @@ const year = new Date().getFullYear()
             </li>
           </ul>
         </nav>
-      </div>
 
-      <div class="pt-10 md:hidden">
-        <BrandMark
-          theme="dark"
-          img-class="h-10 w-auto object-contain"
-          aria-label="Zenko"
-        />
-        <p class="mt-4 max-w-95 text-[0.88rem] leading-[1.7] text-white/60">
-          Platform try out interaktif terkurasi untuk persiapan SKD (CPNS & Sekolah Kedinasan) dan TKA (SD–SMK). Beli per paket, akses langsung, tanpa langganan.
-        </p>
-
-        <div class="mt-7 border-t border-white/10">
+        <div class="border-t border-white/10 md:hidden">
           <details
             v-for="column in columns"
             :key="`mobile-${column.title}`"

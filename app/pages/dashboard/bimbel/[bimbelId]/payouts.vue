@@ -41,7 +41,7 @@ async function submit() {
     await Promise.all([refreshBalance(), refreshPayouts()])
     toast.success('Pengajuan pencairan terkirim.', 'Tim kami memprosesnya dalam 1 sampai 3 hari kerja.')
   }
-  catch (cause) { toast.error('Gagal mengajukan pencairan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.')) }
+  catch (cause) { toast.error('Pencairan belum berhasil diajukan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.')) }
   finally { submitting.value = false }
 }
 </script>

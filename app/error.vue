@@ -30,27 +30,27 @@ type ErrorCopy = {
 const COPY: Record<number, ErrorCopy> = {
   404: {
     icon: 'magnifying-glass',
-    heading: 'Halaman tidak ditemukan',
+    heading: 'Waduh, halamannya nyasar',
     description:
-      'Halaman yang kamu cari tidak ada, sudah dipindahkan, atau tautannya salah ketik. Coba periksa lagi alamatnya.',
+      'Halaman yang kamu cari tidak ada atau sudah dipindahkan. Periksa lagi alamatnya, atau kembali ke beranda.',
   },
   403: {
     icon: 'lock-simple',
-    heading: 'Akses ditolak',
+    heading: 'Kamu belum punya akses',
     description:
       'Kamu tidak memiliki izin untuk membuka halaman ini. Jika menurutmu ini keliru, masuk dengan akun yang sesuai atau hubungi tim Zenko.',
   },
   500: {
     icon: 'warning-circle',
-    heading: 'Terjadi kesalahan server',
+    heading: 'Server sedang bermasalah',
     description:
-      'Ada yang tidak beres di sisi kami. Tim Zenko sudah diberi tahu — coba muat ulang halaman ini sebentar lagi.',
+      'Ada kendala di sisi kami. Tim Zenko sudah diberi tahu. Tunggu sebentar, lalu coba lagi.',
   },
 }
 
 const FALLBACK: ErrorCopy = {
   icon: 'warning',
-  heading: 'Terjadi kesalahan',
+  heading: 'Halaman belum bisa dibuka',
   description: 'Halaman ini tidak bisa ditampilkan sekarang. Coba kembali ke beranda atau muat ulang.',
 }
 
@@ -97,6 +97,11 @@ function retry() {
             Kembali ke beranda
           </AppButton>
         </div>
+
+        <p class="text-[0.9rem] text-muted">
+          Masih bermasalah?
+          <NuxtLink to="/pusat-bantuan" class="font-semibold text-primary hover:underline">Buka Pusat Bantuan</NuxtLink>
+        </p>
       </div>
     </main>
   </NuxtLayout>

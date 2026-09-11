@@ -34,7 +34,7 @@ async function loadDetail() {
     detail.value = await fetchAdminTutor(accountId.value)
   }
   catch (cause) {
-    detailError.value = tutorApiMessage(cause, 'Tutor tidak ditemukan atau gagal dimuat.')
+    detailError.value = tutorApiMessage(cause, 'Tutor tidak ditemukan atau belum berhasil dimuat.')
   }
   finally {
     detailPending.value = false

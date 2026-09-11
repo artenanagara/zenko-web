@@ -26,7 +26,7 @@ export function useTutorProfile() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat profil tutor.')
+      error.value = tutorApiMessage(cause, 'Profil tutor belum berhasil dimuat.')
     }
     finally {
       pending.value = false

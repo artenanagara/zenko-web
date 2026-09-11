@@ -13,7 +13,7 @@ defineEmits<{ retry: [] }>()
     <span class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
       <IconAlert class="h-5 w-5" aria-hidden="true" />
     </span>
-    <p class="font-bold tracking-[-0.02em] text-amber-900">Gagal memuat data</p>
+    <p class="font-bold tracking-[-0.02em] text-amber-900">Data belum berhasil dimuat</p>
     <p class="max-w-sm text-[0.9rem] text-amber-800">
       <slot>Data belum berhasil dimuat. Periksa koneksimu, lalu coba lagi.</slot>
     </p>

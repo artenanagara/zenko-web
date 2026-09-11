@@ -14,13 +14,13 @@ function stars(rating: number) {
     <div class="container-page">
       <div class="mx-auto mb-11 max-w-160 text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
-          Cerita pengguna
+          Kata mereka
         </p>
         <h2 id="testimonials-heading" class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-          Pengalaman siswa setelah <span class="text-accent">latihan di Zenko</span>
+          Cerita siswa yang <span class="text-accent">sudah latihan di Zenko</span>
         </h2>
         <p class="mt-3.5 text-[1.02rem] text-muted">
-          Simak cerita siswa yang menggunakan Zenko untuk mempersiapkan ujian.
+          Intip pengalaman mereka saat menyiapkan diri menghadapi ujian.
         </p>
       </div>
 

@@ -123,6 +123,23 @@ export function useAuth() {
     }
   }
 
+  /**
+   * Deletes the signed-in student's own account. The API anonymises the
+   * account, cuts every session, and clears this cookie; like the sign-outs
+   * above, the local user is dropped whatever happens so the caller can send
+   * the reader somewhere public. Errors (wrong password, tutor account, still
+   * managing a bimbel) are rethrown first so the page can show them.
+   */
+  async function deleteAccount(input: { confirmation: string, password: string }) {
+    await useApiFetch('/auth/delete-account', {
+      baseURL: config.apiBase,
+      method: 'POST',
+      body: input,
+      credentials: 'include',
+    })
+    user.value = null
+  }
+
   return {
     user,
     isSignedIn,
@@ -133,6 +150,7 @@ export function useAuth() {
     registerWithEmail,
     signOut,
     signOutAllDevices,
+    deleteAccount,
   }
 }
 
@@ -165,6 +183,6 @@ function emailAuthFailure(cause: unknown): {
   return {
     ok: false,
     reason: 'error',
-    message: serverMessage || 'Gagal menghubungi server. Coba lagi sebentar lagi.',
+    message: serverMessage || 'Server belum bisa dihubungi. Coba lagi sebentar lagi.',
   }
 }

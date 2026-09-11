@@ -20,11 +20,10 @@ void target
           Cara belajar di Zenko
         </p>
         <h2 class="text-[clamp(1.8rem,3vw,2.5rem)] leading-[1.15] tracking-tighter">
-          Latihan try out yang <span class="text-accent">lebih terarah</span>
+          Dari memilih latihan sampai <span class="text-accent">tahu yang perlu dikejar</span>
         </h2>
         <p class="mt-3.5 text-[1.02rem] text-muted">
-          Pilih paket yang sesuai, kerjakan simulasi ujian, lalu pelajari hasil
-          dan pembahasannya dalam satu alur.
+          Satu alur sederhana untuk menemukan latihan, mengukur kemampuan, dan menentukan fokus berikutnya.
         </p>
       </div>
 
@@ -51,9 +50,9 @@ void target
               </li>
             </ul>
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Pilih paket try out yang pas</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Temukan latihan yang pas</h3>
           <p class="leading-[1.62] text-muted">
-            Temukan paket soal dari tutor terpercaya yang sesuai dengan target seleksi, tingkat pemahaman, dan gaya belajarmu.
+            Cari paket berdasarkan tujuan ujian, materi, dan tutor yang sesuai kebutuhanmu.
           </p>
         </article>
 
@@ -64,9 +63,9 @@ void target
           <div class="mb-8 flex min-h-60 items-center justify-center rounded-[20px] bg-surface-sunken p-7">
             <FeatureExamMock :active="isInView" />
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Simulasi ujian mirip aslinya</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Ukur kemampuanmu</h3>
           <p class="leading-[1.62] text-muted">
-            Latihan dengan sistem CBT, batasan waktu, dan format soal yang menyerupai ujian resmi agar kamu makin tenang dan siap.
+            Kerjakan simulasi CBT dengan batas waktu dan format soal yang mengikuti aturan paketnya.
           </p>
         </article>
 
@@ -85,9 +84,9 @@ void target
               </span>
             </div>
           </div>
-          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Evaluasi & pembahasan tuntas</h3>
+          <h3 class="mb-3 text-[1.45rem] font-bold tracking-[-0.03em]">Kejar yang masih kurang</h3>
           <p class="leading-[1.62] text-muted">
-            Dapatkan analisis skor per subtes serta pembahasan rinci di setiap soal agar kamu tahu materi mana yang perlu ditingkatkan.
+            Pahami skor dan pembahasannya, lalu arahkan waktu belajarmu ke materi yang paling membutuhkan perhatian.
           </p>
         </article>
       </div>

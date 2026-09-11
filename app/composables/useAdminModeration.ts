@@ -41,7 +41,7 @@ export function useAdminProductQueue() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat antrean moderasi.')
+      error.value = tutorApiMessage(cause, 'Antrean moderasi belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -94,7 +94,7 @@ export function useAdminPayoutQueue() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat antrean pencairan.')
+      error.value = tutorApiMessage(cause, 'Antrean pencairan belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -139,7 +139,7 @@ export function useAdminPaymentProofs() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat antrean verifikasi pembayaran.')
+      error.value = tutorApiMessage(cause, 'Antrean verifikasi pembayaran belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -191,7 +191,7 @@ export function useAdminBankAccounts() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat daftar rekening bank.')
+      error.value = tutorApiMessage(cause, 'Daftar rekening bank belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -235,7 +235,7 @@ export function useAdminBankAccountChangeRequests() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat pengajuan perubahan rekening.')
+      error.value = tutorApiMessage(cause, 'Pengajuan perubahan rekening belum berhasil dimuat.')
     }
     finally {
       pending.value = false
@@ -283,7 +283,7 @@ export function useAdminSummary() {
       })
     }
     catch (cause) {
-      error.value = tutorApiMessage(cause, 'Gagal memuat jumlah antrean.')
+      error.value = tutorApiMessage(cause, 'Jumlah antrean belum berhasil dimuat.')
     }
     finally {
       pending.value = false

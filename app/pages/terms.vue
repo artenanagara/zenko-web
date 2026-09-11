@@ -9,7 +9,7 @@ useSeoMeta({
   ogTitle: 'Ketentuan Layanan | Zenko',
   ogDescription:
     'Ketentuan penggunaan Zenko mengenai akun, paket belajar, portal dan langganan bimbel, pembayaran, refund, tutor, pencairan, dan penyelesaian sengketa.',
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
+  ...DEFAULT_OG,
   ogUrl: 'https://zenkoedu.id/ketentuan-layanan',
   twitterCard: 'summary_large_image',
 })

@@ -71,7 +71,7 @@ onBeforeUnmount(() => {
     <div class="anim-item rounded-lg bg-white/85 p-6 shadow-float backdrop-blur-sm" style="--delay: 80ms">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <p class="text-[0.82rem] text-muted">Hasil try out terakhir</p>
+          <p class="text-[0.82rem] text-muted">Hasil tryout terakhir</p>
           <p class="mt-1 text-[2.4rem] leading-none font-extrabold tracking-[-0.04em] tabular-nums">
             {{ score }}
           </p>

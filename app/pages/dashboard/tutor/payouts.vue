@@ -111,7 +111,7 @@ async function submitPayout() {
     await Promise.all([refreshBalance(), refreshPayouts()])
   }
   catch (cause) {
-    toast.error('Gagal mengajukan pencairan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Pencairan belum berhasil diajukan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
     payoutSubmitting.value = false
@@ -191,7 +191,7 @@ async function submitPayout() {
           @click="openPayoutModal"
         >
           <IconWallet class="mr-2 h-4.5 w-4.5 shrink-0" />
-          Tarik Saldo
+          Tarik saldo
         </AppButton>
       </div>
 

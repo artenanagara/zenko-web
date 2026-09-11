@@ -8,7 +8,7 @@ const props = withDefaults(
   {
     dateValue: '2026-08-16',
     timeValue: '09:00',
-    label: 'Jadwal Sesi Ujian Try Out',
+    label: 'Jadwal sesi ujian tryout',
   },
 )
 

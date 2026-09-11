@@ -81,7 +81,7 @@ const summary = computed(() => {
           <h1 class="mt-1 text-[1.5rem] leading-tight font-bold tracking-[-0.04em] md:text-[1.7rem]">
             Halo, {{ firstName || 'kembali' }}
           </h1>
-          <p class="mt-1 text-[0.94rem] text-muted">Siap melanjutkan persiapan dan latihan soalmu hari ini?</p>
+          <p class="mt-1 text-[0.94rem] text-muted">Siap lanjut dari progres terakhirmu?</p>
         </div>
       </div>
     </section>
@@ -110,7 +110,7 @@ const summary = computed(() => {
       </AccountStat>
       <AccountStat
         tone="success"
-        label="Try out dikerjakan"
+        label="Tryout dikerjakan"
         :value="String(summary.attempts)"
       >
         <template #icon><IconRepeat class="h-[1.15rem] w-[1.15rem]" /></template>
@@ -169,7 +169,7 @@ const summary = computed(() => {
                 </span>
               </div>
               <p v-else class="mt-1 text-[0.84rem] text-muted">
-                Belum pernah dikerjakan. Yuk, mulai sekarang!
+                Belum pernah dikerjakan. Mulai saat kamu siap.
               </p>
             </div>
 
@@ -184,9 +184,9 @@ const summary = computed(() => {
       <!-- No packages yet: one way out, straight to the catalogue. -->
       <div v-else class="flex flex-wrap items-center justify-between gap-4">
         <p class="text-[0.9rem] text-muted">
-          Kamu belum punya paket. Mulai dari katalog, progresnya akan muncul di sini.
+          Belum ada paket di akunmu. Temukan yang sesuai target, lalu mulai latihan.
         </p>
-        <AppButton to="/paket" size="sm">Jelajahi katalog</AppButton>
+        <AppButton to="/paket" size="sm">Cari paket</AppButton>
       </div>
 
       <template v-if="continueItems.length" #action>

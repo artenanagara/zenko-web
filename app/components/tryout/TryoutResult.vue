@@ -330,7 +330,7 @@ function openReview() {
     <!-- Simulasi punya spanduknya sendiri ("hasil tidak disimpan"), yang
          mengatakan hal yang berbeda dari catatan sesi-siswa ini. -->
     <AccountNotice v-if="!simulate">
-      Sesi ini adalah latihan singkat untuk mencoba ruang pengerjaan try out — jumlah soal dan
+      Sesi ini adalah latihan singkat untuk mencoba ruang pengerjaan tryout — jumlah soal dan
       durasinya belum sama dengan paket lengkap yang kamu beli. Riwayatnya tersimpan selama tab ini terbuka.
     </AccountNotice>
 

@@ -113,7 +113,7 @@ function print() {
           <div>
             <BrandMark to="/" img-class="h-10 w-auto object-contain" aria-label="Zenko" />
             <p class="mt-3 text-[0.82rem] leading-[1.6] text-muted">
-              Marketplace try out<br>
+              Marketplace tryout<br>
               Jakarta, Indonesia<br>
               halo@zenkoedu.id
             </p>

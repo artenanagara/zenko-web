@@ -99,7 +99,7 @@ function onSignedIn() {
         "{{ detail.title }}" sudah tercatat di akunmu. Tidak perlu membelinya
         lagi — buka kapan saja dari halaman paketmu.
       </p>
-      <AppButton to="/akun/paket" size="lg" class="mt-3">Lihat paket saya</AppButton>
+      <AppButton to="/akun/paket" size="lg" class="mt-3">Buka paket saya</AppButton>
     </div>
 
     <div

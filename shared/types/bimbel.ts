@@ -131,6 +131,11 @@ export interface BimbelPlanOption {
   plan: BimbelPlan
   name: string
   pricePerMonth: number
+  /**
+   * Harga satu tahun masa aktif, sudah memakai aturan "12 bulan ditagih 10"
+   * dari server — kartu tinggal memilih angka ini saat toggle di Tahunan.
+   */
+  pricePerYear: number
   includedSeats: number
   teacherLimit: number
   productLimit: number
