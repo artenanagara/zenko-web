@@ -11,7 +11,7 @@
  * `/akun/bimbel` dan `/untuk-bimbel/daftar`, karena satu URL memikul tiga
  * pekerjaan sekaligus: pemasaran, pendaftaran, dan ruang milik sendiri.
  */
-definePageMeta({ redirect: '/untuk-bimbel' })
+definePageMeta({ path: '/bimbel' })
 </script>
 
 <template>

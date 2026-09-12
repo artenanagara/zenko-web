@@ -20,6 +20,7 @@ useHead({
 
 // Sort is read from the URL first: the request needs an order before there is
 // anything to show.
+const route = useRoute()
 const sort = useSortQuery()
 
 // One composable now: it owns the selection AND the request, because the
@@ -45,16 +46,12 @@ const {
   reset,
 } = usePackageFilters(sort)
 
-const resultsRef = ref<HTMLElement | null>(null)
-
-/**
- * Turning a page scrolls back to the top of the results, not the top of the
- * document: the sidebar stays where it was, and the first new card is what
- * the reader is looking for.
- */
-function goToPage(target: number) {
-  page.value = Math.min(Math.max(target, 1), pageCount.value)
-  resultsRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+/** Real links keep catalogue pages discoverable without JavaScript. */
+function pageHref(target: number) {
+  return {
+    path: '/paket',
+    query: { ...route.query, halaman: target === 1 ? undefined : String(target) },
+  }
 }
 
 // The sidebar is a plain disclosure on mobile rather than a modal: it sits
@@ -157,7 +154,7 @@ const showFilters = ref(false)
             </li>
           </ul>
 
-          <div ref="resultsRef" class="scroll-mt-24" />
+          <div class="scroll-mt-24" />
 
           <PackageGrid :items="filtered" :pending="pending" :error="error" :skeleton-count="9">
             <template #empty>
@@ -178,27 +175,25 @@ const showFilters = ref(false)
             class="mt-8 flex flex-wrap items-center justify-center gap-2"
             aria-label="Halaman katalog"
           >
-            <AppButton
-              variant="outline"
-              size="sm"
-              :disabled="page <= 1 || pending"
-              @click="goToPage(page - 1)"
+            <NuxtLink
+              v-if="page > 1"
+              :to="pageHref(page - 1)"
+              class="inline-flex min-h-11 items-center justify-center rounded-full border border-line px-4 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
             >
               Sebelumnya
-            </AppButton>
+            </NuxtLink>
 
             <span class="px-3 text-[0.9rem] font-semibold text-muted tabular-nums" aria-live="polite">
               Halaman {{ page }} dari {{ pageCount }}
             </span>
 
-            <AppButton
-              variant="outline"
-              size="sm"
-              :disabled="page >= pageCount || pending"
-              @click="goToPage(page + 1)"
+            <NuxtLink
+              v-if="page < pageCount"
+              :to="pageHref(page + 1)"
+              class="inline-flex min-h-11 items-center justify-center rounded-full border border-line px-4 text-sm font-semibold transition-colors hover:border-primary hover:text-primary"
             >
               Berikutnya
-            </AppButton>
+            </NuxtLink>
           </nav>
         </div>
       </div>

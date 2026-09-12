@@ -20,8 +20,10 @@ export interface TutorSale {
   buyerName: string
   /** Harga yang dibayar pembeli. */
   price: number
-  /** Porsi tutor: 70% × harga bayar. */
+  /** Porsi tutor dari snapshot bagi hasil saat pesanan dibuat. */
   share: number
+  /** Persentase snapshot untuk transaksi ini; bisa berbeda antarbaris. */
+  sharePercent?: number
   shareStatus: ShareStatus
 }
 

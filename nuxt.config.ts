@@ -38,7 +38,13 @@ export default defineNuxtConfig({
   // (packages/sample.vue), so it must not appear in the sitemap even though
   // it isn't all literally listed in public/robots.txt.
   sitemap: {
+    // The handler adds live package, help article, and tutor profile URLs.
+    // `sources` is required; without it Nuxt only emits statically discovered
+    // page routes and silently skips server/api/__sitemap__/urls.ts.
+    sources: ['/api/__sitemap__/urls'],
     exclude: [
+      '/bimbel',
+      '/untuk-bimbel/daftar',
       '/dashboard/**',
       '/akun/**',
       '/masuk',
@@ -57,6 +63,11 @@ export default defineNuxtConfig({
   // rendering an account/dashboard layout that the client auth middleware
   // immediately replaces with /masuk or another role home.
   routeRules: {
+    // Preserve the legacy marketing URL with a permanent redirect so search
+    // engines consolidate any accumulated signals on the canonical page.
+    '/bimbel': {
+      redirect: { to: '/untuk-bimbel', statusCode: 301 },
+    },
     '/akun': { ssr: false },
     '/akun/**': { ssr: false },
     '/dashboard': { ssr: false },
@@ -137,6 +148,14 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      // AppIcon imports individual Phosphor files so the client bundle can
+      // tree-shake unused icons. The package export map exposes only its
+      // barrel, so point Vite at the installed files explicitly.
+      alias: {
+        '@phosphor-icons/vue/dist/icons': new URL('./node_modules/@phosphor-icons/vue/dist/icons', import.meta.url).pathname,
+      },
+    },
   },
 
   nitro: {
@@ -212,6 +231,9 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { property: 'og:site_name', content: 'Zenko' },
+        { property: 'og:locale', content: 'id_ID' },
+        { property: 'og:type', content: 'website' },
         {
           name: 'description',
           content:

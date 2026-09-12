@@ -14,6 +14,15 @@ useHead({
 })
 
 const { summary, sales, pending, error, refresh } = useTutorSales()
+const {
+  data: shareRate,
+  pending: shareRatePending,
+  error: shareRateError,
+  refresh: refreshShareRate,
+} = useTutorShareRate()
+const termsAcceptedChecked = ref(false)
+const termsAcceptancePending = ref(false)
+const termsAcceptanceError = ref('')
 
 // Produk hanya untuk mengisi dropdown filter; the sales rows carry their own
 // titles.
@@ -84,9 +93,8 @@ const {
     '30d': () => true,
     all: () => true,
   },
-  // Sorting by the tutor's share and by the buyer's price give the same order
-  // (share is a flat 70% of price), so one pair of "Nominal" options covers
-  // both money columns.
+  // Sort nominal means the tutor's actual snapshot share. With custom rates,
+  // price and net income no longer necessarily have the same ordering.
   sorts: {
     newest: (a, b) => b.paidAt - a.paidAt,
     oldest: (a, b) => a.paidAt - b.paidAt,
@@ -109,6 +117,7 @@ function load() {
 onMounted(() => {
   load()
   refreshProducts()
+  refreshShareRate()
 })
 
 watch([period, productId], load)
@@ -147,8 +156,57 @@ const salesColumns = [
   { key: 'productTitle', label: 'Produk' },
   { key: 'buyerName', label: 'Pembeli' },
   { key: 'price', label: 'Harga', align: 'right' as const },
+  { key: 'sharePercent', label: '%', align: 'right' as const },
   { key: 'share', label: 'Pendapatan bersih', align: 'right' as const },
 ]
+
+const showShareCard = computed(() => Boolean(
+  shareRate.value
+  && (
+    shareRate.value.effectivePercent > 70
+    || shareRate.value.nextChange
+    || shareRate.value.changeHistory.length > 0
+  ),
+))
+
+const activeShareNote = computed(() => {
+  const data = shareRate.value
+  if (!data) return ''
+  return data.changeHistory.find(change => (
+    !change.cancelledAt
+    && change.startsAt <= data.serverTime
+    && (!change.endsAt || change.endsAt > data.serverTime)
+  ))?.noteForTutor ?? ''
+})
+
+const termsModalOpen = computed({
+  get: () => shareRate.value?.termsAccepted === false && Boolean(shareRate.value.termsVersion),
+  set: () => {},
+})
+
+async function acceptCurrentTutorTerms() {
+  if (!shareRate.value?.termsVersion || !termsAcceptedChecked.value) return
+  termsAcceptancePending.value = true
+  termsAcceptanceError.value = ''
+  try {
+    await acceptTutorTerms({ termsVersion: shareRate.value.termsVersion, accepted: true })
+    await refreshShareRate()
+    termsAcceptedChecked.value = false
+  }
+  catch (cause) {
+    termsAcceptanceError.value = tutorApiMessage(cause, 'Persetujuan Syarat Tutor belum berhasil disimpan.')
+  }
+  finally {
+    termsAcceptancePending.value = false
+  }
+}
+
+function formatWibDateTime(seconds?: number | null): string {
+  if (!seconds) return '—'
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta',
+  }).format(seconds * 1000) + ' WIB'
+}
 
 // DashboardTable's cell slots hand back `item`/`value` as Record<string, any>/any
 // (it isn't a generic component), so lookups against the strictly-typed
@@ -172,6 +230,50 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
       title="Penjualan"
       description="Catatan seluruh transaksi paket soalmu. Penghasilan bersih akan siap dicairkan 7 hari setelah pembayaran terverifikasi. Untuk menjaga kenyamanan bersama, nama pembeli disamarkan."
     />
+
+    <DashboardSkeleton v-if="shareRatePending && !shareRate" variant="stats" :count="1" :columns="2" label="Memuat informasi bagi hasil..." />
+
+    <AppInlineMessage v-else-if="shareRateError" type="error" role="alert">
+      {{ shareRateError }}
+      <button type="button" class="ml-2 min-h-11 font-semibold underline" @click="refreshShareRate">Coba lagi</button>
+    </AppInlineMessage>
+
+    <DashboardPanel v-else-if="showShareCard" title="Bagi hasilmu">
+      <div class="grid gap-3">
+        <p class="text-3xl font-bold tracking-[-0.05em] text-ink">{{ shareRate?.effectivePercent }}%</p>
+        <p v-if="shareRate?.nextChange" class="text-sm text-muted">
+          Dijadwalkan: {{ shareRate.nextChange.effectivePercent }}% mulai {{ formatWibDateTime(shareRate.nextChange.startsAt) }}.
+        </p>
+        <p v-if="activeShareNote" class="text-sm leading-relaxed text-ink">{{ activeShareNote }}</p>
+
+        <div v-if="shareRate?.changeHistory.length" class="border-t border-line pt-4">
+          <h3 class="text-sm font-bold text-ink">Riwayat pemberitahuan</h3>
+          <ol class="mt-3 grid gap-3">
+            <li
+              v-for="change in shareRate.changeHistory"
+              :key="change.id"
+              class="rounded-sm border border-hairline bg-surface-alt p-3"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-semibold text-ink">{{ change.percent === null ? 'Kembali ke 70% standar' : `${change.percent}%` }}</p>
+                <DashboardBadge :tone="change.cancelledAt ? 'neutral' : change.startsAt > shareRate.serverTime ? 'warning' : 'brand'">
+                  {{ change.cancelledAt ? 'Dibatalkan' : change.startsAt > shareRate.serverTime ? 'Dijadwalkan' : 'Berlaku' }}
+                </DashboardBadge>
+              </div>
+              <p class="mt-1 text-xs text-muted">
+                {{ formatWibDateTime(change.startsAt) }}<template v-if="change.endsAt"> – {{ formatWibDateTime(change.endsAt) }}</template>
+              </p>
+              <p
+                v-if="change.noteForTutor && change.noteForTutor !== activeShareNote"
+                class="mt-2 text-sm leading-relaxed text-ink"
+              >
+                {{ change.noteForTutor }}
+              </p>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </DashboardPanel>
 
     <DashboardStats :items="stats" :columns="3" />
 
@@ -258,6 +360,9 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
           <template #cell(price)="{ value }">
             <span class="tabular-nums">{{ formatRupiah(value) }}</span>
           </template>
+          <template #cell(sharePercent)="{ value }">
+            <span class="font-semibold tabular-nums">{{ typeof value === 'number' ? `${value}%` : '—' }}</span>
+          </template>
           <template #cell(share)="{ item }">
             <span class="inline-flex items-center gap-2.5">
               <span class="font-semibold tabular-nums">{{ formatRupiah(item.share) }}</span>
@@ -269,5 +374,42 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
         </DashboardTable>
       </div>
     </DashboardPanel>
+
+    <AppModal
+      :model-value="termsModalOpen"
+      title="Syarat Tutor diperbarui"
+      :description="shareRate?.termsVersion ? `Versi ${shareRate.termsVersion}` : 'Baca perubahan sebelum melanjutkan.'"
+      @update:model-value="() => {}"
+    >
+      <div class="grid gap-4">
+        <p class="text-sm leading-relaxed text-ink">
+          Syarat terbaru menjelaskan bagi hasil khusus, waktu berlakunya, riwayat pemberitahuan, dan kerahasiaan informasi komersial.
+        </p>
+        <NuxtLink
+          to="/syarat-tutor#bagi-hasil"
+          target="_blank"
+          class="inline-flex min-h-11 items-center font-semibold text-primary hover:underline"
+        >
+          Baca Syarat Tutor lengkap
+          <span class="sr-only"> (buka di tab baru)</span>
+        </NuxtLink>
+        <label class="flex min-h-11 cursor-pointer items-start gap-3 rounded-sm border border-line p-3 text-sm text-ink">
+          <input v-model="termsAcceptedChecked" type="checkbox" class="mt-0.5 h-5 w-5 shrink-0 accent-primary">
+          <span>Saya telah membaca dan menyetujui Syarat Tutor versi {{ shareRate?.termsVersion || 'aktif' }}.</span>
+        </label>
+        <AppInlineMessage v-if="termsAcceptanceError" type="error" role="alert">{{ termsAcceptanceError }}</AppInlineMessage>
+      </div>
+      <template #footer>
+        <AppButton
+          variant="primary"
+          size="sm"
+          :loading="termsAcceptancePending"
+          :disabled="!termsAcceptedChecked || !shareRate?.termsVersion || termsAcceptancePending"
+          @click="acceptCurrentTutorTerms"
+        >
+          Setujui dan lanjutkan
+        </AppButton>
+      </template>
+    </AppModal>
   </div>
 </template>

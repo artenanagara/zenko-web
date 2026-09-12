@@ -15,6 +15,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Upload to the VPS has been seen to sit for 20+ minutes on a dead SSH
+    # session; the keep-alive options below fail that fast, and this bounds
+    # everything else.
+    timeout-minutes: 30
     environment: staging
     env:
       DEPLOY_SHA: ${{ github.sha }}
@@ -59,6 +63,24 @@ jobs:
         run: |
           archive="/tmp/zenko-web-staging-${DEPLOY_SHA}.tar.gz"
           remote_archive="/tmp/zenko-web-staging-${DEPLOY_SHA}.tar.gz"
-          scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
-          ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" \
+          # Inbound transfer to the VPS sometimes crawls at a few KB/s for a
+          # stretch (a 9 MB archive has taken 18 minutes; three fresh scp
+          # attempts of five minutes each all stalled). rsync keeps what already
+          # arrived and resumes after a stall instead of starting over, so a slow
+          # link still converges; scp remains the fallback if the host lacks rsync.
+          ssh_cmd="ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
+          uploaded=false
+          for attempt in 1 2 3 4 5 6; do
+            if rsync --partial --inplace --append-verify --timeout=90 -e "$ssh_cmd" "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"; then
+              uploaded=true
+              break
+            fi
+            echo "upload attempt $attempt stalled; resuming" >&2
+            sleep 10
+          done
+          if [ "$uploaded" != true ]; then
+            echo "rsync did not complete; falling back to scp" >&2
+            timeout 600 scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
+          fi
+          ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" \
             sudo -n /usr/local/sbin/zenko-deploy-web-staging "$DEPLOY_SHA" "$remote_archive"

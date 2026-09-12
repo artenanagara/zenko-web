@@ -2,9 +2,9 @@
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 // This is the formal Tutor Terms & Conditions a tutor agrees to — distinct
 // from /jadi-tutor (become-tutor.vue), which stays the marketing/application
-// page. Figures here (70:30 split, no registration/monthly fees, tutor sets
-// own prices) are kept consistent with what become-tutor.vue's FAQ and
-// terms.vue's Bagian 4/7 already commit to.
+// page. The 70:30 split is the standard and the tutor's minimum share;
+// special share schedules are governed by section 3 and applied by the API.
+// Public marketing keeps communicating the standard 70:30 arrangement.
 definePageMeta({ path: '/syarat-tutor' })
 
 useSeoMeta({
@@ -25,7 +25,7 @@ useHead({
 </script>
 
 <template>
-  <LegalDocument lead="Syarat" accent="Tutor" updated="25 Agustus 2026">
+  <LegalDocument lead="Syarat" accent="Tutor" updated="12 September 2026">
     <p>
       Syarat dan Ketentuan Tutor ini (&ldquo;Syarat Tutor&rdquo;) mengatur
       hubungan antara Zenko dan setiap Tutor yang menerbitkan dan menjual
@@ -91,12 +91,33 @@ useHead({
     <p>
       Setiap penjualan Paket dibagi <strong>70% untuk Tutor</strong> dan
       <strong>30% untuk Zenko</strong>, dihitung dari harga yang benar-benar
-      dibayar pembeli setelah diskon. Tidak ada biaya pendaftaran maupun biaya
-      langganan bulanan, dan kamu bebas menentukan serta menyesuaikan harga
-      setiap Paketmu sendiri kapan saja melalui dashboard tutor.
+      dibayar pembeli setelah diskon. Persentase ini adalah bagian standar dan
+      <strong>bagian minimum Tutor</strong>: Zenko tidak akan menetapkan bagian
+      Tutor di bawah 70% tanpa persetujuan tertulis dari Tutor. Tidak ada biaya
+      pendaftaran maupun biaya langganan bulanan, dan kamu bebas menentukan
+      serta menyesuaikan harga setiap Paketmu sendiri kapan saja melalui
+      dashboard tutor.
     </p>
     <p>
-      Porsi 30% milik Zenko digunakan untuk menutup biaya pemrosesan
+      <strong>Bagi hasil khusus.</strong> Setelah kamu menerima versi Syarat
+      Tutor yang memuat ketentuan ini, Zenko dapat memberikan bagian yang lebih
+      tinggi dari bagian standar kepadamu, secara tetap atau untuk jangka waktu
+      tertentu. Persentase, tanggal mulai, dan tanggal berakhirnya bila ada
+      dipublikasikan melalui dashboard tutor. Zenko juga mengirim email sebagai
+      pengingat. Pemberian tersebut merupakan insentif dari Zenko dan bagian
+      dari pelaksanaan Syarat Tutor, bukan pengurangan atas bagian standar 70%.
+      Ketentuan yang berlaku untuk bagi hasil khusus:
+    </p>
+    <ul>
+      <li>Persentase yang berlaku untuk setiap penjualan adalah persentase yang aktif <strong>saat pembeli membuat pesanan</strong>, dan dicatat pada riwayat penjualanmu. Perubahan persentase tidak memengaruhi penjualan yang sudah terjadi.</li>
+      <li>Bagi hasil khusus berjangka berakhir dengan sendirinya pada tanggal berakhir yang disampaikan sejak awal, lalu kembali ke bagian standar. Berakhirnya bagi hasil khusus pada tanggal tersebut <strong>bukan merupakan perubahan persentase</strong> sebagaimana dimaksud Bagian 9.</li>
+      <li>Bagi hasil khusus yang <strong>belum mulai berlaku</strong> dapat diubah atau dibatalkan oleh Zenko sebelum tanggal mulainya.</li>
+      <li>Bagi hasil khusus yang <strong>sedang berlaku</strong> tidak akan diturunkan atau diakhiri lebih cepat dari tanggal berakhirnya tanpa pemberitahuan sedikitnya 30 hari, sesuai Bagian 9.</li>
+      <li>Riwayat pemberitahuan di dashboard merupakan catatan utama tanggal publikasi. Kegagalan email pengingat tidak menghapus pemberitahuan yang sudah tersedia di dashboard.</li>
+      <li>Persentase bagi hasil khusus merupakan informasi komersial <strong>rahasia</strong>. Zenko membatasi akses kepada personel yang memerlukannya untuk operasi keuangan, audit, hukum, atau penanganan insiden. Kamu tidak mengumumkannya kepada publik atau Tutor lain, kecuali pengungkapan diwajibkan hukum, diperlukan untuk perpajakan, atau diberikan kepada penasihat profesional yang juga terikat kerahasiaan.</li>
+    </ul>
+    <p>
+      Porsi milik Zenko digunakan untuk menutup biaya pemrosesan
       pembayaran otomatis melalui DOKU, biaya server dan hosting sistem CBT
       engine, serta operasional Platform secara umum. Rincian lengkap
       mekanisme bagi hasil, termasuk pengecualian dan potongan karena refund
@@ -185,10 +206,12 @@ useHead({
     <p>
       Zenko dapat memperbarui Syarat Tutor ini dari waktu ke waktu. Tanggal
       pembaruan ditampilkan di bagian atas. Perubahan material &mdash;
-      termasuk perubahan persentase bagi hasil &mdash; akan diberitahukan
-      sedikitnya 30 hari sebelum berlaku dan tidak berlaku surut terhadap
-      transaksi yang sudah selesai, sebagaimana diatur pada Bagian 7
-      Ketentuan Layanan.
+      termasuk penurunan persentase bagi hasil yang sedang berlaku untukmu
+      &mdash; akan diberitahukan sedikitnya 30 hari sebelum berlaku dan tidak
+      berlaku surut terhadap transaksi yang sudah selesai, sebagaimana diatur
+      pada Bagian 7 Ketentuan Layanan. Kenaikan persentase dapat berlaku segera.
+      Berakhirnya bagi hasil khusus pada tanggal yang telah ditetapkan, serta
+      pembatalan bagi hasil khusus yang belum mulai berlaku, diatur pada Bagian 3.
     </p>
 
     <hr>

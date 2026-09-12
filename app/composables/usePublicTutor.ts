@@ -11,10 +11,8 @@ export async function usePublicTutor(username: string): Promise<Ref<PublicTutorD
 }
 
 /**
- * Reviews are fetched after hydration, so the caller renders a skeleton while
- * `pending`. It starts `true`, not `false`: the server-rendered HTML would
- * otherwise say "belum ada ulasan" and flip to a list a moment later — a lie
- * on first paint, and the worst one on a `?tab=ulasan` deep link.
+ * Reviews are fetched through Nuxt's SSR-aware useFetch, so public review
+ * content is present in the initial HTML and still supports client retries.
  *
  * `refresh()` swallows nothing: a failed `$fetch` used to escape as an
  * unhandled rejection and leave the panel silently empty forever, which is
@@ -23,15 +21,13 @@ export async function usePublicTutor(username: string): Promise<Ref<PublicTutorD
  */
 export function usePublicTutorReviews(username: string) {
   const { public: config } = useRuntimeConfig()
-  const data = ref<ProductReview[]>([])
-  const pending = ref(true)
-  const error = ref(false)
+  const { data, pending, error, refresh: fetchReviews } = useFetch<ProductReview[]>(
+    `/tutors/${encodeURIComponent(username)}/reviews`,
+    { baseURL: config.apiBase, default: () => [] },
+  )
+
   async function refresh() {
-    pending.value = true
-    error.value = false
-    try { data.value = await useApiFetch<ProductReview[]>(`/tutors/${encodeURIComponent(username)}/reviews`, { baseURL: config.apiBase }) }
-    catch { error.value = true }
-    finally { pending.value = false }
+    await fetchReviews()
   }
-  return { data, pending, error, refresh }
+  return { data, pending, error: computed(() => !!error.value), refresh }
 }

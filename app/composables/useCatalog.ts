@@ -18,7 +18,9 @@ export function usePackages(sort: Ref<SortKey>): CatalogSource<Package[]> {
   // `sort` is reactive, so switching tabs refetches automatically.
   const { data, pending, error } = useFetch<Package[]>('/packages', {
     baseURL: config.apiBase,
-    query: { sort },
+    // The homepage is a showcase, not the full catalogue. Keep the SSR
+    // payload bounded as the number of live packages grows.
+    query: { sort, limit: 12 },
     default: () => [],
   })
 

@@ -39,7 +39,7 @@ const bimbelRevenueShare = [
 </script>
 
 <template>
-  <LegalDocument lead="Ketentuan" accent="Layanan" updated="10 September 2026">
+  <LegalDocument lead="Ketentuan" accent="Layanan" updated="12 September 2026">
     <p>
       Ketentuan Layanan ini (&ldquo;Ketentuan&rdquo;) mengatur penggunaan Zenko,
       platform marketplace dan pengelolaan pembelajaran yang mempertemukan tutor,
@@ -212,8 +212,12 @@ const bimbelRevenueShare = [
       <li>Tutor bertanggung jawab atas pajaknya, kecuali Zenko diwajibkan melakukan pemotongan atau pelaporan berdasarkan hukum.</li>
     </ul>
     <p>
-      Perubahan persentase pembagian atau minimum pencairan akan diberitahukan sedikitnya
-      30 hari sebelum berlaku dan tidak diterapkan surut pada transaksi yang sudah selesai.
+      Penurunan persentase pembagian yang sedang berlaku, atau perubahan minimum
+      pencairan, akan diberitahukan sedikitnya 30 hari sebelum berlaku dan tidak
+      diterapkan surut pada transaksi yang sudah selesai. Berakhirnya persentase
+      khusus pada tanggal berakhir yang telah dipublikasikan sejak awal bukan
+      merupakan perubahan persentase. Ketentuan rinci bagi hasil khusus Tutor
+      diatur dalam <NuxtLink to="/syarat-tutor#bagi-hasil">Syarat Tutor</NuxtLink>.
     </p>
 
     <hr>

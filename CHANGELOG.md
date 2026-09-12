@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.24.0](https://github.com/artenanagara/zenko-web/compare/v0.23.1...v0.24.0) (2026-09-12)
+
+
+### Features
+
+* **admin:** show "Atur tarif" for every tutor on the share tab ([189b680](https://github.com/artenanagara/zenko-web/commit/189b680df804c46216da66aae83273dc8a25f4d0))
+* **admin:** tutor revenue-share scheduling and SEO audit improvements ([ee98765](https://github.com/artenanagara/zenko-web/commit/ee987658badad491199fc0a62d40655764e4d7f6))
+* **seo:** complete web audit improvements ([4f36146](https://github.com/artenanagara/zenko-web/commit/4f36146dd10a4807e17b379adcc3122eda036630))
+
+
+### Bug Fixes
+
+* **admin:** keep the share editor inside the viewport, presets only ([8321945](https://github.com/artenanagara/zenko-web/commit/8321945d7f945431348d763ef52328476c15645e))
+
+## [0.23.1](https://github.com/artenanagara/zenko-web/compare/v0.23.0...v0.23.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **editor:** typeset CSV-imported $latex$ in the editor, and simplify the copyright modal ([#66](https://github.com/artenanagara/zenko-web/issues/66)) ([aaa05e2](https://github.com/artenanagara/zenko-web/commit/aaa05e215b9611d04e6eb00b9ab38068648eab0f))
+
 ## [0.23.0](https://github.com/artenanagara/zenko-web/compare/v0.22.0...v0.23.0) (2026-09-12)
 
 
