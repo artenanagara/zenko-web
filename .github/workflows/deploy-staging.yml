@@ -63,6 +63,19 @@ jobs:
         run: |
           archive="/tmp/zenko-web-staging-${DEPLOY_SHA}.tar.gz"
           remote_archive="/tmp/zenko-web-staging-${DEPLOY_SHA}.tar.gz"
-          scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
+          # One SSH session can crawl at a few KB/s while a fresh one to the same
+          # host flies (a 9 MB upload has taken 18 minutes), so a transfer that
+          # has not finished in five minutes is abandoned and started over.
+          for attempt in 1 2 3; do
+            if timeout 300 scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"; then
+              break
+            fi
+            if [ "$attempt" = 3 ]; then
+              echo "upload failed after 3 attempts" >&2
+              exit 1
+            fi
+            echo "upload attempt $attempt stalled; retrying" >&2
+            sleep 10
+          done
           ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" \
             sudo -n /usr/local/sbin/zenko-deploy-web-staging "$DEPLOY_SHA" "$remote_archive"
