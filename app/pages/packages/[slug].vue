@@ -65,7 +65,7 @@ useSeoMeta({
   description: detail.value.description.slice(0, 160),
   ogTitle: `${detail.value.title} | Zenko`,
   ogDescription: detail.value.description.slice(0, 160),
-  ogImage: detail.value.thumbnailUrl,
+  ogImage: detail.value.thumbnailUrl || PACKAGE_COVER_FALLBACK_OG,
   ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
 })

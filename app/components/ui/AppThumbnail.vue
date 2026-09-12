@@ -6,7 +6,8 @@
  * produk lama), jadi tiap tempat yang menampilkan kartu paket dulu memilih
  * sendiri antara `<img>` yang src-nya kosong — yang tampil sebagai ikon
  * gambar rusak — dan kotak abu-abu buatan sendiri. Komponen ini menyatukan
- * keduanya: satu berkas cadangan bermerek di `public/brand/`, dipakai baik
+ * keduanya: satu berkas cadangan bermerek di `public/brand/` (JPEG 1280×800,
+ * rasio 16:10 seperti sampul unggahan tutor), dipakai baik
  * saat `src` memang kosong maupun saat URL-nya gagal dimuat (tautan lama,
  * berkas terhapus di penyimpanan).
  *
@@ -22,7 +23,7 @@ const props = defineProps<{
 }>()
 
 /** Satu-satunya sumber gambar cadangan — lihat public/brand/. */
-const FALLBACK = '/brand/package-thumbnail-fallback.svg'
+const FALLBACK = '/brand/package-thumbnail-fallback.jpg'
 
 /**
  * Dipakai untuk memaksa render ulang saat `src` berganti: sekali `failed`
