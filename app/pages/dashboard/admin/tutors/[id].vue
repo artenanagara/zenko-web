@@ -474,7 +474,6 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
         <DashboardPanel title="Bagi hasil" description="Jadwal komersial privat untuk tutor ini.">
           <template #action>
             <AppButton
-              v-if="shareSchedule?.termsAccepted !== false"
               variant="primary"
               size="sm"
               :disabled="sharePending"
@@ -492,9 +491,9 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
           </div>
 
           <div v-else-if="shareSchedule" class="grid gap-6">
-            <AppInlineMessage v-if="shareSchedule.termsAccepted === false" type="warning">
+            <AppInlineMessage v-if="shareSchedule.termsAccepted === false" type="info">
               Tutor belum menerima Syarat Tutor versi {{ shareSchedule.termsVersion || 'aktif' }}.
-              Jadwal pertama baru dapat dibuat setelah persetujuan tercatat.
+              Jadwal tetap dapat diatur; tutor diminta menyetujui syarat saat membuka dashboard penjualan.
             </AppInlineMessage>
 
             <div class="rounded-md border border-hairline bg-surface-alt p-5">
