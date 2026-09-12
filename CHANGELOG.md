@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.0](https://github.com/artenanagara/zenko-web/compare/v0.22.0...v0.23.0) (2026-09-12)
+
+
+### Features
+
+* **brand:** real Open Graph card and mascot package cover ([d02fb1a](https://github.com/artenanagara/zenko-web/commit/d02fb1a43ebca50e252c8fe26c388e8c4d9d194c))
+* **brand:** real Open Graph card and mascot package cover ([a190ab5](https://github.com/artenanagara/zenko-web/commit/a190ab512bfa5e5dd3255027ff9b0dc0402b61dd))
+
 ## [0.22.0](https://github.com/artenanagara/zenko-web/compare/v0.21.0...v0.22.0) (2026-09-11)
 
 
