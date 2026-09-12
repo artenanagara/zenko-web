@@ -23,7 +23,19 @@ useSeoMeta({
 
 useHead({
   link: [{ rel: 'canonical', href: 'https://zenkoedu.id/' }],
-  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(useOrganizationSchema()) }],
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify([
+      useOrganizationSchema(),
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'Zenko',
+        alternateName: ['Zenko Edu', 'zenkoedu.id'],
+        url: 'https://zenkoedu.id/',
+      },
+    ]),
+  }],
 })
 </script>
 

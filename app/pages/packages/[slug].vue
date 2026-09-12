@@ -20,7 +20,6 @@ const productReviews = useProductReviews(slug)
 // would only delay knowing whether this visitor already has an ulasan here.
 // A signed-out visitor gets a 401, which the composable reads as "none".
 onMounted(() => {
-  productReviews.refresh()
   productReviews.refreshMine()
 })
 
@@ -62,9 +61,9 @@ const canonicalUrl = `https://zenkoedu.id/paket/${detail.value.slug}`
 
 useSeoMeta({
   title: `${detail.value.title} | Zenko`,
-  description: detail.value.description.slice(0, 160),
+  description: metaDescription(detail.value.description),
   ogTitle: `${detail.value.title} | Zenko`,
-  ogDescription: detail.value.description.slice(0, 160),
+  ogDescription: metaDescription(detail.value.description),
   ogImage: detail.value.thumbnailUrl || PACKAGE_COVER_FALLBACK_OG,
   ogUrl: canonicalUrl,
   twitterCard: 'summary_large_image',
@@ -106,9 +105,22 @@ const productJsonLd = {
     : {}),
 }
 
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Beranda', item: 'https://zenkoedu.id/' },
+    { '@type': 'ListItem', position: 2, name: detail.value.category, item: 'https://zenkoedu.id/paket' },
+    { '@type': 'ListItem', position: 3, name: detail.value.title, item: canonicalUrl },
+  ],
+}
+
 useHead({
   link: [{ rel: 'canonical', href: canonicalUrl }],
-  script: [{ type: 'application/ld+json', innerHTML: JSON.stringify(productJsonLd) }],
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify([productJsonLd, breadcrumbJsonLd]),
+  }],
 })
 </script>
 
@@ -140,11 +152,12 @@ useHead({
                  katalog supaya satu paket tidak beratribusi berbeda antara
                  tempat ia ditemukan dan tempat ia dibeli. -->
             <PackageAttribution :author="detail.author" :bimbel="detail.bimbel" variant="detail" />
-            <span class="flex items-center gap-1.5">
+            <span v-if="detail.reviewCount > 0" class="flex items-center gap-1.5">
               <IconStar class="h-3.5 w-3.5 text-star" />
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>
               ({{ detail.reviewCount }} ulasan)
             </span>
+            <span v-else class="text-muted">Belum ada ulasan</span>
             <span>{{ detail.attemptLabel }} dikerjakan</span>
           </div>
         </div>
@@ -158,6 +171,8 @@ useHead({
           <AppThumbnail
             :src="detail.thumbnailUrl"
             :alt="`Thumbnail paket ${detail.title}`"
+            loading="eager"
+            fetchpriority="high"
             class="aspect-video w-full rounded-lg bg-[#edf3ff] object-cover shadow-xs"
           />
 

@@ -39,6 +39,9 @@ fi
 
 ln -sfn "${release_dir}" "${app_root}/current.next"
 mv -Tf "${app_root}/current.next" "${current_link}"
+# The unit file is updated out of band; without this every restart logs
+# "unit file changed on disk" and keeps running the stale definition.
+systemctl daemon-reload
 systemctl restart zenko-web.service
 
 healthy=false

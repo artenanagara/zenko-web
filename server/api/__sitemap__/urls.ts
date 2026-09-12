@@ -1,4 +1,5 @@
-import type { Package } from '#shared/types/catalog'
+import type { Category, Package } from '#shared/types/catalog'
+import { helpArticles } from '../../../app/data/help-center'
 
 /**
  * Dynamic sitemap entries for the catalogue: one per real package, fetched
@@ -11,6 +12,27 @@ export default defineSitemapEventHandler(async () => {
   const packages = await $fetch<Package[]>('/packages', {
     baseURL: config.apiBase,
   })
+  const categories = await $fetch<Category[]>('/categories', {
+    baseURL: config.apiBase,
+  })
 
-  return packages.map(pkg => ({ loc: `/paket/${pkg.slug}` }))
+  const tutorUsernames = [...new Set(
+    packages
+      .map(pkg => pkg.author.username.trim())
+      .filter(Boolean),
+  )]
+
+  return [
+    ...packages.map(pkg => ({ loc: `/paket/${pkg.slug}` })),
+    ...categories
+      .filter(category => category.count >= 2)
+      .flatMap(category => [
+        { loc: `/kategori/${category.slug}` },
+        ...(category.subcategories ?? [])
+          .filter(subcategory => subcategory.count >= 2)
+          .map(subcategory => ({ loc: `/kategori/${category.slug}/${subcategory.slug}` })),
+      ]),
+    ...helpArticles.map(article => ({ loc: `/pusat-bantuan/${article.slug}` })),
+    ...tutorUsernames.map(username => ({ loc: `/tutor/${encodeURIComponent(username)}` })),
+  ]
 })

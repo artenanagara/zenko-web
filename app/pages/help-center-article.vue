@@ -56,6 +56,18 @@ useSeoMeta({
 
 useHead({
   link: [{ rel: 'canonical', href: pageUrl }],
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Beranda', item: 'https://zenkoedu.id/' },
+        { '@type': 'ListItem', position: 2, name: 'Pusat Bantuan', item: 'https://zenkoedu.id/pusat-bantuan' },
+        { '@type': 'ListItem', position: 3, name: current.title, item: pageUrl },
+      ],
+    }),
+  }],
 })
 
 // Belum dikirim ke mana pun — belum ada endpoint feedback. Karena itu balasan

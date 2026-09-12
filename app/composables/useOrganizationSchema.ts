@@ -13,6 +13,10 @@ export function useOrganizationSchema() {
     logo: 'https://zenkoedu.id/logo.png',
     email: 'halo@zenkoedu.id',
     telephone: '+6288227663468',
+    sameAs: [
+      'https://www.instagram.com/zenkoedu.id',
+      'https://www.tiktok.com/@zenkoedu.id',
+    ],
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Klaten',
