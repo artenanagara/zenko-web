@@ -15,6 +15,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Upload to the VPS has been seen to sit for 20+ minutes on a dead SSH
+    # session; the keep-alive options below fail that fast, and this bounds
+    # everything else.
+    timeout-minutes: 20
     environment: staging
     env:
       DEPLOY_SHA: ${{ github.sha }}
@@ -59,6 +63,6 @@ jobs:
         run: |
           archive="/tmp/zenko-web-staging-${DEPLOY_SHA}.tar.gz"
           remote_archive="/tmp/zenko-web-staging-${DEPLOY_SHA}.tar.gz"
-          scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
-          ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" \
+          scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
+          ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" \
             sudo -n /usr/local/sbin/zenko-deploy-web-staging "$DEPLOY_SHA" "$remote_archive"
