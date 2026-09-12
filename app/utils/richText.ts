@@ -63,10 +63,78 @@ export function plainTextToEditorHtml(value: string): string {
   return paragraphs.map(line => `<p>${line}</p>`).join('')
 }
 
-/** Normalizes any stored prompt/explanation value into HTML the editor can load. */
+/**
+ * Normalizes any stored prompt/explanation value into HTML the editor can
+ * load, then upgrades bare `$latex$` / `$$latex$$` text into real inlineMath
+ * nodes (see upgradeBareMathToNodes) so CSV-imported formulas typeset inside
+ * the editor too, not only in student-facing views.
+ */
 export function toEditorHtml(value: string): string {
   if (!value) return ''
-  return looksLikeRichTextHtml(value) ? value : plainTextToEditorHtml(value)
+  const html = looksLikeRichTextHtml(value) ? value : plainTextToEditorHtml(value)
+  return upgradeBareMathToNodes(html)
+}
+
+/**
+ * Tokens the upgrade below must step over untouched: an existing inlineMath
+ * span (its text content is literally `$latex$`, so a naive pass would wrap
+ * it twice) and any other tag (a `$` inside an attribute value is not math).
+ */
+const MATH_SPAN_OR_TAG_PATTERN = /<span\b[^>]*data-type="inlineMath"[^>]*>.*?<\/span>|<[^>]+>/gi
+
+/**
+ * `$$latex$$` first (display, own centered line), then `$latex$` (inline).
+ * The inner class excludes `$` and angle brackets, so a formula never spans a
+ * tag boundary and a lone dollar sign ("Rp 5$ ") is left alone; `\S` at both
+ * ends keeps "$ 5 $"-style prose from being mistaken for math.
+ */
+const BARE_DISPLAY_MATH_PATTERN = /\$\$(\S(?:[^$<>]*?\S)?)\$\$/g
+const BARE_INLINE_MATH_PATTERN = /\$(\S(?:[^$<>]*?\S)?)\$/g
+
+/**
+ * Rewrites bare `$latex$` text into the `<span data-type="inlineMath">` node
+ * markup @aarkue/tiptap-math-extension parses on load.
+ *
+ * Why this is needed: the extension recognises `$..$` only through an
+ * InputRule/PasteRule, which ProseMirror runs for live typing and paste —
+ * never for `content:` initial load or `setContent()`. Those go through the
+ * schema's parseHTML, which for inlineMath matches only the span. A CSV
+ * import (questionCsv.ts) stores its cells as `<p>$latex$</p>`, so until this
+ * pass the editor showed the raw dollar text and the tutor had to re-type
+ * every formula for it to render — while the student view, which goes
+ * through renderInlineMathHtml, already typeset it. Once the tutor saves,
+ * the editor persists the span form and this pass becomes a no-op.
+ *
+ * `data-latex` keeps the entity-escaped text as-is: the value came from HTML
+ * text, so `&lt;`/`&amp;` are already attribute-safe, and the extension's
+ * parseHTML reads the attribute back through the DOM, which decodes them.
+ * Only `"` needs converting, since it would end the attribute early.
+ */
+export function upgradeBareMathToNodes(html: string): string {
+  if (!html.includes('$')) return html
+
+  const wrap = (latex: string, display: boolean): string => {
+    const attr = latex.replace(/"/g, '&quot;')
+    const delimiter = display ? '$$' : '$'
+    return `<span data-type="inlineMath" data-latex="${attr}" data-evaluate="no" data-display="${display ? 'yes' : 'no'}">${delimiter}${latex}${delimiter}</span>`
+  }
+
+  let out = ''
+  let last = 0
+  for (const match of html.matchAll(MATH_SPAN_OR_TAG_PATTERN)) {
+    out += upgradeTextRun(html.slice(last, match.index), wrap)
+    out += match[0]
+    last = match.index + match[0].length
+  }
+  out += upgradeTextRun(html.slice(last), wrap)
+  return out
+}
+
+function upgradeTextRun(text: string, wrap: (latex: string, display: boolean) => string): string {
+  if (!text.includes('$')) return text
+  return text
+    .replace(BARE_DISPLAY_MATH_PATTERN, (_whole, latex: string) => wrap(latex, true))
+    .replace(BARE_INLINE_MATH_PATTERN, (_whole, latex: string) => wrap(latex, false))
 }
 
 const BLOCK_BOUNDARY_PATTERN = /<\/(p|div|li|h[1-3]|tr)>|<br\s*\/?>/gi
