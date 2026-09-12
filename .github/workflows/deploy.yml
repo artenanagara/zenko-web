@@ -22,7 +22,7 @@ jobs:
     # Upload to the VPS has been seen to sit for 20+ minutes on a dead SSH
     # session; the keep-alive options below fail that fast, and this bounds
     # everything else.
-    timeout-minutes: 20
+    timeout-minutes: 30
     environment: production
     env:
       DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -69,19 +69,24 @@ jobs:
         run: |
           archive="/tmp/zenko-web-${DEPLOY_SHA}.tar.gz"
           remote_archive="/tmp/zenko-web-${DEPLOY_SHA}.tar.gz"
-          # One SSH session can crawl at a few KB/s while a fresh one to the same
-          # host flies (a 9 MB upload has taken 18 minutes), so a transfer that
-          # has not finished in five minutes is abandoned and started over.
-          for attempt in 1 2 3; do
-            if timeout 300 scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"; then
+          # Inbound transfer to the VPS sometimes crawls at a few KB/s for a
+          # stretch (a 9 MB archive has taken 18 minutes; three fresh scp
+          # attempts of five minutes each all stalled). rsync keeps what already
+          # arrived and resumes after a stall instead of starting over, so a slow
+          # link still converges; scp remains the fallback if the host lacks rsync.
+          ssh_cmd="ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4"
+          uploaded=false
+          for attempt in 1 2 3 4 5 6; do
+            if rsync --partial --inplace --append-verify --timeout=90 -e "$ssh_cmd" "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"; then
+              uploaded=true
               break
             fi
-            if [ "$attempt" = 3 ]; then
-              echo "upload failed after 3 attempts" >&2
-              exit 1
-            fi
-            echo "upload attempt $attempt stalled; retrying" >&2
+            echo "upload attempt $attempt stalled; resuming" >&2
             sleep 10
           done
+          if [ "$uploaded" != true ]; then
+            echo "rsync did not complete; falling back to scp" >&2
+            timeout 600 scp -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$archive" "$VPS_USER@$VPS_HOST:$remote_archive"
+          fi
           ssh -i ~/.ssh/zenko-deploy -o IdentitiesOnly=yes -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$VPS_USER@$VPS_HOST" \
             sudo -n /usr/local/sbin/zenko-deploy-web "$DEPLOY_SHA" "$remote_archive"
