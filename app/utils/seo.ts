@@ -12,13 +12,18 @@
  * domain produksi karena kartu pratinjau yang sama harus muncul dari
  * staging maupun produksi.
  */
-// TODO(og): ganti ke /og/zenko-og.jpg (1200×628, JPEG) begitu berkas
-// sumbernya masuk ke public/og/ — sampai saat itu lockup lama tetap dipakai
-// supaya tidak ada halaman yang menunjuk gambar yang belum ada.
 export const DEFAULT_OG = {
-  ogImage: 'https://zenkoedu.id/brand/zenko-lockup-horizontal-blue.png',
-  ogImageWidth: 654,
-  ogImageHeight: 204,
+  ogImage: 'https://zenkoedu.id/og/zenko-og.jpg',
+  ogImageWidth: 1200,
+  ogImageHeight: 630,
   ogImageAlt: 'Zenko — tryout online untuk semua ujian',
-  ogImageType: 'image/png',
+  ogImageType: 'image/jpeg',
 } as const
+
+/**
+ * Sampul cadangan paket sebagai gambar Open Graph — untuk halaman detail
+ * paket yang tutornya tidak mengunggah sampul. Berkas yang sama dengan yang
+ * dipakai AppThumbnail di katalog, jadi pratinjau tautan dan kartu katalog
+ * menampilkan gambar yang sama.
+ */
+export const PACKAGE_COVER_FALLBACK_OG = 'https://zenkoedu.id/brand/package-thumbnail-fallback.jpg'
