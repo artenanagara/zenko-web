@@ -18,7 +18,11 @@ import type { Package } from '#shared/types/catalog'
  */
 import { NuxtLink } from '#components'
 
-defineProps<{ item: Package }>()
+defineProps<{
+  item: Package
+  /** Above-the-fold cards should not be lazy-loaded behind the LCP. */
+  eager?: boolean
+}>()
 </script>
 
 <template>
@@ -35,7 +39,8 @@ defineProps<{ item: Package }>()
       <AppThumbnail
         :src="item.thumbnailUrl"
         :alt="`Thumbnail paket ${item.title}`"
-        loading="lazy"
+        :loading="eager ? 'eager' : 'lazy'"
+        :fetchpriority="eager ? 'high' : 'auto'"
         class="aspect-16/10 w-full rounded-sm bg-[#edf3ff] object-cover"
       />
 

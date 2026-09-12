@@ -36,7 +36,12 @@ const grid =
     </slot>
 
     <div v-else :class="grid">
-      <PackageCard v-for="item in items" :key="item.id" :item="item" />
+      <PackageCard
+        v-for="(item, index) in items"
+        :key="item.id"
+        :item="item"
+        :eager="index < 4"
+      />
     </div>
   </section>
 </template>

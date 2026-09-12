@@ -29,7 +29,7 @@ function onSubmit() {
         </span>
 
         <h1 class="text-[clamp(2rem,3.8vw,3.4rem)] leading-[1.08] tracking-tighter">
-          Belajar lebih terarah
+          Tryout online untuk berbagai ujian
           <span class="text-accent mt-1 block">maju lebih percaya diri</span>
         </h1>
 

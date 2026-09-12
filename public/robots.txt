@@ -1,4 +1,7 @@
 User-agent: *
+# Crawler policy for AI training/search is managed at the Cloudflare edge.
+# Keep the canonical sitemap discoverable from the repository as well.
+Sitemap: https://zenkoedu.id/sitemap.xml
 Disallow: /dashboard
 Disallow: /akun
 Disallow: /masuk

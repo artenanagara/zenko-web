@@ -2,17 +2,17 @@ import type { ProductReview, ProductReviewInput } from '#shared/types/product-re
 
 export function useProductReviews(slug: string) {
   const { public: config } = useRuntimeConfig()
-  const data = ref<ProductReview[]>([])
+  const { data, pending, error: requestError, refresh: fetchReviews } = useFetch<ProductReview[]>(
+    `/packages/${encodeURIComponent(slug)}/reviews`,
+    { baseURL: config.apiBase, default: () => [] },
+  )
   const mine = ref<ProductReview | null>(null)
-  const pending = ref(false)
   const error = ref('')
 
   async function refresh() {
-    pending.value = true
     error.value = ''
-    try { data.value = await useApiFetch<ProductReview[]>(`/packages/${encodeURIComponent(slug)}/reviews`, { baseURL: config.apiBase }) }
-    catch (cause) { error.value = tutorApiMessage(cause, 'Ulasan belum berhasil dimuat.') }
-    finally { pending.value = false }
+    await fetchReviews()
+    if (requestError.value) error.value = tutorApiMessage(requestError.value, 'Ulasan belum berhasil dimuat.')
   }
 
   async function refreshMine() {

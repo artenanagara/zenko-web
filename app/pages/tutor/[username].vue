@@ -91,19 +91,17 @@ function goToTab(tab: string) {
   nextTick(() => tabStrip.value?.scrollIntoView({ block: 'start' }))
 }
 
-onMounted(() => tutorReviews.refresh())
-
 /* ── SEO ───────────────────────────────────────────────────────────────── */
 
-const metaDescription = computed(() =>
-  (profile.value.bio || `Profil tutor ${displayName.value} di Zenko.`).slice(0, 160),
+const metaDescriptionValue = computed(() =>
+  metaDescription(profile.value.bio || `Profil tutor ${displayName.value} di Zenko.`),
 )
 
 useSeoMeta({
   title: `${displayName.value} | Tutor Zenko`,
-  description: metaDescription.value,
+  description: metaDescriptionValue.value,
   ogTitle: `${displayName.value} | Tutor Zenko`,
-  ogDescription: metaDescription.value,
+  ogDescription: metaDescriptionValue.value,
   ogImage: avatarUrl.value || undefined,
   ogUrl: canonicalUrl.value,
 })

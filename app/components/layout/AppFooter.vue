@@ -39,11 +39,12 @@ const columns: FooterColumn[] = [
     ],
   },
   {
-    title: 'Zenko',
-    links: [
-      { label: 'Tentang Kami', to: '/tentang' },
-      { label: 'Cara Kerja', to: '/#cara-kerja' },
-    ],
+      title: 'Zenko',
+      links: [
+        { label: 'Tentang Kami', to: '/tentang' },
+        { label: 'Cara Kerja', to: '/#cara-kerja' },
+        { label: 'Panduan TKA', to: '/tka' },
+      ],
   },
   {
     // Rekrutmen dipisah dari info perusahaan: pembacanya berbeda.

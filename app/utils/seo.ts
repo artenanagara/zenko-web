@@ -27,3 +27,23 @@ export const DEFAULT_OG = {
  * menampilkan gambar yang sama.
  */
 export const PACKAGE_COVER_FALLBACK_OG = 'https://zenkoedu.id/brand/package-thumbnail-fallback.jpg'
+
+/**
+ * Produce a compact, plain-text description suitable for search snippets.
+ * API descriptions may contain HTML, lists, or line breaks, and cutting them
+ * at an arbitrary character can leave a broken word in the SERP preview.
+ */
+export function metaDescription(value: string, max = 155): string {
+  const plain = value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (plain.length <= max) return plain
+
+  const suffix = '…'
+  const limit = max - suffix.length
+  const cut = plain.slice(0, limit).trimEnd()
+  const wordBoundary = cut.lastIndexOf(' ')
+  return `${(wordBoundary > 0 ? cut.slice(0, wordBoundary) : cut).trimEnd()}${suffix}`
+}
