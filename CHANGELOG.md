@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.1](https://github.com/artenanagara/zenko-web/compare/v0.23.0...v0.23.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **editor:** typeset CSV-imported $latex$ in the editor, and simplify the copyright modal ([#66](https://github.com/artenanagara/zenko-web/issues/66)) ([aaa05e2](https://github.com/artenanagara/zenko-web/commit/aaa05e215b9611d04e6eb00b9ab38068648eab0f))
+
 ## [0.23.0](https://github.com/artenanagara/zenko-web/compare/v0.22.0...v0.23.0) (2026-09-12)
 
 
