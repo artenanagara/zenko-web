@@ -27,6 +27,12 @@ export interface User {
    * since nothing else reads it.
    */
   createdAt: number
+  /**
+   * True only for the tightly allow-listed admin account that may inspect and
+   * change tutor revenue-share schedules. This only controls discoverability
+   * in the UI; the API remains the authorization boundary.
+   */
+  canManageShareSchedule: boolean
 }
 
 /**

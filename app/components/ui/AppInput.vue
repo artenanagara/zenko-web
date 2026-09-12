@@ -3,7 +3,7 @@ const props = withDefaults(
   defineProps<{
     id?: string
     label: string
-    type?: 'text' | 'email' | 'tel' | 'url' | 'number' | 'datetime-local'
+    type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'number' | 'datetime-local'
     placeholder?: string
     autocomplete?: string
     hint?: string

@@ -17,6 +17,7 @@ export interface MockUser {
   avatarUrl: string
   role: 'student' | 'tutor' | 'admin'
   verified: boolean
+  canManageShareSchedule: boolean
 }
 
 export function buildUser(overrides: Partial<MockUser> = {}): MockUser {
@@ -27,6 +28,7 @@ export function buildUser(overrides: Partial<MockUser> = {}): MockUser {
     avatarUrl: 'https://i.pravatar.cc/80?img=1',
     role: 'student',
     verified: true,
+    canManageShareSchedule: false,
     ...overrides,
   }
 }
