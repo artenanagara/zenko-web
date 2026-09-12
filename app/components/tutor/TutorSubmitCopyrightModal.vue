@@ -2,13 +2,14 @@
 /**
  * Modal pernyataan hak cipta soal — muncul saat tutor menekan "Ajukan untuk
  * tayang" di langkah 5 TutorProductWizard, sebelum request submit benar-benar
- * dikirim ke server.
+ * dikirim ke server. Dua tombol saja: Batal, atau Setuju & ajukan.
  *
- * Tombol setuju baru aktif setelah isi pernyataan digulir sampai bawah:
- * dialog yang bisa langsung di-OK tanpa dibaca tidak ada gunanya sebagai
- * pernyataan. Kalau viewport cukup tinggi sehingga isinya muat tanpa perlu
- * digulir, gerbangnya langsung terbuka — ResizeObserver menjaga kasus ini
- * termasuk saat jendela di-resize selagi modal terbuka.
+ * Isinya digulir di dalam modal sendiri. Selama modal terbuka, halaman di
+ * belakangnya dikunci lewat `body.style.overflow` — pola kunci gulir yang
+ * sama dengan menu mobile dan sheet navigator soal, dan yang membuat plugin
+ * Lenis menghentikan pelembutan gulirnya (lihat plugins/lenis.client.ts).
+ * `data-lenis-prevent` menjaga roda mouse di atas isi modal tetap menggulir
+ * isi itu secara native, dan tidak "tembus" ke halaman saat mentok di bawah.
  *
  * Isi pernyataan diringkas dari Ketentuan Layanan Bagian 4 (kewajiban tutor)
  * dan Bagian 9 (hak kekayaan intelektual); tautan ke halaman itu ada di
@@ -25,59 +26,35 @@ const emit = defineEmits<{ confirm: [] }>()
 const open = defineModel<boolean>('open', { required: true })
 
 const bodyRef = ref<HTMLElement | null>(null)
-const reachedEnd = ref(false)
 
-// Toleransi beberapa piksel: di layar dengan zoom/DPR pecahan, scrollTop +
-// clientHeight bisa berhenti 0,5px di bawah scrollHeight dan tidak pernah
-// benar-benar "sama".
-const END_TOLERANCE_PX = 4
-
-function checkScroll() {
-  const el = bodyRef.value
-  if (!el) return
-  if (el.scrollTop + el.clientHeight >= el.scrollHeight - END_TOLERANCE_PX) {
-    reachedEnd.value = true
-  }
+function lockPage(locked: boolean) {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = locked ? 'hidden' : ''
 }
-
-let observer: ResizeObserver | null = null
 
 watch(open, async (isOpen) => {
-  reachedEnd.value = false
-  observer?.disconnect()
-  observer = null
+  lockPage(isOpen)
   if (!isOpen) return
   await nextTick()
-  const el = bodyRef.value
-  if (!el) return
-  el.scrollTop = 0
-  checkScroll()
-  if (typeof ResizeObserver !== 'undefined') {
-    observer = new ResizeObserver(checkScroll)
-    observer.observe(el)
-  }
+  if (bodyRef.value) bodyRef.value.scrollTop = 0
 }, { immediate: true })
 
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => lockPage(false))
 
-const canConfirm = computed(() => reachedEnd.value && !props.submitting)
-
-function scrollToEnd() {
-  bodyRef.value?.scrollTo({ top: bodyRef.value.scrollHeight, behavior: 'smooth' })
-}
+const canConfirm = computed(() => !props.submitting)
 </script>
 
 <template>
   <AppModal
     v-model="open"
     title="Pernyataan hak cipta soal"
-    description="Baca sampai selesai sebelum mengajukan paket ini."
+    description="Baca sebelum mengajukan paket ini."
   >
     <div
       ref="bodyRef"
-      class="-mx-6 -my-6 max-h-[55vh] overflow-y-auto px-6 py-6"
+      data-lenis-prevent
+      class="-mx-6 -my-6 max-h-[55vh] overflow-y-auto overscroll-contain px-6 py-6"
       tabindex="0"
-      @scroll.passive="checkScroll"
     >
       <div class="grid gap-4 text-[0.88rem] leading-relaxed text-ink">
         <p>
@@ -142,35 +119,12 @@ function scrollToEnd() {
     </div>
 
     <template #footer="{ close }">
-      <!-- Footer AppModal adalah flex satu baris; di layar sempit hint gulir
-           dan dua tombol tidak muat sebaris, jadi dibungkus sendiri agar hint
-           naik ke barisnya sendiri di bawah sm. -->
-      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-        <!-- Petunjuk gulir hanya tampil selagi gerbang masih tertutup, dan
-             bisa diklik untuk melompat ke bawah. -->
-        <button
-          v-if="!reachedEnd"
-          type="button"
-          class="inline-flex items-center gap-1.5 text-[0.8rem] text-muted hover:text-ink sm:mr-auto"
-          @click="scrollToEnd"
-        >
-          <AppIcon name="arrow-down" :size="14" aria-hidden="true" />
-          Gulir sampai bawah untuk melanjutkan
-        </button>
-        <span v-else class="inline-flex items-center gap-1.5 text-[0.8rem] text-muted sm:mr-auto">
-          <AppIcon name="check-circle" :size="14" weight="fill" class="text-success" aria-hidden="true" />
-          Sudah dibaca
-        </span>
-
-        <div class="flex items-center justify-end gap-3">
-          <AppButton type="button" variant="outline" size="sm" :disabled="submitting" @click="close()">
-            Batal
-          </AppButton>
-          <AppButton type="button" size="sm" :disabled="!canConfirm" @click="emit('confirm')">
-            {{ submitting ? 'Mengajukan...' : confirmLabel }}
-          </AppButton>
-        </div>
-      </div>
+      <AppButton type="button" variant="outline" size="sm" :disabled="submitting" @click="close()">
+        Batal
+      </AppButton>
+      <AppButton type="button" size="sm" :disabled="!canConfirm" @click="emit('confirm')">
+        {{ submitting ? 'Mengajukan...' : confirmLabel }}
+      </AppButton>
     </template>
   </AppModal>
 </template>
