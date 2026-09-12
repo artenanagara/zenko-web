@@ -83,7 +83,9 @@ const activeTab = ref('profil')
 
 const shareEditorOpen = ref(false)
 const shareEditorStep = ref<'edit' | 'confirm'>('edit')
-const sharePercent = ref<number | string>(75)
+// Only the preset steps are offered; the API still validates 70–90 itself.
+const SHARE_PERCENT_PRESETS = [75, 80, 85, 90] as const
+const sharePercent = ref<number>(75)
 const useStandardPercent = ref(false)
 const shareStartsAt = ref('')
 const shareEndsAt = ref('')
@@ -107,11 +109,11 @@ const cancelIdempotencyKey = ref('')
 const shareInput = computed<TutorShareMutationInput | null>(() => {
   const startsAt = parseWibInput(shareStartsAt.value)
   const endsAt = shareEndsAt.value ? parseWibInput(shareEndsAt.value) : null
-  const percent = useStandardPercent.value ? null : Number(sharePercent.value)
+  const percent = useStandardPercent.value ? null : sharePercent.value
   if (
     !startsAt
     || (endsAt !== null && !endsAt)
-    || (!useStandardPercent.value && (percent === null || !Number.isInteger(percent) || percent < 70 || percent > 90))
+    || (percent !== null && !SHARE_PERCENT_PRESETS.includes(percent as typeof SHARE_PERCENT_PRESETS[number]))
   ) return null
   return {
     percent,
@@ -129,8 +131,11 @@ const shareFormValid = computed(() => {
 
 function openShareEditor() {
   const tomorrowWib = Math.floor(Date.now() / 1000) + 24 * 60 * 60
-  sharePercent.value = shareSchedule.value?.effectivePercent ?? 75
-  useStandardPercent.value = false
+  // Preselect the current rate when it is one of the presets; a tutor on the
+  // standard 70% starts on the "Standar 70%" choice instead of a bogus preset.
+  const current = shareSchedule.value?.effectivePercent ?? 70
+  useStandardPercent.value = !SHARE_PERCENT_PRESETS.includes(current as typeof SHARE_PERCENT_PRESETS[number])
+  sharePercent.value = useStandardPercent.value ? 75 : current
   shareStartsAt.value = wibInputValue(tomorrowWib, 9)
   shareEndsAt.value = ''
   shareInternalReason.value = ''
@@ -568,16 +573,19 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
       :title="shareEditorStep === 'confirm' ? 'Konfirmasi perubahan bagi hasil' : 'Atur tarif bagi hasil'"
       :description="shareEditorStep === 'confirm' ? `Periksa kembali perubahan untuk ${detail?.name || 'tutor'}.` : 'Waktu ditampilkan dalam WIB dan tanggal akhir bersifat eksklusif.'"
     >
-      <form v-if="shareEditorStep === 'edit'" class="grid gap-5" @submit.prevent="previewShareChange">
+      <!-- AppModal never clips its panel, so a form this tall scrolls inside
+           its own body instead of pushing the header and footer off-screen. -->
+      <form v-if="shareEditorStep === 'edit'" class="grid max-h-[min(60vh,34rem)] gap-5 overflow-y-auto pr-1" @submit.prevent="previewShareChange">
         <fieldset :disabled="sharePreviewPending" class="grid gap-3">
           <legend class="text-[0.9rem] font-semibold text-ink">Persentase tutor</legend>
           <div class="flex flex-wrap gap-2">
             <button
-              v-for="preset in [75, 80, 85, 90]"
+              v-for="preset in SHARE_PERCENT_PRESETS"
               :key="preset"
               type="button"
               class="min-h-11 rounded-sm border px-4 py-2 text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              :class="!useStandardPercent && Number(sharePercent) === preset ? 'border-primary bg-primary-soft text-primary' : 'border-line bg-surface text-ink'"
+              :aria-pressed="!useStandardPercent && sharePercent === preset"
+              :class="!useStandardPercent && sharePercent === preset ? 'border-primary bg-primary-soft text-primary' : 'border-line bg-surface text-ink'"
               @click="useStandardPercent = false; sharePercent = preset"
             >
               {{ preset }}%
@@ -591,18 +599,6 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
               Standar 70%
             </button>
           </div>
-          <AppInput
-            v-if="!useStandardPercent"
-            id="share-percent"
-            v-model="sharePercent"
-            type="number"
-            label="Persentase lain"
-            :min="70"
-            :max="90"
-            :step="1"
-            hint="Bilangan bulat antara 70 dan 90."
-            required
-          />
         </fieldset>
 
         <div class="grid gap-4 sm:grid-cols-2">
