@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.25.0](https://github.com/artenanagara/zenko-web/compare/v0.24.0...v0.25.0) (2026-09-13)
+
+
+### Features
+
+* **deploy:** auto-refresh maintenance page and neutral outage copy ([9c71974](https://github.com/artenanagara/zenko-web/commit/9c719742af3757f79d6310c097dc0a615fab5de2))
+* promote staging to production (home perf, maintenance page) ([7f86ce5](https://github.com/artenanagara/zenko-web/commit/7f86ce5e1305871a1afaf012fd6d99824c466b2c))
+
+
+### Performance Improvements
+
+* **home:** defer below-the-fold work and stabilise layout ([d55edf9](https://github.com/artenanagara/zenko-web/commit/d55edf92d82819245418bfb7ced72135e3b84d1c))
+
 ## [0.24.0](https://github.com/artenanagara/zenko-web/compare/v0.23.1...v0.24.0) (2026-09-12)
 
 
