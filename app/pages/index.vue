@@ -53,7 +53,7 @@ useHead({
       <CatalogAssurance class="mt-6" />
     </div>
 
-    <FeatureSection />
-    <TestimonialSection :items="testimonials" />
+    <LazyFeatureSection />
+    <LazyTestimonialSection :items="testimonials" />
   </main>
 </template>

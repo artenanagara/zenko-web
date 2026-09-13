@@ -10,7 +10,7 @@ function stars(rating: number) {
 </script>
 
 <template>
-  <section class="py-18 md:py-22" aria-labelledby="testimonials-heading">
+  <section class="py-18 [content-visibility:auto] [contain-intrinsic-size:0_520px] md:py-22" aria-labelledby="testimonials-heading">
     <div class="container-page">
       <div class="mx-auto mb-11 max-w-160 text-center">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
@@ -50,7 +50,7 @@ function stars(rating: number) {
           </blockquote>
 
           <footer class="mt-6 flex items-center gap-3 border-t border-[rgba(148,163,184,0.2)] pt-5">
-            <img :src="item.avatarUrl" alt="" loading="lazy" class="h-11 w-11 shrink-0 rounded-full object-cover">
+            <img :src="item.avatarUrl" alt="" width="44" height="44" loading="lazy" class="h-11 w-11 shrink-0 rounded-full object-cover">
             <div>
               <h3 class="text-[0.98rem] tracking-[-0.02em]">{{ item.name }}</h3>
               <span class="text-[0.84rem] text-muted">{{ item.role }}</span>

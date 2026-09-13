@@ -67,6 +67,8 @@ const isCard = computed(() => props.variant === 'card')
       <img
         :src="author.avatarUrl"
         alt=""
+        width="28"
+        height="28"
         loading="lazy"
         class="shrink-0 rounded-full object-cover"
         :class="isCard ? 'h-6 w-6' : 'h-7 w-7'"
