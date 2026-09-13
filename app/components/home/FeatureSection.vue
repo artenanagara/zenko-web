@@ -11,7 +11,7 @@ void target
   <section
     id="cara-kerja"
     ref="target"
-    class="dot-grid relative border-y border-hairline bg-surface-alt py-18 md:py-22"
+    class="dot-grid relative border-y border-hairline bg-surface-alt py-18 [content-visibility:auto] [contain-intrinsic-size:0_760px] md:py-22"
     :class="[ready && 'anim-ready', isInView && 'is-inview']"
   >
     <div class="container-page relative z-1">

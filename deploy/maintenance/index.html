@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Zenko sedang dalam perbaikan</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="Zenko sedang dalam perbaikan terjadwal. Layanan akan kembali dalam waktu dekat.">
+<!-- Memuat ulang sendiri tanpa JavaScript (CSP @maintenance hanya mengizinkan
+     script-src 'self'). Begitu Nuxt kembali, pengunjung langsung masuk. -->
+<meta http-equiv="refresh" content="60">
+<meta name="description" content="Zenko sedang dalam perbaikan. Layanan akan kembali dalam waktu dekat.">
 <!--
   Halaman ini dilayani Nginx sendiri, BUKAN oleh Nuxt — karena justru Nuxt yang
   mati saat maintenance. Karena itu tidak boleh ada satu pun permintaan keluar:
@@ -159,8 +162,9 @@
     <h1>Zenko sedang dalam perbaikan</h1>
 
     <p class="lead">
-      Kami sedang memperbarui sistem supaya Zenko berjalan lebih baik.
-      Layanan akan kembali dalam waktu dekat.
+      Kami sedang memperbarui atau memulihkan sistem supaya Zenko berjalan
+      lebih baik. Layanan akan kembali dalam waktu dekat, dan halaman ini
+      akan memuat ulang sendiri.
     </p>
 
     <div class="panel">

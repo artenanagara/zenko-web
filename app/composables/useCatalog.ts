@@ -59,6 +59,11 @@ export function useTestimonials(): CatalogSource<Testimonial[]> {
 
   const { data, pending, error } = useFetch<Testimonial[]>('/testimonials', {
     baseURL: config.apiBase,
+    // Testimonials sit below the fold and are not part of the first paint.
+    // Fetch them after hydration so a slow public endpoint cannot delay the
+    // homepage's hero and catalogue response.
+    server: false,
+    lazy: true,
     default: () => [],
   })
 

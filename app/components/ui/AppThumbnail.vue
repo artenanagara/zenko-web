@@ -47,6 +47,8 @@ function onError() {
   <img
     :src="resolved"
     :alt="alt"
+    width="1280"
+    height="800"
     :loading="loading"
     @error="onError"
   >
