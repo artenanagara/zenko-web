@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/artenanagara/zenko-web/compare/v0.25.0...v0.26.0) (2026-09-14)
+
+
+### Features
+
+* promote staging to production (tutor bulk actions, richer admin directories, Google auth fix) ([#72](https://github.com/artenanagara/zenko-web/issues/72)) ([8f0db2a](https://github.com/artenanagara/zenko-web/commit/8f0db2a58754e3efd584c12cf082a41116565c08))
+
 ## [0.25.0](https://github.com/artenanagara/zenko-web/compare/v0.24.0...v0.25.0) (2026-09-13)
 
 
