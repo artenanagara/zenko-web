@@ -130,7 +130,7 @@ export function useAuth() {
    * the reader somewhere public. Errors (wrong password, tutor account, still
    * managing a bimbel) are rethrown first so the page can show them.
    */
-  async function deleteAccount(input: { confirmation: string, password: string }) {
+  async function deleteAccount(input: { confirmation: string }) {
     await useApiFetch('/auth/delete-account', {
       baseURL: config.apiBase,
       method: 'POST',

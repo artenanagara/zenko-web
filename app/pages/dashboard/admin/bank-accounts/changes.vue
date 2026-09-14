@@ -79,6 +79,7 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru diajukan' },
   { value: 'oldest', label: 'Terlama diajukan' },
   { value: 'tutor-asc', label: 'Nama tutor A–Z' },
+  { value: 'tutor-desc', label: 'Nama tutor Z–A' },
 ]
 
 const {
@@ -110,6 +111,7 @@ const {
     newest: (a, b) => b.requestedAt - a.requestedAt,
     oldest: (a, b) => a.requestedAt - b.requestedAt,
     'tutor-asc': (a, b) => a.tutor.name.localeCompare(b.tutor.name, 'id'),
+    'tutor-desc': (a, b) => b.tutor.name.localeCompare(a.tutor.name, 'id'),
   },
   defaultFilter: 'pending',
   defaultSort: 'newest',

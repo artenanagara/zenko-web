@@ -62,6 +62,23 @@ const previewProducts = computed(() =>
   [...products.value].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, PREVIEW_ROWS),
 )
 
+/**
+ * Seleksi di pratinjau. The preview owns no action — every product action
+ * lives in Produk saya — so a selection here is handed over: the chosen ids
+ * ride in ?pilih= and arrive pre-selected on that page, where the bulk
+ * buttons are. Same table, same checkboxes, one place that acts.
+ */
+const selected = ref<string[]>([])
+watch(previewProducts, (list) => {
+  const known = new Set(list.map(product => product.id))
+  if (selected.value.some(id => !known.has(id))) {
+    selected.value = selected.value.filter(id => known.has(id))
+  }
+})
+function manageSelected() {
+  return navigateTo({ path: '/dashboard/tutor/products', query: { pilih: selected.value.join(',') } })
+}
+
 /** How many products the preview is not showing — stated under the table. */
 const hiddenProductCount = computed(() => Math.max(products.value.length - PREVIEW_ROWS, 0))
 
@@ -222,8 +239,21 @@ function formatRupiahShort(value: number): string {
         @action="() => navigateTo('/dashboard/tutor/products/new')"
       />
 
-      <template v-else>
-        <DashboardTable :columns="productColumns" :data="previewProducts" primary-key="title">
+      <div v-else class="grid gap-4">
+        <DashboardSelectionBar :count="selected.length" item-noun="produk" @clear="selected = []">
+          <AppButton size="sm" @click="manageSelected">
+            Kelola di Produk Saya
+            <AppIcon name="arrow-right" :size="14" />
+          </AppButton>
+        </DashboardSelectionBar>
+
+        <DashboardTable
+          v-model:selected="selected"
+          :columns="productColumns"
+          :data="previewProducts"
+          primary-key="title"
+          selectable
+        >
           <template #cell(title)="{ item }">
             <NuxtLink
               to="/dashboard/tutor/products"
@@ -246,10 +276,10 @@ function formatRupiahShort(value: number): string {
 
         <!-- Says out loud that the table is cut off, so the panel is never
              mistaken for the whole list. -->
-        <p v-if="hiddenProductCount > 0" class="mt-3 text-[0.82rem] text-muted">
+        <p v-if="hiddenProductCount > 0" class="-mt-1 text-[0.82rem] text-muted">
           <span class="tabular-nums">+{{ hiddenProductCount }}</span> produk lainnya di menu Produk Saya.
         </p>
-      </template>
+      </div>
     </DashboardPanel>
 
     <DashboardPanel

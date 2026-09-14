@@ -29,6 +29,41 @@ onMounted(() => {
 
 const tutorName = computed(() => user.value?.name.trim() || 'Tutor')
 
+/* --------------------------------------------------------------------------
+ * Seleksi massal. A payout row is a record, not a task — nothing here can
+ * cancel or edit one — so selecting rows is for adding them up and taking
+ * them out as CSV, the same two uses as the sales table.
+ * ------------------------------------------------------------------------ */
+
+const selected = ref<string[]>([])
+
+watch(payouts, (list) => {
+  const known = new Set(list.map(payout => payout.id))
+  if (selected.value.some(id => !known.has(id))) {
+    selected.value = selected.value.filter(id => known.has(id))
+  }
+})
+
+const selectedPayouts = computed(() => {
+  const chosen = new Set(selected.value)
+  return payouts.value.filter(payout => chosen.has(payout.id))
+})
+const selectedAmount = computed(() => selectedPayouts.value.reduce((sum, payout) => sum + payout.amount, 0))
+
+function exportSelected() {
+  downloadCsv(
+    `pencairan-zenko-${new Date().toISOString().slice(0, 10)}.csv`,
+    ['Diajukan', 'Nominal', 'Status', 'Diproses', 'Keterangan'],
+    selectedPayouts.value.map(payout => [
+      formatDate(payout.requestedAt),
+      payout.amount,
+      payoutStatusLabel(payout.status),
+      payout.processedAt ? formatDate(payout.processedAt) : '',
+      payout.status === 'rejected' ? (payout.rejectReason ?? '') : '',
+    ]),
+  )
+}
+
 const payoutColumns = [
   { key: 'requestedAt', label: 'Diajukan' },
   { key: 'amount', label: 'Nominal' },
@@ -261,28 +296,48 @@ async function submitPayout() {
         {{ formatRupiah(PAYOUT_MINIMUM) }}.
       </p>
 
-      <DashboardTable v-else :columns="payoutColumns" :data="payouts" primary-key="amount">
-        <template #cell(requestedAt)="{ value }">
-          <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
-        </template>
-        <template #cell(amount)="{ value }">
-          <span class="font-semibold tabular-nums">{{ formatRupiah(value) }}</span>
-        </template>
-        <template #cell(status)="{ item }">
-          <DashboardBadge :tone="payoutStatusTone(item.status)">
-            {{ payoutStatusLabel(item.status) }}
-          </DashboardBadge>
-        </template>
-        <template #cell(keterangan)="{ item }">
-          <template v-if="item.status === 'rejected' && item.rejectReason">
-            {{ item.rejectReason }}
+      <div v-else class="grid gap-4">
+        <DashboardSelectionBar
+          :count="selected.length"
+          item-noun="pengajuan"
+          :summary="`Total ${formatRupiah(selectedAmount)}`"
+          @clear="selected = []"
+        >
+          <AppButton variant="outline" size="sm" @click="exportSelected">
+            <AppIcon name="download-simple" :size="14" />
+            Unduh CSV
+          </AppButton>
+        </DashboardSelectionBar>
+
+        <DashboardTable
+          v-model:selected="selected"
+          :columns="payoutColumns"
+          :data="payouts"
+          primary-key="amount"
+          selectable
+        >
+          <template #cell(requestedAt)="{ value }">
+            <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
           </template>
-          <template v-else-if="item.processedAt">
-            Selesai diproses pada {{ formatDate(item.processedAt) }}
+          <template #cell(amount)="{ value }">
+            <span class="font-semibold tabular-nums">{{ formatRupiah(value) }}</span>
           </template>
-          <template v-else>Menunggu proses</template>
-        </template>
-      </DashboardTable>
+          <template #cell(status)="{ item }">
+            <DashboardBadge :tone="payoutStatusTone(item.status)">
+              {{ payoutStatusLabel(item.status) }}
+            </DashboardBadge>
+          </template>
+          <template #cell(keterangan)="{ item }">
+            <template v-if="item.status === 'rejected' && item.rejectReason">
+              {{ item.rejectReason }}
+            </template>
+            <template v-else-if="item.processedAt">
+              Selesai diproses pada {{ formatDate(item.processedAt) }}
+            </template>
+            <template v-else>Menunggu proses</template>
+          </template>
+        </DashboardTable>
+      </div>
     </DashboardPanel>
   </div>
 </template>

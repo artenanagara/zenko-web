@@ -295,6 +295,32 @@ const socialLinks = computed(() => {
 
 /* ---------------------------------------------------------------- produk -- */
 
+/**
+ * Urutan tabel produk. No search or status filter here — a single tutor's
+ * catalogue is short enough to read whole — but the same four orderings as
+ * every other admin table, so the eye lands on the same control.
+ */
+const PRODUCT_SORT_OPTIONS = [
+  { value: 'newest', label: 'Terbaru diperbarui' },
+  { value: 'oldest', label: 'Terlama diperbarui' },
+  { value: 'title-asc', label: 'Judul A–Z' },
+  { value: 'title-desc', label: 'Judul Z–A' },
+]
+const productSort = ref('newest')
+
+const PRODUCT_SORTS: Record<string, (a: AdminTutorDetail['products'][number], b: AdminTutorDetail['products'][number]) => number> = {
+  'newest': (a, b) => b.updatedAt - a.updatedAt,
+  'oldest': (a, b) => a.updatedAt - b.updatedAt,
+  'title-asc': (a, b) => a.title.localeCompare(b.title, 'id'),
+  'title-desc': (a, b) => b.title.localeCompare(a.title, 'id'),
+}
+
+const sortedProducts = computed(() => {
+  const compare = PRODUCT_SORTS[productSort.value]
+  const list = detail.value?.products ?? []
+  return compare ? [...list].sort(compare) : list
+})
+
 const PRODUCT_COLUMNS = [
   { key: 'title', label: 'Produk' },
   { key: 'type', label: 'Tipe' },
@@ -442,10 +468,23 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
           title="Produk"
           :description="`${detail.products.length} produk dibuat, apa pun statusnya.`"
         >
+          <template v-if="detail.products.length > 1" #action>
+            <!-- AppSelect is w-full; the wrapper sets the width. -->
+            <div class="w-52">
+              <AppSelect
+                :options="PRODUCT_SORT_OPTIONS"
+                :model-value="productSort"
+                label="Urutkan"
+                size="sm"
+                @update:model-value="productSort = String($event)"
+              />
+            </div>
+          </template>
+
           <p v-if="detail.products.length === 0" class="py-6 text-center text-muted">
             Tutor ini belum membuat produk.
           </p>
-          <DashboardTable v-else :columns="PRODUCT_COLUMNS" :data="detail.products" primary-key="title" action-key="aksi">
+          <DashboardTable v-else :columns="PRODUCT_COLUMNS" :data="sortedProducts" primary-key="title" action-key="aksi">
             <template #cell(title)="{ value }">
               <span class="block font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
             </template>
