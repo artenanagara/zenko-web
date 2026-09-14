@@ -45,6 +45,7 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru diajukan' },
   { value: 'oldest', label: 'Terlama diajukan' },
   { value: 'name', label: 'Nama A–Z' },
+  { value: 'name-desc', label: 'Nama Z–A' },
 ]
 
 const {
@@ -69,6 +70,7 @@ const {
     newest: (a, b) => b.submittedAt - a.submittedAt,
     oldest: (a, b) => a.submittedAt - b.submittedAt,
     name: (a, b) => a.name.localeCompare(b.name, 'id'),
+    'name-desc': (a, b) => b.name.localeCompare(a.name, 'id'),
   },
   defaultFilter: 'pending',
   defaultSort: 'newest',

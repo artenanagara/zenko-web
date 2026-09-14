@@ -69,6 +69,7 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru diperbarui' },
   { value: 'oldest', label: 'Terlama diperbarui' },
   { value: 'title', label: 'Judul A–Z' },
+  { value: 'title-desc', label: 'Judul Z–A' },
   { value: 'price-desc', label: 'Harga tertinggi' },
   { value: 'price-asc', label: 'Harga terendah' },
 ]
@@ -102,6 +103,7 @@ const {
     newest: (a, b) => b.updatedAt - a.updatedAt,
     oldest: (a, b) => a.updatedAt - b.updatedAt,
     title: (a, b) => a.title.localeCompare(b.title, 'id'),
+    'title-desc': (a, b) => b.title.localeCompare(a.title, 'id'),
     'price-desc': (a, b) => b.price - a.price,
     'price-asc': (a, b) => a.price - b.price,
   },

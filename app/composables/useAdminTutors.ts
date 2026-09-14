@@ -1,5 +1,5 @@
 import type { AdminTutorDetail } from '#shared/types/admin-tutor'
-import type { User } from '#shared/types/user'
+import type { AdminTutorRow } from '#shared/types/admin-directory'
 
 /**
  * Admin's tutor directory: every account holding the tutor role, and one
@@ -14,7 +14,7 @@ import type { User } from '#shared/types/user'
 export function useAdminTutors() {
   const { public: config } = useRuntimeConfig()
 
-  const data = ref<User[]>([])
+  const data = ref<AdminTutorRow[]>([])
   const pending = ref(false)
   const error = ref('')
 
@@ -22,7 +22,7 @@ export function useAdminTutors() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<User[]>('/admin/tutors', {
+      data.value = await useApiFetch<AdminTutorRow[]>('/admin/tutors', {
         baseURL: config.apiBase,
         credentials: 'include',
       })

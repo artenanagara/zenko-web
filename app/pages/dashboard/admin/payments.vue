@@ -95,6 +95,8 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'oldest', label: 'Paling lama menunggu' },
   { value: 'newest', label: 'Terbaru dikonfirmasi' },
   { value: 'amount-desc', label: 'Nominal terbesar' },
+  { value: 'name-asc', label: 'Nama pengirim A–Z' },
+  { value: 'name-desc', label: 'Nama pengirim Z–A' },
 ]
 
 const {
@@ -126,6 +128,8 @@ const {
     oldest: (a, b) => a.createdAt - b.createdAt,
     newest: (a, b) => b.createdAt - a.createdAt,
     'amount-desc': (a, b) => b.amountDue - a.amountDue,
+    'name-asc': (a, b) => a.senderName.localeCompare(b.senderName, 'id'),
+    'name-desc': (a, b) => b.senderName.localeCompare(a.senderName, 'id'),
   },
   defaultFilter: 'all',
   defaultSort: 'oldest',

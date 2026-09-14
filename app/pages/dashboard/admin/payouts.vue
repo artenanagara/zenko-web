@@ -55,6 +55,8 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'oldest', label: 'Terlama diajukan' },
   { value: 'amount-desc', label: 'Nominal terbesar' },
   { value: 'amount-asc', label: 'Nominal terkecil' },
+  { value: 'tutor-asc', label: 'Nama tutor A–Z' },
+  { value: 'tutor-desc', label: 'Nama tutor Z–A' },
 ]
 
 function isActionable(payout: AdminPayout): boolean {
@@ -90,6 +92,8 @@ const {
     oldest: (a, b) => a.requestedAt - b.requestedAt,
     'amount-desc': (a, b) => b.amount - a.amount,
     'amount-asc': (a, b) => a.amount - b.amount,
+    'tutor-asc': (a, b) => a.tutor.name.localeCompare(b.tutor.name, 'id'),
+    'tutor-desc': (a, b) => b.tutor.name.localeCompare(a.tutor.name, 'id'),
   },
   defaultFilter: 'queue',
   defaultSort: 'newest',

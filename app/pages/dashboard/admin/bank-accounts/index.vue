@@ -54,8 +54,20 @@ const FILTER_OPTIONS: TableControlOption[] = [
 const SORT_OPTIONS: TableControlOption[] = [
   { value: 'tutor-asc', label: 'Nama tutor A–Z' },
   { value: 'tutor-desc', label: 'Nama tutor Z–A' },
+  { value: 'newest', label: 'Terbaru diverifikasi' },
+  { value: 'oldest', label: 'Terlama diverifikasi' },
   { value: 'bank-asc', label: 'Bank A–Z' },
 ]
+
+/**
+ * verifiedAt is the only timestamp a saved bank account carries, so "time"
+ * here means when an admin verified it. Rows still waiting sink to the
+ * bottom in both directions — they have no date to sort by, and an admin
+ * looking for the newest verification does not want the unverified on top.
+ */
+function verifiedAtOf(account: AdminBankAccount): number {
+  return account.verifiedAt ?? 0
+}
 
 const {
   search,
@@ -82,6 +94,13 @@ const {
     'tutor-asc': (a, b) => a.tutor.name.localeCompare(b.tutor.name, 'id'),
     'tutor-desc': (a, b) => b.tutor.name.localeCompare(a.tutor.name, 'id'),
     'bank-asc': (a, b) => a.bankLabel.localeCompare(b.bankLabel, 'id'),
+    newest: (a, b) => verifiedAtOf(b) - verifiedAtOf(a),
+    oldest: (a, b) => {
+      const left = verifiedAtOf(a)
+      const right = verifiedAtOf(b)
+      if (!left || !right) return (left ? 0 : 1) - (right ? 0 : 1)
+      return left - right
+    },
   },
   defaultFilter: 'unverified',
   defaultSort: 'tutor-asc',

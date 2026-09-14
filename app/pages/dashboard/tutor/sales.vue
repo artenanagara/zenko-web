@@ -151,6 +151,50 @@ function showEverything() {
   productId.value = ''
 }
 
+/* --------------------------------------------------------------------------
+ * Seleksi massal. A sale has no id of its own — one order can carry several
+ * products — so the row key is orderId+productId, the same pair the overview
+ * list keys on. What a selection of sales is for: adding them up (the total
+ * in the bar) and taking them out (CSV), since nothing about a paid sale can
+ * be changed from here.
+ * ------------------------------------------------------------------------ */
+
+const selected = ref<string[]>([])
+// Typed loosely on purpose: DashboardTable hands rows back as Record<string, any>.
+const saleKey = (sale: Record<string, any>): string => `${sale.orderId}-${sale.productId}`
+
+// A period or product change refetches; drop keys the new list no longer has.
+watch(sales, (list) => {
+  const known = new Set(list.map(saleKey))
+  if (selected.value.some(key => !known.has(key))) {
+    selected.value = selected.value.filter(key => known.has(key))
+  }
+})
+
+const selectedSales = computed(() => {
+  const chosen = new Set(selected.value)
+  return sales.value.filter(sale => chosen.has(saleKey(sale)))
+})
+const selectedShare = computed(() => selectedSales.value.reduce((sum, sale) => sum + sale.share, 0))
+
+function exportSelected() {
+  downloadCsv(
+    `penjualan-zenko-${new Date().toISOString().slice(0, 10)}.csv`,
+    ['Tanggal', 'Invoice', 'Produk', 'Tipe', 'Pembeli', 'Harga', 'Persen bagi hasil', 'Pendapatan bersih', 'Status'],
+    selectedSales.value.map(sale => [
+      formatDate(sale.paidAt),
+      sale.invoice,
+      sale.productTitle,
+      productTypeLabel(sale.productType),
+      sale.buyerName,
+      sale.price,
+      typeof sale.sharePercent === 'number' ? sale.sharePercent : '',
+      sale.share,
+      shareStatusLabel(sale.shareStatus),
+    ]),
+  )
+}
+
 const salesColumns = [
   { key: 'paidAt', label: 'Tanggal' },
   { key: 'productTitle', label: 'Produk' },
@@ -343,35 +387,52 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
           @action="() => navigateTo('/dashboard/tutor/products')"
         />
 
-        <DashboardTable
-          v-else
-          :columns="salesColumns"
-          :data="rows"
-         primary-key="productTitle">
-          <template #cell(paidAt)="{ value }">
-            <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
-          </template>
-          <template #cell(productTitle)="{ item }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.productTitle }}</span>
-            <span class="block text-[0.82rem] text-muted">
-              {{ productTypeLabel(item.productType) }} · {{ item.invoice }}
-            </span>
-          </template>
-          <template #cell(price)="{ value }">
-            <span class="tabular-nums">{{ formatRupiah(value) }}</span>
-          </template>
-          <template #cell(sharePercent)="{ value }">
-            <span class="font-semibold tabular-nums">{{ typeof value === 'number' ? `${value}%` : '—' }}</span>
-          </template>
-          <template #cell(share)="{ item }">
-            <span class="inline-flex items-center gap-2.5">
-              <span class="font-semibold tabular-nums">{{ formatRupiah(item.share) }}</span>
-              <DashboardBadge :tone="shareStatusTone(item.shareStatus)">
-                {{ shareStatusLabel(item.shareStatus) }}
-              </DashboardBadge>
-            </span>
-          </template>
-        </DashboardTable>
+        <template v-else>
+          <DashboardSelectionBar
+            :count="selected.length"
+            item-noun="transaksi"
+            :summary="`Pendapatan bersih ${formatRupiah(selectedShare)}`"
+            @clear="selected = []"
+          >
+            <AppButton variant="outline" size="sm" @click="exportSelected">
+              <AppIcon name="download-simple" :size="14" />
+              Unduh CSV
+            </AppButton>
+          </DashboardSelectionBar>
+
+          <DashboardTable
+            v-model:selected="selected"
+            :columns="salesColumns"
+            :data="rows"
+            :row-key="saleKey"
+            primary-key="productTitle"
+            selectable
+          >
+            <template #cell(paidAt)="{ value }">
+              <span class="whitespace-nowrap">{{ formatDate(value) }}</span>
+            </template>
+            <template #cell(productTitle)="{ item }">
+              <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.productTitle }}</span>
+              <span class="block text-[0.82rem] text-muted">
+                {{ productTypeLabel(item.productType) }} · {{ item.invoice }}
+              </span>
+            </template>
+            <template #cell(price)="{ value }">
+              <span class="tabular-nums">{{ formatRupiah(value) }}</span>
+            </template>
+            <template #cell(sharePercent)="{ value }">
+              <span class="font-semibold tabular-nums">{{ typeof value === 'number' ? `${value}%` : '—' }}</span>
+            </template>
+            <template #cell(share)="{ item }">
+              <span class="inline-flex items-center gap-2.5">
+                <span class="font-semibold tabular-nums">{{ formatRupiah(item.share) }}</span>
+                <DashboardBadge :tone="shareStatusTone(item.shareStatus)">
+                  {{ shareStatusLabel(item.shareStatus) }}
+                </DashboardBadge>
+              </span>
+            </template>
+          </DashboardTable>
+        </template>
       </div>
     </DashboardPanel>
 

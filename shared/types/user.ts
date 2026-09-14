@@ -8,6 +8,8 @@
  */
 export type Role = 'student' | 'tutor' | 'admin'
 
+export type LoginMethod = 'email' | 'google'
+
 /** Signed-in identity, as returned by GET /auth/me. */
 export interface User {
   id: string
@@ -27,6 +29,12 @@ export interface User {
    * since nothing else reads it.
    */
   createdAt: number
+  /**
+   * How the holder signs in: "email" when the account has a password,
+   * "google" otherwise. Like createdAt, only the admin directory endpoints
+   * fill it; absent elsewhere.
+   */
+  loginMethod?: LoginMethod
   /**
    * True only for the tightly allow-listed admin account that may inspect and
    * change tutor revenue-share schedules. This only controls discoverability

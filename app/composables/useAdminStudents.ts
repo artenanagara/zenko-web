@@ -1,4 +1,4 @@
-import type { User } from '#shared/types/user'
+import type { AdminStudentRow } from '#shared/types/admin-directory'
 
 /**
  * Admin's student directory: every account holding the student role.
@@ -12,7 +12,7 @@ import type { User } from '#shared/types/user'
 export function useAdminStudents() {
   const { public: config } = useRuntimeConfig()
 
-  const data = ref<User[]>([])
+  const data = ref<AdminStudentRow[]>([])
   const pending = ref(false)
   const error = ref('')
 
@@ -20,7 +20,7 @@ export function useAdminStudents() {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<User[]>('/admin/students', {
+      data.value = await useApiFetch<AdminStudentRow[]>('/admin/students', {
         baseURL: config.apiBase,
         credentials: 'include',
       })
