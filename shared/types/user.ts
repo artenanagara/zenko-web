@@ -10,8 +10,6 @@ export type Role = 'student' | 'tutor' | 'admin' | 'marketing' | 'editor'
 
 export type LoginMethod = 'email' | 'google'
 
-export type LoginMethod = 'email' | 'google'
-
 /** Signed-in identity, as returned by GET /auth/me. */
 export interface User {
   id: string
