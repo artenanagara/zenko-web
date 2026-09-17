@@ -82,6 +82,10 @@ export default defineNuxtConfig({
     '/pusat-bantuan/peringatan-anti-kecurangan': {
       redirect: { to: '/pusat-bantuan/tampilan-soal-disembunyikan', statusCode: 301 },
     },
+    // Impor soal bukan lagi hanya CSV: Word (.docx) adalah format utamanya.
+    '/pusat-bantuan/impor-soal-csv': {
+      redirect: { to: '/pusat-bantuan/impor-soal-word-csv', statusCode: 301 },
+    },
   },
 
   // lenis.css: tinggi html/body auto + overflow clip saat Lenis dihentikan.
