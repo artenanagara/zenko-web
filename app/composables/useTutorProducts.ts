@@ -307,34 +307,58 @@ export async function importTutorQuestionsDocx(
 }
 
 /**
- * Unduh template DOCX produk ini — dibuat server-side supaya contohnya selalu
- * cocok dengan parser-nya dan baris SUBTES-nya memuat nama subtes asli produk
- * ini. `mode: 'section'` menghilangkan baris SUBTES, untuk impor yang sudah
- * dipatok ke satu subtes.
+ * Unduh template soal produk ini, DOCX atau CSV.
+ *
+ * Keduanya dibuat server-side dari satu daftar contoh yang sama
+ * (zenko-api/internal/docximport) dan dibentuk mengikuti kategori ujian produk
+ * ini: contohnya hanya memuat jenis soal yang diterima subtesnya, dengan
+ * jumlah opsi dan skala bobot yang dipakai kategori itu. Tutor tidak bisa
+ * mengunduh contoh yang justru akan ditolak saat diimpor.
+ *
+ * `sectionId` mempersempit template ke satu subtes sekaligus menghilangkan
+ * baris/kolom SUBTES — cakupannya sudah dijawab di modal impor.
  */
-export async function downloadTutorDocxTemplate(
+export async function downloadTutorQuestionTemplate(
   productId: string,
-  options: { mode?: 'section' | 'combined', filename?: string } = {},
+  options: { format: 'docx' | 'csv', sectionId?: string },
   workspace?: ProductWorkspace,
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
-  // $fetch langsung, bukan useApiFetch: helper itu diketik untuk respons JSON
-  // (FetchOptions<'json'>) sementara yang diunduh di sini adalah berkas biner.
-  // Tidak ada yang hilang — token CSRF hanya dipasang untuk method yang
-  // mengubah data, dan ini GET.
-  const blob = await $fetch<Blob>(`${productsRoot(workspace)}/${productId}/questions/template.docx`, {
-    baseURL: config.apiBase,
-    method: 'GET',
-    query: options.mode ? { mode: options.mode } : undefined,
-    responseType: 'blob',
-    credentials: 'include',
-  })
+  const query: Record<string, string> = {}
+  if (options.sectionId) query.sectionId = options.sectionId
 
+  // $fetch langsung, bukan useApiFetch: helper itu diketik untuk respons JSON
+  // (FetchOptions<'json'>) sementara yang diunduh di sini adalah berkas. Tidak
+  // ada yang hilang — token CSRF hanya dipasang untuk method yang mengubah
+  // data, dan ini GET.
+  const response = await $fetch.raw<Blob>(
+    `${productsRoot(workspace)}/${productId}/questions/template.${options.format}`,
+    { baseURL: config.apiBase, method: 'GET', query, responseType: 'blob', credentials: 'include' },
+  )
+
+  const blob = response._data
+  if (!blob) throw new Error('Template kosong')
+
+  saveBlob(blob, filenameFromResponse(response.headers) ?? `template-soal.${options.format}`)
+}
+
+/**
+ * Nama berkas dari header Content-Disposition, supaya nama yang tersimpan sama
+ * dengan yang ditentukan server (mengandung jenis soal dan judul produk).
+ * Null kalau headernya tidak terbaca — beberapa proxy membuangnya.
+ */
+function filenameFromResponse(headers: Headers): string | null {
+  const disposition = headers.get('content-disposition')
+  const match = disposition?.match(/filename="?([^";]+)"?/i)
+  return match?.[1] ?? null
+}
+
+function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = options.filename ?? 'template-soal-zenko.docx'
+  link.download = filename
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

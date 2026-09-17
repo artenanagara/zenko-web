@@ -72,6 +72,15 @@ function wrapOptionCellHtml(cell: string): string {
 }
 
 /**
+ * Bungkus teks pertanyaan jadi paragraf HTML. Hanya dipakai ketika ada
+ * `gambarSoal` — tanpa gambar, teksnya diserahkan apa adanya seperti
+ * sebelumnya supaya perilaku lama tidak berubah.
+ */
+function wrapPromptCellHtml(cell: string): string {
+  return cell ? `<p>${escapeHtml(cell)}</p>` : ''
+}
+
+/**
  * Parse satu baris (lewat `cell(kolom)`) jadi QuestionDraft — logic ini sama
  * persis untuk impor per subtes maupun gabungan, cuma diberi arti baris/kolom
  * `subtes` tambahan di pemanggil masing-masing.
@@ -87,6 +96,17 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
   const explanation = cell('pembahasan')
   if (!prompt) return { ok: false, error: 'kolom pertanyaan kosong.' }
   if (!explanation) return { ok: false, error: 'pembahasan wajib diisi.' }
+
+  // `gambarSoal` adalah satu-satunya cara gambar masuk ke pertanyaan lewat
+  // CSV: sel spreadsheet hanya memuat teks, jadi yang bisa ditulis di sana
+  // adalah URL gambar yang sudah publik. Impor DOCX menyisipkan gambarnya
+  // sendiri; di sini tutor yang menyediakan alamatnya. URL yang bukan http(s)
+  // ditolak di server (validateQuestionImageURL), jadi tidak perlu ditebak di
+  // sini — cukup dipasang sebagai <img> pertama pada pertanyaan.
+  const promptImage = cell('gambarsoal')
+  const promptHtml = promptImage
+    ? `<p><img src="${escapeHtml(promptImage)}" alt=""></p>${wrapPromptCellHtml(prompt)}`
+    : prompt
 
   const base = { ...(stimulus ? { stimulus } : {}) }
   // Sel opsi CSV masih teks polos + `$..$` (tutor tidak bisa mengetik HTML
@@ -114,7 +134,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
     if (!options.some(option => option.isCorrect)) {
       return { ok: false, error: 'kolom kunci harus salah satu huruf opsi yang terisi (A–E).' }
     }
-    return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+    return { ok: true, question: { kind, prompt: promptHtml, explanation, options, ...base } }
   }
 
   if (kind === 'multiple_choice' || kind === 'assertion_reason' || kind === 'associative_choice') {
@@ -129,7 +149,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
     if (options.length < 2 || options.filter(option => option.isCorrect).length < requiredCorrect) {
       return { ok: false, error: kind === 'multiple_choice' ? 'kolom kunci harus memuat minimal dua huruf opsi.' : 'kolom kunci harus memuat satu huruf opsi.' }
     }
-    return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+    return { ok: true, question: { kind, prompt: promptHtml, explanation, options, ...base } }
   }
 
   if (kind === 'weighted') {
@@ -149,7 +169,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
     })
     if (weightProblem) return { ok: false, error: 'tiap opsi berbobot butuh bobot bilangan bulat ≥ 0.' }
     if (options.length < 2) return { ok: false, error: 'minimal dua opsi terisi.' }
-    return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+    return { ok: true, question: { kind, prompt: promptHtml, explanation, options, ...base } }
   }
 
   if (kind === 'true_false') {
@@ -164,7 +184,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
       text: statement,
       isCorrect: keys[at] === true,
     }))
-    return { ok: true, question: { kind, prompt, explanation, options, ...base } }
+    return { ok: true, question: { kind, prompt: promptHtml, explanation, options, ...base } }
   }
 
   if (kind === 'matching') {
@@ -174,7 +194,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
     if (leftOptions.length < 2 || rightItems.length !== leftOptions.length || leftOptions.some(option => !pairs[option.label])) {
       return { ok: false, error: 'matching membutuhkan jumlah item kiri/kanan yang sama dan pasangan pada kolom kunci.' }
     }
-    return { ok: true, question: { kind, prompt, explanation, options: leftOptions, matching: { items: rightItems, pairs }, ...base } }
+    return { ok: true, question: { kind, prompt: promptHtml, explanation, options: leftOptions, matching: { items: rightItems, pairs }, ...base } }
   }
 
   if (kind === 'ordering') {
@@ -186,7 +206,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
     if (options.length < 2 || ordering.length !== options.length || new Set(ordering).size !== options.length || options.some(option => !ordering.includes(option.label))) {
       return { ok: false, error: 'ordering membutuhkan urutan semua label opsi pada kolom kunci.' }
     }
-    return { ok: true, question: { kind, prompt, explanation, options, ordering, ...base } }
+    return { ok: true, question: { kind, prompt: promptHtml, explanation, options, ordering, ...base } }
   }
 
   // isian_singkat
@@ -194,7 +214,7 @@ function parseQuestionRow(cell: (name: string) => string, _expectedKind: Questio
   if (answers.length === 0) {
     return { ok: false, error: 'kolom jawabanIsian wajib berisi minimal satu jawaban (pisahkan dengan ";").' }
   }
-  return { ok: true, question: { kind, prompt, explanation, answers, ...base } }
+  return { ok: true, question: { kind, prompt: promptHtml, explanation, answers, ...base } }
 }
 
 export function parseQuestionCsv(text: string, section: Pick<TutorSection, 'defaultKind'>): QuestionCsvResult {
@@ -366,94 +386,6 @@ function parseTrueFalse(raw: string): boolean | null {
   return null
 }
 
-const CSV_TEMPLATE_HEADER = [
-  'tipe', 'wacana', 'pertanyaan', 'pembahasan',
-  'opsiA', 'opsiB', 'opsiC', 'opsiD', 'opsiE',
-  'gambarOpsiA', 'gambarOpsiB', 'gambarOpsiC', 'gambarOpsiD', 'gambarOpsiE',
-  'kunci', 'bobotA', 'bobotB', 'bobotC', 'bobotD', 'bobotE', 'jawabanIsian',
-]
-
-/** Nilai kolom `tipe` yang diharapkan untuk tiap kind — dipakai template dan pesan error. */
-export const TEMPLATE_KIND_CELL: Record<QuestionKind, string> = {
-  single_choice: 'pilihan_ganda',
-  multiple_choice: 'pilihan_ganda_kompleks',
-  weighted: 'berbobot',
-  true_false: 'benar_salah',
-  short_answer: 'isian_singkat',
-  assertion_reason: 'sebab_akibat',
-  associative_choice: 'asosiatif',
-  matching: 'menjodohkan',
-  ordering: 'mengurutkan',
-}
-
-/**
- * Template CSV kosong untuk satu subtes — header resmi + satu baris contoh
- * berisi `tipe` sesuai `defaultKind` subtes, supaya tutor tinggal isi.
- */
-export function buildQuestionCsvTemplate(section: Pick<TutorSection, 'defaultKind'>): string {
-  const exampleRow = CSV_TEMPLATE_HEADER.map((column) => {
-    if (column === 'tipe') return TEMPLATE_KIND_CELL[section.defaultKind]
-    return ''
-  })
-  return [CSV_TEMPLATE_HEADER, exampleRow].map(row => row.map(csvCell).join(',')).join('\r\n')
-}
-
-const CSV_TEMPLATE_HEADER_COMBINED = ['subtes', ...CSV_TEMPLATE_HEADER]
-
-/**
- * Template CSV untuk impor gabungan (§7.4) — header + kolom `subtes`, dan
- * satu baris contoh per subtes produk ini berisi nama subtes-nya persis
- * (bukan placeholder generik) supaya tutor tidak salah ketik.
- */
-export function buildCombinedQuestionCsvTemplate(
-  sections: Pick<TutorSection, 'title' | 'defaultKind'>[],
-): string {
-  const exampleRows = sections.map(section =>
-    CSV_TEMPLATE_HEADER_COMBINED.map((column) => {
-      if (column === 'subtes') return section.title
-      if (column === 'tipe') return TEMPLATE_KIND_CELL[section.defaultKind]
-      return ''
-    }),
-  )
-  return [CSV_TEMPLATE_HEADER_COMBINED, ...exampleRows].map(row => row.map(csvCell).join(',')).join('\r\n')
-}
-
-function csvCell(value: string): string {
-  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-}
-
-/** Trigger unduhan file lewat Blob + <a> sementara — tanpa dependency baru. */
-export function downloadCsvTemplate(section: Pick<TutorSection, 'title' | 'defaultKind'>): void {
-  const csv = buildQuestionCsvTemplate(section)
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `question-template-${slugifyFilename(section.title)}.csv`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
-/** Trigger unduhan template gabungan — sama seperti downloadCsvTemplate. */
-export function downloadCombinedCsvTemplate(sections: Pick<TutorSection, 'title' | 'defaultKind'>[]): void {
-  const csv = buildCombinedQuestionCsvTemplate(sections)
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = 'template-soal-gabungan.csv'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
-function slugifyFilename(title: string): string {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-  return slug || 'subtes'
-}
 
 /**
  * Pemecah CSV kecil dengan dukungan tanda kutip ("...", "" sebagai escape) dan

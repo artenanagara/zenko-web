@@ -74,7 +74,6 @@ const docxFile = ref<File | null>(null)
  * "tabel" untuk DOCX, "baris" untuk CSV.
  */
 const importedAsDocx = ref(false)
-const downloadingTemplate = ref(false)
 const parsed = ref<QuestionDraft[]>([])
 const combinedParsed = ref<QuestionImportDraft[]>([])
 const parseErrors = ref<string[]>([])
@@ -360,22 +359,31 @@ function clearFileSelection() {
   if (fileInput.value) fileInput.value.value = ''
 }
 
+/** Format yang sedang diunduh, atau null — menonaktifkan kedua tombolnya. */
+const downloadingTemplate = ref<'docx' | 'csv' | null>(null)
+
 /**
- * Unduh template DOCX produk ini. Dibuat server-side (lihat
- * internal/docximport di zenko-api) supaya contoh di dalamnya selalu cocok
- * dengan parser yang akan membacanya kembali, dan supaya baris SUBTES-nya
- * memuat nama subtes produk ini, bukan placeholder yang harus ditebak.
+ * Unduh template produk ini. Isinya dibentuk server-side mengikuti kategori
+ * ujian produk (lihat zenko-api/internal/docximport): contoh yang dimuat hanya
+ * jenis soal yang diterima subtesnya, dengan jumlah opsi dan skala bobot
+ * kategori itu. Tidak ada yang perlu dipilih di sini — kategori produk sudah
+ * menjawabnya, dan menawarkan pilihan lain hanya akan menghasilkan contoh yang
+ * ditolak saat diimpor.
  */
-async function downloadDocxTemplate() {
-  downloadingTemplate.value = true
+async function downloadTemplate(format: 'docx' | 'csv') {
+  downloadingTemplate.value = format
   try {
-    await downloadTutorDocxTemplate(props.productId, { mode: mode.value }, props.workspace)
+    await downloadTutorQuestionTemplate(
+      props.productId,
+      { format, sectionId: mode.value === 'section' ? props.section.id : undefined },
+      props.workspace,
+    )
   }
   catch (cause) {
-    toast.error('Template DOCX belum berhasil diunduh.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+    toast.error('Template belum berhasil diunduh.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
   }
   finally {
-    downloadingTemplate.value = false
+    downloadingTemplate.value = null
   }
 }
 
@@ -388,70 +396,63 @@ function reset() {
 </script>
 
 <template>
-  <!-- min-w-0: di dalam modal, daftar header CSV di bawah adalah satu token
-       tanpa spasi yang lebih lebar dari dialognya; tanpa ini grid melebar
-       mengikuti token itu dan seluruh kartu menembus tepi modal. -->
-  <div class="grid min-w-0 gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
-    <p v-if="mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
-      Satu file CSV bisa berisi soal dari beberapa subtes produk ini sekaligus — kolom
-      <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
-      di tiap baris menentukan section tujuannya (dicocokkan ke nama subtes produk ini,
-      tidak peka huruf besar/kecil). Baris dengan nama subtes salah ketik dilaporkan
-      sebagai error spesifik, bukan menggagalkan seluruh file.
+  <!-- min-w-0: panel ini hidup di dalam modal, dan nama berkas yang dipilih
+       bisa jadi satu token tanpa spasi yang lebih lebar dari dialognya; tanpa
+       ini grid melebar mengikuti token itu dan kartunya menembus tepi modal. -->
+  <div class="grid min-w-0 gap-4 rounded-md border border-hairline bg-surface px-4 py-4">
+    <!-- Satu penjelasan untuk kedua format, bukan satu blok per format.
+         Yang berbeda di antara DOCX dan CSV adalah isi templatenya, bukan cara
+         memakainya — menjelaskan keduanya terpisah membuat panel ini bertumpuk
+         dan menyuruh tutor membaca hal yang sama dua kali. Aturan detail tiap
+         jenis soal ada di dalam templatenya sendiri, tempat yang memang dibaca
+         saat menulis soal. -->
+    <p class="text-[0.84rem] leading-[1.7] text-muted">
+      Satu soal per tabel (Word) atau per baris (CSV). Unduh templatenya, isi, lalu unggah
+      kembali di bawah. Templatenya sudah disesuaikan dengan kategori ujian produk ini —
+      berisi contoh terisi untuk tiap jenis soal yang diterima, lengkap dengan aturan kunci,
+      jumlah opsi, dan skala bobotnya.
+      <template v-if="mode === 'combined'">
+        Satu berkas boleh memuat soal dari beberapa subtes sekaligus —
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">SUBTES</code>
+        tiap soal yang menentukan tujuannya.
+      </template>
+      <template v-else>
+        Semua soal masuk ke <strong class="font-semibold text-ink">{{ section.title }}</strong>.
+      </template>
     </p>
 
-    <!-- Dua format, satu input berkas. Word didahulukan karena bank soal
-         guru hampir selalu sudah berupa dokumen Word; CSV tetap ada untuk
-         bank soal yang memang lahir di spreadsheet. -->
-    <div class="grid gap-2 rounded-md border border-hairline bg-surface-sunken/60 px-4 py-3">
-      <p class="text-[0.84rem] leading-[1.7] text-muted">
-        <strong class="font-semibold text-ink">Word (.docx)</strong> — satu tabel untuk satu soal, kolom kiri
-        nama baris (TIPE, SOAL, A–E, KUNCI, …), kolom kanan isinya. Gambar, teks Arab, tabel,
-        format tebal/miring, dan rumus LaTeX
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">$...$</code>
-        ikut terbawa. Template di bawah sudah berisi contoh untuk kesembilan jenis soal Zenko.
-      </p>
-      <div>
+    <div class="grid gap-3 rounded-md border border-hairline bg-surface-sunken/50 px-4 py-3.5">
+      <!-- Dua tombol setara: formatnya pilihan tutor, bukan rekomendasi kami.
+           Tidak ada pilihan lain di sini — isi templatenya sudah ditentukan
+           kategori ujian produk ini. -->
+      <div class="grid gap-2 sm:grid-cols-2">
         <AppButton
           type="button"
           size="sm"
           variant="outline"
-          :disabled="downloadingTemplate"
-          @click="downloadDocxTemplate"
+          :disabled="downloadingTemplate !== null"
+          @click="downloadTemplate('docx')"
         >
           <AppIcon name="file-doc" :size="16" aria-hidden="true" />
-          {{ downloadingTemplate ? 'Menyiapkan...' : 'Unduh Template DOCX' }}
+          {{ downloadingTemplate === 'docx' ? 'Menyiapkan...' : 'Template Word (.docx)' }}
+        </AppButton>
+        <AppButton
+          type="button"
+          size="sm"
+          variant="outline"
+          :disabled="downloadingTemplate !== null"
+          @click="downloadTemplate('csv')"
+        >
+          <AppIcon name="file-csv" :size="16" aria-hidden="true" />
+          {{ downloadingTemplate === 'csv' ? 'Menyiapkan...' : 'Template CSV' }}
         </AppButton>
       </div>
-    </div>
 
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <p v-if="mode === 'section'" class="min-w-0 max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
-        Header yang dikenali:
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem] break-all">tipe,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
-        Kolom yang tidak terpakai boleh kosong. Kolom
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> harus
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">{{ TEMPLATE_KIND_CELL[section.defaultKind] }}</code>
-        sebagai contoh awal. Tipe soal dapat berbeda di setiap baris.
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">kunci</code>
-        berisi huruf A–E untuk pilihan ganda, atau daftar B/S dipisah ";" untuk
-        soal Benar/Salah. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">jawabanIsian</code>
-        dipisah ";" untuk isian singkat. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
-        dan <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">gambarOpsi*</code> opsional.
+      <p class="text-[0.78rem] leading-[1.6] text-muted">
+        Isi keduanya sama; yang berbeda cuma bentuknya. Pilih Word kalau soalmu memuat gambar,
+        rumus, teks Arab, atau tabel — gambar disisipkan langsung ke dalam sel dan diunggah
+        otomatis saat impor. CSV hanya memuat teks; gambarnya harus berupa URL.
       </p>
-      <p v-else class="min-w-0 max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
-        Header sama seperti template per subtes, ditambah kolom pertama
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code> (wajib diisi).
-        Kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> tiap baris
-        menentukan tipe jawaban untuk baris tersebut (lihat contoh di template).
-      </p>
-      <button
-        type="button"
-        class="shrink-0 text-[0.84rem] font-semibold text-primary hover:underline"
-        @click="mode === 'combined' ? downloadCombinedCsvTemplate(props.sections) : downloadCsvTemplate(section)"
-      >
-        Unduh Template CSV
-      </button>
     </div>
 
     <div>

@@ -543,7 +543,7 @@ const activeSectionDotClass = computed(() =>
           <span>
             <span class="block font-bold tracking-[-0.02em] text-ink">Satu subtes saja</span>
             <span class="mt-1 block text-[0.84rem] leading-[1.6] text-muted">
-              Semua baris masuk ke <strong class="font-semibold text-ink">{{ activeSection?.title }}</strong>,
+              Semua soal masuk ke <strong class="font-semibold text-ink">{{ activeSection?.title }}</strong>,
               subtes yang sedang kamu buka.
             </span>
           </span>
