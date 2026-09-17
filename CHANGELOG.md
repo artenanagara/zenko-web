@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.0](https://github.com/artenanagara/zenko-web/compare/v0.27.0...v0.28.0) (2026-09-17)
+
+
+### Features
+
+* **admin:** scope admin.zenkoedu.id to the admin dashboard ([f266a17](https://github.com/artenanagara/zenko-web/commit/f266a177d77b2741b3182f02537b9822a303a724))
+
 ## [0.27.0](https://github.com/artenanagara/zenko-web/compare/v0.26.0...v0.27.0) (2026-09-17)
 
 
