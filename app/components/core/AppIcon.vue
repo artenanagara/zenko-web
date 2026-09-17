@@ -30,6 +30,7 @@ import PhEar from '@phosphor-icons/vue/dist/icons/PhEar.vue'
 import PhEnvelopeSimple from '@phosphor-icons/vue/dist/icons/PhEnvelopeSimple.vue'
 import PhEye from '@phosphor-icons/vue/dist/icons/PhEye.vue'
 import PhFileCsv from '@phosphor-icons/vue/dist/icons/PhFileCsv.vue'
+import PhFileDoc from '@phosphor-icons/vue/dist/icons/PhFileDoc.vue'
 import PhFileText from '@phosphor-icons/vue/dist/icons/PhFileText.vue'
 import PhFiles from '@phosphor-icons/vue/dist/icons/PhFiles.vue'
 import PhFolderLock from '@phosphor-icons/vue/dist/icons/PhFolderLock.vue'
@@ -114,7 +115,7 @@ const ICONS: Record<string, any> = {
   check: PhCheck, 'check-circle': PhCheckCircle, clock: PhClock, code: PhCode, 'code-simple': PhCodeSimple,
   copy: PhCopy, 'currency-circle-dollar': PhCurrencyCircleDollar, 'download-simple': PhDownloadSimple,
   ear: PhEar, 'envelope-simple': PhEnvelopeSimple, eye: PhEye, 'file-csv': PhFileCsv,
-  'file-text': PhFileText, files: PhFiles, 'folder-lock': PhFolderLock, globe: PhGlobe,
+  'file-doc': PhFileDoc, 'file-text': PhFileText, files: PhFiles, 'folder-lock': PhFolderLock, globe: PhGlobe,
   'graduation-cap': PhGraduationCap, handshake: PhHandshake, highlighter: PhHighlighter,
   'hourglass-medium': PhHourglassMedium, image: PhImage, info: PhInfo, 'instagram-logo': PhInstagramLogo,
   lightning: PhLightning, link: PhLink, 'linkedin-logo': PhLinkedinLogo, 'list-bullets': PhListBullets,

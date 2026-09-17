@@ -81,7 +81,7 @@ export const helpCategories: HelpCategory[] = [
   {
     slug: 'portal-tutor',
     title: 'Portal Tutor: Pembuatan Soal dan Penjualan',
-    description: 'Ajukan akun tutor, buat paket, input soal, impor CSV, rekening, dan pencairan.',
+    description: 'Ajukan akun tutor, buat paket, input soal, impor dari Word atau CSV, rekening, dan pencairan.',
     icon: 'handshake',
   },
   {
@@ -720,43 +720,89 @@ export const helpArticles: HelpArticle[] = [
     keywords: ['editor soal', 'katex', 'rumus matematika', 'gambar soal', 'tkp berbobot'],
   },
   {
-    slug: 'impor-soal-csv',
+    slug: 'impor-soal-word-csv',
     categorySlug: 'portal-tutor',
-    title: 'Impor Soal Massal via CSV',
+    title: 'Impor Soal dari Word atau CSV',
     roles: ['tutor'],
-    updated: '11 September 2026',
-    readMinutes: 3,
-    summary: 'Unggah banyak soal sekaligus lewat file CSV.',
-    prerequisites: ['Sedang berada di langkah Soal pada pembuatan paket.', 'Punya aplikasi spreadsheet seperti Excel atau Google Sheets.'],
+    updated: '17 September 2026',
+    readMinutes: 5,
+    summary: 'Unggah bank soal yang sudah kamu punya: satu tabel per soal di Word (.docx), atau satu baris per soal di CSV.',
+    prerequisites: [
+      'Sedang berada di langkah Soal pada pembuatan paket.',
+      'Punya Microsoft Word atau Google Docs untuk format .docx, atau Excel / Google Sheets untuk CSV.',
+    ],
     steps: [
       {
         title: 'Buka impor soal',
-        body: 'Di editor subtes, klik "Impor soal", lalu pilih impor untuk subtes ini saja atau impor gabungan untuk beberapa subtes sekaligus.',
+        body: 'Di editor subtes, klik "Impor soal". Kalau paketmu punya lebih dari satu subtes, pilih dulu: impor ke subtes yang sedang dibuka saja, atau satu berkas untuk semua subtes sekaligus.',
       },
       {
-        title: 'Unduh template',
-        body: 'Klik "Unduh Template CSV" untuk mendapatkan berkas contoh dengan kolom yang sesuai. Template gabungan punya kolom tambahan untuk nama subtes.',
+        title: 'Unduh templatenya',
+        body: 'Ada dua tombol setara: "Template Word (.docx)" dan "Template CSV". Isinya sama; yang berbeda cuma bentuk berkasnya. Templatenya dibentuk otomatis mengikuti kategori ujian paketmu — yang muncul di dalamnya hanya jenis soal yang subtesmu terima, lengkap dengan jumlah opsi dan skala bobot yang berlaku. Paket SKD, misalnya, hanya memuat pilihan ganda dan soal berbobot, semuanya dengan lima pilihan.',
+        note: {
+          appearance: 'information',
+          body: 'Pilih Word kalau soalmu memuat gambar, rumus, teks Arab, atau tabel. CSV hanya memuat teks.',
+        },
       },
       {
-        title: 'Lengkapi dan simpan',
-        body: 'Buka template di Excel atau Google Sheets, lengkapi kolomnya, lalu simpan sebagai .csv (UTF-8).',
+        title: 'Isi templatenya',
+        body: 'Di Word, satu tabel = satu soal: kolom kiri nama baris (TIPE, SOAL, A–E, KUNCI, PEMBAHASAN), kolom kanan isinya. Jangan mengubah tulisan di kolom kiri. Di CSV, satu baris = satu soal dengan nama kolom yang sama. Setiap template sudah berisi contoh yang terisi penuh, jadi paling cepat dengan menyalin tabel contohnya lalu mengganti isinya.',
+        note: {
+          appearance: 'information',
+          body: 'Semua teks di luar tabel diabaikan saat impor — judul, petunjuk, kop sekolah, nomor halaman. Tabel yang dibiarkan kosong juga dilewati, jadi sisa tabel yang tidak terpakai tidak akan jadi error.',
+        },
       },
       {
-        title: 'Unggah dan periksa laporan',
-        body: 'Unggah berkas CSV-nya. Zenko menampilkan jumlah soal yang berhasil diimpor.',
+        title: 'Sisipkan gambar langsung di Word',
+        body: 'Taruh gambarnya di dalam sel SOAL, WACANA, PEMBAHASAN, atau sel pilihan lewat Insert → Picture. Zenko mengunggahnya sendiri saat impor dan menaruhnya kembali di posisi yang sama di antara kalimatnya. Pakai PNG atau JPG.',
         note: {
           appearance: 'warning',
-          body: 'Baris dengan kolom tidak lengkap atau format yang salah dilewati. Daftar baris yang dilewati tampil di panel impor. Perbaiki baris tersebut lalu unggah ulang.',
+          body: 'Gambar vektor yang ditempel dari aplikasi lain (format EMF/WMF) tidak bisa dibaca dan akan dilaporkan supaya bisa kamu sisipkan ulang lewat editor soal. Di CSV gambar hanya bisa berupa alamat URL di kolom gambarSoal atau gambarOpsiA–E.',
+        },
+      },
+      {
+        title: 'Satu bacaan untuk beberapa soal',
+        body: 'Di Word, tulis bacaannya satu kali di tabel WACANA tersendiri — tabel yang punya baris WACANA tapi tidak punya baris SOAL. Soal-soal di tabel sesudahnya otomatis menempel ke bacaan itu, maksimal 7 soal per bacaan, sampai ada tabel WACANA berikutnya. Kalau ada soal yang tidak memakai bacaan itu, tulis tanda minus (-) di baris WACANA soal tersebut.',
+        note: {
+          appearance: 'information',
+          body: 'Di CSV, soal-soal berurutan yang isi kolom wacana-nya sama persis digabung menjadi satu bacaan. Contoh wacana bersama yang sudah terisi ada di dalam template Word.',
+        },
+      },
+      {
+        title: 'Unggah dan baca laporannya',
+        body: 'Pilih berkasnya, lalu klik tombol impor. Zenko menampilkan berapa soal yang masuk dan daftar tabel atau baris yang dilewati beserta alasannya.',
+        note: {
+          appearance: 'warning',
+          body: 'Di Word (dan CSV semua subtes), satu soal yang salah tidak membatalkan soal lain: yang benar tetap masuk, yang bermasalah dilaporkan satu per satu. Di CSV untuk satu subtes, baris yang tidak terbaca dilewati sebelum dikirim, tetapi kalau server menolak salah satu baris sisanya, seluruh berkas ditolak — perbaiki baris yang disebut, lalu unggah ulang.',
         },
       },
     ],
     troubleshooting: [
       {
-        question: 'Sebagian baris gagal diimpor, apa penyebab paling umum?',
-        answer: 'Biasanya kolom wajib kosong, format kunci jawaban tidak sesuai template, atau file tidak disimpan sebagai CSV UTF-8.',
+        question: 'Soal uraian saya ditolak. Kenapa?',
+        answer: 'Zenko menilai jawaban secara otomatis, jadi belum ada soal uraian yang dinilai manual. Tulis soalnya sebagai isian_singkat, lalu isi baris JAWABAN dengan semua jawaban yang kamu terima, dipisah titik koma. Penilaiannya mengabaikan besar-kecil huruf dan spasi di tepi.',
+      },
+      {
+        question: 'Rumus matematika saya berantakan setelah diimpor.',
+        answer: 'Tulis rumus dengan LaTeX di antara tanda dolar, misalnya $\\frac{3}{4}$ atau $x^2$. Rumus yang dibuat dengan Equation Word hanya terbaca sebagai teks biasa dan perlu ditulis ulang di editor soal.',
+      },
+      {
+        question: 'Laporan bilang "subtes tidak ditemukan pada produk ini".',
+        answer: 'Nama di baris atau kolom SUBTES harus sama persis dengan nama subtes di paketmu. Daftar nama yang berlaku tercetak di bagian "Aturan subtes pada produk ini" di atas template Word; di CSV, salin dari daftar subtes di editor. Besar-kecil huruf dan spasi di tepi tidak masalah, tapi salah ketik akan membuat soalnya dilewati.',
+      },
+      {
+        question: 'Laporan bilang jenis soal saya tidak diizinkan untuk subtes ini.',
+        answer: 'Sebagian kategori mengunci jenis soal per subtes — SKD, misalnya, hanya menerima pilihan ganda di TWK/TIU dan soal berbobot di TKP. Aturan tiap subtes tercetak di bagian atas template Word, dan contoh yang dimuat kedua template hanya jenis yang memang diterima.',
+      },
+      {
+        question: 'Sebagian soal dilewati dengan alasan subtes sudah mencapai target.',
+        answer: 'Dari Word, soal berhenti masuk begitu jumlah soal subtes mencapai targetnya; tabel sisanya dilaporkan dilewati. Hapus soal yang tidak terpakai lebih dulu, atau kurangi jumlah soal di berkasmu, lalu unggah ulang sisanya. Dari CSV untuk satu subtes, kalau jumlah barisnya melebihi sisa kuota tapi masih muat di target, Zenko menawarkan menimpa seluruh soal subtes itu dengan isi berkasmu — konfirmasi dulu, karena soal yang ditulis tangan ikut terhapus. Kalau melebihi target, tombol impornya dimatikan sampai berkasnya dikurangi.',
       },
     ],
-    keywords: ['impor csv', 'upload soal', 'template csv', 'soal massal', 'excel'],
+    keywords: [
+      'impor soal', 'impor word', 'docx', 'impor csv', 'upload soal', 'template soal',
+      'soal massal', 'excel', 'gambar soal', 'wacana', 'bacaan',
+    ],
   },
   {
     slug: 'rekening-bank-tutor',
