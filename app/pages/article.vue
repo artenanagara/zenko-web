@@ -201,13 +201,19 @@ onUnmounted(() => {
               </div>
             </header>
 
-            <img
-              v-if="article.coverUrl"
-              :src="article.coverUrl"
-              :alt="article.coverAlt || article.title"
-              fetchpriority="high"
-              class="mt-9 aspect-16/9 w-full rounded-[20px] object-cover"
-            >
+            <!-- Sampul. Lewat komponen yang sama dengan kartu di indeks,
+                 jadi artikel tanpa gambar unggahan tetap punya sampul
+                 bermerek alih-alih langsung melompat dari judul ke badan
+                 teks — dan sampul yang sama mengiringi artikel itu di mana
+                 pun ia muncul. Lebih rendah dari 16/9 di layar lebar: ini
+                 pengiring artikel, bukan hero yang mendorong paragraf
+                 pertama keluar layar. -->
+            <MarketingArticleCover
+              :article="article"
+              eager
+              size="page"
+              class="mt-9 aspect-16/9 w-full rounded-[20px] md:aspect-[2.4/1]"
+            />
 
             <!-- ==========================================================
                  Badan artikel
