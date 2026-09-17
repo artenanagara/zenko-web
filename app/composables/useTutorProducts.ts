@@ -272,6 +272,75 @@ export async function importTutorQuestions(
   })
 }
 
+/**
+ * POST /tutor/products/:id/questions/import-docx — impor bank soal Word.
+ *
+ * Berkasnya diurai di server (lihat internal/docximport di zenko-api):
+ * .docx adalah arsip zip yang tidak bisa dibuka browser tanpa dependensi
+ * baru, gambarnya harus lewat pipeline unggah, dan HTML hasil bacanya harus
+ * disanitasi oleh policy yang sama dengan field soal lain. Jadi di sini tidak
+ * ada parsing sama sekali — berkasnya dikirim apa adanya.
+ *
+ * `sectionId` membuat seluruh soal masuk ke satu subtes dan membuat baris
+ * SUBTES di dokumen diabaikan; tanpa itu tiap tabel dicocokkan lewat baris
+ * SUBTES-nya sendiri. Sama seperti impor CSV, tabel yang gagal masuk
+ * `problems` dan tidak menggagalkan tabel lain.
+ */
+export async function importTutorQuestionsDocx(
+  productId: string,
+  file: File,
+  options: { sectionId?: string } = {},
+  workspace?: ProductWorkspace,
+): Promise<QuestionImportResult> {
+  const { public: config } = useRuntimeConfig()
+
+  const body = new FormData()
+  body.append('file', file)
+  if (options.sectionId) body.append('sectionId', options.sectionId)
+
+  return await useApiFetch<QuestionImportResult>(`${productsRoot(workspace)}/${productId}/questions/import-docx`, {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body,
+    credentials: 'include',
+  })
+}
+
+/**
+ * Unduh template DOCX produk ini — dibuat server-side supaya contohnya selalu
+ * cocok dengan parser-nya dan baris SUBTES-nya memuat nama subtes asli produk
+ * ini. `mode: 'section'` menghilangkan baris SUBTES, untuk impor yang sudah
+ * dipatok ke satu subtes.
+ */
+export async function downloadTutorDocxTemplate(
+  productId: string,
+  options: { mode?: 'section' | 'combined', filename?: string } = {},
+  workspace?: ProductWorkspace,
+): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  // $fetch langsung, bukan useApiFetch: helper itu diketik untuk respons JSON
+  // (FetchOptions<'json'>) sementara yang diunduh di sini adalah berkas biner.
+  // Tidak ada yang hilang — token CSRF hanya dipasang untuk method yang
+  // mengubah data, dan ini GET.
+  const blob = await $fetch<Blob>(`${productsRoot(workspace)}/${productId}/questions/template.docx`, {
+    baseURL: config.apiBase,
+    method: 'GET',
+    query: options.mode ? { mode: options.mode } : undefined,
+    responseType: 'blob',
+    credentials: 'include',
+  })
+
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = options.filename ?? 'template-soal-zenko.docx'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 /** PATCH satu soal — full replace isi soal, bentuk sama dengan create. */
 export async function updateTutorQuestion(
   productId: string,
