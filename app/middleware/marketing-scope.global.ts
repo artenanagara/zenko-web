@@ -12,7 +12,10 @@ const AUTH_PATHS = new Set([
 ])
 
 export default defineNuxtRouteMiddleware((to) => {
-  const hostname = useRequestURL().hostname
+  const hostname = import.meta.server
+    ? useRequestHeaders(['host']).host?.split(':')[0]
+    : window.location.hostname
+  if (!hostname) return
   if (!MARKETING_HOSTS.has(hostname)) return
 
   const path = to.path
