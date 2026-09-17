@@ -1,26 +1,14 @@
 <script setup lang="ts">
-import { uploadTutorImage } from '~/composables/useTutorProducts'
-
 definePageMeta({ layout: 'dashboard', middleware: 'auth', roles: ['marketing', 'editor'] })
 useHead({ title: 'Tambah Banner | Marketing Hub', meta: [{ name: 'robots', content: 'noindex' }] })
 
 const slots = [{ value: 'hero', label: 'Hero' }, { value: 'top_bar', label: 'Top bar' }, { value: 'sidebar', label: 'Sidebar' }]
 const { public: config } = useRuntimeConfig()
 const saving = ref(false)
-const uploading = ref<'desktop' | 'mobile' | null>(null)
 const error = ref('')
 const form = reactive({ slot: 'hero', title: '', description: '', buttonLabel: '', targetUrl: '', desktopImageUrl: '', mobileImageUrl: '', startsAt: '', endsAt: '', enabled: true })
 
 function iso(value: string) { return value ? new Date(value).toISOString() : '' }
-async function uploadVisual(event: Event, target: 'desktop' | 'mobile') {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  uploading.value = target
-  error.value = ''
-  try { form[target === 'desktop' ? 'desktopImageUrl' : 'mobileImageUrl'] = await uploadTutorImage(file) }
-  catch { error.value = 'Visual banner belum berhasil diunggah.' }
-  finally { uploading.value = null }
-}
 async function save() {
   if (!form.title.trim()) { error.value = 'Judul banner wajib diisi.'; return }
   saving.value = true
@@ -52,10 +40,8 @@ async function save() {
       <div class="grid content-start gap-6">
         <AppPanel header="Visual" :collapsible="false">
           <div class="grid gap-4">
-            <AppTextField id="banner-desktop" v-model="form.desktopImageUrl" label="URL visual desktop" placeholder="https://..." />
-            <label class="grid gap-1 text-xs font-semibold text-muted" for="banner-desktop-file">Atau unggah desktop<input id="banner-desktop-file" type="file" accept="image/png,image/jpeg,image/webp" :disabled="uploading !== null" class="text-sm font-normal" @change="uploadVisual($event, 'desktop')"></label>
-            <AppTextField id="banner-mobile" v-model="form.mobileImageUrl" label="URL visual mobile" placeholder="https://..." />
-            <label class="grid gap-1 text-xs font-semibold text-muted" for="banner-mobile-file">Atau unggah mobile<input id="banner-mobile-file" type="file" accept="image/png,image/jpeg,image/webp" :disabled="uploading !== null" class="text-sm font-normal" @change="uploadVisual($event, 'mobile')"></label>
+            <MarketingImageUpload v-model="form.desktopImageUrl" label="Visual desktop" alt="Pratinjau banner desktop" />
+            <MarketingImageUpload v-model="form.mobileImageUrl" label="Visual mobile" alt="Pratinjau banner mobile" />
           </div>
         </AppPanel>
         <AppPanel header="Penayangan" :collapsible="false">

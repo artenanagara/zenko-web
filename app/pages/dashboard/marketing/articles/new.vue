@@ -1,14 +1,46 @@
 <script setup lang="ts">
-import { uploadTutorImage } from '~/composables/useTutorProducts'
 definePageMeta({ layout: 'dashboard', middleware: 'auth', roles: ['marketing', 'editor'] })
 useHead({ title: 'Tulis Artikel | Marketing Hub', meta: [{ name: 'robots', content: 'noindex' }] })
 const { public: config } = useRuntimeConfig()
-const categories = ref<{ id: string, name: string }[]>([]); const saving = ref(false); const uploading = ref(false); const error = ref('')
+const categories = ref<{ id: string, name: string }[]>([])
+const saving = ref(false)
+const error = ref('')
 const form = reactive({ title: '', subtitle: '', slug: '', coverUrl: '', coverAlt: '', content: '', categoryId: '', metaTitle: '', metaDescription: '', noIndex: false, status: 'draft' })
+
 onMounted(async () => { try { categories.value = await useApiFetch('/marketing/categories', { baseURL: config.apiBase, credentials: 'include' }) } catch { /* optional */ } })
 function slugify(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') }
 watch(() => form.title, value => { if (!form.slug) form.slug = slugify(value) })
-async function uploadCover(event: Event) { const file = (event.target as HTMLInputElement).files?.[0]; if (!file) return; uploading.value = true; error.value = ''; try { form.coverUrl = await uploadTutorImage(file) } catch { error.value = 'Gambar sampul belum berhasil diunggah.' } finally { uploading.value = false } }
-async function save() { if (!form.title.trim()) { error.value = 'Judul artikel wajib diisi.'; return }; saving.value = true; error.value = ''; try { const article = await useApiFetch<{ id: string }>('/marketing/articles', { baseURL: config.apiBase, method: 'POST', credentials: 'include', body: form }); await navigateTo(`/dashboard/marketing/articles/${article.id}`) } catch { error.value = 'Artikel belum berhasil disimpan.' } finally { saving.value = false } }
+async function save() {
+  if (!form.title.trim()) { error.value = 'Judul artikel wajib diisi.'; return }
+  saving.value = true; error.value = ''
+  try {
+    const article = await useApiFetch<{ id: string }>('/marketing/articles', { baseURL: config.apiBase, method: 'POST', credentials: 'include', body: form })
+    await navigateTo(`/dashboard/marketing/articles/${article.id}`)
+  } catch { error.value = 'Artikel belum berhasil disimpan.' }
+  finally { saving.value = false }
+}
 </script>
-<template><div class="grid gap-6"><AppPageHeader title="Tulis artikel baru" description="Tulis, optimalkan, dan siapkan artikel untuk diterbitkan." /><AppInlineMessage v-if="error" type="error">{{ error }}</AppInlineMessage><form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" @submit.prevent="save"><AppPanel header="Kanvas menulis" :collapsible="false"><div class="grid gap-5"><AppTextField id="article-title" v-model="form.title" label="Judul utama" placeholder="Contoh: Cara belajar SKD lebih terarah" /><AppTextField id="article-subtitle" v-model="form.subtitle" label="Subjudul" placeholder="Ringkasan singkat untuk pembaca" /><div class="grid gap-2"><label for="cover-file" class="text-xs font-semibold text-muted">Gambar sampul</label><input id="cover-file" type="file" accept="image/png,image/jpeg,image/webp" :disabled="uploading" class="text-sm text-muted" @change="uploadCover"><img v-if="form.coverUrl" :src="form.coverUrl" :alt="form.coverAlt || form.title" class="aspect-[16/7] w-full rounded-md object-cover"><AppTextField id="article-cover-alt" v-model="form.coverAlt" label="Alt text gambar" /></div><RichTextEditor v-model="form.content" aria-label="Isi artikel" placeholder="Mulai menulis artikel..." /></div></AppPanel><div class="grid content-start gap-6"><AppPanel header="Publikasi" :collapsible="false"><div class="grid gap-4"><AppTextField id="article-slug" v-model="form.slug" label="Slug URL" /><AppSelect v-model="form.status" label="Status" :options="[{ value: 'draft', label: 'Simpan sebagai draf' }, { value: 'published', label: 'Terbitkan sekarang' }, { value: 'scheduled', label: 'Terjadwal' }]" /><AppSelect v-model="form.categoryId" label="Kategori" :options="[{ value: '', label: 'Tanpa kategori' }, ...categories.map(item => ({ value: item.id, label: item.name }))]" /><AppButton type="submit" :loading="saving">{{ form.status === 'published' ? 'Terbitkan artikel' : 'Simpan artikel' }}</AppButton></div></AppPanel><AppPanel header="SEO dasar" :collapsible="false"><div class="grid gap-4"><AppTextField id="article-meta-title" v-model="form.metaTitle" label="Meta title" /><AppTextField id="article-meta-description" v-model="form.metaDescription" label="Meta description" /><p class="text-xs text-muted">{{ form.metaTitle.length }}/60 karakter · {{ form.metaDescription.length }}/160 karakter</p><label class="flex items-center gap-2 text-xs text-muted"><input v-model="form.noIndex" type="checkbox" class="accent-primary"> Jangan indeks artikel ini</label></div></AppPanel></div></form></div></template>
+
+<template>
+  <div class="grid gap-6">
+    <AppPageHeader title="Tulis artikel baru" description="Tulis, optimalkan, dan siapkan artikel untuk diterbitkan." />
+    <AppInlineMessage v-if="error" type="error">{{ error }}</AppInlineMessage>
+    <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" @submit.prevent="save">
+      <AppPanel header="Kanvas menulis" :collapsible="false">
+        <div class="grid gap-5">
+          <AppTextField id="article-title" v-model="form.title" label="Judul utama" placeholder="Contoh: Cara belajar SKD lebih terarah" />
+          <AppTextField id="article-subtitle" v-model="form.subtitle" label="Subjudul" placeholder="Ringkasan singkat untuk pembaca" />
+          <div class="grid gap-4">
+            <MarketingImageUpload v-model="form.coverUrl" label="Gambar sampul" :alt="form.coverAlt || form.title || 'Pratinjau gambar sampul'" />
+            <AppTextField id="article-cover-alt" v-model="form.coverAlt" label="Alt text gambar" />
+          </div>
+          <RichTextEditor v-model="form.content" aria-label="Isi artikel" placeholder="Mulai menulis artikel..." />
+        </div>
+      </AppPanel>
+      <div class="grid content-start gap-6">
+        <AppPanel header="Publikasi" :collapsible="false"><div class="grid gap-4"><AppTextField id="article-slug" v-model="form.slug" label="Slug URL" /><AppSelect v-model="form.status" label="Status" :options="[{ value: 'draft', label: 'Simpan sebagai draf' }, { value: 'published', label: 'Terbitkan sekarang' }, { value: 'scheduled', label: 'Terjadwal' }]" /><AppSelect v-model="form.categoryId" label="Kategori" :options="[{ value: '', label: 'Tanpa kategori' }, ...categories.map(item => ({ value: item.id, label: item.name }))]" /><AppButton type="submit" :loading="saving">{{ form.status === 'published' ? 'Terbitkan artikel' : 'Simpan artikel' }}</AppButton></div></AppPanel>
+        <AppPanel header="SEO dasar" :collapsible="false"><div class="grid gap-4"><AppTextField id="article-meta-title" v-model="form.metaTitle" label="Meta title" /><AppTextField id="article-meta-description" v-model="form.metaDescription" label="Meta description" /><p class="text-xs text-muted">{{ form.metaTitle.length }}/60 karakter · {{ form.metaDescription.length }}/160 karakter</p><label class="flex items-center gap-2 text-xs text-muted"><input v-model="form.noIndex" type="checkbox" class="accent-primary"> Jangan indeks artikel ini</label></div></AppPanel>
+      </div>
+    </form>
+  </div>
+</template>
