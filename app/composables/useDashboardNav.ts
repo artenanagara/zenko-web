@@ -9,6 +9,7 @@ import IconHome from '~/components/icons/IconHome.vue'
 import IconLifebuoy from '~/components/icons/IconLifebuoy.vue'
 import IconReceipt from '~/components/icons/IconReceipt.vue'
 import IconRepeat from '~/components/icons/IconRepeat.vue'
+import IconRocket from '~/components/icons/IconRocket.vue'
 import IconSettings from '~/components/icons/IconSettings.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconUsers from '~/components/icons/IconUsers.vue'
@@ -17,6 +18,8 @@ import IconImage from '~/components/icons/IconImage.vue'
 import IconLink from '~/components/icons/IconLink.vue'
 import IconSearch from '~/components/icons/IconSearch.vue'
 import IconTarget from '~/components/icons/IconTarget.vue'
+import IconTableInsert from '~/components/icons/IconTableInsert.vue'
+import IconTrophy from '~/components/icons/IconTrophy.vue'
 
 /** Roles that have a dashboard. A student's home is the account area instead. */
 type DashboardRole = 'admin' | 'tutor' | 'marketing' | 'editor'
@@ -161,23 +164,23 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
     title: 'Marketing Hub',
     items: [
       { label: 'Ringkasan', to: '/dashboard/marketing', icon: IconHome, exact: true },
-      { label: 'Artikel & Panduan', to: '/dashboard/marketing/articles', icon: IconGrid, section: 'Konten & CMS' },
-      { label: 'Kategori Konten', to: '/dashboard/marketing/categories', icon: IconGrid, section: 'Konten & CMS' },
+      { label: 'Artikel & Panduan', to: '/dashboard/marketing/articles', icon: IconReceipt, section: 'Konten & CMS' },
+      { label: 'Kategori Konten', to: '/dashboard/marketing/categories', icon: IconTableInsert, section: 'Konten & CMS' },
       { label: 'Banner & Promosi', to: '/dashboard/marketing/banners', icon: IconImage, section: 'Konten & CMS' },
       { label: 'Performa Pencarian', to: '/dashboard/marketing/seo/performance', icon: IconSearch, section: 'SEO & Visibilitas' },
       { label: 'Peluang Cepat', to: '/dashboard/marketing/seo/opportunities', icon: IconTarget, section: 'SEO & Visibilitas' },
       { label: 'Sitemap & Tautan', to: '/dashboard/marketing/seo/health', icon: IconLink, section: 'SEO & Visibilitas' },
       { label: 'Trafik Web', to: '/dashboard/marketing/insights/traffic', icon: IconChart, section: 'Insight & Atribusi' },
-      { label: 'Kampanye UTM', to: '/dashboard/marketing/insights/campaigns', icon: IconLink, section: 'Insight & Atribusi' },
-      { label: 'Funnel Konversi', to: '/dashboard/marketing/insights/funnel', icon: IconChart, section: 'Insight & Atribusi' },
+      { label: 'Kampanye UTM', to: '/dashboard/marketing/insights/campaigns', icon: IconRocket, section: 'Insight & Atribusi' },
+      { label: 'Funnel Konversi', to: '/dashboard/marketing/insights/funnel', icon: IconTrophy, section: 'Insight & Atribusi' },
     ],
   },
   editor: {
     title: 'Marketing Hub',
     items: [
       { label: 'Ringkasan', to: '/dashboard/marketing', icon: IconHome, exact: true },
-      { label: 'Artikel & Panduan', to: '/dashboard/marketing/articles', icon: IconGrid, section: 'Konten & CMS' },
-      { label: 'Kategori Konten', to: '/dashboard/marketing/categories', icon: IconGrid, section: 'Konten & CMS' },
+      { label: 'Artikel & Panduan', to: '/dashboard/marketing/articles', icon: IconReceipt, section: 'Konten & CMS' },
+      { label: 'Kategori Konten', to: '/dashboard/marketing/categories', icon: IconTableInsert, section: 'Konten & CMS' },
       { label: 'Banner & Promosi', to: '/dashboard/marketing/banners', icon: IconImage, section: 'Konten & CMS' },
     ],
   },
