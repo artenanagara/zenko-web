@@ -152,6 +152,19 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
     busyId.value = ''
   }
 }
+
+async function toggleMarketplace(product: TutorProductSummary, enabled: boolean) {
+  if (!canManageMarketplace.value) return
+  const approved = await confirm({
+    title: enabled ? `Jual "${product.title}" di marketplace?` : `Hentikan penjualan "${product.title}"?`,
+    description: enabled
+      ? 'Zenko akan membuat salinan marketplace untuk ditinjau. Paket privat siswa tetap aman.'
+      : 'Salinan marketplace akan diarsipkan dan tidak menerima pembelian baru.',
+    confirmLabel: enabled ? 'Ya, jual di marketplace' : 'Hentikan penjualan',
+  })
+  if (!approved) return
+  await run(product, enabled ? 'marketplace' : 'archive')
+}
 </script>
 
 <template>
@@ -252,8 +265,17 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
                   {{ busyId === product.id ? 'Menayangkan…' : 'Tayangkan' }}
                 </button>
                 <NuxtLink v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" class="text-[0.86rem] font-semibold text-primary hover:underline">Lihat hasil</NuxtLink>
-                <button v-if="product.visibility === 'bimbel' && product.status === 'live' && canManageMarketplace" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'marketplace')">Jual di marketplace</button>
-                <button v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'marketplace')">Ajukan ulang</button>
+                <label v-if="canManageMarketplace && ((product.visibility === 'bimbel' && product.status === 'live') || product.visibility === 'public')" class="inline-flex items-center gap-2 text-[0.86rem] font-semibold text-ink">
+                  <input
+                    type="checkbox"
+                    class="h-4 w-4 accent-primary"
+                    :checked="product.visibility === 'public' && product.status !== 'archived'"
+                    :disabled="busyId === product.id || (product.visibility === 'public' && product.status === 'review')"
+                    :aria-label="`Jual ${product.title} di marketplace`"
+                    @change="toggleMarketplace(product, ($event.target as HTMLInputElement).checked)"
+                  >
+                  Marketplace
+                </label>
                 <button v-if="product.status === 'live'" type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'archive')">Arsipkan</button>
                 <button v-if="canDelete(product)" type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'delete')">
                   {{ busyId === product.id ? 'Menghapus…' : 'Hapus' }}

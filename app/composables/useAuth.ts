@@ -1,5 +1,7 @@
 import type { User } from '#shared/types/user'
 
+let refreshPromise: Promise<void> | null = null
+
 export type EmailAuthFailure = 'invalid' | 'unverified' | 'duplicate' | 'error'
 
 export type EmailLoginResult =
@@ -29,21 +31,17 @@ export function useAuth() {
 
   async function refresh() {
     if (!import.meta.client) return
-
+    if (refreshPromise) return refreshPromise
     isLoading.value = true
-    try {
-      user.value = await useApiFetch<User>('/auth/me', {
-        baseURL: config.apiBase,
-        credentials: 'include',
-      })
-    }
-    catch {
-      // 401 is the normal signed-out answer, not a failure worth surfacing.
-      user.value = null
-    }
-    finally {
-      isLoading.value = false
-    }
+    refreshPromise = (async () => {
+      try {
+        user.value = await useApiFetch<User>('/auth/me', { baseURL: config.apiBase, credentials: 'include' })
+      } catch {
+        // 401 is the normal signed-out answer, not a failure worth surfacing.
+        user.value = null
+      } finally { isLoading.value = false; refreshPromise = null }
+    })()
+    return refreshPromise
   }
 
   /** Full-page navigation: the OAuth consent screen cannot run in an iframe. */

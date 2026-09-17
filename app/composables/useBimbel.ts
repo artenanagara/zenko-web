@@ -133,6 +133,7 @@ export const updateBimbel = (id: string, body: Partial<Pick<Bimbel, 'name' | 'ci
 export const rotateBimbelJoinCode = (id: string) => bimbelRequest<Bimbel>(bimbelPath(id, '/join-code/rotate'), { method: 'POST' })
 export const inviteBimbelMember = (id: string, email: string, role: string) => bimbelRequest<BimbelMember>(bimbelPath(id, '/members'), { method: 'POST', body: { email, role } })
 export const updateBimbelMember = (id: string, accountId: string, body: { role?: string, status?: string }) => bimbelRequest<BimbelMember>(bimbelPath(id, `/members/${accountId}`), { method: 'PATCH', body })
+export const deleteBimbelMember = (id: string, accountId: string) => bimbelRequest<void>(bimbelPath(id, `/members/${accountId}`), { method: 'DELETE' })
 export const createBimbelClass = (id: string, name: string) => bimbelRequest<BimbelClass>(bimbelPath(id, '/classes'), { method: 'POST', body: { name } })
 export const getBimbelClass = (id: string, classId: string) => bimbelRequest<BimbelClass>(bimbelPath(id, `/classes/${classId}`))
 export const updateBimbelClassMembers = (id: string, classId: string, accountIds: string[]) => bimbelRequest<BimbelClass>(bimbelPath(id, `/classes/${classId}/members`), { method: 'PUT', body: { accountIds } })

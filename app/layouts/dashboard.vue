@@ -247,7 +247,10 @@ onBeforeUnmount(() => {
 
           <!-- Same menu as the navbar: tutors and admins buy packages too, so
                the account page must be reachable from here. -->
-          <ProfileMenu v-if="user" :user="user" />
+          <!-- Workspace headers stay focused on the work surface. Account
+               controls live under Pengaturan for admin/marketing/editor and
+               are intentionally not shown as a profile dropdown here. -->
+          <ProfileMenu v-if="user && !['admin', 'marketing', 'editor'].includes(user.role)" :user="user" />
         </div>
       </header>
 

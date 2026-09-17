@@ -141,6 +141,9 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // menunggu admin — yang tersisa daftar bacaan, dan tempatnya di sini.
       { label: 'Daftar bimbel', to: '/dashboard/admin/bimbels', icon: IconHandshake, section: 'Direktori' },
 
+      { label: 'Pengguna marketing', to: '/dashboard/admin/marketing-users', icon: IconUsers, section: 'Pengelolaan' },
+      { label: 'Pengaturan', to: '/dashboard/admin/settings', icon: IconSettings, section: 'Pengelolaan' },
+
       { label: 'Pusat Bantuan', to: '/pusat-bantuan', icon: IconLifebuoy, section: 'Bantuan' },
     ],
   },
@@ -174,6 +177,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       { label: 'Performa Produk', to: '/dashboard/marketing/insights/products', icon: IconGrid, section: 'Insight & Atribusi' },
       { label: 'Kampanye UTM', to: '/dashboard/marketing/insights/campaigns', icon: IconRocket, section: 'Insight & Atribusi' },
       { label: 'Funnel Konversi', to: '/dashboard/marketing/insights/funnel', icon: IconTrophy, section: 'Insight & Atribusi' },
+      { label: 'Pengaturan', to: '/dashboard/marketing/settings', icon: IconSettings, section: 'Pengelolaan' },
     ],
   },
   editor: {

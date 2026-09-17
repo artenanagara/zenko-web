@@ -9,12 +9,13 @@ const bimbelId = String(useRoute().params.bimbelId)
 const bimbel = useBimbelDetail(bimbelId)
 const { data: members, pending, error, refresh } = useBimbelMembers(bimbelId)
 const toast = useToast()
-const students = computed(() => members.value.filter(member => member.role === 'student'))
+const students = computed(() => members.value.filter(member => member.role === 'student' && member.status !== 'left'))
 const inviteOpen = ref(false)
 const inviteEmail = ref('')
 const inviting = ref(false)
 const inviteError = ref('')
 const busyId = ref('')
+const selected = ref<string[]>([])
 const quotaFullError = ref(false)
 
 const pendingSeats = computed(() => bimbel.data.value?.pendingSeatAddonSeats ?? 0)
@@ -90,7 +91,8 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
   busyId.value = member.accountId
   quotaFullError.value = false
   try {
-    await updateBimbelMember(bimbelId, member.accountId, { status })
+    if (status === 'left') await deleteBimbelMember(bimbelId, member.accountId)
+    else await updateBimbelMember(bimbelId, member.accountId, { status })
     await load()
     toast.success('Status siswa diperbarui.')
   }
@@ -104,6 +106,21 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
   }
   finally { busyId.value = '' }
 }
+
+async function removeSelected() {
+  if (!selected.value.length || busyId.value) return
+  const approved = await confirm({ title: `Hapus ${selected.value.length} siswa?`, description: 'Siswa akan dikeluarkan dari bimbel dan tidak bisa lagi mengakses paket bimbel.', confirmLabel: 'Hapus siswa' })
+  if (!approved) return
+  busyId.value = 'bulk'
+  try {
+    await Promise.all(selected.value.map(accountId => deleteBimbelMember(bimbelId, accountId)))
+    selected.value = []
+    await load()
+    toast.success('Siswa berhasil dihapus dari bimbel.')
+  } catch (cause) { toast.error('Sebagian siswa belum terhapus.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.')) }
+  finally { busyId.value = '' }
+}
+const { confirm } = useConfirm()
 </script>
 
 <template>
@@ -147,15 +164,16 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
           :total-count="total" item-noun="siswa" :actionable-count="pendingCount" actionable-label="menunggu diaktifkan"
           :active="isActive" @reset="reset"
         />
+        <div v-if="selected.length" class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-danger/20 bg-danger-soft px-4 py-3"><span class="text-sm font-semibold">{{ selected.length }} siswa dipilih</span><AppButton size="sm" variant="outline" :loading="busyId === 'bulk'" @click="removeSelected">Hapus siswa</AppButton></div>
         <AppEmptyState v-if="rows.length === 0" title="Hasil tidak ditemukan" description="Tidak ada siswa yang cocok dengan pencarian atau status yang dipilih." action-label="Hapus pencarian" @action="reset" />
-        <DashboardTable v-else :columns="columns" :data="rows" primary-key="accountId" action-key="aksi">
+        <DashboardTable v-else v-model:selected="selected" selectable row-key="accountId" :columns="columns" :data="rows" primary-key="accountId" action-key="aksi">
           <template #cell(name)="{ item }"><span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span><span class="block text-[0.82rem] text-muted">{{ item.email }}</span></template>
           <template #cell(status)="{ item }"><DashboardBadge :tone="STATUS_TONE[item.status as BimbelMemberStatus]">{{ STATUS_LABEL[item.status as BimbelMemberStatus] }}</DashboardBadge></template>
           <template #cell(joinedAt)="{ value }"><span class="whitespace-nowrap">{{ formatDate(value) }}</span></template>
           <template #cell(aksi)="{ item }">
             <template v-for="student in [findStudent(item.accountId)]" :key="item.accountId">
               <AppButton v-if="student && student.status !== 'active'" size="sm" :disabled="busyId === student.accountId" @click="patchStatus(student, 'active')">{{ busyId === student.accountId ? 'Memproses…' : 'Aktifkan' }}</AppButton>
-              <AppButton v-else-if="student" size="sm" variant="outline" :disabled="busyId === student.accountId" @click="patchStatus(student, 'suspended')">{{ busyId === student.accountId ? 'Memproses…' : 'Tangguhkan' }}</AppButton>
+              <AppButton v-else-if="student" size="sm" variant="outline" :disabled="busyId === student.accountId" @click="patchStatus(student, 'left')">{{ busyId === student.accountId ? 'Memproses…' : 'Hapus' }}</AppButton>
             </template>
           </template>
         </DashboardTable>
