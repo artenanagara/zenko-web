@@ -272,6 +272,99 @@ export async function importTutorQuestions(
   })
 }
 
+/**
+ * POST /tutor/products/:id/questions/import-docx — impor bank soal Word.
+ *
+ * Berkasnya diurai di server (lihat internal/docximport di zenko-api):
+ * .docx adalah arsip zip yang tidak bisa dibuka browser tanpa dependensi
+ * baru, gambarnya harus lewat pipeline unggah, dan HTML hasil bacanya harus
+ * disanitasi oleh policy yang sama dengan field soal lain. Jadi di sini tidak
+ * ada parsing sama sekali — berkasnya dikirim apa adanya.
+ *
+ * `sectionId` membuat seluruh soal masuk ke satu subtes dan membuat baris
+ * SUBTES di dokumen diabaikan; tanpa itu tiap tabel dicocokkan lewat baris
+ * SUBTES-nya sendiri. Sama seperti impor CSV, tabel yang gagal masuk
+ * `problems` dan tidak menggagalkan tabel lain.
+ */
+export async function importTutorQuestionsDocx(
+  productId: string,
+  file: File,
+  options: { sectionId?: string } = {},
+  workspace?: ProductWorkspace,
+): Promise<QuestionImportResult> {
+  const { public: config } = useRuntimeConfig()
+
+  const body = new FormData()
+  body.append('file', file)
+  if (options.sectionId) body.append('sectionId', options.sectionId)
+
+  return await useApiFetch<QuestionImportResult>(`${productsRoot(workspace)}/${productId}/questions/import-docx`, {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body,
+    credentials: 'include',
+  })
+}
+
+/**
+ * Unduh template soal produk ini, DOCX atau CSV.
+ *
+ * Keduanya dibuat server-side dari satu daftar contoh yang sama
+ * (zenko-api/internal/docximport) dan dibentuk mengikuti kategori ujian produk
+ * ini: contohnya hanya memuat jenis soal yang diterima subtesnya, dengan
+ * jumlah opsi dan skala bobot yang dipakai kategori itu. Tutor tidak bisa
+ * mengunduh contoh yang justru akan ditolak saat diimpor.
+ *
+ * `sectionId` mempersempit template ke satu subtes sekaligus menghilangkan
+ * baris/kolom SUBTES — cakupannya sudah dijawab di modal impor.
+ */
+export async function downloadTutorQuestionTemplate(
+  productId: string,
+  options: { format: 'docx' | 'csv', sectionId?: string },
+  workspace?: ProductWorkspace,
+): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+
+  const query: Record<string, string> = {}
+  if (options.sectionId) query.sectionId = options.sectionId
+
+  // $fetch langsung, bukan useApiFetch: helper itu diketik untuk respons JSON
+  // (FetchOptions<'json'>) sementara yang diunduh di sini adalah berkas. Tidak
+  // ada yang hilang — token CSRF hanya dipasang untuk method yang mengubah
+  // data, dan ini GET.
+  const response = await $fetch.raw<Blob>(
+    `${productsRoot(workspace)}/${productId}/questions/template.${options.format}`,
+    { baseURL: config.apiBase, method: 'GET', query, responseType: 'blob', credentials: 'include' },
+  )
+
+  const blob = response._data
+  if (!blob) throw new Error('Template kosong')
+
+  saveBlob(blob, filenameFromResponse(response.headers) ?? `template-soal.${options.format}`)
+}
+
+/**
+ * Nama berkas dari header Content-Disposition, supaya nama yang tersimpan sama
+ * dengan yang ditentukan server (mengandung jenis soal dan judul produk).
+ * Null kalau headernya tidak terbaca — beberapa proxy membuangnya.
+ */
+function filenameFromResponse(headers: Headers): string | null {
+  const disposition = headers.get('content-disposition')
+  const match = disposition?.match(/filename="?([^";]+)"?/i)
+  return match?.[1] ?? null
+}
+
+function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 /** PATCH satu soal — full replace isi soal, bentuk sama dengan create. */
 export async function updateTutorQuestion(
   productId: string,

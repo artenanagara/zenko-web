@@ -5,13 +5,22 @@ import type { CsvPassageGroup } from '~/utils/questionCsv'
 type ImportMode = 'section' | 'combined'
 
 /**
- * Impor CSV soal — dua mode:
- * - `section`: parse di client (app/utils/questionCsv.ts), kirim batch ke
- *   POST .../sections/:sectionId/questions untuk subtes aktif.
- * - `combined` (§7.4 kontrak): satu file berisi kolom `subtes` tambahan,
- *   dikirim ke POST .../questions/import — server mencocokkan tiap baris ke
- *   section produk ini dan melaporkan baris yang gagal cocok/valid di
- *   `problems`, tanpa membatalkan baris lain yang valid.
+ * Impor soal dari berkas — menerima dua format lewat satu input berkas:
+ *
+ * - **CSV**: diurai di client (app/utils/questionCsv.ts), lalu dikirim
+ *   sebagai batch ke POST .../sections/:sectionId/questions (mode `section`)
+ *   atau ke POST .../questions/import dengan kolom `subtes` per baris (mode
+ *   `combined`, §7.4 kontrak).
+ * - **DOCX**: TIDAK diurai di sini sama sekali — berkasnya dikirim apa adanya
+ *   ke POST .../questions/import-docx. Sebuah .docx adalah arsip zip yang
+ *   tidak bisa dibuka browser tanpa dependensi baru, gambar di dalamnya harus
+ *   lewat pipeline unggah, dan HTML hasil bacanya harus disanitasi policy yang
+ *   sama dengan field soal lain. Ketiganya ada di server, jadi parsernya juga.
+ *
+ * Konsekuensinya: untuk CSV panel ini bisa menghitung jumlah soal sebelum
+ * mengirim (dan menawarkan "timpa" saat melebihi sisa target), untuk DOCX
+ * tidak — jumlah dan kuota subtes baru diketahui dari respons server, yang
+ * memakai bentuk laporan yang sama (`imported` + `problems`).
  *
  * Modenya datang dari pemanggil (modal "Impor soal" di TutorSectionEditor.vue),
  * bukan dari tab di dalam panel ini: pilihannya sudah dijawab sebelum panel
@@ -29,7 +38,7 @@ const props = defineProps<{
   mode: ImportMode
   /**
    * Fitur grup wacana (produk TKA): kolom `wacana` yang identik pada baris
-   * BERURUTAN otomatis menjadi satu wacana bersama (maksimal 5 soal per
+   * BERURUTAN otomatis menjadi satu wacana bersama (maksimal 7 soal per
    * wacana), dibuat lewat endpoint passages sebelum soalnya dikirim. Tanpa
    * flag ini kolom `wacana` tetap jadi stimulus per soal seperti sebelumnya.
    */
@@ -53,6 +62,18 @@ const mode = computed(() => props.mode)
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const fileName = ref('')
+/**
+ * Berkas Word yang dipilih, belum dikirim. Berbeda dengan CSV, isinya tidak
+ * pernah dibaca di sini — lihat komentar berkas.
+ */
+const docxFile = ref<File | null>(null)
+/**
+ * Format berkas pada impor terakhir. Terpisah dari `docxFile` karena berkasnya
+ * dilepas begitu impor selesai (supaya tidak bisa terkirim dua kali) sementara
+ * laporan hasilnya justru baru dibaca setelah itu — dan laporan itu menyebut
+ * "tabel" untuk DOCX, "baris" untuk CSV.
+ */
+const importedAsDocx = ref(false)
 const parsed = ref<QuestionDraft[]>([])
 const combinedParsed = ref<QuestionImportDraft[]>([])
 const parseErrors = ref<string[]>([])
@@ -71,17 +92,30 @@ watch(mode, reset)
 /** Grup wacana hasil parse (fitur TKA) — dibuat lewat API saat impor. */
 const passageGroups = ref<CsvPassageGroup[]>([])
 
+function isDocx(file: File): boolean {
+  return file.name.toLowerCase().endsWith('.docx')
+}
+
 async function onFileChange(event: Event) {
   importProblems.value = []
   parsed.value = []
   combinedParsed.value = []
   parseErrors.value = []
   passageGroups.value = []
+  docxFile.value = null
 
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
 
   fileName.value = file.name
+
+  // Word: tidak ada yang bisa dibaca di sini, jadi berkasnya hanya ditahan
+  // sampai tombol impor ditekan.
+  if (isDocx(file)) {
+    docxFile.value = file
+    return
+  }
+
   const text = await file.text()
 
   if (mode.value === 'combined') {
@@ -201,6 +235,9 @@ async function rollbackCreatedPassages(created: CreatedPassage[]): Promise<void>
 
 const rowCount = computed(() => mode.value === 'combined' ? combinedParsed.value.length : parsed.value.length)
 
+/** Ada sesuatu yang siap dikirim — baris CSV yang terbaca, atau berkas Word. */
+const canImport = computed(() => rowCount.value > 0 || docxFile.value !== null)
+
 /**
  * Tiga keadaan untuk mode per subtes, dihitung dari sisa target:
  * - muat di sisa: impor biasa, soal ditambahkan di belakang;
@@ -211,13 +248,17 @@ const rowCount = computed(() => mode.value === 'combined' ? combinedParsed.value
  */
 const existingCount = computed(() => props.section.questions.length)
 const room = computed(() => Math.max(props.section.questionTarget - existingCount.value, 0))
+// Keduanya hanya berlaku untuk CSV: jumlah soal di sebuah .docx baru
+// diketahui server, yang menolak per tabel begitu target subtes tercapai dan
+// melaporkannya di `problems` — tanpa membatalkan tabel yang sudah masuk.
 const needsReplace = computed(() =>
   mode.value === 'section'
+  && !docxFile.value
   && parsed.value.length > room.value
   && parsed.value.length <= props.section.questionTarget,
 )
 const overTarget = computed(() =>
-  mode.value === 'section' && parsed.value.length > props.section.questionTarget,
+  mode.value === 'section' && !docxFile.value && parsed.value.length > props.section.questionTarget,
 )
 
 /**
@@ -231,7 +272,7 @@ async function importQuestions() {
   // overTarget diblokir di sini juga (tombolnya sudah disabled): batch per
   // subtes bersifat all-or-nothing di server — mengirimkannya pasti 400,
   // dan wacana yang terlanjur dibuat sebelum 400 itu akan jadi yatim.
-  if (rowCount.value === 0 || overTarget.value) return
+  if (!canImport.value || overTarget.value) return
 
   // Menimpa itu permanen dan menyapu soal yang mungkin ditulis tangan, jadi
   // klik pertama hanya membuka konfirmasi dengan angkanya; klik kedua (dari
@@ -247,7 +288,20 @@ async function importQuestions() {
   let createdPassages: CreatedPassage[] = []
   try {
     let imported: number
-    if (mode.value === 'combined') {
+    importedAsDocx.value = docxFile.value !== null
+    if (docxFile.value) {
+      // Subtes tujuan ikut cakupan yang sudah dipilih tutor di modal: pada
+      // mode per subtes baris SUBTES di dokumen sengaja diabaikan server.
+      const result = await importTutorQuestionsDocx(
+        props.productId,
+        docxFile.value,
+        mode.value === 'section' ? { sectionId: props.section.id } : {},
+        props.workspace,
+      )
+      imported = result.imported
+      importProblems.value = result.problems
+    }
+    else if (mode.value === 'combined') {
       if (passageGroups.value.length) createdPassages = await createGroupedPassages(combinedParsed.value)
       const result = await importTutorQuestions(props.productId, combinedParsed.value, props.workspace)
       imported = result.imported
@@ -263,11 +317,12 @@ async function importQuestions() {
     // sebagian ditolak server per baris — bagi tutor keduanya sama saja:
     // soalnya tidak masuk, dan dia perlu tahu yang mana.
     const skipped = parseErrors.value.length + importProblems.value.length
+    const unit = importedAsDocx.value ? 'tabel' : 'baris'
     clearFileSelection()
     emit('refresh')
     toast.success(
       replace ? `${imported} soal terimpor, menggantikan soal sebelumnya.` : `${imported} soal terimpor.`,
-      skipped ? `${skipped} baris dilewati — lihat daftarnya di panel impor.` : undefined,
+      skipped ? `${skipped} ${unit} dilewati — lihat daftarnya di panel impor.` : undefined,
     )
     // Menutup dialog hanya saat tidak ada yang perlu dibaca lagi. Daftar baris
     // yang dilewati dirender di panel ini, jadi menutupnya sendiri akan
@@ -296,11 +351,40 @@ async function importQuestions() {
  */
 function clearFileSelection() {
   confirmingReplace.value = false
+  docxFile.value = null
   parsed.value = []
   combinedParsed.value = []
   passageGroups.value = []
   fileName.value = ''
   if (fileInput.value) fileInput.value.value = ''
+}
+
+/** Format yang sedang diunduh, atau null — menonaktifkan kedua tombolnya. */
+const downloadingTemplate = ref<'docx' | 'csv' | null>(null)
+
+/**
+ * Unduh template produk ini. Isinya dibentuk server-side mengikuti kategori
+ * ujian produk (lihat zenko-api/internal/docximport): contoh yang dimuat hanya
+ * jenis soal yang diterima subtesnya, dengan jumlah opsi dan skala bobot
+ * kategori itu. Tidak ada yang perlu dipilih di sini — kategori produk sudah
+ * menjawabnya, dan menawarkan pilihan lain hanya akan menghasilkan contoh yang
+ * ditolak saat diimpor.
+ */
+async function downloadTemplate(format: 'docx' | 'csv') {
+  downloadingTemplate.value = format
+  try {
+    await downloadTutorQuestionTemplate(
+      props.productId,
+      { format, sectionId: mode.value === 'section' ? props.section.id : undefined },
+      props.workspace,
+    )
+  }
+  catch (cause) {
+    toast.error('Template belum berhasil diunduh.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    downloadingTemplate.value = null
+  }
 }
 
 /** Kembali ke keadaan awal, termasuk diagnostik — dipakai saat memilih berkas baru. */
@@ -312,54 +396,75 @@ function reset() {
 </script>
 
 <template>
-  <!-- min-w-0: di dalam modal, daftar header CSV di bawah adalah satu token
-       tanpa spasi yang lebih lebar dari dialognya; tanpa ini grid melebar
-       mengikuti token itu dan seluruh kartu menembus tepi modal. -->
-  <div class="grid min-w-0 gap-3 rounded-md border border-hairline bg-surface px-4 py-4">
-    <p v-if="mode === 'combined'" class="text-[0.82rem] leading-[1.6] text-muted">
-      Satu file CSV bisa berisi soal dari beberapa subtes produk ini sekaligus — kolom
-      <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
-      di tiap baris menentukan section tujuannya (dicocokkan ke nama subtes produk ini,
-      tidak peka huruf besar/kecil). Baris dengan nama subtes salah ketik dilaporkan
-      sebagai error spesifik, bukan menggagalkan seluruh file.
+  <!-- min-w-0: panel ini hidup di dalam modal, dan nama berkas yang dipilih
+       bisa jadi satu token tanpa spasi yang lebih lebar dari dialognya; tanpa
+       ini grid melebar mengikuti token itu dan kartunya menembus tepi modal. -->
+  <div class="grid min-w-0 gap-4 rounded-md border border-hairline bg-surface px-4 py-4">
+    <!-- Satu penjelasan untuk kedua format, bukan satu blok per format.
+         Yang berbeda di antara DOCX dan CSV adalah isi templatenya, bukan cara
+         memakainya — menjelaskan keduanya terpisah membuat panel ini bertumpuk
+         dan menyuruh tutor membaca hal yang sama dua kali. Aturan detail tiap
+         jenis soal ada di dalam templatenya sendiri, tempat yang memang dibaca
+         saat menulis soal. -->
+    <p class="text-[0.84rem] leading-[1.7] text-muted">
+      Satu soal per tabel (Word) atau per baris (CSV). Unduh templatenya, isi, lalu unggah
+      kembali di bawah. Templatenya sudah disesuaikan dengan kategori ujian produk ini —
+      berisi contoh terisi untuk tiap jenis soal yang diterima, lengkap dengan aturan kunci,
+      jumlah opsi, dan skala bobotnya.
+      <template v-if="mode === 'combined'">
+        Satu berkas boleh memuat soal dari beberapa subtes sekaligus —
+        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">SUBTES</code>
+        tiap soal yang menentukan tujuannya.
+      </template>
+      <template v-else>
+        Semua soal masuk ke <strong class="font-semibold text-ink">{{ section.title }}</strong>.
+      </template>
+      Butuh satu bacaan untuk beberapa soal? Di Word, tulis bacaannya sekali di tabel
+      <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">WACANA</code>
+      dan soal-soal sesudahnya otomatis menempel ke bacaan itu — contohnya ada di template.
     </p>
 
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <p v-if="mode === 'section'" class="min-w-0 max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
-        Header yang dikenali:
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem] break-all">tipe,wacana,pertanyaan,pembahasan,opsiA..opsiE,gambarOpsiA..gambarOpsiE,kunci,bobotA..bobotE,jawabanIsian</code>.
-        Kolom yang tidak terpakai boleh kosong. Kolom
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> harus
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">{{ TEMPLATE_KIND_CELL[section.defaultKind] }}</code>
-        sebagai contoh awal. Tipe soal dapat berbeda di setiap baris.
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">kunci</code>
-        berisi huruf A–E untuk pilihan ganda, atau daftar B/S dipisah ";" untuk
-        soal Benar/Salah. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">jawabanIsian</code>
-        dipisah ";" untuk isian singkat. <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
-        dan <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">gambarOpsi*</code> opsional.
+    <div class="grid gap-3 rounded-md border border-hairline bg-surface-sunken/50 px-4 py-3.5">
+      <!-- Dua tombol setara: formatnya pilihan tutor, bukan rekomendasi kami.
+           Tidak ada pilihan lain di sini — isi templatenya sudah ditentukan
+           kategori ujian produk ini. -->
+      <div class="grid gap-2 sm:grid-cols-2">
+        <AppButton
+          type="button"
+          size="sm"
+          variant="outline"
+          :disabled="downloadingTemplate !== null"
+          @click="downloadTemplate('docx')"
+        >
+          <AppIcon name="file-doc" :size="16" aria-hidden="true" />
+          {{ downloadingTemplate === 'docx' ? 'Menyiapkan...' : 'Template Word (.docx)' }}
+        </AppButton>
+        <AppButton
+          type="button"
+          size="sm"
+          variant="outline"
+          :disabled="downloadingTemplate !== null"
+          @click="downloadTemplate('csv')"
+        >
+          <AppIcon name="file-csv" :size="16" aria-hidden="true" />
+          {{ downloadingTemplate === 'csv' ? 'Menyiapkan...' : 'Template CSV' }}
+        </AppButton>
+      </div>
+
+      <p class="text-[0.78rem] leading-[1.6] text-muted">
+        Isi keduanya sama; yang berbeda cuma bentuknya. Pilih Word kalau soalmu memuat gambar,
+        rumus, teks Arab, atau tabel — gambar disisipkan langsung ke dalam sel dan diunggah
+        otomatis saat impor. CSV hanya memuat teks; gambarnya harus berupa URL.
       </p>
-      <p v-else class="min-w-0 max-w-2xl text-[0.84rem] leading-[1.7] text-muted">
-        Header sama seperti template per subtes, ditambah kolom pertama
-        <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code> (wajib diisi).
-        Kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">tipe</code> tiap baris
-        menentukan tipe jawaban untuk baris tersebut (lihat contoh di template).
-      </p>
-      <button
-        type="button"
-        class="shrink-0 text-[0.84rem] font-semibold text-primary hover:underline"
-        @click="mode === 'combined' ? downloadCombinedCsvTemplate(props.sections) : downloadCsvTemplate(section)"
-      >
-        Unduh Template CSV
-      </button>
     </div>
 
     <div>
-      <label :for="`${uid}-file`" class="sr-only">Pilih file CSV</label>
+      <label :for="`${uid}-file`" class="sr-only">Pilih file DOCX atau CSV</label>
       <input
         :id="`${uid}-file`"
         ref="fileInput"
         type="file"
-        accept=".csv,text/csv"
+        accept=".docx,.csv,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         class="block w-full text-[0.88rem] text-muted file:mr-3 file:cursor-pointer file:rounded-xs file:border-0 file:bg-primary-soft file:px-4 file:py-2 file:text-[0.84rem] file:font-semibold file:text-primary"
         @change="onFileChange"
       >
@@ -371,7 +476,7 @@ function reset() {
       </ul>
     </AppSectionMessage>
 
-    <AppSectionMessage v-if="importProblems.length" appearance="warning" title="Beberapa baris tidak diimpor:">
+    <AppSectionMessage v-if="importProblems.length" appearance="warning" :title="importedAsDocx ? 'Beberapa tabel tidak diimpor:' : 'Beberapa baris tidak diimpor:'">
       <ul class="grid list-disc gap-1 pl-5">
         <li v-for="problem in importProblems" :key="problem">{{ problem }}</li>
       </ul>
@@ -380,7 +485,7 @@ function reset() {
     <AppInlineMessage v-if="passageGroups.length" type="info">
       {{ passageGroups.length }} wacana akan dibuat otomatis dari kolom
       <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
-      — baris berurutan dengan teks wacana sama menjadi satu grup (maksimal 5 soal per wacana).
+      — baris berurutan dengan teks wacana sama menjadi satu grup (maksimal 7 soal per wacana).
     </AppInlineMessage>
 
     <!-- Langkah kedua timpa: pertanyaan dengan angkanya, di tempat yang
@@ -405,6 +510,22 @@ function reset() {
       </div>
     </AppSectionMessage>
 
+    <!-- Word: jumlah soalnya belum diketahui sebelum server membacanya, jadi
+         tombolnya menyebut berkasnya, bukan angka yang belum ada. -->
+    <div v-else-if="docxFile" class="flex flex-wrap items-center gap-3">
+      <AppButton type="button" size="sm" variant="primary" :disabled="importing" @click="importQuestions">
+        {{ importing ? 'Mengimpor...' : 'Impor soal dari dokumen' }}
+      </AppButton>
+      <span class="text-[0.84rem] text-muted">{{ fileName }}</span>
+      <button
+        type="button"
+        class="text-[0.84rem] font-semibold text-muted transition-colors hover:text-ink"
+        @click="reset"
+      >
+        Batal
+      </button>
+    </div>
+
     <div v-else-if="rowCount > 0" class="flex flex-wrap items-center gap-3">
       <!-- Diblokir saat melebihi target: server menolak seluruh batch (400),
            jadi mengizinkan klik hanya menjanjikan impor yang pasti gagal. -->
@@ -426,6 +547,18 @@ function reset() {
         Batal
       </button>
     </div>
+
+    <AppInlineMessage v-if="docxFile" type="info">
+      <template v-if="mode === 'section'">
+        Semua soal di dokumen ini masuk ke <strong class="font-semibold">{{ section.title }}</strong>;
+        baris SUBTES di dalam dokumen diabaikan. Sisa target subtes ini {{ room }} dari
+        {{ section.questionTarget }} — tabel yang melebihi target dilewati dan dilaporkan satu per satu.
+      </template>
+      <template v-else>
+        Tiap tabel masuk ke subtes yang ditulis di baris SUBTES-nya. Tabel dengan nama subtes yang
+        salah ketik dilaporkan satu per satu, tanpa menggagalkan tabel lain.
+      </template>
+    </AppInlineMessage>
 
     <AppInlineMessage v-if="needsReplace && !confirmingReplace" type="warning">
       File ini berisi {{ parsed.length }} soal, tetapi sisa target subtes tinggal {{ room }}

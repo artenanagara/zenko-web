@@ -27,6 +27,8 @@ const initial = computed(() => props.user.name.trim().charAt(0).toUpperCase() ||
 const ROLE_BADGE: Partial<Record<Role, { label: string, tone: 'brand' | 'neutral' }>> = {
   tutor: { label: 'Tutor', tone: 'brand' },
   admin: { label: 'Admin', tone: 'neutral' },
+  marketing: { label: 'Marketing', tone: 'brand' },
+  editor: { label: 'Editor', tone: 'neutral' },
 }
 const roleBadge = computed(() => ROLE_BADGE[props.user.role] ?? null)
 
@@ -41,7 +43,11 @@ const dashboardPath = computed(() =>
 )
 
 const dashboardLabel = computed(() =>
-  props.user.role === 'admin' ? 'Dashboard Admin' : 'Dashboard Tutor',
+  props.user.role === 'admin'
+    ? 'Dashboard Admin'
+    : props.user.role === 'tutor'
+      ? 'Dashboard Tutor'
+      : 'Marketing Hub',
 )
 
 /**

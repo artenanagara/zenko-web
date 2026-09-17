@@ -5,4 +5,5 @@
   <ConfirmDialog />
   <ToastHost />
   <CookieConsent />
+  <MarketingPageviewBeacon />
 </template>

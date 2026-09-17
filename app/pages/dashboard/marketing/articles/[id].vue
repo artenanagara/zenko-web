@@ -1,0 +1,7 @@
+<script setup lang="ts">
+definePageMeta({ layout: 'dashboard', middleware: 'auth', roles: ['marketing', 'editor'] })
+const route = useRoute(); const { public: config } = useRuntimeConfig(); const article = ref<any>(null); const pending = ref(true); const error = ref(false)
+onMounted(async () => { try { article.value = await useApiFetch(`/marketing/articles/${route.params.id}`, { baseURL: config.apiBase, credentials: 'include' }) } catch { error.value = true } finally { pending.value = false } })
+useHead(() => ({ title: article.value ? `${article.value.title} | Marketing Hub` : 'Artikel | Marketing Hub', meta: [{ name: 'robots', content: 'noindex' }] }))
+</script>
+<template><div class="grid gap-6"><AppPageHeader title="Artikel" description="Editor artikel akan menerima panel publikasi dan SEO lanjutan pada subfase berikutnya." /><DashboardSkeleton v-if="pending" variant="rows" :count="5" /><AppInlineMessage v-else-if="error" type="error">Artikel belum berhasil dimuat.</AppInlineMessage><AppPanel v-else-if="article" header="Artikel tersimpan" :collapsible="false"><div class="grid gap-3"><h2 class="text-xl font-bold text-ink">{{ article.title }}</h2><p class="text-sm text-muted">Status: {{ article.status }} · {{ article.wordCount }} kata · {{ article.readingMinutes }} menit baca</p><div class="rounded-md bg-surface-alt p-4 text-sm leading-7 text-muted" v-html="article.content" /></div></AppPanel></div></template>

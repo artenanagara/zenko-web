@@ -48,3 +48,24 @@ export function formatDuration(minutes: number): string {
   if (hours === 0) return `${rest} menit`
   return rest === 0 ? `${hours} jam` : `${hours} jam ${rest} menit`
 }
+
+/**
+ * 12 Agustus 2026, dari timestamp ISO 8601.
+ *
+ * Marketing CMS timestamps (article publish dates) arrive as RFC 3339 strings
+ * rather than the Unix seconds the rest of zenko-api sends, so they cannot go
+ * through formatDateLong above. The zone is pinned for the same reason it is
+ * there: an article published late at night must not render as two different
+ * dates between SSR and hydration.
+ */
+export function formatIsoDateLong(iso: string): string {
+  const parsed = new Date(iso)
+  if (Number.isNaN(parsed.getTime())) return ''
+
+  return parsed.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: TIME_ZONE,
+  })
+}

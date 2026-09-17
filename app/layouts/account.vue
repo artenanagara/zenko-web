@@ -10,7 +10,7 @@ const { user } = useAuth()
 
 const initial = computed(() => user.value?.name.trim().charAt(0).toUpperCase() || '?')
 
-const ROLE_LABEL = { student: 'Siswa', tutor: 'Tutor', admin: 'Admin' } as const
+const ROLE_LABEL = { student: 'Siswa', tutor: 'Tutor', admin: 'Admin', marketing: 'Marketing', editor: 'Editor' } as const
 </script>
 
 <template>

@@ -177,7 +177,67 @@ server {
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header X-Frame-Options "DENY" always;
-    # Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
+# Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
+}
+
+# --- Marketing production -------------------------------------------------
+# This host shares the production process, while the app's global host guard
+# exposes only the Marketing Hub routes here.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name marketing.zenkoedu.id;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/letsencrypt; default_type "text/plain"; try_files $uri =404; }
+    location / { return 308 https://marketing.zenkoedu.id$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name marketing.zenkoedu.id;
+    client_max_body_size 6m;
+    ssl_certificate /etc/letsencrypt/live/marketing.zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/marketing.zenkoedu.id/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    location ^~ /api/ { proxy_pass http://127.0.0.1:8080; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_read_timeout 60s; }
+    location ^~ /uploads/ { proxy_pass http://127.0.0.1:8080; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_hide_header Cache-Control; add_header Cache-Control "public, max-age=31536000, immutable" always; }
+    location / { proxy_pass http://127.0.0.1:3000; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 60s; }
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+}
+
+# --- Admin production ------------------------------------------------------
+# Same process as the host above; the app's workspace guard
+# (app/utils/workspace.ts) exposes only /dashboard/admin and the login
+# routes here. Get the cert once with:
+#   certbot certonly --nginx -d admin.zenkoedu.id
+# after admin.zenkoedu.id's DNS A/AAAA record points at this host, and add
+# https://admin.zenkoedu.id to ALLOW_ORIGINS in the matching zenko-api env file.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name admin.zenkoedu.id;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/letsencrypt; default_type "text/plain"; try_files $uri =404; }
+    location / { return 308 https://admin.zenkoedu.id$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name admin.zenkoedu.id;
+    client_max_body_size 6m;
+    ssl_certificate /etc/letsencrypt/live/admin.zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/admin.zenkoedu.id/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    location ^~ /api/ { proxy_pass http://127.0.0.1:8080; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_read_timeout 60s; }
+    location ^~ /uploads/ { proxy_pass http://127.0.0.1:8080; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_hide_header Cache-Control; add_header Cache-Control "public, max-age=31536000, immutable" always; }
+    location / { proxy_pass http://127.0.0.1:3000; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 60s; }
+    # An admin console is never something to index, on any environment.
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
 }
 
 # --- Staging (reuses this VPS: zenko-api-staging on 8081, zenko-web-staging
@@ -289,7 +349,66 @@ server {
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
     add_header Strict-Transport-Security "max-age=31536000" always;
     add_header X-Frame-Options "DENY" always;
-    # Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
+# Nuxt Nitro emits the CSP with a per-response nonce for SSR scripts.
+}
+
+# --- Marketing staging ----------------------------------------------------
+server {
+    listen 80;
+    listen [::]:80;
+    server_name marketing-staging.zenkoedu.id;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/letsencrypt; default_type "text/plain"; try_files $uri =404; }
+    location / { return 308 https://marketing-staging.zenkoedu.id$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name marketing-staging.zenkoedu.id;
+    client_max_body_size 6m;
+    ssl_certificate /etc/letsencrypt/live/marketing-staging.zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/marketing-staging.zenkoedu.id/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    location ^~ /api/ { proxy_pass http://127.0.0.1:8081; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_read_timeout 60s; }
+    location ^~ /uploads/ { proxy_pass http://127.0.0.1:8081; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_hide_header Cache-Control; add_header Cache-Control "public, max-age=31536000, immutable" always; }
+    location / { proxy_pass http://127.0.0.1:3001; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 60s; }
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
+}
+
+# --- Admin staging ----------------------------------------------------------
+# Same process as the host above; the app's workspace guard
+# (app/utils/workspace.ts) exposes only /dashboard/admin and the login
+# routes here. Get the cert once with:
+#   certbot certonly --nginx -d admin-staging.zenkoedu.id
+# after admin-staging.zenkoedu.id's DNS A/AAAA record points at this host, and add
+# https://admin-staging.zenkoedu.id to ALLOW_ORIGINS in the matching zenko-api env file.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name admin-staging.zenkoedu.id;
+    location ^~ /.well-known/acme-challenge/ { root /var/www/letsencrypt; default_type "text/plain"; try_files $uri =404; }
+    location / { return 308 https://admin-staging.zenkoedu.id$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name admin-staging.zenkoedu.id;
+    client_max_body_size 6m;
+    ssl_certificate /etc/letsencrypt/live/admin-staging.zenkoedu.id/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/admin-staging.zenkoedu.id/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    location ^~ /api/ { proxy_pass http://127.0.0.1:8081; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_read_timeout 60s; }
+    location ^~ /uploads/ { proxy_pass http://127.0.0.1:8081; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Forwarded-Proto $scheme; proxy_hide_header Cache-Control; add_header Cache-Control "public, max-age=31536000, immutable" always; }
+    location / { proxy_pass http://127.0.0.1:3001; proxy_http_version 1.1; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; proxy_set_header Upgrade $http_upgrade; proxy_set_header Connection "upgrade"; proxy_read_timeout 60s; }
+    # An admin console is never something to index, on any environment.
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-Frame-Options "DENY" always;
 }
 
 # --- Design System (reuses this VPS: zenko-design on port 3002 — see
