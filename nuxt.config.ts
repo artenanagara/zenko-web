@@ -178,7 +178,7 @@ export default defineNuxtConfig({
       apiBase: 'http://localhost:8080/api/v1',
       // GA4 Measurement ID. Override per environment with
       // NUXT_PUBLIC_ANALYTICS_MEASUREMENT_ID.
-      analyticsMeasurementId: '',
+      analyticsMeasurementId: 'G-20Y9CGTQ0L',
       // Whether checkout may call POST /orders. How the resulting order is
       // actually paid is the server's decision — a Duitku QRIS charge, or the
       // manual QRIS channel where the buyer transfers to Zenko's static QR and
