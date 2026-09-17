@@ -12,10 +12,8 @@ const opportunities = [
   <div class="grid gap-6">
     <AppPageHeader title="Peluang Cepat" description="Prioritaskan perbaikan SEO dengan dampak terbesar." />
     <AppSectionMessage title="Menunggu data pencarian">Peluang akan dihitung dari kombinasi data Search Console dan katalog konten. Tidak ada rekomendasi yang dibuat sebelum kedua sumber tersebut tersambung.</AppSectionMessage>
-    <div class="grid gap-4 md:grid-cols-3">
-      <AppPanel v-for="item in opportunities" :key="item.title" :header="item.title" :collapsible="false">
-        <div class="grid min-h-36 content-between gap-4"><p class="text-sm leading-6 text-muted">{{ item.description }}</p><span class="text-xs font-semibold text-faint">Belum tersedia</span></div>
-      </AppPanel>
-    </div>
+    <AppPanel header="Daftar peluang" :collapsible="false">
+      <div class="overflow-x-auto"><table class="w-full min-w-[680px] text-left text-sm"><thead class="border-b border-hairline text-xs text-muted"><tr><th class="px-4 py-3 font-semibold">Peluang</th><th class="px-4 py-3 font-semibold">Deskripsi</th><th class="px-4 py-3 font-semibold">Status</th></tr></thead><tbody class="divide-y divide-hairline"><tr v-for="item in opportunities" :key="item.title"><td class="px-4 py-4 font-semibold text-ink">{{ item.title }}</td><td class="px-4 py-4 text-muted">{{ item.description }}</td><td class="px-4 py-4"><AppBadge>Belum tersedia</AppBadge></td></tr></tbody></table></div>
+    </AppPanel>
   </div>
 </template>

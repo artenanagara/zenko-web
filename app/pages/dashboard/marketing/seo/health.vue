@@ -14,9 +14,7 @@ const checks = [
     <AppPageHeader title="Sitemap & Tautan" description="Jaga jalur crawl dan tautan konten tetap sehat." />
     <AppSectionMessage title="Monitoring teknis belum terhubung">Checklist ini menjadi kontrak awal untuk health monitor. Pemeriksaan otomatis membutuhkan sitemap source, crawler internal, dan redirect store.</AppSectionMessage>
     <AppPanel header="Checklist kesehatan SEO" :collapsible="false">
-      <ul class="divide-y divide-hairline">
-        <li v-for="check in checks" :key="check.label" class="grid gap-2 py-4 first:pt-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"><div><p class="font-semibold text-ink">{{ check.label }}</p><p class="mt-1 text-sm leading-6 text-muted">{{ check.detail }}</p></div><span class="rounded-full bg-surface-alt px-3 py-1 text-xs font-semibold text-muted">{{ check.state }}</span></li>
-      </ul>
+      <div class="overflow-x-auto"><table class="w-full min-w-[680px] text-left text-sm"><thead class="border-b border-hairline text-xs text-muted"><tr><th class="px-4 py-3 font-semibold">Pemeriksaan</th><th class="px-4 py-3 font-semibold">Detail</th><th class="px-4 py-3 font-semibold">Status</th></tr></thead><tbody class="divide-y divide-hairline"><tr v-for="check in checks" :key="check.label"><td class="px-4 py-4 font-semibold text-ink">{{ check.label }}</td><td class="px-4 py-4 text-muted">{{ check.detail }}</td><td class="px-4 py-4"><AppBadge>{{ check.state }}</AppBadge></td></tr></tbody></table></div>
     </AppPanel>
   </div>
 </template>
