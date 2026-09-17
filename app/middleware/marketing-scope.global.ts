@@ -12,7 +12,8 @@ const AUTH_PATHS = new Set([
 ])
 
 export default defineNuxtRouteMiddleware((to) => {
-  if (import.meta.server || !MARKETING_HOSTS.has(window.location.hostname)) return
+  const hostname = useRequestURL().hostname
+  if (!MARKETING_HOSTS.has(hostname)) return
 
   const path = to.path
   const isMarketingRoute = path === '/dashboard/marketing' || path.startsWith('/dashboard/marketing/')
