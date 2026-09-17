@@ -80,7 +80,7 @@ function contentSecurityPolicy(nonce: string, devApi: string) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     `img-src 'self' https: data: blob:${dev}`,
-    `connect-src 'self' https://zenkoedu.id${dev}`,
+    `connect-src 'self' https://zenkoedu.id https://staging.zenkoedu.id https://marketing.zenkoedu.id https://marketing-staging.zenkoedu.id${dev}`,
     "frame-src 'none'",
     'upgrade-insecure-requests',
   ].join('; ')
