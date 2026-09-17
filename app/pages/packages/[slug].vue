@@ -5,6 +5,10 @@ definePageMeta({ path: '/paket/:slug()' })
 const route = useRoute()
 const slug = route.params.slug as string
 
+onMounted(() => {
+  trackMarketingEvent({ name: 'product_view', productId: detail.value.id, productSlug: detail.value.slug, productName: detail.value.title })
+})
+
 const detail = await usePackageDetail(slug)
 const related = useRelatedPackages(detail.value.category, slug)
 
@@ -276,6 +280,7 @@ useHead({
                 :to="ownsPackage ? '/akun/paket' : `/checkout/${detail.slug}`"
                 size="lg"
                 class="w-full"
+                @click="!ownsPackage && trackMarketingEvent({ name: 'product_click', productId: detail.id, productSlug: detail.slug, productName: detail.title })"
               >
                 {{ ownsPackage ? 'Buka paket saya' : 'Beli paket' }}
               </AppButton>
@@ -284,6 +289,7 @@ useHead({
                 variant="light"
                 size="lg"
                 class="w-full border border-hairline shadow-none"
+                @click="trackMarketingEvent({ name: 'product_click', productId: detail.id, productSlug: detail.slug, productName: detail.title })"
               >
                 Coba 5 soal gratis
               </AppButton>

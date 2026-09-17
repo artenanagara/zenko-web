@@ -171,6 +171,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       { label: 'Peluang Cepat', to: '/dashboard/marketing/seo/opportunities', icon: IconTarget, section: 'SEO & Visibilitas' },
       { label: 'Sitemap & Tautan', to: '/dashboard/marketing/seo/health', icon: IconLink, section: 'SEO & Visibilitas' },
       { label: 'Trafik Web', to: '/dashboard/marketing/insights/traffic', icon: IconChart, section: 'Insight & Atribusi' },
+      { label: 'Performa Produk', to: '/dashboard/marketing/insights/products', icon: IconGrid, section: 'Insight & Atribusi' },
       { label: 'Kampanye UTM', to: '/dashboard/marketing/insights/campaigns', icon: IconRocket, section: 'Insight & Atribusi' },
       { label: 'Funnel Konversi', to: '/dashboard/marketing/insights/funnel', icon: IconTrophy, section: 'Insight & Atribusi' },
     ],
@@ -182,6 +183,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       { label: 'Artikel & Panduan', to: '/dashboard/marketing/articles', icon: IconReceipt, section: 'Konten & CMS' },
       { label: 'Kategori Konten', to: '/dashboard/marketing/categories', icon: IconTableInsert, section: 'Konten & CMS' },
       { label: 'Banner & Promosi', to: '/dashboard/marketing/banners', icon: IconImage, section: 'Konten & CMS' },
+      { label: 'Performa Produk', to: '/dashboard/marketing/insights/products', icon: IconGrid, section: 'Insight & Atribusi' },
     ],
   },
 }
