@@ -32,6 +32,11 @@ const activeBimbelId = computed(() =>
     : '',
 )
 
+const isMarketingHub = computed(() =>
+  (user.value?.role === 'marketing' || user.value?.role === 'editor')
+  && route.path.startsWith('/dashboard/marketing'),
+)
+
 const current = computed(() => {
   const bimbel = memberships.value.find(item => item.bimbelId === activeBimbelId.value && item.status === 'active')
   if (bimbel) return { name: bimbel.bimbelName, detail: ROLE_LABEL[bimbel.role], icon: 'buildings' }
@@ -43,6 +48,7 @@ const current = computed(() => {
 
 <template>
   <div
+    v-if="!isMarketingHub"
     class="flex w-full items-center gap-2.5 rounded-md border border-hairline bg-surface-alt px-2.5 py-2"
     :title="props.collapsed ? current.name : undefined"
   >
