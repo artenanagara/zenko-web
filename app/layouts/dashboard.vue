@@ -74,7 +74,9 @@ const sidebarBadges = computed<Record<string, number>>(() => {
     return badges
   }
 
-  const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
+  if (user.value?.role !== 'tutor') return badges
+
+  const rejected = (badgeProducts.value ?? []).filter(product => product.status === 'rejected').length
   const productPath = routeBimbelId
     ? `/dashboard/bimbel/${routeBimbelId}/products`
     : '/dashboard/tutor/products'
