@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/artenanagara/zenko-web/compare/v0.26.0...v0.27.0) (2026-09-17)
+
+
+### Features
+
+* **analytics:** enable GA4 for Zenko ([0485965](https://github.com/artenanagara/zenko-web/commit/04859659d659fea56ddb7cb19d59e6cafa39ec9f))
+
 ## [0.26.0](https://github.com/artenanagara/zenko-web/compare/v0.25.0...v0.26.0) (2026-09-14)
 
 
