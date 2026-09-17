@@ -6,7 +6,7 @@
  * What a signed-in user may do. Exactly one per account: the dashboards are
  * separate surfaces, not overlapping permission sets.
  */
-export type Role = 'student' | 'tutor' | 'admin'
+export type Role = 'student' | 'tutor' | 'admin' | 'marketing' | 'editor'
 
 export type LoginMethod = 'email' | 'google'
 
@@ -54,6 +54,8 @@ const HOME_PATH: Record<Role, string> = {
   student: '/akun',
   tutor: '/dashboard/tutor',
   admin: '/dashboard/admin',
+  marketing: '/dashboard/marketing',
+  editor: '/dashboard/marketing',
 }
 
 export function homePathFor(role: Role): string {

@@ -15,6 +15,9 @@ export default defineSitemapEventHandler(async () => {
   const categories = await $fetch<Category[]>('/categories', {
     baseURL: config.apiBase,
   })
+  const articles = await $fetch<{ slug: string, updatedAt: string }[]>('/articles', {
+    baseURL: config.apiBase,
+  })
 
   const tutorUsernames = [...new Set(
     packages
@@ -33,6 +36,7 @@ export default defineSitemapEventHandler(async () => {
           .map(subcategory => ({ loc: `/kategori/${category.slug}/${subcategory.slug}` })),
       ]),
     ...helpArticles.map(article => ({ loc: `/pusat-bantuan/${article.slug}` })),
+    ...articles.map(article => ({ loc: `/artikel/${article.slug}`, lastmod: article.updatedAt })),
     ...tutorUsernames.map(username => ({ loc: `/tutor/${encodeURIComponent(username)}` })),
   ]
 })

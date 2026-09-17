@@ -42,6 +42,7 @@ useHead({
 <template>
   <main>
     <HeroSection />
+    <MarketingBannerSlot slot="hero" />
 
     <!-- #paket is the anchor the package detail breadcrumb jumps back to. -->
     <div id="paket" class="container-page flex justify-center py-8">

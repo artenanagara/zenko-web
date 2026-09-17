@@ -24,6 +24,8 @@ const ROLE_LABEL: Record<Role, string> = {
   student: 'Siswa',
   tutor: 'Tutor',
   admin: 'Admin',
+  marketing: 'Marketing',
+  editor: 'Editor',
 }
 
 /** Same badge vocabulary as the navbar account menu, so a role reads alike. */
@@ -31,6 +33,8 @@ const ROLE_TONE: Record<Role, 'neutral' | 'brand'> = {
   student: 'neutral',
   tutor: 'brand',
   admin: 'neutral',
+  marketing: 'brand',
+  editor: 'neutral',
 }
 
 /* --------------------------------------------------------------------------
@@ -303,6 +307,8 @@ const roleDescription = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'Mengelola moderasi, pembayaran tutor, dan operasional Zenko.'
     case 'tutor': return 'Bisa membuat, menjual, dan memantau paket tryout — sekaligus tetap bisa membeli paket seperti siswa.'
+    case 'marketing': return 'Mengelola konten publik, kampanye, SEO, dan insight pertumbuhan Zenko.'
+    case 'editor': return 'Membuat dan memelihara konten editorial Marketing Hub.'
     default: return 'Mencari, membeli, dan mengerjakan paket tryout.'
   }
 })
@@ -558,6 +564,9 @@ async function onSignOutAllDevices() {
               </AppButton>
               <AppButton v-else-if="user.role === 'tutor'" to="/dashboard/tutor" variant="outline" size="sm">
                 Dashboard tutor
+              </AppButton>
+              <AppButton v-else-if="user.role === 'marketing' || user.role === 'editor'" to="/dashboard/marketing" variant="outline" size="sm">
+                Marketing Hub
               </AppButton>
               <DashboardBadge v-else-if="tutorApplication.data.value?.status === 'pending'" tone="warning">
                 Pengajuan tutor sedang ditinjau
