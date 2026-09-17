@@ -324,8 +324,12 @@ export interface CsvPassageGroup {
   questionIndexes: number[]
 }
 
-/** Batas soal per wacana — cermin model.MaxQuestionsPerPassage di zenko-api. */
-const MAX_PASSAGE_QUESTIONS = 5
+/**
+ * Batas soal per wacana — cermin model.MaxQuestionsPerPassage di zenko-api,
+ * yang bernilai 7. Sebelumnya 5 di sini, jadi baris ke-6 dan ke-7 dengan teks
+ * wacana sama membuka wacana baru padahal server menerimanya dalam satu grup.
+ */
+const MAX_PASSAGE_QUESTIONS = 7
 
 /** Bungkus teks wacana polos CSV jadi paragraf HTML, satu <p> per baris. */
 function wrapPassageHtml(text: string): string {
@@ -340,8 +344,8 @@ function wrapPassageHtml(text: string): string {
 /**
  * Kelompokkan kolom `wacana` hasil parse jadi grup wacana (fitur TKA):
  * baris-baris BERURUTAN dengan teks wacana identik (dan subtes sama, pada
- * impor gabungan) menjadi satu grup, maksimal 5 soal per grup — baris ke-6
- * dengan teks sama membuka grup baru, mengikuti batas resmi 1 stimulus → 5
+ * impor gabungan) menjadi satu grup, maksimal 7 soal per grup — baris ke-8
+ * dengan teks sama membuka grup baru, mengikuti batas resmi 1 stimulus → 7
  * soal. Soal yang masuk grup dilepas `stimulus`-nya (teksnya pindah ke
  * wacana); pemanggil membuat wacananya lewat POST .../passages lalu mengisi
  * `passageId` tiap anggota sebelum mengirim batch soal.

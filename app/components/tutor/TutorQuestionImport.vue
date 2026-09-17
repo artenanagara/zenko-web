@@ -38,7 +38,7 @@ const props = defineProps<{
   mode: ImportMode
   /**
    * Fitur grup wacana (produk TKA): kolom `wacana` yang identik pada baris
-   * BERURUTAN otomatis menjadi satu wacana bersama (maksimal 5 soal per
+   * BERURUTAN otomatis menjadi satu wacana bersama (maksimal 7 soal per
    * wacana), dibuat lewat endpoint passages sebelum soalnya dikirim. Tanpa
    * flag ini kolom `wacana` tetap jadi stimulus per soal seperti sebelumnya.
    */
@@ -419,6 +419,9 @@ function reset() {
       <template v-else>
         Semua soal masuk ke <strong class="font-semibold text-ink">{{ section.title }}</strong>.
       </template>
+      Butuh satu bacaan untuk beberapa soal? Di Word, tulis bacaannya sekali di tabel
+      <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">WACANA</code>
+      dan soal-soal sesudahnya otomatis menempel ke bacaan itu — contohnya ada di template.
     </p>
 
     <div class="grid gap-3 rounded-md border border-hairline bg-surface-sunken/50 px-4 py-3.5">
@@ -482,7 +485,7 @@ function reset() {
     <AppInlineMessage v-if="passageGroups.length" type="info">
       {{ passageGroups.length }} wacana akan dibuat otomatis dari kolom
       <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">wacana</code>
-      — baris berurutan dengan teks wacana sama menjadi satu grup (maksimal 5 soal per wacana).
+      — baris berurutan dengan teks wacana sama menjadi satu grup (maksimal 7 soal per wacana).
     </AppInlineMessage>
 
     <!-- Langkah kedua timpa: pertanyaan dengan angkanya, di tempat yang
