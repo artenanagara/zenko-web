@@ -190,7 +190,7 @@ useHead({
           </AppSectionMessage>
 
           <h2 class="mt-10 mb-3 text-[1.35rem] font-bold tracking-[-0.03em]">Tentang paket ini</h2>
-          <p class="leading-[1.75] text-muted">{{ detail.description }}</p>
+          <p class="whitespace-pre-line leading-[1.75] text-muted">{{ detail.description }}</p>
 
           <h2 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Materi yang dibahas</h2>
           <ul class="divide-y divide-line overflow-hidden rounded-lg border border-hairline">
