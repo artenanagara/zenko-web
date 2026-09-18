@@ -132,6 +132,7 @@ const showEndConfirm = ref(false)
 
 /** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
 const navOpen = ref(false)
+const textScale = ref<'sm' | 'md' | 'lg'>('md')
 
 function requestEndSection() {
   navOpen.value = false
@@ -251,6 +252,9 @@ function retry() {
         :class="obscured && 'blur-lg'"
       >
         <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <div class="mb-3 flex justify-end">
+            <ExamTextScaleControl v-model="textScale" />
+          </div>
           <TryoutQuestion
             :question="session.currentQuestion.value"
             :index="session.displayIndex.value"
@@ -259,6 +263,7 @@ function retry() {
             :value="session.answers.value[session.currentQuestion.value.id]?.value"
             :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
             :passage="session.currentPassage.value"
+            :text-scale="textScale"
             @select="session.selectAnswer"
             @answer="session.setAnswerValue"
           />
@@ -266,7 +271,7 @@ function retry() {
 
         <!-- Rail nomor soal: desktop saja. Di HP tempatnya bottom
              sheet di bawah, bukan tumpukan di bawah kartu soal. -->
-        <div class="hidden min-h-0 md:block md:overflow-y-auto md:pr-1">
+        <div class="hidden min-h-0 md:block md:h-screen md:overflow-y-auto md:pr-1">
           <TryoutNavigator
             :groups="session.navigatorGroups.value"
             :current-index="session.currentIndex.value"
