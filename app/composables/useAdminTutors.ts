@@ -47,3 +47,14 @@ export async function fetchAdminTutor(accountId: string): Promise<AdminTutorDeta
     credentials: 'include',
   })
 }
+
+/** Hapus produk milik tutor dari direktori admin, dengan konfirmasi server. */
+export async function deleteAdminTutorProduct(productId: string): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+  await useApiFetch(`/admin/products/${productId}`, {
+    baseURL: config.apiBase,
+    credentials: 'include',
+    method: 'DELETE',
+    body: { confirmation: 'HAPUS' },
+  })
+}

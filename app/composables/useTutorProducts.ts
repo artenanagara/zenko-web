@@ -479,6 +479,7 @@ export async function submitTutorProduct(
   id: string,
   workspace?: ProductWorkspace,
   visibility: 'public' | 'bimbel' = 'public',
+  changeSummary?: string,
 ): Promise<void> {
   const { public: config } = useRuntimeConfig()
 
@@ -488,6 +489,7 @@ export async function submitTutorProduct(
   await useApiFetch(`${productsRoot(workspace)}/${id}/${action}`, {
     baseURL: config.apiBase,
     method: 'POST',
+    ...(changeSummary !== undefined ? { body: { changeSummary } } : {}),
     credentials: 'include',
   })
 }

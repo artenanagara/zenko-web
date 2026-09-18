@@ -179,6 +179,10 @@ useHead({
           <h2 class="mt-10 mb-3 text-[1.35rem] font-bold tracking-[-0.03em]">Tentang paket ini</h2>
           <p class="leading-[1.75] text-muted">{{ detail.description }}</p>
 
+          <AppSectionMessage v-if="detail.changeSummary" class="mt-5" appearance="information">
+            <span class="font-semibold">Perubahan terbaru:</span> {{ detail.changeSummary }}
+          </AppSectionMessage>
+
           <h2 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Materi yang dibahas</h2>
           <ul class="divide-y divide-line overflow-hidden rounded-lg border border-hairline">
             <li

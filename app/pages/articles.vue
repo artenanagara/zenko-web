@@ -85,15 +85,6 @@ const filtered = computed<Article[]>(() => {
   })
 })
 
-/**
- * The newest article gets a wide card of its own, but only on the unfiltered
- * view: inside a filter or a search the reader is looking for a specific
- * article, and singling one out just makes the list harder to scan.
- */
-const isBrowsingAll = computed(() => !activeCategory.value && !searchQuery.value.trim())
-const featured = computed(() => (isBrowsingAll.value ? filtered.value[0] : undefined))
-const rest = computed(() => (featured.value ? filtered.value.slice(1) : filtered.value))
-
 function selectCategory(slug: string) {
   // `replace` rather than `push`: filtering is not a destination, and a back
   // button that walks through every chip the reader tried is a nuisance.
@@ -255,57 +246,12 @@ function categorySlug(name: string): string {
         </div>
 
         <template v-else>
-          <!-- Artikel terbaru, satu kartu lebar -->
-          <NuxtLink
-            v-if="featured"
-            :to="`/artikel/${featured.slug}`"
-            class="group mb-6 grid overflow-hidden rounded-[28px] border border-hairline bg-surface shadow-xs transition-[transform,box-shadow] duration-300 ease-smooth hover:-translate-y-1 hover:shadow-lift lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]"
-          >
-            <MarketingArticleCover
-              :article="featured"
-              eager
-              class="aspect-16/9 w-full lg:aspect-auto lg:h-full lg:min-h-80"
-            />
-            <div class="flex flex-col justify-center p-7 md:p-10">
-              <p class="flex flex-wrap items-center gap-2 text-[0.72rem] font-bold tracking-[0.14em] uppercase">
-                <span class="rounded-pill bg-primary-soft px-3 py-1 text-primary">Terbaru</span>
-                <!-- Sama seperti kartu biasa: kategori hanya diulang di sini
-                     kalau sampulnya gambar sungguhan, bukan gambar cadangan
-                     yang sudah menuliskannya. -->
-                <span v-if="featured.categoryName && featured.coverUrl" class="text-muted">
-                  {{ featured.categoryName }}
-                </span>
-              </p>
-              <h3 class="mt-4 text-[clamp(1.35rem,2.4vw,1.85rem)] leading-[1.22] font-bold tracking-[-0.035em]">
-                {{ featured.title }}
-              </h3>
-              <p class="clamp-3 mt-3.5 leading-[1.7] text-muted">
-                {{ articleExcerpt(featured, 240) }}
-              </p>
-              <p class="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.82rem] text-faint">
-                <span>{{ featured.authorName || 'Tim Zenko' }}</span>
-                <span v-if="featured.publishedAt" aria-hidden="true">·</span>
-                <span v-if="featured.publishedAt">{{ formatIsoDateLong(featured.publishedAt) }}</span>
-                <span aria-hidden="true">·</span>
-                <span>{{ featured.readingMinutes }} menit baca</span>
-              </p>
-              <span class="mt-6 inline-flex items-center gap-1.5 font-semibold text-primary">
-                Baca artikel
-                <AppIcon
-                  name="arrow-right"
-                  :size="16"
-                  class="transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </span>
-            </div>
-          </NuxtLink>
-
-          <div v-if="rest.length" class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             <MarketingArticleCard
-              v-for="(article, index) in rest"
+              v-for="(article, index) in filtered"
               :key="article.id"
               :article="article"
-              :eager="!featured && index < 3"
+              :eager="index < 3"
             />
           </div>
         </template>

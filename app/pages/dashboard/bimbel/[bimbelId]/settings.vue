@@ -32,7 +32,7 @@ function selectTab(tab: string) {
   void navigateTo({ path: route.path, hash: tab === 'profil' ? '' : `#${tab}` }, { replace: true })
 }
 
-const form = reactive({ name: '', city: '', description: '', logoUrl: '' })
+const form = reactive({ name: '', username: '', city: '', description: '', logoUrl: '' })
 const saving = ref(false)
 const rotating = ref(false)
 const bankSaving = ref(false)
@@ -40,7 +40,7 @@ const account = reactive<BankAccountInput>({ bankCode: 'bca', bankLabel: 'BCA', 
 
 onMounted(() => Promise.all([bimbel.refresh(), refreshMemberships(), bank.refresh(), changeRequest.refresh()]))
 watch(() => bimbel.data.value, (value) => {
-  if (value) Object.assign(form, { name: value.name, city: value.city ?? '', description: value.description ?? '', logoUrl: value.logoUrl ?? '' })
+  if (value) Object.assign(form, { name: value.name, username: value.slug, city: value.city ?? '', description: value.description ?? '', logoUrl: value.logoUrl ?? '' })
 })
 watch(() => account.bankCode, (code) => {
   account.bankLabel = BANK_OPTIONS.find(item => item.code === code)?.label ?? code
@@ -123,6 +123,14 @@ async function saveBank() {
           </div>
           <AppInput v-model="form.name" label="Nama bimbel" required />
           <AppInput v-model="form.city" label="Kota" />
+          <div class="md:col-span-2">
+            <AppInput
+              v-model="form.username"
+              label="Username bimbel"
+              placeholder="bimbel-kamu"
+              hint="3–30 karakter: huruf kecil, angka, atau tanda hubung. Dipakai sebagai alamat publik bimbel."
+            />
+          </div>
           <AppTextarea v-model="form.description" class="md:col-span-2" label="Deskripsi" />
           <div class="md:col-span-2"><AppButton type="submit" :loading="saving">Simpan perubahan</AppButton></div>
         </form>
