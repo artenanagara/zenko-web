@@ -152,7 +152,7 @@ const formState = computed<FormState>(() => {
         </NuxtLink>
       </nav>
 
-      <div class="mb-9 text-center">
+      <div class="mb-8 text-center md:mb-10">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
           Bimbel di Zenko
         </p>
@@ -168,7 +168,7 @@ const formState = computed<FormState>(() => {
         </p>
       </div>
 
-      <div class="rounded-[22px] border border-hairline bg-surface p-6 shadow-xs md:p-9">
+      <div class="rounded-[22px] border border-hairline bg-surface p-5 shadow-xs md:p-9">
         <p v-if="formState === 'checking'" class="py-6 text-center text-muted">
           Memeriksa akun...
         </p>
@@ -238,7 +238,17 @@ const formState = computed<FormState>(() => {
           </p>
         </div>
 
-        <form v-else class="grid gap-5" novalidate @submit.prevent="onSubmit">
+        <form v-else class="grid gap-6" novalidate @submit.prevent="onSubmit">
+          <div class="flex items-start gap-3 border-b border-hairline pb-5">
+            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-primary-soft text-primary" aria-hidden="true">
+              <AppIcon name="buildings" :size="20" weight="bold" />
+            </span>
+            <div>
+              <h2 class="font-bold tracking-[-0.02em]">Siapkan ruang bimbelmu</h2>
+              <p class="mt-1 text-[0.86rem] leading-[1.55] text-muted">Isi data dasar bimbel. Kamu bisa melengkapinya setelah ruang aktif.</p>
+            </div>
+          </div>
+
           <!-- Identitas ditampilkan, bukan ditanyakan: server membacanya dari
                sesi, jadi kolom yang bisa diketik hanya bisa berbohong. -->
           <div class="flex items-center gap-3.5 rounded-sm border border-hairline-strong bg-surface-alt px-4 py-3.5">
