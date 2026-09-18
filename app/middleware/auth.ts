@@ -1,5 +1,3 @@
-import { homePathFor } from '#shared/types/user'
-
 /**
  * Guards routes that need a session, and narrows them further when the route
  * declares `meta.roles`.
@@ -29,7 +27,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (allowed?.length && user.value && !allowed.includes(user.value.role)) {
-    // Send them somewhere they belong rather than to a dead end.
-    return navigateTo(homePathFor(user.value.role))
+    // Workspace subdomains must not bounce a session belonging to another
+    // workspace back and forth forever (for example a marketing session on
+    // admin-staging). Let the workspace login replace that session instead of
+    // sending the browser to a home path that the host guard rejects again.
+    return navigateTo({ path: '/masuk', query: { lanjut: to.fullPath } })
   }
 })
