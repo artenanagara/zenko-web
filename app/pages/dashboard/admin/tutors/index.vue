@@ -89,6 +89,7 @@ const columns = [
   { key: 'loginMethod', label: 'Cara masuk', hideOnMobile: true },
   { key: 'status', label: 'Verifikasi' },
   { key: 'joined', label: 'Bergabung' },
+  { key: 'actions', label: 'Aksi', align: 'right' as const },
 ]
 
 const LOGIN_METHOD_LABEL: Record<string, string> = {
@@ -98,6 +99,20 @@ const LOGIN_METHOD_LABEL: Record<string, string> = {
 
 function initial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?'
+}
+
+const deleteTarget = ref<AdminTutorRow | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+function openDelete(tutor: AdminTutorRow) { deleteTarget.value = tutor; deleteError.value = ''; deleteOpen.value = true }
+function openTutorDelete(id: string) { const tutor = tutors.value.find(item => item.id === id); if (tutor) openDelete(tutor) }
+async function removeTutor() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminTutor(deleteTarget.value.id); deleteOpen.value = false; await refresh() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Tutor belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
 }
 </script>
 
@@ -211,8 +226,12 @@ function initial(name: string): string {
           <template #cell(joined)="{ item }">
             <span class="whitespace-nowrap text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
           </template>
+          <template #cell(actions)="{ item }">
+            <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="openTutorDelete(item.id)">Hapus</button>
+          </template>
         </DashboardTable>
       </div>
     </DashboardPanel>
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="tutor" description="Akun tutor akan dihapus dan seluruh paket yang tayang akan diarsipkan agar pembeli tetap memiliki akses." :busy="deleteBusy" :error="deleteError" @confirm="removeTutor" />
   </div>
 </template>

@@ -166,6 +166,20 @@ function findProduct(id: string): AdminProductSummary | undefined {
   return source.value.find(product => product.id === id)
 }
 
+const deleteTarget = ref<AdminProductSummary | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+const deleteDescription = computed(() => `Paket ${deleteTarget.value?.title ? `"${deleteTarget.value.title}" ` : ''}akan dihapus permanen beserta seluruh soalnya.`)
+function openDelete(product: AdminProductSummary) { deleteTarget.value = product; deleteError.value = ''; deleteOpen.value = true }
+async function removeProduct() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminProduct(deleteTarget.value.id); deleteOpen.value = false; await afterDecision() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Paket belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
+}
+
 /* --------------------------------------------------------------------------
  * Keputusan langsung dari baris antrean — modal & copy identik dengan halaman
  * detail, hasilnya pun sama (design spec §3).
@@ -359,6 +373,7 @@ async function decide(approve: boolean, reason?: string) {
                     Tolak…
                   </button>
                 </template>
+                <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="decisionBusy || deleteBusy" @click="openDelete(product)">Hapus</button>
               </span>
             </template>
           </template>
@@ -388,5 +403,6 @@ async function decide(approve: boolean, reason?: string) {
       :error="decisionError"
       @confirm="reason => decide(false, reason)"
     />
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="paket" :description="deleteDescription" :busy="deleteBusy" :error="deleteError" @confirm="removeProduct" />
   </div>
 </template>

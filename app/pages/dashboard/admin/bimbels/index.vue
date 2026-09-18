@@ -40,6 +40,19 @@ const legacy = computed(() =>
 )
 const busyId = ref('')
 const toast = useToast()
+const deleteTarget = ref<Bimbel | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+function openDelete(bimbel: Bimbel) { deleteTarget.value = bimbel; deleteError.value = ''; deleteOpen.value = true }
+function openBimbelDelete(id: string) { const bimbel = bimbels.value.find(item => item.id === id); if (bimbel) openDelete(bimbel) }
+async function removeBimbel() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminBimbel(deleteTarget.value.id); deleteOpen.value = false; await load() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Bimbel belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
+}
 
 function load() {
   return Promise.all([refresh(), legacyApplications.refresh()])
@@ -159,6 +172,7 @@ const columns = [
   { key: 'joined', label: 'Mendaftar' },
   { key: 'period', label: 'Masa aktif' },
   { key: 'status', label: 'Langganan' },
+  { key: 'actions', label: 'Aksi', align: 'right' as const },
 ]
 
 function findBimbel(id: string): Bimbel | undefined {
@@ -296,8 +310,12 @@ function findBimbel(id: string): Bimbel | undefined {
               </div>
             </template>
           </template>
+          <template #cell(actions)="{ item }">
+            <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="openBimbelDelete(item.id)">Hapus</button>
+          </template>
         </DashboardTable>
       </div>
     </DashboardPanel>
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="bimbel" description="Bimbel, anggota, kelas, tagihan, dan paket privat di dalamnya akan dihapus permanen." :busy="deleteBusy" :error="deleteError" @confirm="removeBimbel" />
   </div>
 </template>

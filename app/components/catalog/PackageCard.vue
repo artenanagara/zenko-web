@@ -64,7 +64,6 @@ function trackClick() {
              price row down. -->
         <PackageAttribution
           :author="item.author"
-          :bimbel="item.bimbel"
           variant="card"
           class="mt-3 -mb-2"
         />

@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import type { Author, PackageBimbel } from '#shared/types/catalog'
+import type { Author } from '#shared/types/catalog'
 
 /**
- * Atribusi ganda satu paket: "oleh Tutor A · Bimbel X".
- *
- * Sebelum "Terbitkan sebagai", paket yang dijual bimbel tampil dengan nama
- * bimbel MENGGANTIKAN nama penulisnya. Sekarang keduanya ada, dan urutannya
- * disengaja: tutor lebih dulu, bimbel sebagai bendera di belakangnya.
- *
- * Nama tutor menaut ke profilnya. Nama bimbel sengaja TIDAK menaut ke mana
- * pun selama `/bimbel/:slug` belum ada — tautan mati lebih buruk daripada
- * teks biasa. Bobot visualnya juga dijaga setara teks tutor, bukan lozenge
- * yang berteriak: yang dijanjikan §6.2 adalah individu di bawah bendera
- * agency, bukan agency yang menelan individu.
+ * One public author per marketplace card. A tutor-owned package links to a
+ * tutor profile; a package published by a bimbel links to its organisation
+ * profile and uses the organisation logo.
  *
  * NuxtLink diimpor, tidak di-resolve lewat nama — auto-import tidak
  * mendaftarkan apa pun yang bisa ditemukan resolveComponent. Alasan yang sama
@@ -23,8 +15,6 @@ import { NuxtLink } from '#components'
 const props = withDefaults(
   defineProps<{
     author: Author
-    /** Absen untuk paket pribadi tutor — mayoritas paket. */
-    bimbel?: PackageBimbel
     /**
      * `card` untuk grid katalog (kecil, muted, di atas overlay stretched-link
      * kartu); `detail` untuk baris meta di header halaman paket.
@@ -39,6 +29,9 @@ const props = withDefaults(
  * platform tidak punya keduanya — keduanya tampil sebagai teks tanpa tautan.
  */
 const profilePath = computed(() => {
+  if (props.author.type === 'bimbel' && props.author.slug) {
+    return `/bimbel/${encodeURIComponent(props.author.slug)}`
+  }
   const identifier = props.author.username || props.author.id
   return identifier ? `/tutor/${encodeURIComponent(identifier)}` : undefined
 })
@@ -70,29 +63,13 @@ const isCard = computed(() => props.variant === 'card')
         width="28"
         height="28"
         loading="lazy"
-        class="shrink-0 rounded-full object-cover"
-        :class="isCard ? 'h-6 w-6' : 'h-7 w-7'"
+        class="shrink-0 object-cover"
+        :class="[
+          author.type === 'bimbel' ? 'rounded-md' : 'rounded-full',
+          isCard ? 'h-6 w-6' : 'h-7 w-7',
+        ]"
       >
       <span class="truncate">{{ author.name }}</span>
     </component>
-
-    <template v-if="bimbel">
-      <span class="shrink-0 opacity-60" aria-hidden="true">·</span>
-      <!-- Batas 55% di kartu: tanpa itu nama bimbel yang panjang menyusut
-           proporsional bersama nama tutor, dan tutornya — identitas yang
-           justru dikembalikan oleh atribusi ganda — yang paling banyak
-           terpotong. -->
-      <span
-        class="flex min-w-0 items-center gap-1.5"
-        :class="isCard ? 'max-w-[55%]' : ''"
-        :title="bimbel.name"
-      >
-        <AppIcon name="buildings" :size="isCard ? 14 : 16" class="shrink-0" />
-        <!-- Tanpa ini pembaca layar hanya mendengar dua nama berurutan dan
-             tidak punya cara tahu yang kedua adalah lembaga. -->
-        <span class="sr-only">Bimbel penerbit:</span>
-        <span class="truncate">{{ bimbel.name }}</span>
-      </span>
-    </template>
   </div>
 </template>

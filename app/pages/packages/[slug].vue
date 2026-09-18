@@ -83,14 +83,14 @@ const productJsonLd = {
   description: detail.value.description,
   category: detail.value.category,
   image: detail.value.thumbnailUrl,
-  // Brand is who sells it, author is who wrote it — and for a bimbel's package
-  // those are two different parties. Naming the tutor as the brand was right
-  // while a tutor was the only kind of seller; now that a package can be sold
-  // under an organisation's name, the markup should say the same thing the
-  // page does rather than credit the seller to whoever happens to be listed
-  // first. Author is stated in both cases, so the person is never dropped.
-  brand: { '@type': 'Brand', name: detail.value.bimbel?.name || detail.value.author.name },
-  author: { '@type': 'Person', name: detail.value.author.name },
+  brand: { '@type': 'Brand', name: detail.value.author.name },
+  author: {
+    '@type': detail.value.author.type === 'bimbel' ? 'Organization' : 'Person',
+    name: detail.value.author.name,
+    ...(detail.value.author.type === 'bimbel' && detail.value.author.slug
+      ? { url: `https://zenkoedu.id/bimbel/${detail.value.author.slug}` }
+      : {}),
+  },
   offers: {
     '@type': 'Offer',
     price: detail.value.price,
@@ -152,10 +152,8 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <!-- Penulis + bimbel penerbitnya, komponen yang sama dengan kartu
-                 katalog supaya satu paket tidak beratribusi berbeda antara
-                 tempat ia ditemukan dan tempat ia dibeli. -->
-            <PackageAttribution :author="detail.author" :bimbel="detail.bimbel" variant="detail" />
+            <!-- Marketplace exposes one clickable author, matching the card. -->
+            <PackageAttribution :author="detail.author" variant="detail" />
             <span v-if="detail.reviewCount > 0" class="flex items-center gap-1.5">
               <IconStar class="h-3.5 w-3.5 text-star" />
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>

@@ -93,6 +93,7 @@ const columns = [
   { key: 'purchaseCount', label: 'Paket dibeli', align: 'right' as const },
   { key: 'attemptCount', label: 'Tryout', align: 'right' as const },
   { key: 'joined', label: 'Bergabung' },
+  { key: 'actions', label: 'Aksi', align: 'right' as const },
 ]
 
 const LOGIN_METHOD_LABEL: Record<string, string> = {
@@ -102,6 +103,20 @@ const LOGIN_METHOD_LABEL: Record<string, string> = {
 
 function initial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?'
+}
+
+const deleteTarget = ref<AdminStudentRow | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+function openDelete(student: AdminStudentRow) { deleteTarget.value = student; deleteError.value = ''; deleteOpen.value = true }
+function openStudentDelete(id: string) { const student = students.value.find(item => item.id === id); if (student) openDelete(student) }
+async function removeStudent() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminStudent(deleteTarget.value.id); deleteOpen.value = false; await refresh() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Siswa belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
 }
 </script>
 
@@ -204,8 +219,12 @@ function initial(name: string): string {
           <template #cell(joined)="{ item }">
             <span class="whitespace-nowrap text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
           </template>
+          <template #cell(actions)="{ item }">
+            <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="openStudentDelete(item.id)">Hapus</button>
+          </template>
         </DashboardTable>
       </div>
     </DashboardPanel>
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="siswa" description="Akun siswa, sesi login, dan identitas akun akan dihapus dari direktori." :busy="deleteBusy" :error="deleteError" @confirm="removeStudent" />
   </div>
 </template>
