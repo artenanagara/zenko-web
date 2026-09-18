@@ -180,6 +180,15 @@ useHead({
             class="aspect-video w-full rounded-lg bg-[#edf3ff] object-cover shadow-xs"
           />
 
+          <AppSectionMessage
+            v-if="detail.changeSummary"
+            class="mt-6"
+            appearance="information"
+            title="Perubahan terbaru"
+          >
+            {{ detail.changeSummary }}
+          </AppSectionMessage>
+
           <h2 class="mt-10 mb-3 text-[1.35rem] font-bold tracking-[-0.03em]">Tentang paket ini</h2>
           <p class="leading-[1.75] text-muted">{{ detail.description }}</p>
 

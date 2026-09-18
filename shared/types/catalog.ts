@@ -84,6 +84,8 @@ export interface PackageDetail extends Package {
   topics: Topic[]
   /** Unix seconds. */
   updatedAt: number
+  /** Ringkasan perubahan terakhir yang perlu diketahui siswa. */
+  changeSummary?: string
 }
 
 export interface Testimonial {
