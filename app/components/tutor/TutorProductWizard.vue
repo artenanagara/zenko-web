@@ -1029,6 +1029,7 @@ const submitting = ref(false)
 const submitted = ref(false)
 const submitProblems = ref<string[]>([])
 const submitError = ref('')
+const changeSummary = ref('')
 const isBimbelPrivateProduct = computed(() => Boolean(props.bimbelId) && detail.value?.visibility !== 'public')
 
 /** Label tombol ajukan di footer; dipakai ulang oleh modal hak cipta. */
@@ -1065,6 +1066,11 @@ async function submitForReview() {
   submitError.value = ''
   submitProblems.value = []
 
+  if (isLiveProduct.value && !changeSummary.value.trim()) {
+    submitError.value = 'Catatan perubahan wajib diisi saat mengajukan ulang produk.'
+    return
+  }
+
   // Harga yang baru diketik harus sampai ke server sebelum divalidasi.
   if (!(await persist())) {
     copyrightModalOpen.value = false
@@ -1077,6 +1083,7 @@ async function submitForReview() {
       props.productId,
       workspace.value,
       detail.value?.visibility ?? (props.bimbelId ? 'bimbel' : 'public'),
+      isLiveProduct.value ? changeSummary.value.trim() : undefined,
     )
     submitted.value = true
     // Produk ini meninggalkan draft, jadi apa yang tayang milik tutor bisa
@@ -1628,6 +1635,19 @@ const priceHintBlocking = computed(() =>
       <!-- ======================================== Kelompok 5: Review & ajukan -->
       <DashboardPanel v-else>
         <div class="grid gap-6">
+          <div v-if="isLiveProduct" class="rounded-md border border-primary/25 bg-primary-soft p-5">
+            <label for="product-change-summary" :class="FIELD_LABEL_CLASS">Catatan perubahan <span class="text-danger-ink">*</span></label>
+            <p class="mt-1 text-[0.82rem] text-muted">Jelaskan perubahan yang kamu ajukan agar tampil pada halaman produk setelah disetujui.</p>
+            <textarea
+              id="product-change-summary"
+              v-model="changeSummary"
+              rows="3"
+              maxlength="1000"
+              required
+              class="mt-3 block w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm"
+              placeholder="Contoh: Memperbarui deskripsi, sampul, harga, dan menambahkan soal baru."
+            />
+          </div>
           <div class="rounded-md border border-hairline bg-surface-alt p-5">
             <h3 class="text-[0.9rem] font-semibold">Ringkasan</h3>
             <dl class="mt-3 grid gap-4 sm:grid-cols-2">

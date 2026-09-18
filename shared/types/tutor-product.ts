@@ -278,6 +278,8 @@ export interface BundleItem {
  */
 export interface TutorProductDetail extends TutorProductSummary {
   description: string
+  /** Ringkasan perubahan yang akan tampil di halaman slug publik. */
+  changeSummary?: string
   /**
    * Checklist "Yang kamu dapatkan" yang diisi tutor sendiri, ditampilkan di
    * halaman detail publik. Kosong/absen berarti tutor belum mengisinya — API
@@ -378,4 +380,9 @@ export interface UpdateProductRequest {
   items?: string[]
   /** single only: see TutorProductDetail.shuffleQuestions. */
   shuffleQuestions?: boolean
+}
+
+/** POST /tutor/products/:id/submit. Catatan wajib saat mengajukan ulang produk live. */
+export interface SubmitProductRequest {
+  changeSummary?: string
 }

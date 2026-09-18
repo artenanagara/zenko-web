@@ -200,8 +200,8 @@ async function removeTutor() {
           </template>
 
           <template #cell(specializations)="{ value }">
-            <span v-if="value.length" class="flex flex-wrap gap-1">
-              <DashboardBadge v-for="tag in value" :key="tag" tone="neutral">{{ tag }}</DashboardBadge>
+            <span v-if="value.length" class="block max-w-44 truncate text-[0.86rem] text-muted" :title="value.join(', ')">
+              {{ value.slice(0, 2).join(' · ') }}<template v-if="value.length > 2"> +{{ value.length - 2 }}</template>
             </span>
             <span v-else class="text-muted">—</span>
           </template>

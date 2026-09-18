@@ -261,7 +261,7 @@ function findBimbel(id: string): Bimbel | undefined {
 
         <DashboardTable v-else :columns="columns" :data="rows" primary-key="bimbel">
           <template #cell(bimbel)="{ item }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span>
+            <NuxtLink :to="`/dashboard/admin/bimbels/${item.id}`" class="block font-semibold tracking-[-0.02em] text-ink hover:text-primary hover:underline">{{ item.name }}</NuxtLink>
             <span class="block text-[0.82rem] text-muted">/{{ item.slug }}</span>
           </template>
 
