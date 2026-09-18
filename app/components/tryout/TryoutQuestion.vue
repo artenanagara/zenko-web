@@ -16,7 +16,7 @@ const props = defineProps<{
    * soal, mekanisme lama) yang tetap dirender seperti sebelumnya.
    */
   passage?: TryoutPassage | null
-  textScale?: 'sm' | 'md' | 'lg'
+  textScale?: 1 | 2 | 3 | 4 | 5 | 6 | 7
 }>()
 
 const emit = defineEmits<{
@@ -35,16 +35,24 @@ const passageOpen = ref(true)
 watch(() => props.passage?.id, () => { passageOpen.value = true })
 const passageId = useId()
 
-const textScale = computed(() => props.textScale ?? 'md')
+const textScale = computed(() => props.textScale ?? 4)
 const questionTextClass = computed(() => ({
-  sm: 'text-[0.94rem] md:text-[0.98rem]',
-  md: 'text-[1.02rem] md:text-[1.05rem]',
-  lg: 'text-[1.14rem] md:text-[1.22rem]',
+  1: 'text-[0.86rem] md:text-[0.9rem]',
+  2: 'text-[0.92rem] md:text-[0.96rem]',
+  3: 'text-[0.98rem] md:text-[1.02rem]',
+  4: 'text-[1.02rem] md:text-[1.05rem]',
+  5: 'text-[1.1rem] md:text-[1.16rem]',
+  6: 'text-[1.2rem] md:text-[1.28rem]',
+  7: 'text-[1.3rem] md:text-[1.4rem]',
 }[textScale.value]))
 const answerTextClass = computed(() => ({
-  sm: 'text-[0.86rem]',
-  md: 'text-[0.94rem]',
-  lg: 'text-[1.06rem]',
+  1: 'text-[0.76rem]',
+  2: 'text-[0.82rem]',
+  3: 'text-[0.88rem]',
+  4: 'text-[0.94rem]',
+  5: 'text-[1.02rem]',
+  6: 'text-[1.1rem]',
+  7: 'text-[1.18rem]',
 }[textScale.value]))
 
 const currentValue = computed(() => props.value ?? props.selected ?? null)

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-type ExamTextScale = 'sm' | 'md' | 'lg'
+type ExamTextScale = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
-const scale = defineModel<ExamTextScale>({ default: 'md' })
+const scale = defineModel<ExamTextScale>({ default: 4 as ExamTextScale })
 
 const options: { value: ExamTextScale; label: string; ariaLabel: string }[] = [
-  { value: 'sm', label: 'A−', ariaLabel: 'Perkecil teks' },
-  { value: 'md', label: 'A', ariaLabel: 'Ukuran teks normal' },
-  { value: 'lg', label: 'A+', ariaLabel: 'Perbesar teks' },
+  { value: 1, label: 'A−3', ariaLabel: 'Ukuran teks paling kecil' },
+  { value: 2, label: 'A−2', ariaLabel: 'Ukuran teks kecil sekali' },
+  { value: 3, label: 'A−1', ariaLabel: 'Ukuran teks kecil' },
+  { value: 4, label: 'A', ariaLabel: 'Ukuran teks normal' },
+  { value: 5, label: 'A+1', ariaLabel: 'Ukuran teks besar' },
+  { value: 6, label: 'A+2', ariaLabel: 'Ukuran teks besar sekali' },
+  { value: 7, label: 'A+3', ariaLabel: 'Ukuran teks paling besar' },
 ]
 </script>
 
@@ -16,7 +20,7 @@ const options: { value: ExamTextScale; label: string; ariaLabel: string }[] = [
       v-for="option in options"
       :key="option.value"
       type="button"
-      class="flex h-8 min-w-8 items-center justify-center rounded-[3px] px-1.5 text-[0.78rem] font-bold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+      class="flex h-8 min-w-8 items-center justify-center rounded-[3px] px-1 text-[0.68rem] font-bold transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none sm:px-1.5 sm:text-[0.74rem]"
       :class="scale === option.value ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-alt hover:text-ink'"
       :aria-label="option.ariaLabel"
       :aria-pressed="scale === option.value"

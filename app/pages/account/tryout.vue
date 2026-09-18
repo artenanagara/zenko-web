@@ -132,7 +132,7 @@ const showEndConfirm = ref(false)
 
 /** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
 const navOpen = ref(false)
-const textScale = ref<'sm' | 'md' | 'lg'>('md')
+const textScale = ref<1 | 2 | 3 | 4 | 5 | 6 | 7>(4)
 
 function requestEndSection() {
   navOpen.value = false
@@ -251,7 +251,7 @@ function retry() {
         class="exam-protected container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24"
         :class="obscured && 'blur-lg'"
       >
-        <div class="min-h-0 md:overflow-y-auto md:pr-1">
+        <div class="min-h-0 md:h-screen md:overflow-y-auto md:pr-1">
           <div class="mb-3 flex justify-end">
             <ExamTextScaleControl v-model="textScale" />
           </div>
