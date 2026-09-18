@@ -174,6 +174,7 @@ async function exitSimulation() {
           simulate
         >
           <template #action>
+            <ExamTextScaleControl v-model="textScale" />
             <button
               type="button"
               class="rounded-xs border border-amber-300 bg-white px-3 py-1.5 text-[0.82rem] font-semibold text-amber-900 transition-colors hover:bg-amber-100"
@@ -192,10 +193,6 @@ async function exitSimulation() {
             <AccountNotice class="mb-4">
               Mode simulasi — hasil tidak disimpan dan tidak memengaruhi status produk.
             </AccountNotice>
-
-            <div class="mb-3 flex justify-end">
-              <ExamTextScaleControl v-model="textScale" />
-            </div>
 
             <TryoutQuestion
               :question="session.currentQuestion.value"

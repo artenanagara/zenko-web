@@ -236,7 +236,11 @@ function retry() {
 
     <!-- Sesi berjalan. -->
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
-      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value" />
+      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value">
+        <template #action>
+          <ExamTextScaleControl v-model="textScale" />
+        </template>
+      </TryoutHeader>
 
       <!-- md:h-screen pins the row to the viewport instead of letting the
            taller column (often the navigator, in flat mode with every
@@ -252,9 +256,6 @@ function retry() {
         :class="obscured && 'blur-lg'"
       >
         <div class="min-h-0 md:h-screen md:overflow-y-auto md:pr-1">
-          <div class="mb-3 flex justify-end">
-            <ExamTextScaleControl v-model="textScale" />
-          </div>
           <TryoutQuestion
             :question="session.currentQuestion.value"
             :index="session.displayIndex.value"
