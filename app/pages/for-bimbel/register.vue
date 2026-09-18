@@ -32,6 +32,15 @@ useHead({
 const SIGN_IN_PATH = '/masuk?lanjut=/untuk-bimbel/daftar'
 
 const { user, isSignedIn, isLoading: isCheckingSession } = useAuth()
+const {
+  provinces,
+  cities,
+  isLoadingProvinces,
+  isLoadingCities,
+  error: regionError,
+  loadProvinces,
+  loadCities,
+} = useIndonesiaRegions()
 const application = useMyBimbelApplication()
 const recommendedPlan = useState<'dasar' | 'pro' | 'institusi' | null>('bimbel-recommended-plan', () => null)
 
@@ -51,6 +60,7 @@ watch(isSignedIn, (signedIn) => {
 
 const form = reactive({
   bimbelName: '',
+  provinceCode: '',
   city: '',
   studentCountBand: '',
   termsAccepted: false,
@@ -71,6 +81,22 @@ const STUDENT_COUNT_OPTIONS = [
   { value: '51-150', label: '51–150 siswa' },
   { value: '>150', label: 'Lebih dari 150 siswa' },
 ]
+
+const provinceOptions = computed(() => provinces.value.map(region => ({
+  value: region.code,
+  label: region.name,
+})))
+const cityOptions = computed(() => cities.value.map(region => ({
+  value: region.name,
+  label: region.name,
+})))
+
+onMounted(loadProvinces)
+
+watch(() => form.provinceCode, async (provinceCode) => {
+  form.city = ''
+  await loadCities(provinceCode)
+})
 
 function validate() {
   for (const key of Object.keys(errors) as FieldKey[]) delete errors[key]
@@ -274,13 +300,31 @@ const formState = computed<FormState>(() => {
             required
           />
 
-          <AppInput
-            id="bimbel-city"
-            v-model="form.city"
-            label="Kota"
-            placeholder="Contoh: Surabaya"
-            hint="Opsional."
-          />
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <AppSelect
+                v-model="form.provinceCode"
+                label="Provinsi"
+                :options="provinceOptions"
+                placeholder="Pilih provinsi"
+                :disabled="isLoadingProvinces || provinceOptions.length === 0"
+              />
+              <p v-if="isLoadingProvinces" class="mt-1.5 text-xs text-muted">Memuat provinsi…</p>
+            </div>
+
+            <div>
+              <AppSelect
+                v-model="form.city"
+                label="Kota / kabupaten"
+                :options="cityOptions"
+                :placeholder="isLoadingCities ? 'Memuat kota…' : 'Pilih kota / kabupaten'"
+                :disabled="!form.provinceCode || isLoadingCities || cityOptions.length === 0"
+              />
+              <p class="mt-1.5 text-xs text-muted">Ketik huruf pertama saat dropdown terbuka untuk mencari.</p>
+            </div>
+          </div>
+
+          <AppInlineMessage v-if="regionError" type="error">{{ regionError }}</AppInlineMessage>
 
           <div>
             <AppSelect
