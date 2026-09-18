@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.29.0](https://github.com/artenanagara/zenko-web/compare/v0.28.0...v0.29.0) (2026-09-18)
+
+
+### Features
+
+* add bimbel public profiles and single marketplace author ([6c5d9a1](https://github.com/artenanagara/zenko-web/commit/6c5d9a1f18e9e627303fb84ee200b9650a426a83))
+* **marketing:** complete staging workspace flows ([5459b2f](https://github.com/artenanagara/zenko-web/commit/5459b2ff1e4d678b0bcbff76bdf34ed835198b0e))
+* **marketing:** track product performance ([9582e47](https://github.com/artenanagara/zenko-web/commit/9582e47a74fa8e40b158037ef16252786d80da14))
+* show product change summary on package detail ([a71770c](https://github.com/artenanagara/zenko-web/commit/a71770cd48253c4a3e9bf431b5ff3bb930d8ae3c))
+
+
+### Bug Fixes
+
+* **admin:** use registered form components ([ec3e5fd](https://github.com/artenanagara/zenko-web/commit/ec3e5fddb785567f572cae861e8caee51fdfae1b))
+* avoid cross-workspace auth redirect loop ([fb76339](https://github.com/artenanagara/zenko-web/commit/fb76339da309fd55d1c8c437186c6a9ba0d7355d))
+* **dashboard:** stabilize workspace navigation and roster actions ([099a84e](https://github.com/artenanagara/zenko-web/commit/099a84e28f338c146db63747091d8aa281983ca4))
+* make banner creation route reachable ([85ec915](https://github.com/artenanagara/zenko-web/commit/85ec9156b8945acd9e1b627301b3f6e3a0ba2c9b))
+* preserve package description line breaks ([f643e77](https://github.com/artenanagara/zenko-web/commit/f643e775f8bd2a123fa609c99ccd9ffd60464dfd))
+
 ## [0.28.0](https://github.com/artenanagara/zenko-web/compare/v0.27.0...v0.28.0) (2026-09-17)
 
 
