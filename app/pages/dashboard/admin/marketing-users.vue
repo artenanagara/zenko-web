@@ -31,8 +31,14 @@ onMounted(load)
     <AppPageHeader title="Pengguna marketing" description="Atur akun yang boleh masuk ke Marketing Hub sebagai marketing atau editor." />
     <DashboardPanel header="Tambah atau ubah akses">
       <form class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem_auto] sm:items-end" @submit.prevent="save">
-        <AppField label="Email akun" name="marketing-user-email"><AppInput v-model="email" label="Email akun" type="email" placeholder="nama@zenkoedu.id" required /></AppField>
-        <AppField label="Role" name="marketing-user-role"><AppSelect v-model="role" :options="[{ value: 'marketing', label: 'Marketing' }, { value: 'editor', label: 'Editor' }]" /></AppField>
+        <div>
+          <label for="marketing-user-email" class="mb-2 block text-sm font-semibold text-ink">Email akun</label>
+          <AppInput id="marketing-user-email" v-model="email" label="Email akun" type="email" placeholder="nama@zenkoedu.id" required />
+        </div>
+        <div>
+          <label for="marketing-user-role" class="mb-2 block text-sm font-semibold text-ink">Role</label>
+          <AppSelect id="marketing-user-role" v-model="role" :options="[{ value: 'marketing', label: 'Marketing' }, { value: 'editor', label: 'Editor' }]" />
+        </div>
         <AppButton type="submit" :disabled="saving">{{ saving ? 'Menyimpan…' : 'Simpan akses' }}</AppButton>
       </form>
     </DashboardPanel>
