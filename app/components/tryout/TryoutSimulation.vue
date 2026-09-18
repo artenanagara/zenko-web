@@ -65,7 +65,7 @@ const showEndConfirm = ref(false)
 
 /** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
 const navOpen = ref(false)
-const textScale = ref<1 | 2 | 3 | 4 | 5 | 6 | 7>(4)
+const textScale = ref<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10>(5)
 
 function requestEndSection() {
   navOpen.value = false
