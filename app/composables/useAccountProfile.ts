@@ -19,6 +19,18 @@ export async function updateAccountName(name: string): Promise<void> {
   })
 }
 
+export async function updateLeaderboardHidden(hidden: boolean): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+  const { user } = useAuth()
+
+  user.value = await useApiFetch<User>('/auth/profile', {
+    baseURL: config.apiBase,
+    method: 'PUT',
+    body: { leaderboardHidden: hidden },
+    credentials: 'include',
+  })
+}
+
 /** POST /auth/avatar — uploads and applies the photo in one call. */
 export async function uploadAccountAvatar(file: File): Promise<void> {
   const { public: config } = useRuntimeConfig()

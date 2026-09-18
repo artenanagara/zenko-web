@@ -13,6 +13,8 @@ const slug = route.params.slug as string
 const fromBimbel = computed(() => route.query.dari === 'bimbel')
 const packageHome = computed(() => fromBimbel.value ? '/akun/bimbel' : `/akun/paket/${slug}`)
 const packageHomeLabel = computed(() => fromBimbel.value ? 'Kembali ke Bimbel saya' : 'Kembali ke paket')
+const leaderboard = useLeaderboard(slug)
+if (import.meta.client) void leaderboard.refreshPublic()
 
 // The endpoint returns the real tutor-authored questions only after confirming
 // this account owns the package. Keeping that check and the blueprint in one
@@ -435,6 +437,7 @@ function retry() {
       :answers="session.answers.value"
       :attempt="recordedAttempt"
       :attempt-id="recordedAttemptId"
+      :leaderboard-participants="leaderboard.publicPodium.value?.participants ?? 0"
       :return-to="packageHome"
       :return-label="packageHomeLabel"
       :from-bimbel="fromBimbel"

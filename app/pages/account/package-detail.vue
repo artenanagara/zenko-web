@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Attempt } from '#shared/types/account'
+import type { LeaderboardPeriod } from '~/composables/useLeaderboard'
 import type { PackageStats } from '~/composables/useOwnedPackages'
 
 definePageMeta({
@@ -29,6 +30,20 @@ const attempts = computed(() =>
 
 /** Percobaan terbaru — tujuan tombol "Lihat pembahasan" di header. */
 const latestAttempt = computed(() => attempts.value[0] ?? null)
+
+type PackageSection = 'summary' | 'leaderboard'
+const activePackageSection = ref<PackageSection>('summary')
+const activeLeaderboardPeriod = ref<LeaderboardPeriod>('all')
+const leaderboard = useLeaderboard(slug)
+const leaderboardMaxScore = computed(() => Math.max(0, ...attempts.value.map(attempt => attempt.maxScore)))
+
+if (import.meta.client) {
+  void leaderboard.refreshPublic()
+  void leaderboard.fetchMine(activeLeaderboardPeriod.value)
+}
+watch(activeLeaderboardPeriod, period => leaderboard.fetchMine(period))
+if (route.query.tab === 'leaderboard') activePackageSection.value = 'leaderboard'
+if (route.query.period === 'week') activeLeaderboardPeriod.value = 'week'
 
 /* ------------------------------------------------------------------ ulasan */
 
@@ -167,7 +182,7 @@ function barTone(percent: number) {
       <!-- Identitas paket dan aksinya dalam satu baris: teks di kiri, CTA di
            kanan. Tanpa thumbnail — di halaman milik sendiri gambar katalog
            cuma makan tempat. -->
-      <header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-lg border border-hairline bg-surface p-5 shadow-xs md:p-6">
+      <header class="flex min-w-0 flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-lg border border-hairline bg-surface p-5 shadow-xs md:p-6">
         <div class="min-w-0">
           <DashboardBadge tone="brand">{{ item.category }}</DashboardBadge>
           <h1 class="mt-2.5 text-[1.4rem] leading-[1.2] font-bold tracking-[-0.04em]">{{ item.title }}</h1>
@@ -196,7 +211,7 @@ function barTone(percent: number) {
              menautkan pembahasan tiap percobaan satu per satu; yang di sini
              adalah jalan pintas ke yang baru saja dikerjakan, karena itu yang
              dicari orang begitu selesai. -->
-        <div class="flex shrink-0 flex-wrap items-center gap-2.5">
+        <div class="flex w-full min-w-0 flex-wrap items-center gap-2.5 md:w-auto md:shrink-0">
           <AppButton
             v-if="latestAttempt"
             :to="`/akun/paket/${item.slug}/kerjakan/pembahasan/${latestAttempt.id}`"
@@ -211,6 +226,72 @@ function barTone(percent: number) {
           </AppButton>
         </div>
       </header>
+
+      <div class="flex overflow-x-auto border-b border-hairline" role="tablist" aria-label="Bagian paket">
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activePackageSection === 'summary'"
+          class="shrink-0 border-b-2 px-1 py-3 text-[0.9rem] font-semibold transition-colors"
+          :class="activePackageSection === 'summary' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-ink'"
+          @click="activePackageSection = 'summary'"
+        >Ringkasan</button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activePackageSection === 'leaderboard'"
+          class="ml-6 shrink-0 border-b-2 px-1 py-3 text-[0.9rem] font-semibold transition-colors"
+          :class="activePackageSection === 'leaderboard' ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-ink'"
+          @click="activePackageSection = 'leaderboard'"
+        >Leaderboard</button>
+      </div>
+
+      <section v-show="activePackageSection === 'leaderboard'" class="grid gap-4" role="tabpanel">
+        <DashboardPanel title="Leaderboard" description="Peringkat dihitung dari pengerjaan pertama. Skor sama berbagi peringkat.">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="inline-flex rounded-pill border border-hairline bg-surface-sunken p-1" role="tablist" aria-label="Periode leaderboard">
+              <button
+                v-for="period in ([['all', 'Sepanjang masa'], ['week', 'Minggu ini']] as const)"
+                :key="period[0]"
+                type="button"
+                role="tab"
+                :aria-selected="activeLeaderboardPeriod === period[0]"
+                class="rounded-pill px-3 py-1.5 text-[0.82rem] font-bold transition-colors"
+                :class="activeLeaderboardPeriod === period[0] ? 'bg-surface text-ink shadow-xs' : 'text-muted hover:text-ink'"
+                @click="activeLeaderboardPeriod = period[0]"
+              >{{ period[1] }}</button>
+            </div>
+            <span v-if="leaderboard.mine.value" class="text-[0.82rem] text-muted">
+              {{ leaderboard.mine.value.participants }} peserta
+            </span>
+          </div>
+
+          <div v-if="leaderboard.mine.value && leaderboard.mine.value.podium.length >= 3" class="mt-4">
+            <LeaderboardPodium :entries="leaderboard.mine.value.podium" :max-score="leaderboardMaxScore" />
+          </div>
+          <LeaderboardEmpty
+            v-else-if="leaderboard.mine.value && leaderboard.mine.value.participants < 3"
+            class="mt-4"
+          />
+          <div v-else-if="leaderboard.minePending.value" class="mt-4 h-56 animate-pulse rounded-lg bg-surface-sunken" aria-busy="true" />
+
+          <LeaderboardList
+            v-if="leaderboard.mine.value"
+            :rows="leaderboard.mine.value.rows"
+            :max-score="leaderboardMaxScore"
+            class="mt-4"
+          />
+          <LeaderboardMeBar
+            v-if="leaderboard.mine.value"
+            :me="leaderboard.mine.value.me"
+            :period="activeLeaderboardPeriod"
+            :max-score="leaderboardMaxScore"
+            :all-time-href="`/akun/paket/${item.slug}?tab=leaderboard&period=all`"
+          />
+        </DashboardPanel>
+      </section>
+
+      <div v-show="activePackageSection === 'summary'" class="grid gap-6">
 
       <!-- Belum pernah dikerjakan: satu ajakan yang jelas lebih berguna daripada
            empat kartu berisi tanda strip dan dua panel kosong. -->
@@ -422,6 +503,8 @@ function barTone(percent: number) {
           />
         </DashboardPanel>
       </template>
+
+      </div>
 
       <!-- Ajakan sekali jalan, tepat setelah sesi selesai. Isinya form yang
            sama dengan panel di atas — satu sumber, dua tempat munculnya. -->
