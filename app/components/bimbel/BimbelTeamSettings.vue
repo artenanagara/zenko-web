@@ -100,15 +100,16 @@ async function patch(member: BimbelMember, body: { role?: BimbelRole, status?: B
       </template>
       <template #cell(aksi)="{ item }">
         <template v-for="member in [findMember(item.accountId)]" :key="item.accountId">
-          <button
+          <AppIconButton
             v-if="member && member.role !== 'owner'"
-            type="button"
-            class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
+            variant="ghost"
+            size="sm"
             :disabled="busyId === member.accountId"
             @click="patch(member, { status: member.status === 'active' ? 'suspended' : 'active' })"
-          >
-            {{ member.status === 'active' ? 'Tangguhkan' : 'Aktifkan' }}
-          </button>
+            aria-label="Ubah status anggota"
+            ariaLabel="Ubah status anggota"
+            title="Ubah status anggota"
+          ><AppIcon :name="member.status === 'active' ? 'x-circle' : 'check-circle'" :size="17" aria-hidden="true" /></AppIconButton>
           <span v-else class="text-muted">—</span>
         </template>
       </template>

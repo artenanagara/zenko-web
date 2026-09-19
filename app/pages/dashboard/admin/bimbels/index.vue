@@ -311,7 +311,7 @@ function findBimbel(id: string): Bimbel | undefined {
             </template>
           </template>
           <template #cell(actions)="{ item }">
-            <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="openBimbelDelete(item.id)">Hapus</button>
+            <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus bimbel" ariaLabel="Hapus bimbel" title="Hapus bimbel" @click="openBimbelDelete(item.id)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>

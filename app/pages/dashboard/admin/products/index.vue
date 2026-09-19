@@ -349,31 +349,12 @@ async function decide(approve: boolean, reason?: string) {
             <!-- v-for over a one-item array recovers the typed row (tutor/products pattern). -->
             <template v-for="product in [findProduct(item.id)]" :key="item.id">
               <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
-                <NuxtLink
-                  :to="`/dashboard/admin/products/${product.id}`"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline"
-                >
-                  Tinjau
-                </NuxtLink>
+                <AppIconButton :to="`/dashboard/admin/products/${product.id}`" variant="ghost" size="sm" aria-label="Tinjau produk" ariaLabel="Tinjau produk" title="Tinjau produk"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
                 <template v-if="product.status === 'review'">
-                  <button
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                    :disabled="decisionBusy"
-                    @click="openApprove(product)"
-                  >
-                    Setujui
-                  </button>
-                  <button
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                    :disabled="decisionBusy"
-                    @click="openReject(product)"
-                  >
-                    Tolak…
-                  </button>
+                  <AppIconButton variant="ghost" size="sm" :disabled="decisionBusy" aria-label="Setujui produk" ariaLabel="Setujui produk" title="Setujui produk" @click="openApprove(product)"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="decisionBusy" aria-label="Tolak produk" ariaLabel="Tolak produk" title="Tolak produk" @click="openReject(product)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
                 </template>
-                <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="decisionBusy || deleteBusy" @click="openDelete(product)">Hapus</button>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="decisionBusy || deleteBusy" aria-label="Hapus produk" ariaLabel="Hapus produk" title="Hapus produk" @click="openDelete(product)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
             </template>
           </template>

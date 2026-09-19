@@ -220,7 +220,7 @@ async function removeStudent() {
             <span class="whitespace-nowrap text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
           </template>
           <template #cell(actions)="{ item }">
-            <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="openStudentDelete(item.id)">Hapus</button>
+            <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus siswa" ariaLabel="Hapus siswa" title="Hapus siswa" @click="openStudentDelete(item.id)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>

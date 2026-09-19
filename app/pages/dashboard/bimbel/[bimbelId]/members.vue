@@ -200,9 +200,9 @@ async function runBulk(action: 'active' | 'suspended' | 'delete') {
         <div v-if="selectedStudentIds.length" class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary-soft/45 px-4 py-3">
           <p class="text-sm font-semibold text-ink">{{ selectedStudentIds.length }} siswa dipilih</p>
           <div class="flex flex-wrap gap-2">
-            <AppButton size="sm" variant="outline" :disabled="bulkBusy" @click="runBulk('active')">Aktifkan masal</AppButton>
-            <AppButton size="sm" variant="outline" :disabled="bulkBusy" @click="runBulk('suspended')">Tangguhkan masal</AppButton>
-            <AppButton size="sm" variant="danger" :disabled="bulkBusy" @click="runBulk('delete')">Hapus masal</AppButton>
+            <AppButton size="xs" variant="outline" :disabled="bulkBusy" @click="runBulk('active')">Aktifkan masal</AppButton>
+            <AppButton size="xs" variant="outline" :disabled="bulkBusy" @click="runBulk('suspended')">Tangguhkan masal</AppButton>
+            <AppButton size="xs" variant="danger" :disabled="bulkBusy" @click="runBulk('delete')">Hapus masal</AppButton>
           </div>
         </div>
         <AppEmptyState v-if="rows.length === 0" title="Hasil tidak ditemukan" description="Tidak ada siswa yang cocok dengan pencarian atau status yang dipilih." action-label="Hapus pencarian" @action="reset" />
@@ -213,9 +213,9 @@ async function runBulk(action: 'active' | 'suspended' | 'delete') {
           <template #cell(aksi)="{ item }">
             <template v-for="student in [findStudent(item.accountId)]" :key="item.accountId">
               <span v-if="student" class="inline-flex flex-wrap justify-end gap-2">
-                <AppButton v-if="student.status !== 'active'" size="sm" :disabled="busyId === student.accountId" @click="patchStatus(student, 'active')">{{ busyId === student.accountId ? 'Memproses…' : 'Aktifkan' }}</AppButton>
-                <AppButton v-if="student.status === 'active'" size="sm" variant="outline" :disabled="busyId === student.accountId" @click="patchStatus(student, 'suspended')">{{ busyId === student.accountId ? 'Memproses…' : 'Tangguhkan' }}</AppButton>
-                <AppButton size="sm" variant="danger" :disabled="busyId === student.accountId" @click="removeStudent(student)">Hapus</AppButton>
+                <AppIconButton v-if="student.status !== 'active'" variant="ghost" size="sm" :disabled="busyId === student.accountId" aria-label="Aktifkan siswa" ariaLabel="Aktifkan siswa" title="Aktifkan siswa" @click="patchStatus(student, 'active')"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="student.status === 'active'" variant="ghost" size="sm" :disabled="busyId === student.accountId" aria-label="Tangguhkan siswa" ariaLabel="Tangguhkan siswa" title="Tangguhkan siswa" @click="patchStatus(student, 'suspended')"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === student.accountId" aria-label="Hapus siswa" ariaLabel="Hapus siswa" title="Hapus siswa" @click="removeStudent(student)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
             </template>
           </template>

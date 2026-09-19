@@ -241,7 +241,7 @@ function formatRupiahShort(value: number): string {
 
       <div v-else class="grid gap-4">
         <DashboardSelectionBar :count="selected.length" item-noun="produk" @clear="selected = []">
-          <AppButton size="sm" @click="manageSelected">
+          <AppButton size="xs" @click="manageSelected">
             Kelola di Produk Saya
             <AppIcon name="arrow-right" :size="14" />
           </AppButton>

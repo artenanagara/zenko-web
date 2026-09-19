@@ -524,10 +524,10 @@ const zoomed = ref<VerificationItem | null>(null)
             <AppIcon name="image" :size="18" aria-hidden="true" />
           </button>
           <template v-if="item.proof.status === 'submitted'">
-            <AppButton size="sm" @click="openApprove(item.proof)">Setujui</AppButton>
+            <AppIconButton variant="ghost" size="sm" aria-label="Setujui pembayaran" ariaLabel="Setujui pembayaran" title="Setujui pembayaran" @click="openApprove(item.proof)"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
             <!-- outline, bukan secondary: dua tombol gelap berdampingan
                  membuat menolak terbaca sepenting menyetujui. -->
-            <AppButton variant="outline" size="sm" @click="openReject(item.proof)">Tolak…</AppButton>
+            <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Tolak pembayaran" ariaLabel="Tolak pembayaran" title="Tolak pembayaran" @click="openReject(item.proof)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
           <span v-else-if="!item.proof.hasImage" class="text-[0.84rem] text-muted">—</span>
         </div>

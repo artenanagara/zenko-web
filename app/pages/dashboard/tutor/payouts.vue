@@ -303,7 +303,7 @@ async function submitPayout() {
           :summary="`Total ${formatRupiah(selectedAmount)}`"
           @clear="selected = []"
         >
-          <AppButton variant="outline" size="sm" @click="exportSelected">
+          <AppButton variant="outline" size="xs" @click="exportSelected">
             <AppIcon name="download-simple" :size="14" />
             Unduh CSV
           </AppButton>

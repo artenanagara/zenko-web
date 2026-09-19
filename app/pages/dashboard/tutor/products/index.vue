@@ -429,7 +429,7 @@ async function deleteProduct(product: TutorProductSummary) {
                will skip (already live, or not yet complete). -->
           <DashboardSelectionBar :count="selected.length" item-noun="produk" @clear="selected = []">
             <AppButton
-              size="sm"
+              size="xs"
               :disabled="submitTargets.length === 0 || bulkBusy !== ''"
               :loading="bulkBusy === 'submit'"
               @click="bulkSubmit"
@@ -438,7 +438,7 @@ async function deleteProduct(product: TutorProductSummary) {
             </AppButton>
             <AppButton
               variant="outline"
-              size="sm"
+              size="xs"
               :disabled="archiveTargets.length === 0 || bulkBusy !== ''"
               :loading="bulkBusy === 'archive'"
               @click="bulkArchive"
@@ -447,7 +447,7 @@ async function deleteProduct(product: TutorProductSummary) {
             </AppButton>
             <AppButton
               variant="danger"
-              size="sm"
+              size="xs"
               :disabled="deleteTargets.length === 0 || bulkBusy !== ''"
               :loading="bulkBusy === 'delete'"
               @click="bulkDelete"
@@ -499,40 +499,10 @@ async function deleteProduct(product: TutorProductSummary) {
                    into functions that expect the real TutorProductSummary shape. -->
               <template v-for="product in [findProduct(item.id)]" :key="item.id">
                 <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
-                  <NuxtLink
-                    v-if="canEdit(product)"
-                    :to="`/dashboard/tutor/products/${product.id}/edit`"
-                    class="text-[0.86rem] font-semibold text-primary hover:underline"
-                  >
-                    Edit
-                  </NuxtLink>
-                  <button
-                    v-if="canSubmit(product)"
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                    :disabled="busyId === product.id"
-                    @click="submitProduct(product)"
-                  >
-                    {{ busyId === product.id ? 'Mengajukan...' : 'Ajukan tayang' }}
-                  </button>
-                  <button
-                    v-if="product.status === 'live'"
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                    :disabled="busyId === product.id"
-                    @click="archiveProduct(product)"
-                  >
-                    Arsipkan
-                  </button>
-                  <button
-                    v-if="canDelete(product)"
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                    :disabled="busyId === product.id"
-                    @click="deleteProduct(product)"
-                  >
-                    {{ busyId === product.id ? 'Menghapus...' : 'Hapus' }}
-                  </button>
+                  <AppIconButton v-if="canEdit(product)" :to="`/dashboard/tutor/products/${product.id}/edit`" variant="ghost" size="sm" aria-label="Edit produk" ariaLabel="Edit produk" title="Edit produk"><AppIcon name="pencil-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="canSubmit(product)" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Ajukan tayang" ariaLabel="Ajukan tayang" title="Ajukan tayang" @click="submitProduct(product)"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="product.status === 'live'" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Arsipkan produk" ariaLabel="Arsipkan produk" title="Arsipkan produk" @click="archiveProduct(product)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="canDelete(product)" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Hapus produk" ariaLabel="Hapus produk" title="Hapus produk" @click="deleteProduct(product)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
                   <span
                     v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
                     class="text-[0.86rem] text-muted"
