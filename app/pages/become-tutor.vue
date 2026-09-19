@@ -144,6 +144,7 @@ void advantageRef
 void flowRef
 
 const EXPERTISE_OPTIONS = ['SKD / CPNS', 'Sekolah Kedinasan', 'PPPK', 'UTBK-SNBT', 'TKA', 'Rekrutmen BUMN', 'Lainnya']
+const expertiseSelectOptions = EXPERTISE_OPTIONS.map(option => ({ value: option, label: option }))
 
 // No name/email fields: the server reads identity from the session. The form
 // only asks what the applicant alone knows.
@@ -922,7 +923,7 @@ const formState = computed<FormState>(() => {
             </h2>
           </div>
 
-          <div class="rounded-[22px] border border-hairline bg-surface p-6 shadow-xs md:p-9">
+          <div class="rounded-[22px] border border-hairline bg-surface p-5 shadow-xs md:p-9">
             <p v-if="formState === 'checking'" class="py-6 text-center text-muted">
                 Memeriksa akun...
             </p>
@@ -982,7 +983,17 @@ const formState = computed<FormState>(() => {
               <AppButton to="/dashboard/tutor" size="lg" class="mt-6">Buka dashboard tutor</AppButton>
             </div>
 
-            <form v-else class="grid gap-5" novalidate @submit.prevent="onSubmit">
+            <form v-else class="grid gap-6" novalidate @submit.prevent="onSubmit">
+              <div class="flex items-start gap-3 border-b border-hairline pb-5">
+                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-primary-soft text-primary" aria-hidden="true">
+                  <AppIcon name="graduation-cap" :size="20" weight="bold" />
+                </span>
+                <div>
+                  <h3 class="font-bold tracking-[-0.02em]">Ceritakan tentang dirimu</h3>
+                  <p class="mt-1 text-[0.86rem] leading-[1.55] text-muted">Informasi ini membantu tim kami menilai pengajuanmu dengan lebih cepat.</p>
+                </div>
+              </div>
+
               <!-- Identity is shown, not asked: the server reads it from the
                    session, so an editable field could only lie. -->
               <div class="flex items-center gap-3.5 rounded-sm border border-hairline-strong bg-surface-alt px-4 py-3.5">
@@ -1019,28 +1030,13 @@ const formState = computed<FormState>(() => {
               />
 
               <div>
-                <label for="tutor-expertise" class="mb-2 block text-[0.9rem] font-semibold">
-                  Bidang keahlian
-                </label>
-                <select
-                  id="tutor-expertise"
+                <AppSelect
                   v-model="form.expertise"
-                  class="w-full appearance-none rounded-sm border bg-surface bg-size-[1.15rem] bg-position-[right_1rem_center] bg-no-repeat py-3 pr-11 pl-4 transition-[border-color,box-shadow] duration-200 ease-smooth focus:outline-none"
-                  :class="[
-                    form.expertise ? 'text-ink' : 'text-placeholder',
-                    errors.expertise
-                      ? 'border-red-400 focus:shadow-[0_0_0_4px_rgba(248,113,113,0.16)]'
-                      : 'border-line focus:border-primary/40 focus:shadow-[0_0_0_4px_rgba(47,111,235,0.1)]',
-                  ]"
-                  style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22 fill=%22%236b7280%22><path d=%22M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z%22/></svg>')"
-                  :aria-invalid="Boolean(errors.expertise)"
-                  :aria-describedby="errors.expertise ? 'tutor-expertise-error' : undefined"
-                >
-                  <option value="" disabled>Pilih bidang keahlian</option>
-                  <option v-for="option in EXPERTISE_OPTIONS" :key="option" :value="option">
-                    {{ option }}
-                  </option>
-                </select>
+                  label="Bidang keahlian"
+                  :options="expertiseSelectOptions"
+                  placeholder="Pilih bidang keahlian"
+                  :invalid="Boolean(errors.expertise)"
+                />
                 <p v-if="errors.expertise" id="tutor-expertise-error" class="mt-2 text-[0.82rem] text-red-600">
                   {{ errors.expertise }}
                 </p>

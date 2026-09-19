@@ -16,6 +16,8 @@ export interface User {
   email: string
   name: string
   avatarUrl: string
+  /** Whether this account opts out of displaying its name on public leaderboards. */
+  leaderboardHidden: boolean
   role: Role
   /**
    * Whether the address has been proved — by Google at sign-in, or by opening

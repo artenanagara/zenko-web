@@ -81,6 +81,7 @@ const draftName = ref('')
 const draftEmail = ref('')
 
 const profileSaving = ref(false)
+const leaderboardToggleSaving = ref(false)
 
 /**
  * Field-level errors only. The outcome of a save — succeeded, or failed and
@@ -107,6 +108,23 @@ function cancelEditing() {
   editing.value = false
   clearFieldErrors()
   cancelEmailStep()
+}
+
+async function toggleLeaderboardHidden(event: Event) {
+  const input = event.target as HTMLInputElement
+  const nextValue = input.checked
+  leaderboardToggleSaving.value = true
+  try {
+    await updateLeaderboardHidden(nextValue)
+    toast.success(nextValue ? 'Nama disembunyikan dari leaderboard.' : 'Nama kembali tampil di leaderboard.')
+  }
+  catch (cause) {
+    input.checked = !nextValue
+    toast.error('Pengaturan belum berhasil disimpan.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    leaderboardToggleSaving.value = false
+  }
 }
 
 async function saveProfile() {
@@ -549,6 +567,30 @@ async function onSignOutAllDevices() {
             <span v-for="n in 4" :key="n" class="block h-3 w-full animate-pulse rounded-pill bg-skeleton" />
           </div>
         </div>
+      </DashboardPanel>
+
+      <DashboardPanel
+        title="Privasi leaderboard"
+        description="Pilih apakah nama kamu boleh tampil di podium dan daftar peringkat."
+      >
+        <label class="flex cursor-pointer items-start justify-between gap-4">
+          <span class="flex min-w-0 items-start gap-3">
+            <span class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <AppIcon name="eye" :size="20" aria-hidden="true" />
+            </span>
+            <span>
+              <span class="block font-semibold">Sembunyikan nama saya dari leaderboard</span>
+              <span class="mt-0.5 block text-[0.86rem] text-muted">Nama akan tampil sebagai “Peserta anonim”. Peringkat dan skor tetap sama.</span>
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            class="mt-1 h-5 w-5 shrink-0 accent-primary"
+            :checked="user?.leaderboardHidden ?? false"
+            :disabled="!user || leaderboardToggleSaving"
+            @change="toggleLeaderboardHidden"
+          >
+        </label>
       </DashboardPanel>
 
       <DashboardPanel title="Peran & akses" description="Apa yang bisa dibuka akun ini di Zenko.">

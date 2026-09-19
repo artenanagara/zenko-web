@@ -86,7 +86,7 @@ function numberFor(_question: TryoutQuestion, displayNumber: number) {
              cells as the phone is wide (7 at 390px, 9 at 480px) without a
              breakpoint per device. The desktop rail keeps its fixed 5. -->
         <div
-          class="grid gap-2"
+          class="grid gap-1.5"
           :class="variant === 'sheet'
             ? 'grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))]'
             : 'grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] md:grid-cols-5'"
@@ -97,7 +97,7 @@ function numberFor(_question: TryoutQuestion, displayNumber: number) {
             type="button"
             class="flex w-full touch-manipulation items-center justify-center rounded-sm border text-[0.82rem] font-bold tabular-nums transition-transform duration-150 ease-smooth hover:-translate-y-0.5"
             :class="[
-              variant === 'sheet' ? 'h-11' : 'h-11 md:h-10',
+              variant === 'sheet' ? 'h-11 text-[0.78rem]' : 'h-8 text-[0.68rem] md:h-8 md:text-[0.72rem]',
               statusOf(question.id) === 'answered' && 'border-success bg-success-soft text-success-ink',
               statusOf(question.id) === 'doubtful' && 'border-amber-400 bg-amber-50 text-amber-800',
               statusOf(question.id) === 'unanswered' && 'border-hairline-strong bg-surface text-muted',

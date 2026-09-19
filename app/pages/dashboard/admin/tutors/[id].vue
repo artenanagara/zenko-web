@@ -16,6 +16,8 @@ definePageMeta({
 
 const route = useRoute()
 const accountId = computed(() => String(route.params.id ?? ''))
+const toast = useToast()
+const { confirm } = useConfirm()
 const { user } = useAuth()
 const canManageShareSchedule = computed(() => user.value?.canManageShareSchedule === true)
 const {
@@ -307,6 +309,7 @@ const PRODUCT_SORT_OPTIONS = [
   { value: 'title-desc', label: 'Judul Z–A' },
 ]
 const productSort = ref('newest')
+const deletingProductId = ref('')
 
 const PRODUCT_SORTS: Record<string, (a: AdminTutorDetail['products'][number], b: AdminTutorDetail['products'][number]) => number> = {
   'newest': (a, b) => b.updatedAt - a.updatedAt,
@@ -337,6 +340,28 @@ function statusLabel(status: AdminTutorDetail['products'][number]['status']): st
 }
 function statusTone(status: AdminTutorDetail['products'][number]['status']) {
   return PRODUCT_STATUS_TONE[status]
+}
+
+async function removeProduct(product: Record<string, any>) {
+  if (deletingProductId.value) return
+  const approved = await confirm({
+    title: `Hapus produk “${product.title}”?`,
+    description: 'Produk dan seluruh soalnya akan dihapus permanen dari Zenko.',
+    confirmLabel: 'Hapus produk',
+  })
+  if (!approved) return
+  deletingProductId.value = product.id
+  try {
+    await deleteAdminTutorProduct(product.id)
+    await loadDetail()
+    toast.success('Produk dihapus.')
+  }
+  catch (cause) {
+    toast.error('Produk belum dapat dihapus.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    deletingProductId.value = ''
+  }
 }
 </script>
 
@@ -497,12 +522,46 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
               <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>
             </template>
             <template #cell(aksi)="{ item }">
-              <NuxtLink
-                :to="`/dashboard/admin/products/${item.id}`"
-                class="text-[0.86rem] font-semibold text-primary hover:underline"
-              >
-                Lihat
-              </NuxtLink>
+              <span class="inline-flex items-center gap-1 whitespace-nowrap">
+                <AppIconButton
+                  :to="`/dashboard/admin/products/${item.id}`"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Lihat produk"
+                  ariaLabel="Lihat produk"
+                  title="Lihat produk"
+                >
+                  <AppIcon name="eye" :size="17" aria-hidden="true" />
+                </AppIconButton>
+                <AppIconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Hapus produk"
+                  ariaLabel="Hapus produk"
+                  title="Hapus produk"
+                  class="text-danger hover:bg-danger-soft"
+                  :disabled="Boolean(deletingProductId)"
+                  @click="removeProduct(item)"
+                >
+                  <AppIcon name="trash" :size="17" aria-hidden="true" />
+                </AppIconButton>
+                <!--
+                <NuxtLink
+                  :to="`/dashboard/admin/products/${item.id}`"
+                  class="text-[0.86rem] font-semibold text-primary hover:underline"
+                >
+                  Lihat
+                </NuxtLink>
+                <button
+                  type="button"
+                  class="text-[0.86rem] font-semibold text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="Boolean(deletingProductId)"
+                  @click="removeProduct(item)"
+                >
+                  {{ deletingProductId === item.id ? 'Menghapus…' : 'Hapus' }}
+                </button>
+                -->
+              </span>
             </template>
           </DashboardTable>
         </DashboardPanel>

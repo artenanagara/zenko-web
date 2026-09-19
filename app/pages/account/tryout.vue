@@ -13,6 +13,8 @@ const slug = route.params.slug as string
 const fromBimbel = computed(() => route.query.dari === 'bimbel')
 const packageHome = computed(() => fromBimbel.value ? '/akun/bimbel' : `/akun/paket/${slug}`)
 const packageHomeLabel = computed(() => fromBimbel.value ? 'Kembali ke Bimbel saya' : 'Kembali ke paket')
+const leaderboard = useLeaderboard(slug)
+if (import.meta.client) void leaderboard.refreshPublic()
 
 // The endpoint returns the real tutor-authored questions only after confirming
 // this account owns the package. Keeping that check and the blueprint in one
@@ -130,6 +132,7 @@ const showEndConfirm = ref(false)
 
 /** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
 const navOpen = ref(false)
+const textScale = ref<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10>(5)
 
 function requestEndSection() {
   navOpen.value = false
@@ -233,7 +236,11 @@ function retry() {
 
     <!-- Sesi berjalan. -->
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
-      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value" />
+      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value">
+        <template #action>
+          <ExamTextScaleControl v-model="textScale" />
+        </template>
+      </TryoutHeader>
 
       <!-- md:h-screen pins the row to the viewport instead of letting the
            taller column (often the navigator, in flat mode with every
@@ -248,7 +255,7 @@ function retry() {
         class="exam-protected container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24"
         :class="obscured && 'blur-lg'"
       >
-        <div class="min-h-0 md:overflow-y-auto md:pr-1">
+        <div class="min-h-0 md:h-screen md:overflow-y-auto md:pr-1">
           <TryoutQuestion
             :question="session.currentQuestion.value"
             :index="session.displayIndex.value"
@@ -257,6 +264,7 @@ function retry() {
             :value="session.answers.value[session.currentQuestion.value.id]?.value"
             :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
             :passage="session.currentPassage.value"
+            :text-scale="textScale"
             @select="session.selectAnswer"
             @answer="session.setAnswerValue"
           />
@@ -264,7 +272,7 @@ function retry() {
 
         <!-- Rail nomor soal: desktop saja. Di HP tempatnya bottom
              sheet di bawah, bukan tumpukan di bawah kartu soal. -->
-        <div class="hidden min-h-0 md:block md:overflow-y-auto md:pr-1">
+        <div class="hidden min-h-0 md:block md:h-screen md:overflow-y-auto md:pr-1">
           <TryoutNavigator
             :groups="session.navigatorGroups.value"
             :current-index="session.currentIndex.value"
@@ -435,6 +443,7 @@ function retry() {
       :answers="session.answers.value"
       :attempt="recordedAttempt"
       :attempt-id="recordedAttemptId"
+      :leaderboard-participants="leaderboard.publicPodium.value?.participants ?? 0"
       :return-to="packageHome"
       :return-label="packageHomeLabel"
       :from-bimbel="fromBimbel"

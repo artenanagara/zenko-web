@@ -32,6 +32,15 @@ useHead({
 const SIGN_IN_PATH = '/masuk?lanjut=/untuk-bimbel/daftar'
 
 const { user, isSignedIn, isLoading: isCheckingSession } = useAuth()
+const {
+  provinces,
+  cities,
+  isLoadingProvinces,
+  isLoadingCities,
+  error: regionError,
+  loadProvinces,
+  loadCities,
+} = useIndonesiaRegions()
 const application = useMyBimbelApplication()
 const recommendedPlan = useState<'dasar' | 'pro' | 'institusi' | null>('bimbel-recommended-plan', () => null)
 
@@ -51,6 +60,7 @@ watch(isSignedIn, (signedIn) => {
 
 const form = reactive({
   bimbelName: '',
+  provinceCode: '',
   city: '',
   studentCountBand: '',
   termsAccepted: false,
@@ -71,6 +81,22 @@ const STUDENT_COUNT_OPTIONS = [
   { value: '51-150', label: '51–150 siswa' },
   { value: '>150', label: 'Lebih dari 150 siswa' },
 ]
+
+const provinceOptions = computed(() => provinces.value.map(region => ({
+  value: region.code,
+  label: region.name,
+})))
+const cityOptions = computed(() => cities.value.map(region => ({
+  value: region.name,
+  label: region.name,
+})))
+
+onMounted(loadProvinces)
+
+watch(() => form.provinceCode, async (provinceCode) => {
+  form.city = ''
+  await loadCities(provinceCode)
+})
 
 function validate() {
   for (const key of Object.keys(errors) as FieldKey[]) delete errors[key]
@@ -152,7 +178,7 @@ const formState = computed<FormState>(() => {
         </NuxtLink>
       </nav>
 
-      <div class="mb-9 text-center">
+      <div class="mb-8 text-center md:mb-10">
         <p class="mb-2 inline-block text-[0.76rem] font-bold tracking-[0.12em] text-primary uppercase">
           Bimbel di Zenko
         </p>
@@ -168,7 +194,7 @@ const formState = computed<FormState>(() => {
         </p>
       </div>
 
-      <div class="rounded-[22px] border border-hairline bg-surface p-6 shadow-xs md:p-9">
+      <div class="rounded-[22px] border border-hairline bg-surface p-5 shadow-xs md:p-9">
         <p v-if="formState === 'checking'" class="py-6 text-center text-muted">
           Memeriksa akun...
         </p>
@@ -238,7 +264,17 @@ const formState = computed<FormState>(() => {
           </p>
         </div>
 
-        <form v-else class="grid gap-5" novalidate @submit.prevent="onSubmit">
+        <form v-else class="grid gap-6" novalidate @submit.prevent="onSubmit">
+          <div class="flex items-start gap-3 border-b border-hairline pb-5">
+            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-primary-soft text-primary" aria-hidden="true">
+              <AppIcon name="buildings" :size="20" weight="bold" />
+            </span>
+            <div>
+              <h2 class="font-bold tracking-[-0.02em]">Siapkan ruang bimbelmu</h2>
+              <p class="mt-1 text-[0.86rem] leading-[1.55] text-muted">Isi data dasar bimbel. Kamu bisa melengkapinya setelah ruang aktif.</p>
+            </div>
+          </div>
+
           <!-- Identitas ditampilkan, bukan ditanyakan: server membacanya dari
                sesi, jadi kolom yang bisa diketik hanya bisa berbohong. -->
           <div class="flex items-center gap-3.5 rounded-sm border border-hairline-strong bg-surface-alt px-4 py-3.5">
@@ -264,13 +300,31 @@ const formState = computed<FormState>(() => {
             required
           />
 
-          <AppInput
-            id="bimbel-city"
-            v-model="form.city"
-            label="Kota"
-            placeholder="Contoh: Surabaya"
-            hint="Opsional."
-          />
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <AppSelect
+                v-model="form.provinceCode"
+                label="Provinsi"
+                :options="provinceOptions"
+                placeholder="Pilih provinsi"
+                :disabled="isLoadingProvinces || provinceOptions.length === 0"
+              />
+              <p v-if="isLoadingProvinces" class="mt-1.5 text-xs text-muted">Memuat provinsi…</p>
+            </div>
+
+            <div>
+              <AppSelect
+                v-model="form.city"
+                label="Kota / kabupaten"
+                :options="cityOptions"
+                :placeholder="isLoadingCities ? 'Memuat kota…' : 'Pilih kota / kabupaten'"
+                :disabled="!form.provinceCode || isLoadingCities || cityOptions.length === 0"
+              />
+              <p class="mt-1.5 text-xs text-muted">Ketik huruf pertama saat dropdown terbuka untuk mencari.</p>
+            </div>
+          </div>
+
+          <AppInlineMessage v-if="regionError" type="error">{{ regionError }}</AppInlineMessage>
 
           <div>
             <AppSelect

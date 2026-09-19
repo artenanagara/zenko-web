@@ -187,7 +187,7 @@ function alignClass(col: DashboardTableColumn) {
 
   <!-- Tabel: md ke atas, sama persis dengan AppTable. -->
   <div class="hidden overflow-x-auto rounded-xl border border-line bg-surface shadow-xs md:block">
-    <table class="w-full text-left text-xs">
+    <table class="min-w-max w-full text-left text-xs">
       <thead class="border-b border-line bg-surface-sunken font-bold tracking-wider text-ink uppercase">
         <tr>
           <!-- Lebar tetap: kolom centang tidak boleh ikut melar mengikuti
@@ -203,7 +203,7 @@ function alignClass(col: DashboardTableColumn) {
               @change="toggleAllVisible"
             >
           </th>
-          <th v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col)]">
+          <th v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col), col.key === actionColumn?.key ? 'sticky right-0 z-20 border-l border-line bg-surface-sunken shadow-[-8px_0_12px_-12px_rgba(15,23,42,.35)]' : '']">
             {{ col.label }}
           </th>
         </tr>
@@ -224,7 +224,7 @@ function alignClass(col: DashboardTableColumn) {
               @change="toggleRow(row, ($event.target as HTMLInputElement).checked)"
             >
           </td>
-          <td v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col)]">
+          <td v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col), col.key === actionColumn?.key ? 'sticky right-0 z-10 border-l border-line bg-surface shadow-[-8px_0_12px_-12px_rgba(15,23,42,.25)]' : '']">
             <slot :name="`cell(${col.key})`" :item="row" :value="row[col.key]">
               {{ row[col.key] }}
             </slot>
