@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.0](https://github.com/artenanagara/zenko-web/compare/v0.29.0...v0.30.0) (2026-09-19)
+
+
+### Features
+
+* improve admin directories and product flows ([b23a987](https://github.com/artenanagara/zenko-web/commit/b23a98703f665c507ebe56ee15a1831300c14ff4))
+* show plagiarism checks in admin moderation ([0006ae5](https://github.com/artenanagara/zenko-web/commit/0006ae56a529220c7418717b3b3786bef3d0812d))
+
 ## [0.29.0](https://github.com/artenanagara/zenko-web/compare/v0.28.0...v0.29.0) (2026-09-18)
 
 
