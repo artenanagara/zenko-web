@@ -196,32 +196,95 @@ function setOrderingFromEvent(position: number, event: Event) {
 
 <style scoped>
 img.exam-scale-1,
-.exam-scale-1 :deep(img) { max-height: 10rem; }
+.exam-scale-1 :deep(img) { max-height: 6rem; }
 
 img.exam-scale-2,
-.exam-scale-2 :deep(img) { max-height: 12rem; }
+.exam-scale-2 :deep(img) { max-height: 7rem; }
 
 img.exam-scale-3,
-.exam-scale-3 :deep(img) { max-height: 14rem; }
+.exam-scale-3 :deep(img) { max-height: 8rem; }
 
 img.exam-scale-4,
-.exam-scale-4 :deep(img) { max-height: 18rem; }
+.exam-scale-4 :deep(img) { max-height: 10rem; }
 
 img.exam-scale-5,
-.exam-scale-5 :deep(img) { max-height: 24rem; }
+.exam-scale-5 :deep(img) { max-height: 12rem; }
 
 img.exam-scale-6,
-.exam-scale-6 :deep(img) { max-height: 30rem; }
+.exam-scale-6 :deep(img) { max-height: 14rem; }
 
 img.exam-scale-7,
-.exam-scale-7 :deep(img) { max-height: 36rem; }
+.exam-scale-7 :deep(img) { max-height: 17rem; }
 
 img.exam-scale-8,
-.exam-scale-8 :deep(img) { max-height: 42rem; }
+.exam-scale-8 :deep(img) { max-height: 20rem; }
 
 img.exam-scale-9,
-.exam-scale-9 :deep(img) { max-height: 48rem; }
+.exam-scale-9 :deep(img) { max-height: 24rem; }
 
 img.exam-scale-10,
-.exam-scale-10 :deep(img) { max-height: 56rem; }
+.exam-scale-10 :deep(img) { max-height: 28rem; }
+
+/* Keep figures sharp and self-contained as the text grows. On a phone the
+   question column is narrow, so a shorter cap prevents a single tall diagram
+   from taking over the entire viewport while still leaving enough height for
+   labels and axes to remain legible. */
+.exam-scale-1 :deep(img),
+.exam-scale-2 :deep(img),
+.exam-scale-3 :deep(img),
+.exam-scale-4 :deep(img),
+.exam-scale-5 :deep(img),
+.exam-scale-6 :deep(img),
+.exam-scale-7 :deep(img),
+.exam-scale-8 :deep(img),
+.exam-scale-9 :deep(img),
+.exam-scale-10 :deep(img),
+img.exam-scale-1,
+img.exam-scale-2,
+img.exam-scale-3,
+img.exam-scale-4,
+img.exam-scale-5,
+img.exam-scale-6,
+img.exam-scale-7,
+img.exam-scale-8,
+img.exam-scale-9,
+img.exam-scale-10 {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (min-width: 768px) {
+  img.exam-scale-1,
+  .exam-scale-1 :deep(img) { max-height: 8rem; }
+
+  img.exam-scale-2,
+  .exam-scale-2 :deep(img) { max-height: 10rem; }
+
+  img.exam-scale-3,
+  .exam-scale-3 :deep(img) { max-height: 12rem; }
+
+  img.exam-scale-4,
+  .exam-scale-4 :deep(img) { max-height: 14rem; }
+
+  img.exam-scale-5,
+  .exam-scale-5 :deep(img) { max-height: 18rem; }
+
+  img.exam-scale-6,
+  .exam-scale-6 :deep(img) { max-height: 22rem; }
+
+  img.exam-scale-7,
+  .exam-scale-7 :deep(img) { max-height: 28rem; }
+
+  img.exam-scale-8,
+  .exam-scale-8 :deep(img) { max-height: 36rem; }
+
+  img.exam-scale-9,
+  .exam-scale-9 :deep(img) { max-height: 44rem; }
+
+  img.exam-scale-10,
+  .exam-scale-10 :deep(img) { max-height: 52rem; }
+}
 </style>
