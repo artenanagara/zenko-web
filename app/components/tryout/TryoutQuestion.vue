@@ -60,6 +60,7 @@ const answerTextClass = computed(() => ({
   9: 'text-[1.26rem]',
   10: 'text-[1.34rem]',
 }[textScale.value]))
+const imageScaleClass = computed(() => `exam-scale-${textScale.value}`)
 
 const currentValue = computed(() => props.value ?? props.selected ?? null)
 const selectedMultiple = computed(() => Array.isArray(currentValue.value) ? currentValue.value as string[] : [])
@@ -129,7 +130,7 @@ function setOrderingFromEvent(position: number, event: Event) {
         <span :id="passageId" class="min-w-0 text-left text-[0.88rem] font-bold text-ink">{{ passage.title || 'Wacana' }}</span>
         <span class="flex shrink-0 items-center gap-1.5 text-[0.8rem] font-semibold text-muted">{{ passageOpen ? 'Sembunyikan' : 'Tampilkan' }}<IconChevron class="h-4 w-4 transition-transform duration-200 ease-smooth" :class="passageOpen ? 'rotate-180' : ''" /></span>
       </button>
-      <div v-show="passageOpen" :id="`${passageId}-content`" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 leading-[1.65] text-ink md:max-h-[38rem] [&_img]:my-3 [&_img]:max-h-80" :class="answerTextClass" v-html="renderedHtml(passage.content)" />
+      <div v-show="passageOpen" :id="`${passageId}-content`" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 leading-[1.65] text-ink md:max-h-[38rem] [&_img]:my-3" :class="[answerTextClass, imageScaleClass]" v-html="renderedHtml(passage.content)" />
     </section>
 
     <div v-if="question.stimulus" class="mt-4 overflow-hidden rounded-sm border border-hairline bg-surface-alt">
@@ -137,15 +138,15 @@ function setOrderingFromEvent(position: number, event: Event) {
         <span class="text-[0.76rem] font-bold tracking-[0.08em] text-faint uppercase">Bacaan</span>
         <span class="flex shrink-0 items-center gap-1.5 text-[0.8rem] font-semibold text-muted">{{ stimulusOpen ? 'Sembunyikan' : 'Tampilkan' }}<IconChevron class="h-4 w-4 transition-transform duration-200 ease-smooth" :class="stimulusOpen ? 'rotate-180' : ''" /></span>
       </button>
-      <div v-show="stimulusOpen" :id="stimulusId" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 leading-[1.65] text-ink md:max-h-none md:overflow-visible [&_img]:my-3 [&_img]:max-h-80" :class="answerTextClass" v-html="renderedHtml(question.stimulus)" />
+      <div v-show="stimulusOpen" :id="stimulusId" class="prose-question max-h-[46svh] overflow-y-auto border-t border-hairline px-4 py-3.5 leading-[1.65] text-ink md:max-h-none md:overflow-visible [&_img]:my-3" :class="[answerTextClass, imageScaleClass]" v-html="renderedHtml(question.stimulus)" />
     </div>
 
-    <div class="prose-question mt-4 leading-[1.6] font-medium tracking-[-0.01em] text-ink [&_img]:max-h-96" :class="questionTextClass" v-html="renderedHtml(question.text)" />
+    <div class="prose-question mt-4 leading-[1.6] font-medium tracking-[-0.01em] text-ink" :class="[questionTextClass, imageScaleClass]" v-html="renderedHtml(question.text)" />
 
     <div v-if="question.kind === 'multiple_choice'" class="mt-5 grid gap-2.5 md:mt-6" role="group" aria-label="Pilihan jawaban">
       <button v-for="option in question.options" :key="option.label" type="button" class="flex min-h-11 touch-manipulation items-start gap-3 rounded-sm border px-3.5 py-3 text-left transition-colors duration-150 ease-smooth sm:gap-3.5 sm:px-4 sm:py-3.5" :class="selectedMultiple.includes(option.label) ? 'border-transparent bg-primary-soft ring-1 ring-primary' : 'border-hairline-strong bg-surface hover:bg-surface-alt'" :aria-pressed="selectedMultiple.includes(option.label)" @click="toggleMultiple(option.label)">
         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border text-[0.82rem] font-bold" :class="selectedMultiple.includes(option.label) ? 'border-transparent bg-primary text-white' : 'border-hairline-strong text-muted'">{{ option.label }}</span>
-        <span class="min-w-0 flex-1 pt-0.5 leading-[1.55]" :class="answerTextClass"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-h-52 max-w-full rounded-xs object-contain"><span class="prose-question [&_img]:max-h-52" v-html="renderedHtml(option.text)" /></span>
+        <span class="min-w-0 flex-1 pt-0.5 leading-[1.55]" :class="[answerTextClass, imageScaleClass]"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-w-full rounded-xs object-contain" :class="imageScaleClass"><span class="prose-question" v-html="renderedHtml(option.text)" /></span>
       </button>
     </div>
 
@@ -187,8 +188,40 @@ function setOrderingFromEvent(position: number, event: Event) {
     <div v-else class="mt-5 grid gap-2.5" role="radiogroup" aria-label="Pilihan jawaban">
       <button v-for="option in question.options" :key="option.label" type="button" role="radio" :aria-checked="selected === option.label" class="flex min-h-11 touch-manipulation items-start gap-3 rounded-sm border px-3.5 py-3 text-left transition-colors duration-150 ease-smooth sm:gap-3.5 sm:px-4 sm:py-3.5" :class="selected === option.label ? 'border-transparent bg-primary-soft ring-1 ring-primary' : 'border-hairline-strong bg-surface hover:bg-surface-alt'" @click="emit('select', option.label)">
         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[0.82rem] font-bold" :class="selected === option.label ? 'border-transparent bg-primary text-white' : 'border-hairline-strong text-muted'">{{ option.label }}</span>
-        <span class="min-w-0 flex-1 pt-0.5 leading-[1.55]" :class="answerTextClass"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-h-52 max-w-full rounded-xs object-contain"><span class="prose-question [&_img]:max-h-52" v-html="renderedHtml(option.text)" /></span>
+        <span class="min-w-0 flex-1 pt-0.5 leading-[1.55]" :class="[answerTextClass, imageScaleClass]"><img v-if="option.imageUrl" :src="option.imageUrl" alt="" class="mb-2 max-w-full rounded-xs object-contain" :class="imageScaleClass"><span class="prose-question" v-html="renderedHtml(option.text)" /></span>
       </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+img.exam-scale-1,
+.exam-scale-1 :deep(img) { max-height: 10rem; }
+
+img.exam-scale-2,
+.exam-scale-2 :deep(img) { max-height: 12rem; }
+
+img.exam-scale-3,
+.exam-scale-3 :deep(img) { max-height: 14rem; }
+
+img.exam-scale-4,
+.exam-scale-4 :deep(img) { max-height: 18rem; }
+
+img.exam-scale-5,
+.exam-scale-5 :deep(img) { max-height: 24rem; }
+
+img.exam-scale-6,
+.exam-scale-6 :deep(img) { max-height: 30rem; }
+
+img.exam-scale-7,
+.exam-scale-7 :deep(img) { max-height: 36rem; }
+
+img.exam-scale-8,
+.exam-scale-8 :deep(img) { max-height: 42rem; }
+
+img.exam-scale-9,
+.exam-scale-9 :deep(img) { max-height: 48rem; }
+
+img.exam-scale-10,
+.exam-scale-10 :deep(img) { max-height: 56rem; }
+</style>
