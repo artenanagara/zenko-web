@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends string">
+import { useScrollLock } from '@artenanagara/zenko-design-system'
 /**
  * The dropdown behind the catalogue's "Urutkan" and the tutor profile's
  * sort/category controls. Lifted out of catalog/SortDropdown.vue unchanged
@@ -39,6 +40,12 @@ const props = withDefaults(
 const model = defineModel<T>({ required: true })
 
 const open = ref(false)
+
+// An anchored panel is positioned against its trigger, so a page that scrolls
+// underneath slides the panel away from the control it belongs to. The lock is
+// the design system's, shared with AppModal, so a select opened inside a dialog
+// does not unlock the page when it closes while the dialog is still up.
+useScrollLock(open)
 const root = useTemplateRef('root')
 const trigger = useTemplateRef('trigger')
 const menu = useTemplateRef('menu')

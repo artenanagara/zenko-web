@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useScrollLock } from '@artenanagara/zenko-design-system'
 export interface MenuItem {
   id: string
   label: string
@@ -35,6 +36,11 @@ const emit = defineEmits<{
 }>()
 
 const isOpen = ref(false)
+// An anchored panel is positioned against its trigger, so a page that scrolls
+// underneath slides the panel away from the control it belongs to. The lock is
+// the design system's, shared with AppModal, so a select opened inside a dialog
+// does not unlock the page when it closes while the dialog is still up.
+useScrollLock(isOpen)
 const menuRef = ref<HTMLElement | null>(null)
 
 const handleSelect = (id: string) => {
@@ -74,7 +80,7 @@ onUnmounted(() => {
          pintu ke "Bimbel saya" — tidak bisa dijangkau sama sekali. -->
     <div
       v-if="isOpen"
-      class="absolute top-[calc(100%+6px)] z-50 max-h-[min(70vh,22rem)] w-full min-w-48 overflow-y-auto rounded-md border border-line bg-surface p-1.5 shadow-float"
+      class="absolute top-[calc(100%+6px)] z-50 max-h-[min(70vh,22rem)] w-full min-w-48 overflow-y-auto overscroll-contain rounded-md border border-line bg-surface p-1.5 shadow-float"
       :class="align === 'right' ? 'right-0' : 'left-0'"
     >
       <template v-for="item in items" :key="item.id">
