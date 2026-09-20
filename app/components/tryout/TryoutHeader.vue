@@ -78,7 +78,7 @@ const isUrgent = computed(() => props.remainingSeconds <= 60)
           <img
             :src="brandLogo"
             :alt="brand?.name ?? ''"
-            class="h-7 w-auto max-w-[88px] object-contain md:h-8 md:max-w-[150px]"
+            class="h-7 w-auto max-w-[88px] object-contain md:h-9 md:max-w-[168px]"
             @error="brandLogoFailed = true"
           />
           <!-- Di HP atribusinya huruf kecil dan rapat: versi kapital selebar
