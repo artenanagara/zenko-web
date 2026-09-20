@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.1](https://github.com/artenanagara/zenko-web/compare/v0.30.0...v0.30.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* polish dashboard and assessment flows ([3d242b4](https://github.com/artenanagara/zenko-web/commit/3d242b4d061254979d6de584736688f8e1ca59a6))
+* polish dashboard and assessment flows ([39ba2df](https://github.com/artenanagara/zenko-web/commit/39ba2dfc956fd328b1e0787a19302fea0cc6bd33))
+
 ## [0.30.0](https://github.com/artenanagara/zenko-web/compare/v0.29.0...v0.30.0) (2026-09-19)
 
 
