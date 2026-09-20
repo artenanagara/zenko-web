@@ -69,7 +69,7 @@ async function removeBimbel() {
       <div class="grid justify-items-start gap-3"><AppInlineMessage type="error">{{ error || 'Bimbel tidak ditemukan.' }}</AppInlineMessage><AppButton variant="outline" size="sm" @click="load">Coba lagi</AppButton></div>
     </template>
     <template v-else>
-      <AppPageHeader :title="detail.name" :description="[detail.city, `/${detail.slug}`].filter(Boolean).join(' · ')">
+      <AppPageHeader :title="detail.name" :description="[detail.city, detail.provinceName, `/${detail.slug}`].filter(Boolean).join(' · ')">
         <template #breadcrumbs><AppBreadcrumbs :items="breadcrumbs" /></template>
         <template #actions><AppButton variant="danger" size="sm" :loading="deleting" @click="removeBimbel">Hapus bimbel</AppButton></template>
       </AppPageHeader>

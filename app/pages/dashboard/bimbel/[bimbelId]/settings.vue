@@ -32,15 +32,42 @@ function selectTab(tab: string) {
   void navigateTo({ path: route.path, hash: tab === 'profil' ? '' : `#${tab}` }, { replace: true })
 }
 
-const form = reactive({ name: '', username: '', city: '', description: '', logoUrl: '' })
+const form = reactive({ name: '', username: '', provinceCode: '', city: '', description: '', logoUrl: '' })
+
+/* Provinsi dan kota dipilih dari daftar wilayah, bukan diketik: kotanya
+ * bergantung pada provinsi, dan API hanya menerima kode provinsi yang benar. */
+const { provinces, cities, isLoadingProvinces, isLoadingCities, loadProvinces, loadCities } = useIndonesiaRegions()
+const provinceOptions = computed(() => provinces.value.map(region => ({ value: region.code, label: region.name })))
+const cityOptions = computed(() => cities.value.map(region => ({ value: region.name, label: region.name })))
+
+// Mengganti provinsi membuat kota lama tidak lagi berada di dalamnya, jadi
+// pilihannya dikosongkan — kecuali saat memuat nilai yang sudah tersimpan.
+const loadingSavedProfile = ref(false)
+watch(() => form.provinceCode, async (code) => {
+  if (!loadingSavedProfile.value) form.city = ''
+  await loadCities(code)
+})
 const saving = ref(false)
 const rotating = ref(false)
 const bankSaving = ref(false)
 const account = reactive<BankAccountInput>({ bankCode: 'bca', bankLabel: 'BCA', accountNumber: '', holderName: '' })
 
-onMounted(() => Promise.all([bimbel.refresh(), refreshMemberships(), bank.refresh(), changeRequest.refresh()]))
-watch(() => bimbel.data.value, (value) => {
-  if (value) Object.assign(form, { name: value.name, username: value.slug, city: value.city ?? '', description: value.description ?? '', logoUrl: value.logoUrl ?? '' })
+onMounted(() => Promise.all([bimbel.refresh(), refreshMemberships(), bank.refresh(), changeRequest.refresh(), loadProvinces()]))
+watch(() => bimbel.data.value, async (value) => {
+  if (!value) return
+  loadingSavedProfile.value = true
+  Object.assign(form, {
+    name: value.name,
+    username: value.slug,
+    provinceCode: value.provinceCode ?? '',
+    city: value.city ?? '',
+    description: value.description ?? '',
+    logoUrl: value.logoUrl ?? '',
+  })
+  // Kotanya dimuat lebih dulu supaya nilai tersimpan punya pilihan yang cocok
+  // saat select-nya dirender, bukan kosong sesaat lalu terisi.
+  await loadCities(form.provinceCode)
+  loadingSavedProfile.value = false
 })
 watch(() => account.bankCode, (code) => {
   account.bankLabel = BANK_OPTIONS.find(item => item.code === code)?.label ?? code
@@ -122,7 +149,20 @@ async function saveBank() {
             <BimbelLogoField v-model="form.logoUrl" :name="form.name || 'Bimbel'" :disabled="saving" />
           </div>
           <AppInput v-model="form.name" label="Nama bimbel" required />
-          <AppInput v-model="form.city" label="Kota" />
+          <AppSelect
+            v-model="form.provinceCode"
+            label="Provinsi"
+            :options="provinceOptions"
+            :disabled="isLoadingProvinces || saving"
+            :placeholder="isLoadingProvinces ? 'Memuat provinsi…' : 'Pilih provinsi'"
+          />
+          <AppSelect
+            v-model="form.city"
+            label="Kota"
+            :options="cityOptions"
+            :disabled="!form.provinceCode || isLoadingCities || saving"
+            :placeholder="!form.provinceCode ? 'Pilih provinsi dulu' : (isLoadingCities ? 'Memuat kota…' : 'Pilih kota')"
+          />
           <div class="md:col-span-2">
             <AppInput
               v-model="form.username"

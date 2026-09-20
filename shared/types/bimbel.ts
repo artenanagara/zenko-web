@@ -38,6 +38,14 @@ export interface Bimbel {
   id: string
   slug: string
   name: string
+  /** Kode BPS provinsi; yang disimpan API adalah kodenya, bukan namanya. */
+  provinceCode?: string
+  /**
+   * Nama provinsi, diturunkan API dari `provinceCode` saat dibaca dan tidak
+   * pernah disimpan. Dipakai untuk ditampilkan — halaman tidak perlu memanggil
+   * penyedia data wilayah hanya untuk mencetak satu kata.
+   */
+  provinceName?: string
   city?: string
   description?: string
   logoUrl?: string
@@ -116,6 +124,7 @@ export interface BimbelApplication {
   contactName: string
   email: string
   whatsapp?: string
+  provinceCode?: string
   city?: string
   studentCount?: number
   studentCountBand?: BimbelStudentCountBand
