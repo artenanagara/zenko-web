@@ -55,10 +55,29 @@ sudo certbot certonly --webroot -w /var/www/letsencrypt -d demo.zenkoedu.id
 ```
 
 **2b. Create the staging-2 database** (separate from production and from
-the primary staging database, same Postgres instance):
+the primary staging database, same Postgres instance), and install pgvector
+into it:
 ```
 sudo -u postgres createdb -O zenko zenko_staging2
+sudo -u postgres psql -d zenko_staging2 -c "CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;"
 ```
+The extension is a superuser step and has to happen before the API first
+boots. Migration 0048 types a column `vector(768)`; `zenko` owns the database
+but is not a superuser, and pgvector is not a trusted extension here, so the
+API's own migration run answers `permission denied to create extension
+"vector"` — and in demo mode that is not a single failed migration but a 503
+on every request, because a sandbox is provisioned in the middleware ahead of
+every route.
+
+`WITH SCHEMA public` is the other half. An extension lives in exactly one
+schema per database, while every demo sandbox is a schema whose `search_path`
+is pinned to itself; public is the one place all of them can resolve the type
+from. The registry leans on that — it runs sandbox DDL on a separate pool
+whose path is `<sandbox>, public` and closes it before serving (see
+`openMigrationPool` in zenko-api's `internal/demo/registry.go`).
+
+Production needed the same step when 0048 first shipped. demo.zenkoedu.id was
+down for six minutes on 2026-09-20 because it had been missed here.
 
 **2c. Copy the deploy files onto the server.** From your local machine, in
 each repo's checkout:
