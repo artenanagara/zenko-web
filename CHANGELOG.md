@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.31.0](https://github.com/artenanagara/zenko-web/compare/v0.30.1...v0.31.0) (2026-09-20)
+
+
+### Features
+
+* **tryout:** wear the bimbel's logo in the exam room header ([c99ef74](https://github.com/artenanagara/zenko-web/commit/c99ef743656a577ae7711e5df1ee2b3fcafe7bbb))
+* wear the bimbel's logo in the exam room ([f386532](https://github.com/artenanagara/zenko-web/commit/f3865327744aad3fb6f3ad0439f0743452a2bcea))
+
+
+### Bug Fixes
+
+* **auth:** send a wrong-role session home on the public domain ([cc7b9ad](https://github.com/artenanagara/zenko-web/commit/cc7b9ad4f56c855a3789793db8435b7034390f55))
+* render all saved answer values in review ([38498d5](https://github.com/artenanagara/zenko-web/commit/38498d5b6824b2f7cacf629b58ea65e5ef4cd790))
+* render public bimbel child route ([3b60555](https://github.com/artenanagara/zenko-web/commit/3b605558e7bc0562d55a0b456c51a6566013dd57))
+* show correct review status for value answers ([d3fa469](https://github.com/artenanagara/zenko-web/commit/d3fa46906bfa70e263624ebd6e6534bbb9fb4f43))
+* **tryout:** give the bimbel logo more room on desktop ([e61242a](https://github.com/artenanagara/zenko-web/commit/e61242a748e63ba114fa0f8ca4d48da4c91073b0))
+* **tryout:** keep question bottom clear of controls ([84a3fd2](https://github.com/artenanagara/zenko-web/commit/84a3fd273820b6c5286276a237bb07477bdaae02))
+
 ## [0.30.1](https://github.com/artenanagara/zenko-web/compare/v0.30.0...v0.30.1) (2026-09-20)
 
 
