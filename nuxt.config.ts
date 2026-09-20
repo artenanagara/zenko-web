@@ -82,6 +82,10 @@ export default defineNuxtConfig({
     '/pusat-bantuan/peringatan-anti-kecurangan': {
       redirect: { to: '/pusat-bantuan/tampilan-soal-disembunyikan', statusCode: 301 },
     },
+    // Impor soal bukan lagi hanya CSV: Word (.docx) adalah format utamanya.
+    '/pusat-bantuan/impor-soal-csv': {
+      redirect: { to: '/pusat-bantuan/impor-soal-word-csv', statusCode: 301 },
+    },
   },
 
   // lenis.css: tinggi html/body auto + overflow clip saat Lenis dihentikan.
@@ -176,6 +180,9 @@ export default defineNuxtConfig({
       appVersion: packageMetadata.version,
       // Base URL of zenko-api. Override with NUXT_PUBLIC_API_BASE.
       apiBase: 'http://localhost:8080/api/v1',
+      // GA4 Measurement ID. Override per environment with
+      // NUXT_PUBLIC_ANALYTICS_MEASUREMENT_ID.
+      analyticsMeasurementId: 'G-20Y9CGTQ0L',
       // Whether checkout may call POST /orders. How the resulting order is
       // actually paid is the server's decision — a Duitku QRIS charge, or the
       // manual QRIS channel where the buyer transfers to Zenko's static QR and

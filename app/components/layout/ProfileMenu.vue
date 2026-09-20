@@ -27,6 +27,8 @@ const initial = computed(() => props.user.name.trim().charAt(0).toUpperCase() ||
 const ROLE_BADGE: Partial<Record<Role, { label: string, tone: 'brand' | 'neutral' }>> = {
   tutor: { label: 'Tutor', tone: 'brand' },
   admin: { label: 'Admin', tone: 'neutral' },
+  marketing: { label: 'Marketing', tone: 'brand' },
+  editor: { label: 'Editor', tone: 'neutral' },
 }
 const roleBadge = computed(() => ROLE_BADGE[props.user.role] ?? null)
 
@@ -41,7 +43,11 @@ const dashboardPath = computed(() =>
 )
 
 const dashboardLabel = computed(() =>
-  props.user.role === 'admin' ? 'Dashboard Admin' : 'Dashboard Tutor',
+  props.user.role === 'admin'
+    ? 'Dashboard Admin'
+    : props.user.role === 'tutor'
+      ? 'Dashboard Tutor'
+      : 'Marketing Hub',
 )
 
 /**
@@ -59,7 +65,7 @@ const dashboardLabel = computed(() =>
  * ini cukup jadi pintunya. Kalau ruang kerjanya cuma satu, entrinya menyebut
  * namanya, karena pada titik itu ia memang bukan pilihan melainkan tujuan.
  */
-const { data: memberships, ensure: ensureMemberships } = useBimbelMemberships()
+const { data: memberships, refresh: refreshMemberships } = useBimbelMemberships()
 
 const bimbelWorkspaces = computed(() =>
   memberships.value.filter(item => item.status === 'active' && item.role !== 'student'),
@@ -93,10 +99,11 @@ function focusItem(index: number) {
 
 async function openMenu(index = 0) {
   open.value = true
-  // Dimuat saat dibuka, bukan saat dirender: komponen ini ada di header setiap
-  // halaman, dan satu request per halaman untuk entri yang dipakai sebagian
-  // kecil akun adalah harga yang salah. `ensure` hanya menembak sekali.
-  ensureMemberships()
+  // Keanggotaan dapat berubah tanpa full page reload (misalnya undangan
+  // bimbel baru saja diterima). Refresh saat menu dibuka supaya tautan
+  // Dashboard Bimbel langsung muncul pada sesi SPA yang sama, tanpa meminta
+  // pengguna melakukan refresh manual.
+  void refreshMemberships()
   await nextTick()
   focusItem(index)
 }

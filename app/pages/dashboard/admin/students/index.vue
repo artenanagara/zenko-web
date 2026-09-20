@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import type { User } from '#shared/types/user'
+import type { AdminStudentRow } from '#shared/types/admin-directory'
 import type { TableControlOption } from '~/composables/useTableControls'
 
 /**
  * Direktori siswa — daftar setiap akun berperan siswa. Sama seperti direktori
  * tutor: bukan antrean keputusan, tabelnya polos: cari, filter status
- * verifikasi. Berbeda dari tutor, tidak ada halaman detail — tidak ada profil
- * atau produk untuk didalami per siswa, jadi baris tidak bisa diklik.
+ * verifikasi, urutkan. Berbeda dari tutor, tidak ada halaman detail — tidak
+ * ada profil atau produk untuk didalami per siswa — jadi yang perlu diketahui
+ * admin harus terbaca dari barisnya sendiri: cara masuk, sudah beli apa,
+ * sudah mengerjakan berapa, dan sejak kapan.
  */
 definePageMeta({
   layout: 'dashboard',
@@ -30,51 +32,91 @@ onMounted(async () => {
 })
 
 /* --------------------------------------------------------------------------
- * Toolbar — cari, filter verifikasi, urutkan.
+ * Toolbar — cari, filter, urutkan.
  * ------------------------------------------------------------------------ */
 
 const FILTER_OPTIONS: TableControlOption[] = [
   { value: 'all', label: 'Semua siswa' },
   { value: 'verified', label: 'Terverifikasi' },
   { value: 'unverified', label: 'Belum verifikasi' },
+  { value: 'buyers', label: 'Pernah membeli' },
+  { value: 'email', label: 'Masuk lewat email' },
+  { value: 'google', label: 'Masuk lewat Google' },
 ]
 
 const SORT_OPTIONS: TableControlOption[] = [
+  { value: 'newest', label: 'Terbaru bergabung' },
+  { value: 'oldest', label: 'Terlama bergabung' },
   { value: 'name-asc', label: 'Nama A–Z' },
   { value: 'name-desc', label: 'Nama Z–A' },
+  { value: 'purchases', label: 'Paket terbanyak' },
+  { value: 'attempts', label: 'Tryout terbanyak' },
 ]
 
 const {
   search,
-  filter: verificationFilter,
+  filter: studentFilter,
   sort: sortOrder,
   rows,
   total,
   isActive,
   reset,
-} = useTableControls<User>(() => students.value, {
+} = useTableControls<AdminStudentRow>(() => students.value, {
   searchFields: student => [student.name, student.email],
   filters: {
     all: () => true,
     verified: student => student.verified,
     unverified: student => !student.verified,
+    buyers: student => student.purchaseCount > 0,
+    email: student => student.loginMethod === 'email',
+    google: student => student.loginMethod === 'google',
   },
   sorts: {
+    'newest': (a, b) => b.createdAt - a.createdAt,
+    'oldest': (a, b) => a.createdAt - b.createdAt,
     'name-asc': (a, b) => a.name.localeCompare(b.name, 'id'),
     'name-desc': (a, b) => b.name.localeCompare(a.name, 'id'),
+    'purchases': (a, b) => b.purchaseCount - a.purchaseCount,
+    'attempts': (a, b) => b.attemptCount - a.attemptCount,
   },
   defaultFilter: 'all',
-  defaultSort: 'name-asc',
+  defaultSort: 'newest',
 })
+
+/** Akun email yang belum membuka tautan verifikasinya — sinyal, bukan antrean. */
+const unverifiedCount = computed(() => students.value.filter(student => !student.verified).length)
 
 const columns = [
   { key: 'student', label: 'Siswa' },
+  { key: 'loginMethod', label: 'Cara masuk', hideOnMobile: true },
   { key: 'status', label: 'Verifikasi' },
-  { key: 'joined', label: 'Tanggal bergabung' },
+  { key: 'purchaseCount', label: 'Paket dibeli', align: 'right' as const },
+  { key: 'attemptCount', label: 'Tryout', align: 'right' as const },
+  { key: 'joined', label: 'Bergabung' },
+  { key: 'actions', label: 'Aksi', align: 'right' as const },
 ]
+
+const LOGIN_METHOD_LABEL: Record<string, string> = {
+  email: 'Email',
+  google: 'Google',
+}
 
 function initial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?'
+}
+
+const deleteTarget = ref<AdminStudentRow | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+function openDelete(student: AdminStudentRow) { deleteTarget.value = student; deleteError.value = ''; deleteOpen.value = true }
+function openStudentDelete(id: string) { const student = students.value.find(item => item.id === id); if (student) openDelete(student) }
+async function removeStudent() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminStudent(deleteTarget.value.id); deleteOpen.value = false; await refresh() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Siswa belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
 }
 </script>
 
@@ -82,7 +124,7 @@ function initial(name: string): string {
   <div class="grid gap-6">
     <AppPageHeader
       title="Daftar Siswa"
-      description="Setiap akun yang berperan siswa di Zenko."
+      description="Setiap akun yang berperan siswa di Zenko: cara masuknya, paket yang dibeli, tryout yang dikerjakan, dan sejak kapan bergabung."
     />
 
     <DashboardPanel>
@@ -102,16 +144,19 @@ function initial(name: string): string {
       <div v-else class="grid gap-4">
         <DashboardTableToolbar
           v-model:search="search"
-          v-model:filter="verificationFilter"
+          v-model:filter="studentFilter"
           v-model:sort="sortOrder"
           search-id="admin-students-search"
           search-label="Cari siswa"
           search-placeholder="Cari nama atau email…"
           :filter-options="FILTER_OPTIONS"
           :sort-options="SORT_OPTIONS"
+          filter-label="Tampilkan"
           :result-count="rows.length"
           :total-count="total"
           item-noun="siswa"
+          :actionable-count="unverifiedCount"
+          actionable-label="belum verifikasi"
           :active="isActive"
           @reset="reset"
         />
@@ -153,17 +198,33 @@ function initial(name: string): string {
             </div>
           </template>
 
+          <template #cell(loginMethod)="{ value }">
+            <span class="text-[0.86rem]">{{ LOGIN_METHOD_LABEL[value] ?? '—' }}</span>
+          </template>
+
           <template #cell(status)="{ item }">
             <DashboardBadge :tone="item.verified ? 'success' : 'warning'">
               {{ item.verified ? 'Terverifikasi' : 'Belum verifikasi' }}
             </DashboardBadge>
           </template>
 
+          <template #cell(purchaseCount)="{ value }">
+            <span class="tabular-nums" :class="value > 0 ? 'font-semibold text-ink' : 'text-muted'">{{ value }}</span>
+          </template>
+
+          <template #cell(attemptCount)="{ value }">
+            <span class="tabular-nums" :class="value > 0 ? 'font-semibold text-ink' : 'text-muted'">{{ value }}</span>
+          </template>
+
           <template #cell(joined)="{ item }">
-            <span class="text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
+            <span class="whitespace-nowrap text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
+          </template>
+          <template #cell(actions)="{ item }">
+            <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus siswa" ariaLabel="Hapus siswa" title="Hapus siswa" @click="openStudentDelete(item.id)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>
     </DashboardPanel>
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="siswa" description="Akun siswa, sesi login, dan identitas akun akan dihapus dari direktori." :busy="deleteBusy" :error="deleteError" @confirm="removeStudent" />
   </div>
 </template>

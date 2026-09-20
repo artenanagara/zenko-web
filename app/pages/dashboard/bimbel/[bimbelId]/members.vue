@@ -9,12 +9,15 @@ const bimbelId = String(useRoute().params.bimbelId)
 const bimbel = useBimbelDetail(bimbelId)
 const { data: members, pending, error, refresh } = useBimbelMembers(bimbelId)
 const toast = useToast()
-const students = computed(() => members.value.filter(member => member.role === 'student'))
+const { confirm } = useConfirm()
+const students = computed(() => members.value.filter(member => member.role === 'student' && member.status !== 'left'))
 const inviteOpen = ref(false)
 const inviteEmail = ref('')
 const inviting = ref(false)
 const inviteError = ref('')
 const busyId = ref('')
+const bulkBusy = ref(false)
+const selectedStudentIds = ref<string[]>([])
 const quotaFullError = ref(false)
 
 const pendingSeats = computed(() => bimbel.data.value?.pendingSeatAddonSeats ?? 0)
@@ -90,7 +93,8 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
   busyId.value = member.accountId
   quotaFullError.value = false
   try {
-    await updateBimbelMember(bimbelId, member.accountId, { status })
+    if (status === 'left') await deleteBimbelMember(bimbelId, member.accountId)
+    else await updateBimbelMember(bimbelId, member.accountId, { status })
     await load()
     toast.success('Status siswa diperbarui.')
   }
@@ -103,6 +107,52 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
     if (!quotaFullError.value) toast.error('Perubahan belum tersimpan.', message)
   }
   finally { busyId.value = '' }
+}
+
+async function removeStudent(member: BimbelMember) {
+  const approved = await confirm({
+    title: `Hapus ${member.name} dari bimbel?`,
+    description: 'Siswa kehilangan akses ke seluruh paket bimbel ini. Tindakan ini tidak dapat dibatalkan.',
+    confirmLabel: 'Hapus siswa',
+  })
+  if (!approved) return
+
+  busyId.value = member.accountId
+  try {
+    await deleteBimbelMember(bimbelId, member.accountId)
+    selectedStudentIds.value = selectedStudentIds.value.filter(id => id !== member.accountId)
+    await load()
+    toast.success('Siswa dihapus dari bimbel.')
+  }
+  catch (cause) { toast.error('Siswa belum dapat dihapus.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.')) }
+  finally { busyId.value = '' }
+}
+
+async function runBulk(action: 'active' | 'suspended' | 'delete') {
+  const selected = students.value.filter(student => selectedStudentIds.value.includes(student.accountId))
+  if (!selected.length || bulkBusy.value) return
+  const target = action === 'active' ? 'Aktifkan' : action === 'suspended' ? 'Tangguhkan' : 'Hapus'
+  const approved = await confirm({
+    title: `${target} ${selected.length} siswa?`,
+    description: action === 'delete'
+      ? 'Siswa yang dipilih akan kehilangan akses bimbel dan dihapus dari roster secara permanen.'
+      : `Status ${selected.length} siswa yang dipilih akan diperbarui sekaligus.`,
+    confirmLabel: `${target} semua`,
+  })
+  if (!approved) return
+
+  bulkBusy.value = true
+  try {
+    await Promise.all(selected.map(async (student) => {
+      if (action === 'delete') return await deleteBimbelMember(bimbelId, student.accountId)
+      if (student.status !== action) await updateBimbelMember(bimbelId, student.accountId, { status: action })
+    }))
+    selectedStudentIds.value = []
+    await load()
+    toast.success(`${selected.length} siswa berhasil diproses.`)
+  }
+  catch (cause) { toast.error('Sebagian tindakan mungkin belum selesai.', tutorApiMessage(cause, 'Muat ulang daftar lalu coba lagi.')) }
+  finally { bulkBusy.value = false }
 }
 </script>
 
@@ -147,15 +197,26 @@ async function patchStatus(member: BimbelMember, status: BimbelMemberStatus) {
           :total-count="total" item-noun="siswa" :actionable-count="pendingCount" actionable-label="menunggu diaktifkan"
           :active="isActive" @reset="reset"
         />
+        <div v-if="selectedStudentIds.length" class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary-soft/45 px-4 py-3">
+          <p class="text-sm font-semibold text-ink">{{ selectedStudentIds.length }} siswa dipilih</p>
+          <div class="flex flex-wrap gap-2">
+            <AppButton size="xs" variant="outline" :disabled="bulkBusy" @click="runBulk('active')">Aktifkan masal</AppButton>
+            <AppButton size="xs" variant="outline" :disabled="bulkBusy" @click="runBulk('suspended')">Tangguhkan masal</AppButton>
+            <AppButton size="xs" variant="danger" :disabled="bulkBusy" @click="runBulk('delete')">Hapus masal</AppButton>
+          </div>
+        </div>
         <AppEmptyState v-if="rows.length === 0" title="Hasil tidak ditemukan" description="Tidak ada siswa yang cocok dengan pencarian atau status yang dipilih." action-label="Hapus pencarian" @action="reset" />
-        <DashboardTable v-else :columns="columns" :data="rows" primary-key="accountId" action-key="aksi">
+        <DashboardTable v-else v-model:selected="selectedStudentIds" selectable row-key="accountId" :columns="columns" :data="rows" primary-key="accountId" action-key="aksi">
           <template #cell(name)="{ item }"><span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span><span class="block text-[0.82rem] text-muted">{{ item.email }}</span></template>
           <template #cell(status)="{ item }"><DashboardBadge :tone="STATUS_TONE[item.status as BimbelMemberStatus]">{{ STATUS_LABEL[item.status as BimbelMemberStatus] }}</DashboardBadge></template>
           <template #cell(joinedAt)="{ value }"><span class="whitespace-nowrap">{{ formatDate(value) }}</span></template>
           <template #cell(aksi)="{ item }">
             <template v-for="student in [findStudent(item.accountId)]" :key="item.accountId">
-              <AppButton v-if="student && student.status !== 'active'" size="sm" :disabled="busyId === student.accountId" @click="patchStatus(student, 'active')">{{ busyId === student.accountId ? 'Memproses…' : 'Aktifkan' }}</AppButton>
-              <AppButton v-else-if="student" size="sm" variant="outline" :disabled="busyId === student.accountId" @click="patchStatus(student, 'suspended')">{{ busyId === student.accountId ? 'Memproses…' : 'Tangguhkan' }}</AppButton>
+              <span v-if="student" class="inline-flex flex-wrap justify-end gap-2">
+                <AppIconButton v-if="student.status !== 'active'" variant="ghost" size="sm" :disabled="busyId === student.accountId" aria-label="Aktifkan siswa" ariaLabel="Aktifkan siswa" title="Aktifkan siswa" @click="patchStatus(student, 'active')"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="student.status === 'active'" variant="ghost" size="sm" :disabled="busyId === student.accountId" aria-label="Tangguhkan siswa" ariaLabel="Tangguhkan siswa" title="Tangguhkan siswa" @click="patchStatus(student, 'suspended')"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === student.accountId" aria-label="Hapus siswa" ariaLabel="Hapus siswa" title="Hapus siswa" @click="removeStudent(student)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
+              </span>
             </template>
           </template>
         </DashboardTable>

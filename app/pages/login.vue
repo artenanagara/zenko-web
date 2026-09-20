@@ -2,6 +2,7 @@
 import { homePathFor } from '#shared/types/user'
 import type { EmailAuthFailure } from '~/composables/useAuth'
 import { safeInternalPath } from '~/utils/safeRedirect'
+import { workspaceForHost, workspaceTitle } from '~/utils/workspace'
 
 // English file name, Indonesian URL; `path` keeps circulating links alive.
 definePageMeta({ layout: 'auth', path: '/masuk' })
@@ -17,6 +18,12 @@ useHead({
 
 const { signInWithGoogle, signInWithEmail } = useAuth()
 const route = useRoute()
+const hostname = import.meta.server
+  ? useRequestHeaders(['host']).host?.split(':')[0] ?? ''
+  : window.location.hostname
+const workspace = workspaceForHost(hostname)
+const isWorkspaceLogin = workspace !== 'public'
+const loginTitle = workspaceTitle(workspace)
 
 /** The OAuth callback bounces back here with ?error=<reason> on failure. */
 const CALLBACK_ERRORS: Record<string, string> = {
@@ -87,16 +94,16 @@ async function onSubmit() {
 </script>
 
 <template>
-  <main class="grid min-h-screen lg:grid-cols-2">
+  <main :class="isWorkspaceLogin ? 'flex min-h-screen items-center justify-center' : 'grid min-h-screen lg:grid-cols-2'">
     <div class="flex items-center justify-center px-5 py-10 sm:px-8 md:py-14">
       <div class="w-full max-w-100">
         <BrandMark img-class="h-10 w-auto object-contain" />
 
         <h1 class="mt-9 text-[clamp(1.7rem,2.6vw,2.1rem)] leading-[1.18] tracking-[-0.04em]">
-          Yuk, lanjut belajar
+          {{ isWorkspaceLogin ? `Masuk ke ${loginTitle}` : 'Yuk, lanjut belajar' }}
         </h1>
         <p class="mt-2.5 text-muted">
-          Masuk untuk melanjutkan latihanmu dari terakhir.
+          {{ isWorkspaceLogin ? 'Gunakan email dan kata sandi akun kerja kamu.' : 'Masuk untuk melanjutkan latihanmu dari terakhir.' }}
         </p>
 
         <form class="mt-8 grid gap-5" novalidate @submit.prevent="onSubmit">
@@ -158,15 +165,15 @@ async function onSubmit() {
           </AppButton>
         </form>
 
-        <div class="my-7 flex items-center gap-4 text-[0.82rem] text-muted">
+        <div v-if="!isWorkspaceLogin" class="my-7 flex items-center gap-4 text-[0.82rem] text-muted">
           <span class="h-px flex-1 bg-line" />
           atau
           <span class="h-px flex-1 bg-line" />
         </div>
 
-        <GoogleButton @click="signInWithGoogle" />
+        <GoogleButton v-if="!isWorkspaceLogin" @click="signInWithGoogle" />
 
-        <p class="mt-8 text-center text-[0.9rem] text-muted">
+        <p v-if="!isWorkspaceLogin" class="mt-8 text-center text-[0.9rem] text-muted">
           Belum punya akun?
           <NuxtLink to="/daftar" class="font-semibold text-primary hover:underline">
             Buat akun gratis
@@ -176,6 +183,7 @@ async function onSubmit() {
     </div>
 
     <AuthAside
+      v-if="!isWorkspaceLogin"
       badge="Progresmu menunggu untuk dilanjutkan"
       :stats="[
         { label: 'Paketmu', value: 'Rapi' },

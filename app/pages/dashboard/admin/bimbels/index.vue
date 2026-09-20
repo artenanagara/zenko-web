@@ -40,6 +40,19 @@ const legacy = computed(() =>
 )
 const busyId = ref('')
 const toast = useToast()
+const deleteTarget = ref<Bimbel | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+function openDelete(bimbel: Bimbel) { deleteTarget.value = bimbel; deleteError.value = ''; deleteOpen.value = true }
+function openBimbelDelete(id: string) { const bimbel = bimbels.value.find(item => item.id === id); if (bimbel) openDelete(bimbel) }
+async function removeBimbel() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminBimbel(deleteTarget.value.id); deleteOpen.value = false; await load() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Bimbel belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
+}
 
 function load() {
   return Promise.all([refresh(), legacyApplications.refresh()])
@@ -108,7 +121,9 @@ const STATUS_FILTER_OPTIONS: TableControlOption[] = [
 
 const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru mendaftar' },
+  { value: 'oldest', label: 'Terlama mendaftar' },
   { value: 'name', label: 'Nama A–Z' },
+  { value: 'name-desc', label: 'Nama Z–A' },
   { value: 'expiry', label: 'Masa aktif terdekat' },
   { value: 'seats', label: 'Siswa terbanyak' },
 ]
@@ -122,7 +137,7 @@ const {
   isActive,
   reset,
 } = useTableControls<Bimbel>(bimbels, {
-  searchFields: item => [item.name, item.city, item.slug],
+  searchFields: item => [item.name, item.city, item.slug, bimbelPlanLabel(item.plan)],
   filters: {
     all: () => true,
     trial: item => item.status === 'trial',
@@ -133,8 +148,10 @@ const {
     lapsed: item => item.status === 'grace' || item.status === 'suspended',
   },
   sorts: {
-    newest: (a, b) => b.createdAt - a.createdAt,
-    name: (a, b) => a.name.localeCompare(b.name, 'id'),
+    'newest': (a, b) => b.createdAt - a.createdAt,
+    'oldest': (a, b) => a.createdAt - b.createdAt,
+    'name': (a, b) => a.name.localeCompare(b.name, 'id'),
+    'name-desc': (a, b) => b.name.localeCompare(a.name, 'id'),
     expiry: (a, b) => (a.activeUntil || Number.MAX_SAFE_INTEGER) - (b.activeUntil || Number.MAX_SAFE_INTEGER),
     seats: (a, b) => b.seatsUsed - a.seatsUsed,
   },
@@ -149,9 +166,13 @@ const lapsedCount = computed(() =>
 
 const columns = [
   { key: 'bimbel', label: 'Bimbel' },
-  { key: 'plan', label: 'Tingkat', hideOnMobile: true },
-  { key: 'seats', label: 'Siswa', align: 'right' as const },
+  { key: 'city', label: 'Kota', hideOnMobile: true },
+  { key: 'plan', label: 'Tingkat' },
+  { key: 'seats', label: 'Kursi', align: 'right' as const },
+  { key: 'joined', label: 'Mendaftar' },
+  { key: 'period', label: 'Masa aktif' },
   { key: 'status', label: 'Langganan' },
+  { key: 'actions', label: 'Aksi', align: 'right' as const },
 ]
 
 function findBimbel(id: string): Bimbel | undefined {
@@ -240,10 +261,13 @@ function findBimbel(id: string): Bimbel | undefined {
 
         <DashboardTable v-else :columns="columns" :data="rows" primary-key="bimbel">
           <template #cell(bimbel)="{ item }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span>
-            <span class="block text-[0.82rem] text-muted">
-              {{ item.city || 'Kota tidak diisi' }} · daftar {{ formatDate(item.createdAt) }}
-            </span>
+            <NuxtLink :to="`/dashboard/admin/bimbels/${item.id}`" class="block font-semibold tracking-[-0.02em] text-ink hover:text-primary hover:underline">{{ item.name }}</NuxtLink>
+            <span class="block text-[0.82rem] text-muted">/{{ item.slug }}</span>
+          </template>
+
+          <template #cell(city)="{ value }">
+            <span v-if="value" class="text-[0.88rem]">{{ value }}</span>
+            <span v-else class="text-muted">—</span>
           </template>
 
           <template #cell(plan)="{ item }">
@@ -254,10 +278,25 @@ function findBimbel(id: string): Bimbel | undefined {
             </template>
           </template>
 
+          <!-- Kursi terpakai dari kuota; tambahan yang masih menunggu
+               verifikasi disebut terpisah karena belum menambah kuota. -->
           <template #cell(seats)="{ item }">
-            <span class="whitespace-nowrap tabular-nums">
+            <span class="block whitespace-nowrap tabular-nums">
               {{ item.seatsUsed }} / {{ item.seatQuota }}
             </span>
+            <span v-if="item.pendingSeatAddonSeats > 0" class="block whitespace-nowrap text-[0.78rem] text-muted tabular-nums">
+              +{{ item.pendingSeatAddonSeats }} menunggu
+            </span>
+          </template>
+
+          <template #cell(joined)="{ item }">
+            <span class="whitespace-nowrap text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
+          </template>
+
+          <template #cell(period)="{ item }">
+            <template v-for="bimbel in [findBimbel(item.id)]" :key="item.id">
+              <span v-if="bimbel" class="text-[0.86rem]">{{ periodNote(bimbel) }}</span>
+            </template>
           </template>
 
           <template #cell(status)="{ item }">
@@ -268,12 +307,15 @@ function findBimbel(id: string): Bimbel | undefined {
                 <DashboardBadge :tone="STATUS_TONE[bimbel.status]">
                   {{ STATUS_LABEL[bimbel.status] }}
                 </DashboardBadge>
-                <span class="text-[0.78rem] text-muted">{{ periodNote(bimbel) }}</span>
               </div>
             </template>
+          </template>
+          <template #cell(actions)="{ item }">
+            <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus bimbel" ariaLabel="Hapus bimbel" title="Hapus bimbel" @click="openBimbelDelete(item.id)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>
     </DashboardPanel>
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="bimbel" description="Bimbel, anggota, kelas, tagihan, dan paket privat di dalamnya akan dihapus permanen." :busy="deleteBusy" :error="deleteError" @confirm="removeBimbel" />
   </div>
 </template>

@@ -25,6 +25,20 @@ export interface AdminProductSummary extends TutorProductSummary {
  */
 export interface AdminProductDetail extends TutorProductDetail {
   author?: AdminAuthor
+  plagiarismCheck?: ProductPlagiarismCheck
+}
+
+export type PlagiarismCheckStatus = 'clean' | 'flagged_plagiarism' | 'flagged_self_duplicate' | 'error'
+
+export interface ProductPlagiarismCheck {
+  id: string
+  status: PlagiarismCheckStatus
+  highestSimilarity: number
+  matchedProductId?: string
+  matchedQuestionsCount: number
+  totalQuestionsCount: number
+  aiSummary?: string
+  checkedAt: number
 }
 
 /** POST /admin/products/:id/decision — reason wajib saat reject. */

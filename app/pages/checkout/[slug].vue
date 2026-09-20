@@ -9,6 +9,10 @@ const slug = route.params.slug as string
 // rather than on a checkout for nothing.
 const detail = await usePackageDetail(slug)
 
+onMounted(() => {
+  trackMarketingEvent({ name: 'checkout_start', productId: detail.value.id, productSlug: detail.value.slug, productName: detail.value.title })
+})
+
 useHead({
   title: `Checkout ${detail.value.title} | Zenko`,
   // An order page has nothing to rank for and should never be crawled.

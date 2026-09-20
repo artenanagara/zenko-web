@@ -175,10 +175,25 @@ export interface TryoutTheme {
  */
 export type TryoutMode = 'flat' | 'sequential'
 
+/**
+ * Milik siapa ruang ujian ini. Dikirim API hanya ketika paketnya dikerjakan
+ * di dalam sebuah bimbel — untuk paket marketplace biasa field-nya absen dan
+ * ruang ujian memakai identitas Zenko seperti biasa.
+ *
+ * `logoUrl` opsional: bimbel yang belum mengunggah logo tetap punya nama, dan
+ * header jatuh ke lockup Zenko alih-alih menampilkan ruang kosong.
+ */
+export interface TryoutBrand {
+  name: string
+  logoUrl?: string
+}
+
 export interface TryoutBlueprint {
   slug: string
   title: string
   theme: TryoutTheme
+  /** Bimbel penyelenggara, absen untuk paket non-bimbel. */
+  brand?: TryoutBrand
   mode: TryoutMode
   scoreScale?: ScoreScale
   scoreDisclaimer?: string

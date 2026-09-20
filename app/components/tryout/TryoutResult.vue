@@ -62,6 +62,7 @@ const props = withDefaults(
     fromBimbel?: boolean
     /** Simulasi tutor/admin: sembunyikan tautan progres paket milik siswa. */
     simulate?: boolean
+    leaderboardParticipants?: number
   }>(),
   {
     blueprint: null,
@@ -72,6 +73,7 @@ const props = withDefaults(
     returnTo: '',
     returnLabel: 'Kembali ke paket',
     fromBimbel: false,
+    leaderboardParticipants: 0,
   },
 )
 
@@ -106,6 +108,12 @@ const displayMaxScore = computed(() => serverScored.value ? props.attempt!.maxSc
 const verdict = computed<boolean | undefined>(() =>
   serverScored.value ? props.attempt!.passed : undefined,
 )
+
+const leaderboardRank = computed(() => {
+  const rank = Number(props.attempt?.rank)
+  return Number.isInteger(rank) && rank > 0 ? rank : null
+})
+const leaderboardMascot = computed(() => ({ 1: '/brand/mascot/jump.webp', 2: '/brand/mascot/thumb.webp', 3: '/brand/mascot/wave.webp' }[leaderboardRank.value ?? 0] ?? ''))
 
 /** Ada subtes dengan ambang batas → baris skor vs ambang + badge Memenuhi. */
 const hasPassingGrades = computed(() => rows.value.some(row => row.passingGrade != null))
@@ -262,6 +270,32 @@ function openReview() {
         <span>{{ scoreDisclaimer }}</span>
       </p>
     </div>
+
+    <section
+      v-if="leaderboardRank"
+      class="flex flex-wrap items-center gap-4 rounded-lg border border-primary/20 bg-primary-soft px-5 py-4"
+      aria-label="Peringkat leaderboard"
+    >
+      <img v-if="leaderboardMascot" :src="leaderboardMascot" :alt="`Maskot peringkat ${leaderboardRank}`" class="h-20 w-auto">
+      <div class="min-w-0">
+        <p class="text-[0.76rem] font-bold tracking-widest text-primary uppercase">Peringkatmu</p>
+        <p class="mt-1 text-[1.55rem] font-extrabold tracking-[-0.04em] tabular-nums">
+          #{{ leaderboardRank }}<span v-if="leaderboardParticipants" class="text-[1rem] font-semibold text-muted"> dari {{ leaderboardParticipants }}</span>
+        </p>
+        <p v-if="attempt && attempt.number > 1" class="mt-1 text-[0.84rem] text-muted">
+          Peringkat tetap #{{ leaderboardRank }} karena dihitung dari pengerjaan pertama.
+        </p>
+        <NuxtLink
+          v-if="!fromBimbel"
+          :to="`/paket/${packageSlug}#juara`"
+          class="mt-2 inline-flex items-center gap-1.5 text-[0.84rem] font-semibold text-primary transition-colors hover:text-primary-light"
+        >
+          Lihat leaderboard
+          <AppIcon name="arrow-right" :size="15" aria-hidden="true" />
+        </NuxtLink>
+      </div>
+      <AppIcon v-if="leaderboardRank === 1" name="crown" :size="25" weight="fill" class="ml-auto text-star" aria-hidden="true" />
+    </section>
 
     <DashboardStats :items="stats" />
 

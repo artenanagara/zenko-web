@@ -45,6 +45,7 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru diajukan' },
   { value: 'oldest', label: 'Terlama diajukan' },
   { value: 'name', label: 'Nama A–Z' },
+  { value: 'name-desc', label: 'Nama Z–A' },
 ]
 
 const {
@@ -69,6 +70,7 @@ const {
     newest: (a, b) => b.submittedAt - a.submittedAt,
     oldest: (a, b) => a.submittedAt - b.submittedAt,
     name: (a, b) => a.name.localeCompare(b.name, 'id'),
+    'name-desc': (a, b) => b.name.localeCompare(a.name, 'id'),
   },
   defaultFilter: 'pending',
   defaultSort: 'newest',
@@ -306,13 +308,7 @@ async function submitDecision() {
             </DashboardBadge>
           </template>
           <template #cell(aksi)="{ item }">
-            <button
-              type="button"
-              class="text-[0.86rem] font-semibold text-primary hover:underline"
-              @click="openDetail(item.id)"
-            >
-              Tinjau
-            </button>
+            <AppIconButton variant="ghost" size="sm" aria-label="Tinjau pengajuan" ariaLabel="Tinjau pengajuan" title="Tinjau pengajuan" @click="openDetail(item.id)"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>

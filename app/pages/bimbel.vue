@@ -15,5 +15,5 @@ definePageMeta({ path: '/bimbel' })
 </script>
 
 <template>
-  <div />
+  <NuxtPage />
 </template>

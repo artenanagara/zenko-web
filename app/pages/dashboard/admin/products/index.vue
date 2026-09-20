@@ -69,6 +69,7 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru diperbarui' },
   { value: 'oldest', label: 'Terlama diperbarui' },
   { value: 'title', label: 'Judul A–Z' },
+  { value: 'title-desc', label: 'Judul Z–A' },
   { value: 'price-desc', label: 'Harga tertinggi' },
   { value: 'price-asc', label: 'Harga terendah' },
 ]
@@ -102,6 +103,7 @@ const {
     newest: (a, b) => b.updatedAt - a.updatedAt,
     oldest: (a, b) => a.updatedAt - b.updatedAt,
     title: (a, b) => a.title.localeCompare(b.title, 'id'),
+    'title-desc': (a, b) => b.title.localeCompare(a.title, 'id'),
     'price-desc': (a, b) => b.price - a.price,
     'price-asc': (a, b) => a.price - b.price,
   },
@@ -162,6 +164,20 @@ function statusTone(status: AdminProductSummary['status']) {
 }
 function findProduct(id: string): AdminProductSummary | undefined {
   return source.value.find(product => product.id === id)
+}
+
+const deleteTarget = ref<AdminProductSummary | null>(null)
+const deleteOpen = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref('')
+const deleteDescription = computed(() => `Paket ${deleteTarget.value?.title ? `"${deleteTarget.value.title}" ` : ''}akan dihapus permanen beserta seluruh soalnya.`)
+function openDelete(product: AdminProductSummary) { deleteTarget.value = product; deleteError.value = ''; deleteOpen.value = true }
+async function removeProduct() {
+  if (!deleteTarget.value || deleteBusy.value) return
+  deleteBusy.value = true; deleteError.value = ''
+  try { await deleteAdminProduct(deleteTarget.value.id); deleteOpen.value = false; await afterDecision() }
+  catch (cause) { deleteError.value = tutorApiMessage(cause, 'Paket belum berhasil dihapus.') }
+  finally { deleteBusy.value = false }
 }
 
 /* --------------------------------------------------------------------------
@@ -333,30 +349,12 @@ async function decide(approve: boolean, reason?: string) {
             <!-- v-for over a one-item array recovers the typed row (tutor/products pattern). -->
             <template v-for="product in [findProduct(item.id)]" :key="item.id">
               <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
-                <NuxtLink
-                  :to="`/dashboard/admin/products/${product.id}`"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline"
-                >
-                  Tinjau
-                </NuxtLink>
+                <AppIconButton :to="`/dashboard/admin/products/${product.id}`" variant="ghost" size="sm" aria-label="Tinjau produk" ariaLabel="Tinjau produk" title="Tinjau produk"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
                 <template v-if="product.status === 'review'">
-                  <button
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                    :disabled="decisionBusy"
-                    @click="openApprove(product)"
-                  >
-                    Setujui
-                  </button>
-                  <button
-                    type="button"
-                    class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                    :disabled="decisionBusy"
-                    @click="openReject(product)"
-                  >
-                    Tolak…
-                  </button>
+                  <AppIconButton variant="ghost" size="sm" :disabled="decisionBusy" aria-label="Setujui produk" ariaLabel="Setujui produk" title="Setujui produk" @click="openApprove(product)"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="decisionBusy" aria-label="Tolak produk" ariaLabel="Tolak produk" title="Tolak produk" @click="openReject(product)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
                 </template>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="decisionBusy || deleteBusy" aria-label="Hapus produk" ariaLabel="Hapus produk" title="Hapus produk" @click="openDelete(product)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
             </template>
           </template>
@@ -386,5 +384,6 @@ async function decide(approve: boolean, reason?: string) {
       :error="decisionError"
       @confirm="reason => decide(false, reason)"
     />
+    <AdminDeleteModal v-model:open="deleteOpen" item-label="paket" :description="deleteDescription" :busy="deleteBusy" :error="deleteError" @confirm="removeProduct" />
   </div>
 </template>

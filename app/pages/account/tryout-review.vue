@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OptionLabel, TryoutQuestion } from '#shared/types/tryout'
+import type { OptionLabel, TryoutAnswerValue, TryoutQuestion } from '#shared/types/tryout'
 
 /**
  * "Lihat pembahasan" as its own page, not the inline panel TryoutResult used
@@ -36,7 +36,12 @@ useHead({
 })
 
 interface FlatReviewQuestion {
-  question: TryoutQuestion & { selected?: OptionLabel, doubtful?: boolean, isCorrect: boolean }
+  question: TryoutQuestion & {
+    selected?: OptionLabel
+    value?: TryoutAnswerValue
+    doubtful?: boolean
+    isCorrect: boolean
+  }
   sectionIndex: number
 }
 
@@ -123,7 +128,7 @@ function findQuestion(id: string) {
 
 function statusOf(id: string): 'correct' | 'incorrect' | 'unanswered' {
   const question = findQuestion(id)
-  if (!question?.selected) return 'unanswered'
+  if (!question || (question.selected == null && question.value == null)) return 'unanswered'
   return question.isCorrect ? 'correct' : 'incorrect'
 }
 
@@ -151,9 +156,14 @@ function selectSection(index: number) {
 
 const correctCount = computed(() => allQuestions.value.filter(entry => entry.question.isCorrect).length)
 const incorrectCount = computed(
-  () => allQuestions.value.filter(entry => !entry.question.isCorrect && entry.question.selected).length,
+  () => allQuestions.value.filter(entry =>
+    !entry.question.isCorrect
+    && (entry.question.selected != null || entry.question.value != null),
+  ).length,
 )
-const unansweredCount = computed(() => allQuestions.value.filter(entry => !entry.question.selected).length)
+const unansweredCount = computed(() => allQuestions.value.filter(entry =>
+  entry.question.selected == null && entry.question.value == null,
+).length)
 </script>
 
 <template>
@@ -226,7 +236,11 @@ const unansweredCount = computed(() => allQuestions.value.filter(entry => !entry
           <TryoutReviewQuestion
             :question="currentQuestion"
             :number="displayNumber"
-            :answer="{ selected: currentQuestion.selected ?? null, doubtful: currentQuestion.doubtful ?? false }"
+            :answer="{
+              selected: currentQuestion.selected ?? null,
+              value: currentQuestion.value ?? null,
+              doubtful: currentQuestion.doubtful ?? false,
+            }"
           />
 
           <div class="mt-5 flex items-center justify-between gap-3">

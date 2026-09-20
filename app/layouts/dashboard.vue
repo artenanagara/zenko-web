@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Shell for the role dashboards (admin and tutor, via useDashboardNav):
+ * Shell for the role dashboards (admin, tutor, and Marketing Hub via useDashboardNav):
  * a full-height sidebar on the left and a content column with its own navbar.
  *
  * - Desktop (md+): the sidebar is a fixed rail, collapsible to icon-only.
@@ -74,7 +74,9 @@ const sidebarBadges = computed<Record<string, number>>(() => {
     return badges
   }
 
-  const rejected = badgeProducts.value.filter(product => product.status === 'rejected').length
+  if (user.value?.role !== 'tutor') return badges
+
+  const rejected = (badgeProducts.value ?? []).filter(product => product.status === 'rejected').length
   const productPath = routeBimbelId
     ? `/dashboard/bimbel/${routeBimbelId}/products`
     : '/dashboard/tutor/products'
@@ -245,7 +247,10 @@ onBeforeUnmount(() => {
 
           <!-- Same menu as the navbar: tutors and admins buy packages too, so
                the account page must be reachable from here. -->
-          <ProfileMenu v-if="user" :user="user" />
+          <!-- Workspace headers stay focused on the work surface. Account
+               controls live under Pengaturan for admin/marketing/editor and
+               are intentionally not shown as a profile dropdown here. -->
+          <ProfileMenu v-if="user && !['admin', 'marketing', 'editor'].includes(user.role)" :user="user" />
         </div>
       </header>
 

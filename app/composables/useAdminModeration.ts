@@ -73,6 +73,28 @@ export async function decideAdminProduct(id: string, decision: ProductDecisionRe
   })
 }
 
+/** Admin-only destructive actions; the API also requires confirmation `HAPUS`. */
+export async function deleteAdminStudent(id: string, confirmation = 'HAPUS'): Promise<void> {
+  await deleteAdminResource(`/admin/students/${id}`, confirmation)
+}
+
+export async function deleteAdminTutor(id: string, confirmation = 'HAPUS'): Promise<void> {
+  await deleteAdminResource(`/admin/tutors/${id}`, confirmation)
+}
+
+export async function deleteAdminProduct(id: string, confirmation = 'HAPUS'): Promise<void> {
+  await deleteAdminResource(`/admin/products/${id}`, confirmation)
+}
+
+export async function deleteAdminBimbel(id: string, confirmation = 'HAPUS'): Promise<void> {
+  await deleteAdminResource(`/admin/bimbels/${id}`, confirmation)
+}
+
+async function deleteAdminResource(path: string, confirmation: string): Promise<void> {
+  const { public: config } = useRuntimeConfig()
+  await useApiFetch(path, { baseURL: config.apiBase, method: 'DELETE', body: { confirmation }, credentials: 'include' })
+}
+
 /**
  * GET /admin/payouts — antrean pencairan. Dipanggil tanpa `status` sehingga
  * server mengembalikan semuanya; halaman memilah mana yang masih butuh aksi.

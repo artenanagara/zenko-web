@@ -6,9 +6,11 @@
  * pesan tolakan sesudah menekan: tutor tahu soal saldonya, owner tahu bimbelnya
  * ditutup. Server tetap yang memutuskan; ini hanya pratinjau akibatnya.
  *
- * Dua rem: frasa "HAPUS AKUN" yang harus diketik persis, dan kata sandi bila
- * akunnya punya. Akun Google-only tidak punya kata sandi, jadi kolomnya tetap
- * ada tapi boleh kosong — server yang tahu mana yang berlaku.
+ * Satu rem: frasa "HAPUS AKUN" yang harus diketik persis. Kata sandi sengaja
+ * tidak diminta — ia hanya berlaku untuk akun email (akun Google tidak punya),
+ * jadi dulu setengah pengguna dijaga dan setengahnya tidak, sementara formnya
+ * jadi terlihat seperti halaman masuk. Sesi yang sedang aktif sudah menjadi
+ * bukti identitasnya; frasa inilah yang mencegah klik tak sengaja.
  */
 const open = defineModel<boolean>('open', { required: true })
 
@@ -16,7 +18,7 @@ const toast = useToast()
 const { user, deleteAccount } = useAuth()
 
 const DELETE_PHRASE = 'HAPUS AKUN'
-const form = reactive({ confirmation: '', password: '' })
+const form = reactive({ confirmation: '' })
 const deleting = ref(false)
 const deleteError = ref('')
 const phraseOk = computed(() => form.confirmation.trim() === DELETE_PHRASE)
@@ -36,7 +38,6 @@ const blocked = computed(() => isAdmin.value || owesBalance.value)
 watch(open, (isOpen) => {
   if (!isOpen) return
   form.confirmation = ''
-  form.password = ''
   deleteError.value = ''
   void ensureMemberships()
 })
@@ -54,7 +55,7 @@ async function onSubmit() {
   deleting.value = true
   deleteError.value = ''
   try {
-    await deleteAccount({ confirmation: form.confirmation.trim(), password: form.password })
+    await deleteAccount({ confirmation: form.confirmation.trim() })
     open.value = false
     toast.success('Akun kamu sudah dihapus.', 'Terima kasih sudah belajar bersama Zenko.')
     await navigateTo('/')
@@ -119,14 +120,6 @@ async function onSubmit() {
             :placeholder="DELETE_PHRASE"
             autocomplete="off"
             autocapitalize="characters"
-          />
-          <FormField
-            id="delete-password"
-            v-model="form.password"
-            type="password"
-            label="Kata sandi"
-            placeholder="Kosongkan jika kamu selalu masuk lewat Google"
-            autocomplete="current-password"
           />
           <AppInlineMessage v-if="deleteError" type="error">{{ deleteError }}</AppInlineMessage>
         </form>

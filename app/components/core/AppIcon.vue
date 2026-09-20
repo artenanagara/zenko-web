@@ -24,12 +24,14 @@ import PhClock from '@phosphor-icons/vue/dist/icons/PhClock.vue'
 import PhCode from '@phosphor-icons/vue/dist/icons/PhCode.vue'
 import PhCodeSimple from '@phosphor-icons/vue/dist/icons/PhCodeSimple.vue'
 import PhCopy from '@phosphor-icons/vue/dist/icons/PhCopy.vue'
+import PhCrown from '@phosphor-icons/vue/dist/icons/PhCrown.vue'
 import PhCurrencyCircleDollar from '@phosphor-icons/vue/dist/icons/PhCurrencyCircleDollar.vue'
 import PhDownloadSimple from '@phosphor-icons/vue/dist/icons/PhDownloadSimple.vue'
 import PhEar from '@phosphor-icons/vue/dist/icons/PhEar.vue'
 import PhEnvelopeSimple from '@phosphor-icons/vue/dist/icons/PhEnvelopeSimple.vue'
 import PhEye from '@phosphor-icons/vue/dist/icons/PhEye.vue'
 import PhFileCsv from '@phosphor-icons/vue/dist/icons/PhFileCsv.vue'
+import PhFileDoc from '@phosphor-icons/vue/dist/icons/PhFileDoc.vue'
 import PhFileText from '@phosphor-icons/vue/dist/icons/PhFileText.vue'
 import PhFiles from '@phosphor-icons/vue/dist/icons/PhFiles.vue'
 import PhFolderLock from '@phosphor-icons/vue/dist/icons/PhFolderLock.vue'
@@ -50,6 +52,7 @@ import PhListNumbers from '@phosphor-icons/vue/dist/icons/PhListNumbers.vue'
 import PhLockSimple from '@phosphor-icons/vue/dist/icons/PhLockSimple.vue'
 import PhLockSimpleOpen from '@phosphor-icons/vue/dist/icons/PhLockSimpleOpen.vue'
 import PhMagnifyingGlass from '@phosphor-icons/vue/dist/icons/PhMagnifyingGlass.vue'
+import PhMedal from '@phosphor-icons/vue/dist/icons/PhMedal.vue'
 import PhMinus from '@phosphor-icons/vue/dist/icons/PhMinus.vue'
 import PhPalette from '@phosphor-icons/vue/dist/icons/PhPalette.vue'
 import PhPencilSimple from '@phosphor-icons/vue/dist/icons/PhPencilSimple.vue'
@@ -75,6 +78,8 @@ import PhTextT from '@phosphor-icons/vue/dist/icons/PhTextT.vue'
 import PhTextTSlash from '@phosphor-icons/vue/dist/icons/PhTextTSlash.vue'
 import PhTiktokLogo from '@phosphor-icons/vue/dist/icons/PhTiktokLogo.vue'
 import PhTrash from '@phosphor-icons/vue/dist/icons/PhTrash.vue'
+import PhTrendUp from '@phosphor-icons/vue/dist/icons/PhTrendUp.vue'
+import PhTrophy from '@phosphor-icons/vue/dist/icons/PhTrophy.vue'
 import PhUploadSimple from '@phosphor-icons/vue/dist/icons/PhUploadSimple.vue'
 import PhUser from '@phosphor-icons/vue/dist/icons/PhUser.vue'
 import PhUserCirclePlus from '@phosphor-icons/vue/dist/icons/PhUserCirclePlus.vue'
@@ -112,22 +117,22 @@ const ICONS: Record<string, any> = {
   camera: PhCamera, 'caret-down': PhCaretDown, 'caret-left': PhCaretLeft, 'caret-right': PhCaretRight,
   'chart-bar': PhChartBar, 'chalkboard-teacher': PhChalkboardTeacher, 'chat-circle-text': PhChatCircleText,
   check: PhCheck, 'check-circle': PhCheckCircle, clock: PhClock, code: PhCode, 'code-simple': PhCodeSimple,
-  copy: PhCopy, 'currency-circle-dollar': PhCurrencyCircleDollar, 'download-simple': PhDownloadSimple,
+  copy: PhCopy, crown: PhCrown, 'currency-circle-dollar': PhCurrencyCircleDollar, 'download-simple': PhDownloadSimple,
   ear: PhEar, 'envelope-simple': PhEnvelopeSimple, eye: PhEye, 'file-csv': PhFileCsv,
-  'file-text': PhFileText, files: PhFiles, 'folder-lock': PhFolderLock, globe: PhGlobe,
+  'file-doc': PhFileDoc, 'file-text': PhFileText, files: PhFiles, 'folder-lock': PhFolderLock, globe: PhGlobe,
   'graduation-cap': PhGraduationCap, handshake: PhHandshake, highlighter: PhHighlighter,
   'hourglass-medium': PhHourglassMedium, image: PhImage, info: PhInfo, 'instagram-logo': PhInstagramLogo,
   lightning: PhLightning, link: PhLink, 'linkedin-logo': PhLinkedinLogo, 'list-bullets': PhListBullets,
   'list-checks': PhListChecks, 'list-numbers': PhListNumbers, 'lock-simple': PhLockSimple,
   'lock-simple-open': PhLockSimpleOpen, 'magnifying-glass': PhMagnifyingGlass, minus: PhMinus,
-  palette: PhPalette, 'pencil-simple': PhPencilSimple, play: PhPlay, 'play-circle': PhPlayCircle,
+  palette: PhPalette, 'pencil-simple': PhPencilSimple, medal: PhMedal, play: PhPlay, 'play-circle': PhPlayCircle,
   plus: PhPlus, question: PhQuestion, quotes: PhQuotes, 'seal-check': PhSealCheck, settings: PhGear,
   'shield-check': PhShieldCheck, smiley: PhSmiley, sparkle: PhSparkle, 'squares-four': PhSquaresFour,
   star: PhStar, student: PhStudent, target: PhTarget, 'text-aa': PhTextAa,
   'text-align-justify': PhTextAlignJustify, 'text-indent': PhTextIndent, 'text-outdent': PhTextOutdent,
   'text-t': PhTextT, 'text-t-slash': PhTextTSlash, 'tiktok-logo': PhTiktokLogo, trash: PhTrash,
   'upload-simple': PhUploadSimple, user: PhUser, 'user-circle-plus': PhUserCirclePlus, users: PhUsers,
-  'users-three': PhUsersThree, wallet: PhWallet, warning: PhWarning, 'warning-circle': PhWarningCircle,
+  'users-three': PhUsersThree, 'trend-up': PhTrendUp, trophy: PhTrophy, wallet: PhWallet, warning: PhWarning, 'warning-circle': PhWarningCircle,
   'whatsapp-logo': PhWhatsappLogo, x: PhX, 'x-circle': PhXCircle, 'youtube-logo': PhYoutubeLogo,
 }
 

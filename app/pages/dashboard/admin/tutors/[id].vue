@@ -16,6 +16,8 @@ definePageMeta({
 
 const route = useRoute()
 const accountId = computed(() => String(route.params.id ?? ''))
+const toast = useToast()
+const { confirm } = useConfirm()
 const { user } = useAuth()
 const canManageShareSchedule = computed(() => user.value?.canManageShareSchedule === true)
 const {
@@ -295,6 +297,33 @@ const socialLinks = computed(() => {
 
 /* ---------------------------------------------------------------- produk -- */
 
+/**
+ * Urutan tabel produk. No search or status filter here — a single tutor's
+ * catalogue is short enough to read whole — but the same four orderings as
+ * every other admin table, so the eye lands on the same control.
+ */
+const PRODUCT_SORT_OPTIONS = [
+  { value: 'newest', label: 'Terbaru diperbarui' },
+  { value: 'oldest', label: 'Terlama diperbarui' },
+  { value: 'title-asc', label: 'Judul A–Z' },
+  { value: 'title-desc', label: 'Judul Z–A' },
+]
+const productSort = ref('newest')
+const deletingProductId = ref('')
+
+const PRODUCT_SORTS: Record<string, (a: AdminTutorDetail['products'][number], b: AdminTutorDetail['products'][number]) => number> = {
+  'newest': (a, b) => b.updatedAt - a.updatedAt,
+  'oldest': (a, b) => a.updatedAt - b.updatedAt,
+  'title-asc': (a, b) => a.title.localeCompare(b.title, 'id'),
+  'title-desc': (a, b) => b.title.localeCompare(a.title, 'id'),
+}
+
+const sortedProducts = computed(() => {
+  const compare = PRODUCT_SORTS[productSort.value]
+  const list = detail.value?.products ?? []
+  return compare ? [...list].sort(compare) : list
+})
+
 const PRODUCT_COLUMNS = [
   { key: 'title', label: 'Produk' },
   { key: 'type', label: 'Tipe' },
@@ -311,6 +340,28 @@ function statusLabel(status: AdminTutorDetail['products'][number]['status']): st
 }
 function statusTone(status: AdminTutorDetail['products'][number]['status']) {
   return PRODUCT_STATUS_TONE[status]
+}
+
+async function removeProduct(product: Record<string, any>) {
+  if (deletingProductId.value) return
+  const approved = await confirm({
+    title: `Hapus produk “${product.title}”?`,
+    description: 'Produk dan seluruh soalnya akan dihapus permanen dari Zenko.',
+    confirmLabel: 'Hapus produk',
+  })
+  if (!approved) return
+  deletingProductId.value = product.id
+  try {
+    await deleteAdminTutorProduct(product.id)
+    await loadDetail()
+    toast.success('Produk dihapus.')
+  }
+  catch (cause) {
+    toast.error('Produk belum dapat dihapus.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    deletingProductId.value = ''
+  }
 }
 </script>
 
@@ -442,10 +493,23 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
           title="Produk"
           :description="`${detail.products.length} produk dibuat, apa pun statusnya.`"
         >
+          <template v-if="detail.products.length > 1" #action>
+            <!-- AppSelect is w-full; the wrapper sets the width. -->
+            <div class="w-52">
+              <AppSelect
+                :options="PRODUCT_SORT_OPTIONS"
+                :model-value="productSort"
+                label="Urutkan"
+                size="sm"
+                @update:model-value="productSort = String($event)"
+              />
+            </div>
+          </template>
+
           <p v-if="detail.products.length === 0" class="py-6 text-center text-muted">
             Tutor ini belum membuat produk.
           </p>
-          <DashboardTable v-else :columns="PRODUCT_COLUMNS" :data="detail.products" primary-key="title" action-key="aksi">
+          <DashboardTable v-else :columns="PRODUCT_COLUMNS" :data="sortedProducts" primary-key="title" action-key="aksi">
             <template #cell(title)="{ value }">
               <span class="block font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
             </template>
@@ -458,12 +522,46 @@ function statusTone(status: AdminTutorDetail['products'][number]['status']) {
               <DashboardBadge :tone="statusTone(value)">{{ statusLabel(value) }}</DashboardBadge>
             </template>
             <template #cell(aksi)="{ item }">
-              <NuxtLink
-                :to="`/dashboard/admin/products/${item.id}`"
-                class="text-[0.86rem] font-semibold text-primary hover:underline"
-              >
-                Lihat
-              </NuxtLink>
+              <span class="inline-flex items-center gap-1 whitespace-nowrap">
+                <AppIconButton
+                  :to="`/dashboard/admin/products/${item.id}`"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Lihat produk"
+                  ariaLabel="Lihat produk"
+                  title="Lihat produk"
+                >
+                  <AppIcon name="eye" :size="17" aria-hidden="true" />
+                </AppIconButton>
+                <AppIconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Hapus produk"
+                  ariaLabel="Hapus produk"
+                  title="Hapus produk"
+                  class="text-danger hover:bg-danger-soft"
+                  :disabled="Boolean(deletingProductId)"
+                  @click="removeProduct(item)"
+                >
+                  <AppIcon name="trash" :size="17" aria-hidden="true" />
+                </AppIconButton>
+                <!--
+                <NuxtLink
+                  :to="`/dashboard/admin/products/${item.id}`"
+                  class="text-[0.86rem] font-semibold text-primary hover:underline"
+                >
+                  Lihat
+                </NuxtLink>
+                <button
+                  type="button"
+                  class="text-[0.86rem] font-semibold text-danger hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="Boolean(deletingProductId)"
+                  @click="removeProduct(item)"
+                >
+                  {{ deletingProductId === item.id ? 'Menghapus…' : 'Hapus' }}
+                </button>
+                -->
+              </span>
             </template>
           </DashboardTable>
         </DashboardPanel>

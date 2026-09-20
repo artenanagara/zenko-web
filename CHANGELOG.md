@@ -1,5 +1,79 @@
 # Changelog
 
+## [0.31.0](https://github.com/artenanagara/zenko-web/compare/v0.30.1...v0.31.0) (2026-09-20)
+
+
+### Features
+
+* **tryout:** wear the bimbel's logo in the exam room header ([c99ef74](https://github.com/artenanagara/zenko-web/commit/c99ef743656a577ae7711e5df1ee2b3fcafe7bbb))
+* wear the bimbel's logo in the exam room ([f386532](https://github.com/artenanagara/zenko-web/commit/f3865327744aad3fb6f3ad0439f0743452a2bcea))
+
+
+### Bug Fixes
+
+* **auth:** send a wrong-role session home on the public domain ([cc7b9ad](https://github.com/artenanagara/zenko-web/commit/cc7b9ad4f56c855a3789793db8435b7034390f55))
+* render all saved answer values in review ([38498d5](https://github.com/artenanagara/zenko-web/commit/38498d5b6824b2f7cacf629b58ea65e5ef4cd790))
+* render public bimbel child route ([3b60555](https://github.com/artenanagara/zenko-web/commit/3b605558e7bc0562d55a0b456c51a6566013dd57))
+* show correct review status for value answers ([d3fa469](https://github.com/artenanagara/zenko-web/commit/d3fa46906bfa70e263624ebd6e6534bbb9fb4f43))
+* **tryout:** give the bimbel logo more room on desktop ([e61242a](https://github.com/artenanagara/zenko-web/commit/e61242a748e63ba114fa0f8ca4d48da4c91073b0))
+* **tryout:** keep question bottom clear of controls ([84a3fd2](https://github.com/artenanagara/zenko-web/commit/84a3fd273820b6c5286276a237bb07477bdaae02))
+
+## [0.30.1](https://github.com/artenanagara/zenko-web/compare/v0.30.0...v0.30.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* polish dashboard and assessment flows ([3d242b4](https://github.com/artenanagara/zenko-web/commit/3d242b4d061254979d6de584736688f8e1ca59a6))
+* polish dashboard and assessment flows ([39ba2df](https://github.com/artenanagara/zenko-web/commit/39ba2dfc956fd328b1e0787a19302fea0cc6bd33))
+
+## [0.30.0](https://github.com/artenanagara/zenko-web/compare/v0.29.0...v0.30.0) (2026-09-19)
+
+
+### Features
+
+* improve admin directories and product flows ([b23a987](https://github.com/artenanagara/zenko-web/commit/b23a98703f665c507ebe56ee15a1831300c14ff4))
+* show plagiarism checks in admin moderation ([0006ae5](https://github.com/artenanagara/zenko-web/commit/0006ae56a529220c7418717b3b3786bef3d0812d))
+
+## [0.29.0](https://github.com/artenanagara/zenko-web/compare/v0.28.0...v0.29.0) (2026-09-18)
+
+
+### Features
+
+* add bimbel public profiles and single marketplace author ([6c5d9a1](https://github.com/artenanagara/zenko-web/commit/6c5d9a1f18e9e627303fb84ee200b9650a426a83))
+* **marketing:** complete staging workspace flows ([5459b2f](https://github.com/artenanagara/zenko-web/commit/5459b2ff1e4d678b0bcbff76bdf34ed835198b0e))
+* **marketing:** track product performance ([9582e47](https://github.com/artenanagara/zenko-web/commit/9582e47a74fa8e40b158037ef16252786d80da14))
+* show product change summary on package detail ([a71770c](https://github.com/artenanagara/zenko-web/commit/a71770cd48253c4a3e9bf431b5ff3bb930d8ae3c))
+
+
+### Bug Fixes
+
+* **admin:** use registered form components ([ec3e5fd](https://github.com/artenanagara/zenko-web/commit/ec3e5fddb785567f572cae861e8caee51fdfae1b))
+* avoid cross-workspace auth redirect loop ([fb76339](https://github.com/artenanagara/zenko-web/commit/fb76339da309fd55d1c8c437186c6a9ba0d7355d))
+* **dashboard:** stabilize workspace navigation and roster actions ([099a84e](https://github.com/artenanagara/zenko-web/commit/099a84e28f338c146db63747091d8aa281983ca4))
+* make banner creation route reachable ([85ec915](https://github.com/artenanagara/zenko-web/commit/85ec9156b8945acd9e1b627301b3f6e3a0ba2c9b))
+* preserve package description line breaks ([f643e77](https://github.com/artenanagara/zenko-web/commit/f643e775f8bd2a123fa609c99ccd9ffd60464dfd))
+
+## [0.28.0](https://github.com/artenanagara/zenko-web/compare/v0.27.0...v0.28.0) (2026-09-17)
+
+
+### Features
+
+* **admin:** scope admin.zenkoedu.id to the admin dashboard ([f266a17](https://github.com/artenanagara/zenko-web/commit/f266a177d77b2741b3182f02537b9822a303a724))
+
+## [0.27.0](https://github.com/artenanagara/zenko-web/compare/v0.26.0...v0.27.0) (2026-09-17)
+
+
+### Features
+
+* **analytics:** enable GA4 for Zenko ([0485965](https://github.com/artenanagara/zenko-web/commit/04859659d659fea56ddb7cb19d59e6cafa39ec9f))
+
+## [0.26.0](https://github.com/artenanagara/zenko-web/compare/v0.25.0...v0.26.0) (2026-09-14)
+
+
+### Features
+
+* promote staging to production (tutor bulk actions, richer admin directories, Google auth fix) ([#72](https://github.com/artenanagara/zenko-web/issues/72)) ([8f0db2a](https://github.com/artenanagara/zenko-web/commit/8f0db2a58754e3efd584c12cf082a41116565c08))
+
 ## [0.25.0](https://github.com/artenanagara/zenko-web/compare/v0.24.0...v0.25.0) (2026-09-13)
 
 

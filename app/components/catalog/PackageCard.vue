@@ -18,11 +18,15 @@ import type { Package } from '#shared/types/catalog'
  */
 import { NuxtLink } from '#components'
 
-defineProps<{
+const props = defineProps<{
   item: Package
   /** Above-the-fold cards should not be lazy-loaded behind the LCP. */
   eager?: boolean
 }>()
+
+function trackClick() {
+  trackMarketingEvent({ name: 'product_click', productId: props.item.id, productSlug: props.item.slug, productName: props.item.title })
+}
 </script>
 
 <template>
@@ -49,6 +53,7 @@ defineProps<{
           <NuxtLink
             :to="`/paket/${item.slug}`"
             class="after:absolute after:inset-0 after:z-0 after:content-['']"
+            @click="trackClick"
           >
             {{ item.title }}
           </NuxtLink>
@@ -59,7 +64,6 @@ defineProps<{
              price row down. -->
         <PackageAttribution
           :author="item.author"
-          :bimbel="item.bimbel"
           variant="card"
           class="mt-3 -mb-2"
         />

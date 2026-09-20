@@ -143,7 +143,6 @@ onMounted(refreshPricingRule)
  */
 const { public: runtimeConfig } = useRuntimeConfig()
 const PRICE_INPUT_DISABLED = runtimeConfig.paymentEnabled !== true
-const TUTOR_LIVE_CONTENT_EDIT_ENABLED = runtimeConfig.tutorLiveContentEditEnabled === true
 
 /* ------------------------------------------------------------------ form */
 
@@ -495,23 +494,20 @@ watch(detail, (loaded) => {
   }
 })
 
-/** Produk tayang tetap bisa menelusuri wizard dan punya tombol edit isi soal. */
+/** Produk tayang tetap bisa menelusuri wizard dan mengedit detailnya. */
 const isLiveProduct = computed(() => isEdit.value && detail.value?.status === 'live')
 /**
- * Produk live masuk ke langkah Isi dalam mode baca agar tutor tidak langsung
- * mengubah paket yang sudah tayang. Tombol "Edit soal" menjadi titik masuk
- * eksplisit; server tetap menjadi penjaga terakhir lewat feature flag yang
- * sama pada endpoint question-content.
+ * Isi soal live tetap punya titik masuk eksplisit; metadata paket dapat
+ * diedit langsung seperti draft.
  */
 const liveContentEditing = ref(false)
 type SectionEditorHandle = { saveActiveQuestion: () => Promise<boolean> }
 const sectionEditorRef = ref<SectionEditorHandle | null>(null)
 const isLiveReadOnly = computed(() =>
-  isLiveProduct.value && (!TUTOR_LIVE_CONTENT_EDIT_ENABLED || !liveContentEditing.value),
+  isLiveProduct.value && !liveContentEditing.value,
 )
 
 function startLiveContentEditing() {
-  if (!TUTOR_LIVE_CONTENT_EDIT_ENABLED) return
   liveContentEditing.value = true
 }
 
@@ -522,20 +518,19 @@ const canEditProduct = computed(() => {
 })
 
 /**
- * Yang boleh berubah pada metadata setelah tayang hanya harga — judul ikut
- * terkunci karena itulah produk yang sudah dibeli dan sudah diindeks katalog.
- * Isi soal punya rollout terpisah untuk staging dan ditegakkan server pada
- * endpoint question-content; kalau salah satu berubah, ubah keduanya.
+ * Semua detail paket tetap dapat dirawat setelah tayang. Perubahan live
+ * diajukan ulang agar masuk review admin.
  */
 function isFieldEditable(field: 'title' | 'price' | 'priceOriginal' | 'section' | 'details') {
+  void field
   if (!isEdit.value || !detail.value) return true
   if (detail.value.status === 'draft' || detail.value.status === 'rejected') return true
-  return detail.value.status === 'live' && ['price', 'priceOriginal'].includes(field)
+  return detail.value.status === 'live'
 }
 
 const LOCKED_EXPLANATION: Partial<Record<TutorProductDetail['status'], string>> = {
   review: 'Produk sedang ditinjau tim Zenko. Kamu bisa mengeditnya lagi jika hasil tinjauan keluar.',
-  live: 'Produk sudah tayang. Metadata produk tetap terkunci karena produk sudah dibeli dan tampil di katalog. Isi soal dapat diedit pada environment yang mengaktifkan fitur ini.',
+  live: 'Produk sudah tayang. Detail paket tetap bisa diperbarui, lalu diajukan ulang untuk ditinjau.',
   archived: 'Produk sudah diarsipkan dan tidak tampil di katalog.',
 }
 
@@ -555,12 +550,9 @@ const LOCKED_EXPLANATION: Partial<Record<TutorProductDetail['status'], string>> 
 const statusLockNotice = computed(() => {
   if (!isEdit.value || !detail.value) return ''
   if (detail.value.status === 'live' && PRICE_INPUT_DISABLED) {
-    return 'Produk sudah tayang, jadi field-nya terkunci karena produk sudah dibeli dan tampil di katalog. '
-      + 'Harga pun belum bisa diubah selama pembayaran belum tersedia.'
+    return 'Produk sudah tayang. Semua detail tetap bisa diperbarui; harga belum tersedia selama pembayaran belum aktif.'
   }
-  if (detail.value.status === 'live' && TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
-    return 'Produk sudah tayang. Metadata produk tetap terkunci, tetapi isi soal dapat diedit. Perubahan soal berlaku untuk paket yang dibuka setelah perubahan disimpan.'
-  }
+  if (detail.value.status === 'live') return 'Produk sudah tayang. Perubahan detail paket dan isi soal dapat disimpan, lalu diajukan ulang untuk ditinjau.'
   return LOCKED_EXPLANATION[detail.value.status] ?? ''
 })
 
@@ -727,9 +719,6 @@ function syncQuery() {
 
 /** Validasi minimum sebelum melangkah maju; server tetap memvalidasi penuh. */
 function validateThrough(target: number): boolean {
-  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED && target !== 3) {
-    return failStep('Produk tayang hanya bisa mengubah harga di langkah Detail Produk.', 'product-title')
-  }
   if (target > 1 && isSingle.value && !form.examTypeSlug && !form.schoolPractice) {
     return failStep('Pilih identitas paket dulu sebelum lanjut.', examTypeBlockRef)
   }
@@ -1029,6 +1018,7 @@ const submitting = ref(false)
 const submitted = ref(false)
 const submitProblems = ref<string[]>([])
 const submitError = ref('')
+const changeSummary = ref('')
 const isBimbelPrivateProduct = computed(() => Boolean(props.bimbelId) && detail.value?.visibility !== 'public')
 
 /** Label tombol ajukan di footer; dipakai ulang oleh modal hak cipta. */
@@ -1049,21 +1039,18 @@ const copyrightModalOpen = ref(false)
 
 function openCopyrightModal() {
   if (!props.productId) return
-  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
-    toast.info('Produk sudah tayang.', 'Pengajuan ulang belum tersedia di environment ini.')
-    return
-  }
   copyrightModalOpen.value = true
 }
 
 async function submitForReview() {
   if (!props.productId) return
-  if (isLiveProduct.value && !TUTOR_LIVE_CONTENT_EDIT_ENABLED) {
-    toast.info('Produk sudah tayang.', 'Pengajuan ulang belum tersedia di environment ini.')
-    return
-  }
   submitError.value = ''
   submitProblems.value = []
+
+  if (isLiveProduct.value && !changeSummary.value.trim()) {
+    submitError.value = 'Catatan perubahan wajib diisi saat mengajukan ulang produk.'
+    return
+  }
 
   // Harga yang baru diketik harus sampai ke server sebelum divalidasi.
   if (!(await persist())) {
@@ -1077,6 +1064,7 @@ async function submitForReview() {
       props.productId,
       workspace.value,
       detail.value?.visibility ?? (props.bimbelId ? 'bimbel' : 'public'),
+      isLiveProduct.value ? changeSummary.value.trim() : undefined,
     )
     submitted.value = true
     // Produk ini meninggalkan draft, jadi apa yang tayang milik tutor bisa
@@ -1562,7 +1550,6 @@ const priceHintBlocking = computed(() =>
             Produk yang sudah tayang tidak langsung berubah. Klik Edit soal jika ingin memperbarui isi paket ini.
             <template #actions>
               <AppButton
-                v-if="TUTOR_LIVE_CONTENT_EDIT_ENABLED"
                 type="button"
                 size="sm"
                 @click="startLiveContentEditing"
@@ -1628,6 +1615,19 @@ const priceHintBlocking = computed(() =>
       <!-- ======================================== Kelompok 5: Review & ajukan -->
       <DashboardPanel v-else>
         <div class="grid gap-6">
+          <div v-if="isLiveProduct" class="rounded-md border border-primary/25 bg-primary-soft p-5">
+            <label for="product-change-summary" :class="FIELD_LABEL_CLASS">Catatan perubahan <span class="text-danger-ink">*</span></label>
+            <p class="mt-1 text-[0.82rem] text-muted">Jelaskan perubahan yang kamu ajukan agar tampil pada halaman produk setelah disetujui.</p>
+            <textarea
+              id="product-change-summary"
+              v-model="changeSummary"
+              rows="3"
+              maxlength="1000"
+              required
+              class="mt-3 block w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm"
+              placeholder="Contoh: Memperbarui deskripsi, sampul, harga, dan menambahkan soal baru."
+            />
+          </div>
           <div class="rounded-md border border-hairline bg-surface-alt p-5">
             <h3 class="text-[0.9rem] font-semibold">Ringkasan</h3>
             <dl class="mt-3 grid gap-4 sm:grid-cols-2">

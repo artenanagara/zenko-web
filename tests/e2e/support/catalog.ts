@@ -34,17 +34,14 @@ export interface FixtureAuthor {
    * plain text because there is no profile to link to.
    */
   username: string
-}
-
-/**
- * Bimbel pemilik paket. Absen untuk paket pribadi tutor — mayoritas fixture di
- * bawah sengaja tidak punya field ini, karena kartu tanpa bimbel adalah kasus
- * yang paling sering dirender dan paling gampang rusak tanpa disadari.
- */
-export interface FixtureBimbel {
-  name: string
-  slug: string
-  logoUrl?: string
+  /**
+   * Satu penulis publik per paket: tutor, atau bimbel yang menerbitkannya.
+   * Absen berarti tutor — bentuk yang paling sering dirender, dan yang paling
+   * gampang rusak tanpa disadari.
+   */
+  type?: 'tutor' | 'bimbel'
+  /** Slug profil publik bimbel, hanya terisi saat `type` bernilai `bimbel`. */
+  slug?: string
 }
 
 /** GET /api/v1/packages — one element of the (bare, unenveloped) array. */
@@ -55,7 +52,6 @@ export interface FixturePackage {
   category: string
   thumbnailUrl: string
   author: FixtureAuthor
-  bimbel?: FixtureBimbel
   rating: number
   soldLabel: string
   price: number
@@ -113,8 +109,6 @@ export const PACKAGES: Record<string, FixturePackage> = {
     category: 'SKD/CPNS',
     thumbnailUrl: thumb('photo-1522202176988-66273c2fd55f'),
     author: { name: 'Budi Santoso', avatarUrl: avatar(12), username: 'budi-santoso' },
-    // Atribusi ganda: penulis DAN bimbel penerbitnya, keduanya tampil.
-    bimbel: { name: 'Bimbel Nusantara', slug: 'bimbel-nusantara', logoUrl: '' },
     rating: 4.9,
     soldLabel: '2.1rb',
     price: 189_000,
@@ -138,10 +132,16 @@ export const PACKAGES: Record<string, FixturePackage> = {
     title: 'SNBT Master Class 2026',
     category: 'SNBT',
     thumbnailUrl: thumb('photo-1516321318423-f06f85e504b3'),
-    author: { name: 'Dimas Prasetya', avatarUrl: avatar(15), username: '' },
-    // Nama panjang, disengaja: kartu katalog itu grid, jadi baris atribusi
-    // harus memotong namanya, bukan melebarkan kartunya.
-    bimbel: { name: 'Bimbel Cendekia Nusantara Persada Mandiri', slug: 'bimbel-cendekia-nusantara' },
+    // Paket terbitan bimbel: penulis publiknya lembaga itu sendiri, bukan
+    // pengajar di baliknya. Namanya sengaja panjang — kartu katalog itu grid,
+    // jadi baris atribusi harus memotong namanya, bukan melebarkan kartunya.
+    author: {
+      name: 'Bimbel Cendekia Nusantara Persada Mandiri',
+      avatarUrl: avatar(15),
+      username: '',
+      type: 'bimbel',
+      slug: 'bimbel-cendekia-nusantara',
+    },
     rating: 4.7,
     soldLabel: '1.2rb',
     price: 219_000,

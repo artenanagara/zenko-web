@@ -71,10 +71,10 @@ const actionableCount = computed(() =>
 
 const productColumns = [
   { key: 'title', label: 'Paket' },
-  { key: 'visibility', label: 'Akses' },
   { key: 'category', label: 'Kategori' },
   { key: 'questionCount', label: 'Soal' },
   { key: 'status', label: 'Status' },
+  { key: 'marketplace', label: 'Marketplace' },
   { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
 
@@ -103,6 +103,13 @@ const canPublish = (product: TutorProductSummary) =>
 
 const canDelete = (product: TutorProductSummary) =>
   product.status !== 'live' && product.status !== 'review'
+
+/** Satu paket privat dapat memiliki tepat satu salinan marketplace. */
+const marketplaceCopyFor = (product: TutorProductSummary) =>
+  products.value.find(candidate => candidate.sourceProductId === product.id && candidate.status !== 'archived')
+
+const canToggleMarketplace = (product: TutorProductSummary) =>
+  canManageMarketplace.value && product.visibility === 'bimbel' && product.status === 'live'
 
 async function run(product: TutorProductSummary, action: 'publish' | 'marketplace' | 'archive' | 'delete') {
   problems.value = []
@@ -151,6 +158,20 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
   finally {
     busyId.value = ''
   }
+}
+
+async function toggleMarketplace(product: TutorProductSummary, enabled: boolean) {
+  if (!canManageMarketplace.value) return
+  const approved = await confirm({
+    title: enabled ? `Jual "${product.title}" di marketplace?` : `Hentikan penjualan "${product.title}"?`,
+    description: enabled
+      ? 'Zenko akan membuat salinan marketplace untuk ditinjau. Paket privat siswa tetap aman.'
+      : 'Salinan marketplace akan diarsipkan dan tidak menerima pembelian baru.',
+    confirmLabel: enabled ? 'Ya, jual di marketplace' : 'Hentikan penjualan',
+    confirmVariant: enabled ? 'primary' : 'danger',
+  })
+  if (!approved) return
+  await run(product, enabled ? 'marketplace' : 'archive')
 }
 </script>
 
@@ -225,12 +246,6 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
             </span>
           </template>
 
-          <template #cell(visibility)="{ value }">
-            <DashboardBadge :tone="value === 'public' ? 'brand' : 'neutral'">
-              {{ value === 'public' ? 'Marketplace' : 'Privat' }}
-            </DashboardBadge>
-          </template>
-
           <template #cell(category)="{ value, item }">
             {{ item.subcategory ? `${value} · ${item.subcategory}` : (value || 'Umum') }}
           </template>
@@ -244,20 +259,29 @@ async function run(product: TutorProductSummary, action: 'publish' | 'marketplac
             <DashboardBadge :tone="productStatusTone(item.status)">{{ productStatusLabel(item.status) }}</DashboardBadge>
           </template>
 
+          <template #cell(marketplace)="{ item }">
+            <template v-for="product in [findProduct(item.id)]" :key="item.id">
+              <AppSwitch
+                v-if="product && canToggleMarketplace(product)"
+                :model-value="Boolean(marketplaceCopyFor(product))"
+                :disabled="busyId === product.id"
+                :aria-label="`${marketplaceCopyFor(product) ? 'Sembunyikan dari' : 'Tampilkan di'} marketplace: ${product.title}`"
+                @update:model-value="toggleMarketplace(product, $event)"
+              />
+              <span v-else-if="product?.visibility === 'public'" class="text-[0.82rem] text-muted">Salinan marketplace</span>
+              <span v-else class="text-[0.82rem] text-faint">—</span>
+            </template>
+          </template>
+
           <template #cell(aksi)="{ item }">
             <template v-for="product in [findProduct(item.id)]" :key="item.id">
               <span v-if="product" class="inline-flex flex-wrap items-center justify-end gap-x-3 gap-y-2 whitespace-nowrap">
-                <NuxtLink v-if="canEdit(product)" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/edit`" class="text-[0.86rem] font-semibold text-primary hover:underline">Edit</NuxtLink>
-                <button v-if="canPublish(product)" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'publish')">
-                  {{ busyId === product.id ? 'Menayangkan…' : 'Tayangkan' }}
-                </button>
-                <NuxtLink v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" class="text-[0.86rem] font-semibold text-primary hover:underline">Lihat hasil</NuxtLink>
-                <button v-if="product.visibility === 'bimbel' && product.status === 'live' && canManageMarketplace" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'marketplace')">Jual di marketplace</button>
-                <button v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" type="button" class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'marketplace')">Ajukan ulang</button>
-                <button v-if="product.status === 'live'" type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'archive')">Arsipkan</button>
-                <button v-if="canDelete(product)" type="button" class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50" :disabled="busyId === product.id" @click="run(product, 'delete')">
-                  {{ busyId === product.id ? 'Menghapus…' : 'Hapus' }}
-                </button>
+                <AppIconButton v-if="canEdit(product)" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/edit`" variant="ghost" size="sm" aria-label="Edit paket" ariaLabel="Edit paket" title="Edit paket"><AppIcon name="pencil-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="canPublish(product)" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Tayangkan paket" ariaLabel="Tayangkan paket" title="Tayangkan paket" @click="run(product, 'publish')"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" variant="ghost" size="sm" aria-label="Lihat hasil" ariaLabel="Lihat hasil" title="Lihat hasil"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Ajukan ulang ke marketplace" ariaLabel="Ajukan ulang ke marketplace" title="Ajukan ulang ke marketplace" @click="run(product, 'marketplace')"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="product.status === 'live'" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Arsipkan paket" ariaLabel="Arsipkan paket" title="Arsipkan paket" @click="run(product, 'archive')"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton v-if="canDelete(product)" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Hapus paket" ariaLabel="Hapus paket" title="Hapus paket" @click="run(product, 'delete')"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
             </template>
           </template>

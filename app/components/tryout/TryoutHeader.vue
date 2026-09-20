@@ -7,10 +7,21 @@
  * Closer to how the real CBT systems read too: most run a plain, utilitarian
  * header rather than a solid colour block.
  */
+import type { TryoutBrand } from '#shared/types/tryout'
+
 const props = withDefaults(
   defineProps<{
     packageTitle: string
     remainingSeconds: number
+    /**
+     * Bimbel penyelenggara paket ini. Saat ada logonya, logo itulah yang
+     * dipakai di kiri header — bagi siswa sebuah bimbel, ruang ujian ini
+     * adalah ruang ujian lembaganya — dan Zenko turun jadi baris "Powered by"
+     * di bawahnya. Bimbel tanpa logo tetap memakai lockup Zenko: nama saja
+     * bukan pengganti logo, dan header ujian bukan tempat memajang teks
+     * panjang.
+     */
+    brand?: TryoutBrand | null
     /**
      * Mode simulasi (tutor/admin menjajal soalnya sendiri, hasil tidak
      * disimpan). Menyalakan pil "Mode Simulasi" dan mengganti dasar bar jadi
@@ -21,8 +32,21 @@ const props = withDefaults(
      */
     simulate?: boolean
   }>(),
-  { simulate: false },
+  { simulate: false, brand: null },
 )
+
+/**
+ * Logo pihak ketiga: URL-nya milik bimbel, jadi bisa saja mati. Sekali gagal
+ * dimuat, header kembali ke lockup Zenko alih-alih menyisakan ikon rusak.
+ */
+const brandLogoFailed = ref(false)
+watch(() => props.brand?.logoUrl, () => {
+  brandLogoFailed.value = false
+})
+const brandLogo = computed(() => {
+  const url = props.brand?.logoUrl?.trim()
+  return url && !brandLogoFailed.value ? url : ''
+})
 
 const clock = computed(() => {
   const total = Math.max(0, props.remainingSeconds)
@@ -46,10 +70,31 @@ const isUrgent = computed(() => props.remainingSeconds <= 60)
          satu pun aksi yang perlu ruang bernapas. -->
     <div class="container-page flex h-14 items-center justify-between gap-3 md:h-16 md:gap-4">
       <div class="flex min-w-0 items-center gap-2 md:gap-3">
+        <!-- Logo bimbel menggantikan lockup Zenko, dengan atribusi kecil di
+             bawahnya supaya asal platformnya tetap jelas. Bukan tautan:
+             tidak ada satu pun hal di header ujian yang boleh membawa siswa
+             keluar dari sesi yang sedang berjalan. -->
+        <span v-if="brandLogo" class="flex shrink-0 flex-col items-start gap-0.5">
+          <img
+            :src="brandLogo"
+            :alt="brand?.name ?? ''"
+            class="h-7 w-auto max-w-[88px] object-contain md:h-9 md:max-w-[168px]"
+            @error="brandLogoFailed = true"
+          />
+          <!-- Di HP atribusinya huruf kecil dan rapat: versi kapital selebar
+               96px, dan setiap piksel yang dipakainya diambil dari judul
+               paket di sebelahnya. -->
+          <span class="text-[0.55rem] leading-none font-semibold text-faint md:text-[0.62rem] md:tracking-[0.04em] md:uppercase">
+            Powered by <span class="text-primary">Zenko</span>
+          </span>
+        </span>
+
         <!-- Ikon saja di HP: lockup penuh memakan sepertiga lebar layar,
              sementara yang benar-benar harus terbaca adalah judul paket. -->
-        <BrandIcon class="h-8 w-8 shrink-0 sm:hidden" />
-        <BrandMark img-class="h-9 w-auto object-contain shrink-0" class="hidden sm:block" />
+        <template v-else>
+          <BrandIcon class="h-8 w-8 shrink-0 sm:hidden" />
+          <BrandMark img-class="h-9 w-auto object-contain shrink-0" class="hidden sm:block" />
+        </template>
 
         <DashboardBadge v-if="simulate" tone="warning">Mode Simulasi</DashboardBadge>
 

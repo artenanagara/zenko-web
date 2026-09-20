@@ -65,6 +65,7 @@ const showEndConfirm = ref(false)
 
 /** Sheet nomor soal — hanya dipakai di HP; desktop punya rail sendiri. */
 const navOpen = ref(false)
+const textScale = ref<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10>(5)
 
 function requestEndSection() {
   navOpen.value = false
@@ -169,10 +170,12 @@ async function exitSimulation() {
       <template v-else-if="session.phase.value === 'running' && session.currentQuestion.value">
         <TryoutHeader
           :package-title="blueprint.title"
+          :brand="blueprint.brand"
           :remaining-seconds="session.remainingSeconds.value"
           simulate
         >
           <template #action>
+            <ExamTextScaleControl v-model="textScale" />
             <button
               type="button"
               class="rounded-xs border border-amber-300 bg-white px-3 py-1.5 text-[0.82rem] font-semibold text-amber-900 transition-colors hover:bg-amber-100"
@@ -184,7 +187,7 @@ async function exitSimulation() {
         </TryoutHeader>
 
         <main class="container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
-          <div class="min-h-0 md:overflow-y-auto md:pr-1">
+          <div class="min-h-0 pb-24 md:h-screen md:overflow-y-auto md:pr-1 md:pb-24">
             <!-- Spanduk praktik, menempel tepat di bawah header dan sebelum
                  area soal, supaya UI ujian ini tidak pernah tertukar dengan
                  pengerjaan sungguhan. -->
@@ -200,6 +203,7 @@ async function exitSimulation() {
               :value="session.answers.value[session.currentQuestion.value.id]?.value"
               :doubtful="session.answers.value[session.currentQuestion.value.id]?.doubtful ?? false"
               :passage="session.currentPassage.value"
+              :text-scale="textScale"
               @select="session.selectAnswer"
               @answer="session.setAnswerValue"
             />
@@ -207,7 +211,7 @@ async function exitSimulation() {
 
           <!-- Rail nomor soal: desktop saja. Di HP tempatnya bottom
                sheet di bawah, bukan tumpukan di bawah kartu soal. -->
-          <div class="hidden min-h-0 md:block md:overflow-y-auto md:pr-1">
+          <div class="hidden min-h-0 md:block md:h-screen md:overflow-y-auto md:pr-1">
             <TryoutNavigator
               :groups="session.navigatorGroups.value"
               :current-index="session.currentIndex.value"

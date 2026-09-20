@@ -66,6 +66,24 @@ export interface BimbelMember {
   activatedAt?: number
 }
 
+/** GET /admin/bimbels/:id — roster dan bank paket untuk pemeriksaan admin. */
+export interface AdminBimbelDetail extends Bimbel {
+  members: BimbelMember[]
+  products: BimbelProductSummary[]
+}
+
+export interface BimbelProductSummary {
+  id: string
+  title: string
+  slug: string
+  category: string
+  price: number
+  status: 'draft' | 'review' | 'live' | 'rejected' | 'archived'
+  questionCount: number
+  questionTarget: number
+  updatedAt: number
+}
+
 export interface BimbelClass {
   id: string
   bimbelId: string

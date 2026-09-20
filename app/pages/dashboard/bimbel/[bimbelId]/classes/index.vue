@@ -128,15 +128,8 @@ async function remove(item: BimbelClass) {
         <template #cell(aksi)="{ item }">
           <template v-for="classItem in [findClass(item.id)]" :key="item.id">
             <span v-if="canManage && classItem" class="inline-flex items-center gap-3 whitespace-nowrap">
-              <NuxtLink
-                :to="`/dashboard/bimbel/${bimbelId}/classes/${classItem.id}`"
-                class="text-[0.86rem] font-semibold text-primary hover:underline"
-              >
-                Atur siswa
-              </NuxtLink>
-              <button type="button" class="text-[0.86rem] font-semibold text-danger hover:underline" @click="remove(classItem)">
-                Hapus
-              </button>
+              <AppIconButton :to="`/dashboard/bimbel/${bimbelId}/classes/${classItem.id}`" variant="ghost" size="sm" aria-label="Atur siswa" ariaLabel="Atur siswa" title="Atur siswa"><AppIcon name="users-three" :size="17" aria-hidden="true" /></AppIconButton>
+              <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus kelas" ariaLabel="Hapus kelas" title="Hapus kelas" @click="remove(classItem)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
             </span>
             <span v-else class="text-muted">—</span>
           </template>

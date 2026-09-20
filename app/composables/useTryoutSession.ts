@@ -360,7 +360,12 @@ export function useTryoutSession(
   function statusOf(questionId: string): 'answered' | 'doubtful' | 'unanswered' {
     const answer = answers.value[questionId]
     if (answer?.doubtful) return 'doubtful'
-    if (answer?.selected) return 'answered'
+    // Non-single-choice questions store their response in `value` and leave
+    // `selected` null (complex multiple choice, true/false, matching,
+    // ordering, and short answer). The navigator must use the same answered
+    // definition as `answeredCount`, otherwise a visible selection still
+    // appears as unanswered until the page is refreshed.
+    if (answer?.selected != null || answer?.value != null) return 'answered'
     return 'unanswered'
   }
 
@@ -475,7 +480,6 @@ export function useTryoutSession(
     // the workspace open while a request is in flight would let answers keep
     // changing under a submission already sent.
     phase.value = 'finished'
-    if (import.meta.client) sessionStorage.removeItem(key)
 
     if (grade) {
       result.value = null
@@ -483,6 +487,7 @@ export function useTryoutSession(
       return
     }
     result.value = localResult(currentBlueprint)
+    if (import.meta.client) sessionStorage.removeItem(key)
   }
 
   /**
@@ -500,6 +505,10 @@ export function useTryoutSession(
         finishedAt: Math.floor(Date.now() / 1000),
         ...scored,
       }
+      // Keep the recovery copy until the API has accepted and graded every
+      // answer. A refresh during the request must not turn a temporary
+      // network failure into lost work.
+      if (import.meta.client) sessionStorage.removeItem(key)
     }
     catch {
       gradeFailed.value = true

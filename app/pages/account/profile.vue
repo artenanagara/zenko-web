@@ -24,6 +24,8 @@ const ROLE_LABEL: Record<Role, string> = {
   student: 'Siswa',
   tutor: 'Tutor',
   admin: 'Admin',
+  marketing: 'Marketing',
+  editor: 'Editor',
 }
 
 /** Same badge vocabulary as the navbar account menu, so a role reads alike. */
@@ -31,6 +33,8 @@ const ROLE_TONE: Record<Role, 'neutral' | 'brand'> = {
   student: 'neutral',
   tutor: 'brand',
   admin: 'neutral',
+  marketing: 'brand',
+  editor: 'neutral',
 }
 
 /* --------------------------------------------------------------------------
@@ -77,6 +81,7 @@ const draftName = ref('')
 const draftEmail = ref('')
 
 const profileSaving = ref(false)
+const leaderboardToggleSaving = ref(false)
 
 /**
  * Field-level errors only. The outcome of a save — succeeded, or failed and
@@ -103,6 +108,23 @@ function cancelEditing() {
   editing.value = false
   clearFieldErrors()
   cancelEmailStep()
+}
+
+async function toggleLeaderboardHidden(event: Event) {
+  const input = event.target as HTMLInputElement
+  const nextValue = input.checked
+  leaderboardToggleSaving.value = true
+  try {
+    await updateLeaderboardHidden(nextValue)
+    toast.success(nextValue ? 'Nama disembunyikan dari leaderboard.' : 'Nama kembali tampil di leaderboard.')
+  }
+  catch (cause) {
+    input.checked = !nextValue
+    toast.error('Pengaturan belum berhasil disimpan.', accountApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    leaderboardToggleSaving.value = false
+  }
 }
 
 async function saveProfile() {
@@ -303,6 +325,8 @@ const roleDescription = computed(() => {
   switch (user.value?.role) {
     case 'admin': return 'Mengelola moderasi, pembayaran tutor, dan operasional Zenko.'
     case 'tutor': return 'Bisa membuat, menjual, dan memantau paket tryout — sekaligus tetap bisa membeli paket seperti siswa.'
+    case 'marketing': return 'Mengelola konten publik, kampanye, SEO, dan insight pertumbuhan Zenko.'
+    case 'editor': return 'Membuat dan memelihara konten editorial Marketing Hub.'
     default: return 'Mencari, membeli, dan mengerjakan paket tryout.'
   }
 })
@@ -545,6 +569,30 @@ async function onSignOutAllDevices() {
         </div>
       </DashboardPanel>
 
+      <DashboardPanel
+        title="Privasi leaderboard"
+        description="Pilih apakah nama kamu boleh tampil di podium dan daftar peringkat."
+      >
+        <label class="flex cursor-pointer items-start justify-between gap-4">
+          <span class="flex min-w-0 items-start gap-3">
+            <span class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+              <AppIcon name="eye" :size="20" aria-hidden="true" />
+            </span>
+            <span>
+              <span class="block font-semibold">Sembunyikan nama saya dari leaderboard</span>
+              <span class="mt-0.5 block text-[0.86rem] text-muted">Nama akan tampil sebagai “Peserta anonim”. Peringkat dan skor tetap sama.</span>
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            class="mt-1 h-5 w-5 shrink-0 accent-primary"
+            :checked="user?.leaderboardHidden ?? false"
+            :disabled="!user || leaderboardToggleSaving"
+            @change="toggleLeaderboardHidden"
+          >
+        </label>
+      </DashboardPanel>
+
       <DashboardPanel title="Peran & akses" description="Apa yang bisa dibuka akun ini di Zenko.">
         <div v-if="user" class="divide-y divide-hairline">
           <AccountSettingRow
@@ -558,6 +606,9 @@ async function onSignOutAllDevices() {
               </AppButton>
               <AppButton v-else-if="user.role === 'tutor'" to="/dashboard/tutor" variant="outline" size="sm">
                 Dashboard tutor
+              </AppButton>
+              <AppButton v-else-if="user.role === 'marketing' || user.role === 'editor'" to="/dashboard/marketing" variant="outline" size="sm">
+                Marketing Hub
               </AppButton>
               <DashboardBadge v-else-if="tutorApplication.data.value?.status === 'pending'" tone="warning">
                 Pengajuan tutor sedang ditinjau

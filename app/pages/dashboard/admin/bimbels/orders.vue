@@ -139,6 +139,8 @@ const SORT_OPTIONS: TableControlOption[] = [
   { value: 'newest', label: 'Terbaru' },
   { value: 'oldest', label: 'Terlama' },
   { value: 'amount', label: 'Nominal terbesar' },
+  { value: 'name-asc', label: 'Nama bimbel A–Z' },
+  { value: 'name-desc', label: 'Nama bimbel Z–A' },
 ]
 
 const {
@@ -164,6 +166,8 @@ const {
     newest: (a, b) => b.createdAt - a.createdAt,
     oldest: (a, b) => a.createdAt - b.createdAt,
     amount: (a, b) => b.amount - a.amount,
+    'name-asc': (a, b) => (a.bimbelName ?? '').localeCompare(b.bimbelName ?? '', 'id'),
+    'name-desc': (a, b) => (b.bimbelName ?? '').localeCompare(a.bimbelName ?? '', 'id'),
   },
   // Buku catatan, bukan antrean: yang membukanya datang untuk melihat posisi
   // sebuah bimbel, dan menyaring ke satu status akan menyembunyikan justru

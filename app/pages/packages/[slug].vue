@@ -5,6 +5,10 @@ definePageMeta({ path: '/paket/:slug()' })
 const route = useRoute()
 const slug = route.params.slug as string
 
+onMounted(() => {
+  trackMarketingEvent({ name: 'product_view', productId: detail.value.id, productSlug: detail.value.slug, productName: detail.value.title })
+})
+
 const detail = await usePackageDetail(slug)
 const related = useRelatedPackages(detail.value.category, slug)
 
@@ -14,6 +18,30 @@ const related = useRelatedPackages(detail.value.category, slug)
 const { isSignedIn } = useAuth()
 const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.value)
 const productReviews = useProductReviews(slug)
+const leaderboard = useLeaderboard(slug)
+if (import.meta.client) void leaderboard.refreshPublic()
+
+const publicLeaderboardReady = computed(() => !leaderboard.publicPending.value && !productReviews.pending.value)
+const packageSections = computed(() => [
+  { id: 'tentang', label: 'Tentang paket' },
+  ...(leaderboard.publicPodium.value && leaderboard.publicPodium.value.participants >= 3
+    ? [{ id: 'juara', label: 'Juara paket', meta: `${leaderboard.publicPodium.value.participants} peserta` }]
+    : [{ id: 'juara', label: 'Juara paket' }]),
+  ...(detail.value.reviewCount > 0
+    ? [{ id: 'ulasan', label: 'Ulasan', meta: `${detail.value.rating.toFixed(1).replace('.', ',')} (${detail.value.reviewCount})` }]
+    : [{ id: 'ulasan', label: 'Ulasan' }]),
+])
+
+function scrollToLeaderboard(event: MouseEvent) {
+  const target = document.getElementById('juara')
+  if (!target) return
+  event.preventDefault()
+  history.replaceState(null, '', `${window.location.pathname}${window.location.search}#juara`)
+  target.scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    block: 'start',
+  })
+}
 
 // refreshMine() runs for everyone, signed in or not: the session cookie rides
 // along with the request either way, and waiting for useAuth to resolve first
@@ -79,14 +107,14 @@ const productJsonLd = {
   description: detail.value.description,
   category: detail.value.category,
   image: detail.value.thumbnailUrl,
-  // Brand is who sells it, author is who wrote it — and for a bimbel's package
-  // those are two different parties. Naming the tutor as the brand was right
-  // while a tutor was the only kind of seller; now that a package can be sold
-  // under an organisation's name, the markup should say the same thing the
-  // page does rather than credit the seller to whoever happens to be listed
-  // first. Author is stated in both cases, so the person is never dropped.
-  brand: { '@type': 'Brand', name: detail.value.bimbel?.name || detail.value.author.name },
-  author: { '@type': 'Person', name: detail.value.author.name },
+  brand: { '@type': 'Brand', name: detail.value.author.name },
+  author: {
+    '@type': detail.value.author.type === 'bimbel' ? 'Organization' : 'Person',
+    name: detail.value.author.name,
+    ...(detail.value.author.type === 'bimbel' && detail.value.author.slug
+      ? { url: `https://zenkoedu.id/bimbel/${detail.value.author.slug}` }
+      : {}),
+  },
   offers: {
     '@type': 'Offer',
     price: detail.value.price,
@@ -148,17 +176,21 @@ useHead({
           </h1>
 
           <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-[0.92rem] text-muted">
-            <!-- Penulis + bimbel penerbitnya, komponen yang sama dengan kartu
-                 katalog supaya satu paket tidak beratribusi berbeda antara
-                 tempat ia ditemukan dan tempat ia dibeli. -->
-            <PackageAttribution :author="detail.author" :bimbel="detail.bimbel" variant="detail" />
+            <!-- Marketplace exposes one clickable author, matching the card. -->
+            <PackageAttribution :author="detail.author" variant="detail" />
             <span v-if="detail.reviewCount > 0" class="flex items-center gap-1.5">
               <IconStar class="h-3.5 w-3.5 text-star" />
               <span class="font-semibold text-ink">{{ detail.rating.toFixed(1) }}</span>
               ({{ detail.reviewCount }} ulasan)
             </span>
             <span v-else class="text-muted">Belum ada ulasan</span>
-            <span>{{ detail.attemptLabel }} dikerjakan</span>
+            <a
+              v-if="leaderboard.publicPodium.value?.participants && leaderboard.publicPodium.value.participants >= 3"
+              href="#juara"
+              class="transition-colors hover:text-primary"
+              @click="scrollToLeaderboard"
+            >{{ detail.attemptLabel }} dikerjakan</a>
+            <span v-else>{{ detail.attemptLabel }} dikerjakan</span>
           </div>
         </div>
       </div>
@@ -176,32 +208,82 @@ useHead({
             class="aspect-video w-full rounded-lg bg-[#edf3ff] object-cover shadow-xs"
           />
 
-          <h2 class="mt-10 mb-3 text-[1.35rem] font-bold tracking-[-0.03em]">Tentang paket ini</h2>
-          <p class="leading-[1.75] text-muted">{{ detail.description }}</p>
+          <AppSectionMessage
+            v-if="detail.changeSummary"
+            class="mt-6"
+            appearance="information"
+            title="Perubahan terbaru"
+          >
+            {{ detail.changeSummary }}
+          </AppSectionMessage>
 
-          <h2 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Materi yang dibahas</h2>
-          <ul class="divide-y divide-line overflow-hidden rounded-lg border border-hairline">
-            <li
-              v-for="topic in detail.topics"
-              :key="topic.title"
-              class="flex items-center justify-between gap-4 bg-surface px-5 py-4"
-            >
-              <span class="font-semibold">{{ topic.title }}</span>
-              <span class="shrink-0 text-[0.88rem] text-muted">{{ topic.count }} soal</span>
-            </li>
-          </ul>
+          <PackageSectionNav :sections="packageSections" :ready="publicLeaderboardReady" />
 
-          <h2 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Yang kamu dapatkan</h2>
-          <ul class="grid gap-3 min-[560px]:grid-cols-2">
-            <li v-for="item in detail.includes" :key="item" class="flex items-start gap-3 text-muted">
-              <IconCheck class="mt-1 h-5 w-5 shrink-0 text-primary" />
-              {{ item }}
-            </li>
-          </ul>
+          <section id="tentang" aria-labelledby="about-package-title" class="scroll-mt-[calc(var(--package-header-height,4rem)+var(--package-nav-height,3.5rem))]">
+            <h2 id="about-package-title" class="mt-10 mb-3 text-[1.35rem] font-bold tracking-[-0.03em]">Tentang paket ini</h2>
+            <p class="whitespace-pre-line leading-[1.75] text-muted">{{ detail.description }}</p>
 
-          <div class="mt-10 grid gap-5">
-            <div>
-              <h2 class="mb-1 text-[1.35rem] font-bold tracking-[-0.03em]">Ulasan siswa</h2>
+            <h3 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Materi yang dibahas</h3>
+            <ul class="divide-y divide-line overflow-hidden rounded-lg border border-hairline">
+              <li
+                v-for="topic in detail.topics"
+                :key="topic.title"
+                class="flex items-center justify-between gap-4 bg-surface px-5 py-4"
+              >
+                <span class="font-semibold">{{ topic.title }}</span>
+                <span class="shrink-0 text-[0.88rem] text-muted">{{ topic.count }} soal</span>
+              </li>
+            </ul>
+
+            <h3 class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Yang kamu dapatkan</h3>
+            <ul class="grid gap-3 min-[560px]:grid-cols-2">
+              <li v-for="item in detail.includes" :key="item" class="flex items-start gap-3 text-muted">
+                <IconCheck class="mt-1 h-5 w-5 shrink-0 text-primary" />
+                {{ item }}
+              </li>
+            </ul>
+          </section>
+
+          <section id="juara" aria-labelledby="public-leaderboard-title" class="scroll-mt-[calc(var(--package-header-height,4rem)+var(--package-nav-height,3.5rem))]">
+            <h2 id="public-leaderboard-title" class="mt-10 mb-4 text-[1.35rem] font-bold tracking-[-0.03em]">Juara paket ini</h2>
+            <div class="rounded-lg border border-hairline bg-surface p-5 md:p-6">
+              <div v-if="leaderboard.publicPending.value" class="h-64 animate-pulse rounded-lg bg-surface-sunken" aria-busy="true" />
+              <template v-else-if="leaderboard.publicPodium.value">
+                <div class="grid items-center gap-6 min-[901px]:grid-cols-[minmax(0,1.35fr)_minmax(220px,.65fr)]">
+                  <LeaderboardPodium
+                    v-if="leaderboard.publicPodium.value.podium.length >= 3"
+                    :entries="leaderboard.publicPodium.value.podium"
+                  />
+                  <LeaderboardEmpty v-else />
+                  <div class="grid content-center gap-3">
+                    <p class="flex items-center gap-2 text-[0.92rem] text-muted">
+                      <AppIcon name="users-three" :size="19" class="shrink-0 text-primary" aria-hidden="true" />
+                      <span><strong class="text-ink">{{ leaderboard.publicPodium.value.participants }} peserta</strong> sudah mengerjakan</span>
+                    </p>
+                    <p v-if="leaderboard.publicPodium.value.newThisWeek > 0" class="flex items-center gap-2 text-[0.92rem] text-muted">
+                      <AppIcon name="trend-up" :size="19" class="shrink-0 text-success-ink" aria-hidden="true" />
+                      <span><strong class="text-ink">{{ leaderboard.publicPodium.value.newThisWeek }} peserta baru</strong> minggu ini</span>
+                    </p>
+                    <AppButton
+                      v-if="!ownsPackage"
+                      :to="`/checkout/${detail.slug}`"
+                      variant="light"
+                      class="mt-2 w-full border border-hairline shadow-none"
+                      size="md"
+                    >
+                      Kerjakan paket ini untuk lihat posisimu
+                      <AppIcon name="arrow-right" :size="16" aria-hidden="true" />
+                    </AppButton>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </section>
+
+          <section id="ulasan" aria-labelledby="reviews-title" class="scroll-mt-[calc(var(--package-header-height,4rem)+var(--package-nav-height,3.5rem))]">
+            <div class="mt-10 grid gap-5">
+              <div>
+                <h2 id="reviews-title" class="mb-1 text-[1.35rem] font-bold tracking-[-0.03em]">Ulasan siswa</h2>
               <p class="text-[0.88rem] text-muted">Lihat penilaian dan cerita siswa yang sudah mengerjakan paket ini.</p>
             </div>
             <!-- Di atas daftar, bukan di bawahnya: siswa yang baru selesai
@@ -247,7 +329,8 @@ useHead({
               </button>
             </div>
 
-          </div>
+            </div>
+          </section>
         </div>
 
         <!-- Right column: purchase card, sticks while the content scrolls -->
@@ -276,6 +359,7 @@ useHead({
                 :to="ownsPackage ? '/akun/paket' : `/checkout/${detail.slug}`"
                 size="lg"
                 class="w-full"
+                @click="!ownsPackage && trackMarketingEvent({ name: 'product_click', productId: detail.id, productSlug: detail.slug, productName: detail.title })"
               >
                 {{ ownsPackage ? 'Buka paket saya' : 'Beli paket' }}
               </AppButton>
@@ -284,6 +368,7 @@ useHead({
                 variant="light"
                 size="lg"
                 class="w-full border border-hairline shadow-none"
+                @click="trackMarketingEvent({ name: 'product_click', productId: detail.id, productSlug: detail.slug, productName: detail.title })"
               >
                 Coba 5 soal gratis
               </AppButton>

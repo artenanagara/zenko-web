@@ -34,9 +34,6 @@ function toPackage(item: PublicTutorProduct): Package {
     subcategory: item.subcategory,
     thumbnailUrl: item.thumbnailUrl,
     author: props.author,
-    // Diteruskan apa adanya: paket yang diterbitkan atas nama bimbel harus
-    // membawa benderanya juga di sini, dan paket pribadi tetap tanpa field ini.
-    bimbel: item.bimbel,
     rating: item.rating,
     attemptLabel: item.attemptLabel,
     price: item.price,

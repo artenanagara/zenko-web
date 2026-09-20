@@ -64,7 +64,7 @@ test('halaman Paket bimbel memakai tabel dan kontrol yang sama dengan inventori 
   const table = page.getByRole('table')
   await expect(table).toBeVisible()
   await expect(table.getByRole('columnheader', { name: 'Paket' })).toBeVisible()
-  await expect(table.getByRole('columnheader', { name: 'Akses' })).toBeVisible()
+  await expect(table.getByRole('columnheader', { name: 'Marketplace' })).toBeVisible()
   await expect(table.getByRole('columnheader', { name: 'Kategori' })).toBeVisible()
   await expect(table.getByRole('columnheader', { name: 'Soal' })).toBeVisible()
   await expect(table.getByRole('columnheader', { name: 'Status' })).toBeVisible()

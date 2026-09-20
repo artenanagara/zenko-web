@@ -688,6 +688,182 @@
     font-weight: 700;
   }
 
+  /* ------------------------------------------------------------------
+     Artikel editorial (HTML tersanitasi dari zenko-api, lewat v-html)
+
+     Sepupu .legal-prose, disetel untuk dibaca panjang, bukan dipindai:
+     badan teks lebih besar, jarak antarparagraf lebih lega, dan judul
+     punya scroll-margin supaya tautan daftar isi tidak mendarat di
+     bawah header yang menempel.
+
+     Global (bukan `scoped`): isi v-html tidak pernah kebagian atribut
+     scope komponen — alasan yang sama dengan .prose-question.
+
+     Preflight Tailwind mematikan list-style dan meratakan h1-h3, jadi
+     setiap elemen yang boleh ditulis editor harus dipulihkan di sini.
+     Yang tidak disebut di bawah akan tampil sebagai teks biasa.
+     ------------------------------------------------------------------ */
+  .prose-zenko {
+    color: var(--color-ink);
+    font-size: 1.06rem;
+    line-height: 1.8;
+  }
+
+  .prose-zenko > * + * {
+    margin-top: 1.35rem;
+  }
+
+  .prose-zenko h2 {
+    margin-block: 2.75rem 0.85rem;
+    font-size: clamp(1.32rem, 2.2vw, 1.6rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.25;
+    scroll-margin-top: 6.5rem;
+  }
+
+  .prose-zenko h3 {
+    margin-block: 2rem 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+    scroll-margin-top: 6.5rem;
+  }
+
+  /* Judul pertama tidak boleh menambah jarak di atas badan artikel —
+     jaraknya sudah diatur header artikel. */
+  .prose-zenko > :first-child {
+    margin-top: 0;
+  }
+
+  .prose-zenko p {
+    color: var(--color-muted);
+  }
+
+  .prose-zenko strong {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  .prose-zenko a {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-zenko ul,
+  .prose-zenko ol {
+    padding-left: 1.3rem;
+    color: var(--color-muted);
+  }
+
+  .prose-zenko ul {
+    list-style: disc;
+  }
+
+  .prose-zenko ol {
+    list-style: decimal;
+  }
+
+  .prose-zenko li {
+    margin-block: 0.55rem;
+    padding-left: 0.3rem;
+  }
+
+  .prose-zenko li::marker {
+    color: var(--color-primary);
+  }
+
+  .prose-zenko li > p {
+    margin: 0;
+  }
+
+  /* Kutipan: garis merek di kiri, tanpa tanda kutip dekoratif — teksnya
+     sendiri yang harus menonjol. */
+  .prose-zenko blockquote {
+    margin-block: 2rem;
+    border-left: 3px solid var(--color-primary);
+    padding: 0.35rem 0 0.35rem 1.35rem;
+    color: var(--color-ink);
+    font-size: 1.1rem;
+    font-style: italic;
+    line-height: 1.7;
+  }
+
+  .prose-zenko blockquote p {
+    color: inherit;
+  }
+
+  .prose-zenko img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+  }
+
+  .prose-zenko figure {
+    margin-block: 2rem;
+  }
+
+  .prose-zenko figcaption {
+    margin-top: 0.7rem;
+    color: var(--color-faint);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .prose-zenko hr {
+    margin-block: 2.5rem;
+    border: 0;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .prose-zenko code {
+    border-radius: var(--radius-xs);
+    background: var(--color-surface-alt);
+    padding: 0.12em 0.36em;
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+  }
+
+  .prose-zenko pre {
+    border-radius: var(--radius-sm);
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 1rem 1.15rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .prose-zenko pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+  }
+
+  /* Tabel artikel bisa lebih lebar dari layar HP; yang menggulung adalah
+     pembungkusnya di halaman artikel, bukan halamannya. */
+  .prose-zenko table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    text-align: left;
+  }
+
+  .prose-zenko th,
+  .prose-zenko td {
+    border-bottom: 1px solid var(--color-line);
+    padding: 0.8rem 1rem;
+    vertical-align: top;
+  }
+
+  .prose-zenko th {
+    background: var(--color-surface-sunken);
+    font-weight: 700;
+  }
+
   /* Placeholder that must be filled before publishing. Deliberately loud —
      if one ships by accident it should be obvious, not blend in. */
   .legal-todo {
@@ -704,6 +880,14 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  /* Same, for the longer excerpt an article card carries. */
+  .clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
     overflow: hidden;
   }
 }

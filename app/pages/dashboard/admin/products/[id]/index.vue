@@ -264,6 +264,23 @@ async function decide(approve: boolean, reason?: string) {
 
       <AppInlineMessage v-if="conflictText" type="warning">{{ conflictText }}</AppInlineMessage>
 
+      <AppAlert
+        v-if="detail.plagiarismCheck"
+        :variant="detail.plagiarismCheck.status === 'clean' ? 'success' : detail.plagiarismCheck.status === 'error' ? 'warning' : 'danger'"
+        title="Pemeriksaan plagiarisme"
+      >
+        <template v-if="detail.plagiarismCheck.status === 'clean'">
+          Lolos pemeriksaan otomatis. Kemiripan tertinggi {{ detail.plagiarismCheck.highestSimilarity.toFixed(0) }}%.
+        </template>
+        <template v-else-if="detail.plagiarismCheck.status === 'error'">
+          Pemeriksaan AI belum selesai. Lanjutkan peninjauan manual sebelum memutuskan.
+        </template>
+        <template v-else>
+          {{ detail.plagiarismCheck.matchedQuestionsCount }}/{{ detail.plagiarismCheck.totalQuestionsCount }} soal terindikasi mirip dengan satu paket.
+          <span v-if="detail.plagiarismCheck.aiSummary" class="block mt-1">{{ detail.plagiarismCheck.aiSummary }}</span>
+        </template>
+      </AppAlert>
+
       <DashboardPanel title="Ringkasan produk">
         <div class="grid gap-4">
           <div class="flex flex-wrap items-center gap-3">

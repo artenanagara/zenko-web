@@ -77,7 +77,8 @@ const questionFormRef = ref<QuestionFormHandle | null>(null)
 const newFormNonce = ref(0)
 
 /**
- * Impor CSV: `null` = tidak sedang mengimpor (tampilan tulis-soal biasa),
+ * Impor berkas (DOCX atau CSV): `null` = tidak sedang mengimpor (tampilan
+ * tulis-soal biasa),
  * selain itu mode impor yang dipilih lewat modal di tombol "Impor soal".
  *
  * Dulu ini sepasang tab "Input Manual per Soal" / "Impor File CSV" di atas
@@ -223,14 +224,15 @@ const activePassageUsage = computed<Record<string, number>>(() => {
 async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext: boolean) {
   saving.value = true
   errorMessage.value = ''
+  const savedId = editorFor.value
   try {
-    if (editorFor.value && editorFor.value !== 'new') {
-      await updateTutorQuestion(props.productId, section.id, editorFor.value, draft, props.workspace)
+    if (savedId && savedId !== 'new') {
+      await updateTutorQuestion(props.productId, section.id, savedId, draft, props.workspace)
     }
     else {
       await createTutorQuestion(props.productId, section.id, draft, props.workspace)
     }
-    if (andNext) openNewQuestion()
+    if (andNext) openNextQuestion(section, savedId)
     else editorFor.value = ''
     emit('refresh')
   }
@@ -240,6 +242,43 @@ async function saveQuestion(section: TutorSection, draft: QuestionDraft, andNext
   finally {
     saving.value = false
   }
+}
+
+/**
+ * "Simpan & berikutnya" moves to the next *number*, not to a new question.
+ *
+ * It used to always open a blank form, which is right only while a tutor is
+ * writing the bank from the end. Revisiting question 3 of 40 and clicking it
+ * appended a 41st question instead of moving on to number 4 — the button
+ * quietly turned an edit into an insert, and the tutor got a duplicate they
+ * had to find and delete.
+ *
+ * Positions are read from the section as it was before the save, which is
+ * what the numbers on the grid show: editing a question never reorders
+ * anything, and a newly created one is appended, so the slot after it is
+ * beyond the list either way.
+ */
+function openNextQuestion(section: TutorSection, savedId: string) {
+  const savedIndex = savedId === 'new'
+    ? section.questions.length
+    : section.questions.findIndex(question => question.id === savedId)
+
+  // An id that is no longer in the list (deleted in another tab, say) leaves
+  // the position unknown; falling back to a blank form is the old behaviour
+  // and still the safest guess.
+  const nextIndex = savedIndex < 0 ? section.questions.length : savedIndex + 1
+
+  const next = section.questions[nextIndex]
+  if (next) {
+    editorFor.value = next.id
+    return
+  }
+  if (nextIndex < section.questionTarget) {
+    openNewQuestion()
+    return
+  }
+  // The subtest is full: there is no next number to go to.
+  editorFor.value = ''
 }
 
 /** Flush an open question editor before the wizard changes steps. */
@@ -352,7 +391,7 @@ const activeSectionDotClass = computed(() =>
 <template>
   <DashboardPanel
     title="Soal per subtes"
-    description="Pilih subtes lalu susun soalnya dengan menulis langsung atau mengimpor file CSV."
+    description="Pilih subtes lalu susun soalnya dengan menulis langsung atau mengimpor berkas Word (.docx) / CSV."
   >
     <!-- Impor adalah aksi tingkat panel, bukan mode tab yang harus dilewati
          setiap kali menulis soal — jadi tempatnya di header, di samping
@@ -529,8 +568,8 @@ const activeSectionDotClass = computed(() =>
          halaman, bukan menggeser halaman. -->
     <AppModal
       v-model="importOpen"
-      :title="importMode ? importTitle : 'Impor soal dari CSV'"
-      :description="importMode ? 'Unggah file, periksa hasil bacanya, lalu impor.' : 'Pilih cakupan file yang akan kamu unggah.'"
+      :title="importMode ? importTitle : 'Impor soal dari berkas'"
+      :description="importMode ? 'Unggah berkas Word (.docx) atau CSV, periksa hasil bacanya, lalu impor.' : 'Pilih cakupan berkas yang akan kamu unggah.'"
     >
       <div v-if="!importMode" class="grid gap-3">
         <button
@@ -542,7 +581,7 @@ const activeSectionDotClass = computed(() =>
           <span>
             <span class="block font-bold tracking-[-0.02em] text-ink">Satu subtes saja</span>
             <span class="mt-1 block text-[0.84rem] leading-[1.6] text-muted">
-              Semua baris masuk ke <strong class="font-semibold text-ink">{{ activeSection?.title }}</strong>,
+              Semua soal masuk ke <strong class="font-semibold text-ink">{{ activeSection?.title }}</strong>,
               subtes yang sedang kamu buka.
             </span>
           </span>
@@ -557,8 +596,9 @@ const activeSectionDotClass = computed(() =>
           <span>
             <span class="block font-bold tracking-[-0.02em] text-ink">Semua subtes sekaligus</span>
             <span class="mt-1 block text-[0.84rem] leading-[1.6] text-muted">
-              Satu file dengan kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
-              tambahan; tiap baris dicocokkan ke subtesnya sendiri.
+              Satu berkas dengan baris <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">SUBTES</code>
+              (DOCX) atau kolom <code class="rounded-[4px] bg-surface-sunken px-1.5 py-0.5 text-[0.78rem]">subtes</code>
+              (CSV); tiap soal dicocokkan ke subtesnya sendiri.
             </span>
           </span>
         </button>
@@ -567,7 +607,7 @@ const activeSectionDotClass = computed(() =>
       <!-- max-h menahan tinggi dialog saat daftar baris yang dilewati panjang;
            AppModal sendiri tidak membatasi tinggi body-nya. -->
       <div v-else class="max-h-[min(30rem,60vh)] overflow-x-hidden overflow-y-auto">
-        <TutorCsvImport
+        <TutorQuestionImport
           :product-id="productId"
           :section="activeSection!"
           :sections="orderedSections"

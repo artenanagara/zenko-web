@@ -1,5 +1,3 @@
-import { homePathFor } from '#shared/types/user'
-
 /**
  * Guards routes that need a session, and narrows them further when the route
  * declares `meta.roles`.
@@ -12,6 +10,9 @@ import { homePathFor } from '#shared/types/user'
  * zenko-api, which rejects the underlying requests with 401/403 regardless of
  * what the browser lets someone navigate to.
  */
+import { homePathFor } from '#shared/types/user'
+import { workspaceForHost } from '~/utils/workspace'
+
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return
 
@@ -29,7 +30,20 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (allowed?.length && user.value && !allowed.includes(user.value.role)) {
-    // Send them somewhere they belong rather than to a dead end.
+    // Workspace subdomains must not bounce a session belonging to another
+    // workspace back and forth forever (for example a marketing session on
+    // admin-staging): marketing-scope.global.ts sends every off-workspace path
+    // back to the workspace home, which this guard then rejects again. There
+    // the workspace login is the only honest destination — it lets the visitor
+    // replace the session rather than watch the browser ping-pong.
+    if (workspaceForHost(window.location.hostname) !== 'public') {
+      return navigateTo({ path: '/masuk', query: { lanjut: to.fullPath } })
+    }
+
+    // The public domain has no such trap, and every role's home accepts that
+    // role, so there is nothing to bounce off. Sending someone who *is* signed
+    // in to a sign-in form reads like a bug to them; send them somewhere they
+    // can actually use instead.
     return navigateTo(homePathFor(user.value.role))
   }
 })

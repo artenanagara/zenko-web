@@ -15,10 +15,22 @@ useHead({
 
 const { data: products, pending, error, refresh } = useTutorProducts()
 const { confirm } = useConfirm()
+const route = useRoute()
 
 // Client-only fetch: the session cookie never reaches the Nuxt server, so the
 // list resolves after hydration (see useTutorProducts).
-onMounted(refresh)
+onMounted(async () => {
+  await refresh()
+  // Ringkasan can hand over a selection (?pilih=id,id): the tutor ticked rows
+  // in the preview there and asked to manage them here. Unknown ids are
+  // dropped by the pruning watcher below; the query is cleared so a reload
+  // does not re-select what the tutor has since cleared.
+  const handed = typeof route.query.pilih === 'string' ? route.query.pilih.split(',').filter(Boolean) : []
+  if (handed.length) {
+    selected.value = handed
+    await navigateTo({ path: route.path, query: {} }, { replace: true })
+  }
+})
 
 /* --------------------------------------------------------------------------
  * Toolbar — cari, filter status, urutkan. Same shape as the five admin tables
@@ -123,14 +135,6 @@ function findProduct(id: string): TutorProductSummary | undefined {
 const busyId = ref('')
 const toast = useToast()
 
-/**
- * 422 dari submit: judul produk + daftar masalahnya, dirender sebagai list.
- * Stays on the page rather than in a toast — it is a checklist the tutor works
- * through, not a one-line outcome.
- */
-const submitProblems = ref<{ title: string, problems: string[] } | null>(null)
-const submitProblemsTitle = computed(() => submitProblems.value ? `Paket "${submitProblems.value.title}" belum dapat diajukan:` : '')
-
 /** Belum pernah tayang: masih bebas diubah dan masih perlu diajukan. */
 const isUnpublished = (product: TutorProductSummary) =>
   product.status === 'draft' || product.status === 'rejected'
@@ -156,8 +160,127 @@ const canSubmit = (product: TutorProductSummary) =>
   isUnpublished(product)
   && (product.type === 'bundle' || product.questionCount >= product.questionTarget)
 
+/**
+ * 422 dari submit: judul produk + daftar masalahnya, dirender sebagai list.
+ * Stays on the page rather than in a toast — it is a checklist the tutor works
+ * through, not a one-line outcome.
+ */
+const submitProblems = ref<{ title: string, problems: string[] }[]>([])
+
+/* --------------------------------------------------------------------------
+ * Seleksi massal. The table stores ids; everything below derives from them.
+ * A selection only ever names products that still exist — the watcher prunes
+ * ids the list no longer has, so a delete or a refetch cannot leave a phantom
+ * count in the bar.
+ * ------------------------------------------------------------------------ */
+
+const selected = ref<string[]>([])
+
+watch(products, (list) => {
+  const known = new Set(list.map(product => product.id))
+  if (selected.value.some(id => !known.has(id))) {
+    selected.value = selected.value.filter(id => known.has(id))
+  }
+})
+
+const selectedProducts = computed(() => {
+  const chosen = new Set(selected.value)
+  return products.value.filter(product => chosen.has(product.id))
+})
+
+/** Per action, the subset of the selection it applies to — the rest is left alone. */
+const submitTargets = computed(() => selectedProducts.value.filter(canSubmit))
+const archiveTargets = computed(() => selectedProducts.value.filter(product => product.status === 'live'))
+const deleteTargets = computed(() => selectedProducts.value.filter(canDelete))
+
+/** Which bulk action is running, so the three buttons lock together. */
+const bulkBusy = ref<'' | 'submit' | 'archive' | 'delete'>('')
+
+/**
+ * Runs one action over its targets in sequence — the API has no batch
+ * endpoint, and firing a dozen submits at once would only race the refresh.
+ * Failures are collected, not thrown: the tutor gets one toast with the tally
+ * and the rows that failed stay selected so they can be retried.
+ */
+async function runBulk(
+  kind: 'submit' | 'archive' | 'delete',
+  targets: TutorProductSummary[],
+  act: (product: TutorProductSummary) => Promise<void>,
+  done: { title: string, description: (ok: number) => string },
+  failed: { title: string },
+) {
+  bulkBusy.value = kind
+  submitProblems.value = []
+  const succeeded: string[] = []
+  const failures: string[] = []
+  try {
+    for (const product of targets) {
+      try {
+        await act(product)
+        succeeded.push(product.id)
+      }
+      catch (cause) {
+        const problems = kind === 'submit' ? tutorSubmitProblems(cause) : []
+        if (problems.length) submitProblems.value = [...submitProblems.value, { title: product.title, problems }]
+        failures.push(product.title)
+      }
+    }
+    await refresh()
+    selected.value = selected.value.filter(id => !succeeded.includes(id))
+    if (succeeded.length) toast.success(done.title, done.description(succeeded.length))
+    if (failures.length) {
+      toast.error(failed.title, `${failures.length} produk gagal: ${failures.join(', ')}.`)
+    }
+  }
+  finally {
+    bulkBusy.value = ''
+  }
+}
+
+async function bulkSubmit() {
+  const targets = submitTargets.value
+  if (!targets.length) return
+  const ok = await confirm({
+    title: `Ajukan ${targets.length} produk untuk tayang?`,
+    description: 'Setiap paket akan ditinjau admin sebelum tayang di katalog. Paket yang belum lengkap akan ditolak dan daftar masalahnya muncul di atas tabel.',
+    confirmLabel: 'Ajukan semua',
+  })
+  if (!ok) return
+  await runBulk('submit', targets, product => submitTutorProduct(product.id),
+    { title: 'Produk diajukan.', description: ok => `${ok} produk menunggu tinjauan admin.` },
+    { title: 'Sebagian produk belum bisa diajukan.' })
+}
+
+async function bulkArchive() {
+  const targets = archiveTargets.value
+  if (!targets.length) return
+  const ok = await confirm({
+    title: `Arsipkan ${targets.length} produk?`,
+    description: 'Paket-paket ini tidak akan tampil lagi di katalog publik Zenko. Siswa yang sudah membeli tetap bisa mengerjakannya.',
+    confirmLabel: 'Arsipkan semua',
+  })
+  if (!ok) return
+  await runBulk('archive', targets, product => archiveTutorProduct(product.id),
+    { title: 'Produk diarsipkan.', description: ok => `${ok} produk tidak tampil lagi di katalog.` },
+    { title: 'Sebagian produk belum berhasil diarsipkan.' })
+}
+
+async function bulkDelete() {
+  const targets = deleteTargets.value
+  if (!targets.length) return
+  const ok = await confirm({
+    title: `Hapus ${targets.length} produk permanen?`,
+    description: 'Seluruh data soal dan konfigurasi paket-paket ini akan dihapus permanen dan tidak bisa dibatalkan.',
+    confirmLabel: 'Hapus Permanen',
+  })
+  if (!ok) return
+  await runBulk('delete', targets, product => deleteTutorProduct(product.id),
+    { title: 'Produk dihapus permanen.', description: ok => `${ok} produk dihapus.` },
+    { title: 'Sebagian produk belum berhasil dihapus.' })
+}
+
 async function submitProduct(product: TutorProductSummary) {
-  submitProblems.value = null
+  submitProblems.value = []
   busyId.value = product.id
   try {
     await submitTutorProduct(product.id)
@@ -167,7 +290,7 @@ async function submitProduct(product: TutorProductSummary) {
   catch (cause) {
     const problems = tutorSubmitProblems(cause)
     if (problems.length) {
-      submitProblems.value = { title: product.title, problems }
+      submitProblems.value = [{ title: product.title, problems }]
       toast.error('Produk belum bisa diajukan.', `${problems.length} hal masih perlu dibereskan — daftarnya ada di atas tabel.`)
     }
     else {
@@ -187,7 +310,7 @@ async function archiveProduct(product: TutorProductSummary) {
   })
   if (!ok) return
 
-  submitProblems.value = null
+  submitProblems.value = []
   busyId.value = product.id
   try {
     await archiveTutorProduct(product.id)
@@ -210,7 +333,7 @@ async function deleteProduct(product: TutorProductSummary) {
   })
   if (!ok) return
 
-  submitProblems.value = null
+  submitProblems.value = []
   busyId.value = product.id
   try {
     await deleteTutorProduct(product.id)
@@ -236,12 +359,13 @@ async function deleteProduct(product: TutorProductSummary) {
 
 
     <AppSectionMessage
-      v-if="submitProblems"
+      v-for="group in submitProblems"
+      :key="group.title"
       appearance="error"
-      :title="submitProblemsTitle"
+      :title="`Paket &quot;${group.title}&quot; belum dapat diajukan:`"
     >
       <ul class="grid list-disc gap-1 pl-5">
-        <li v-for="problem in submitProblems.problems" :key="problem">{{ problem }}</li>
+        <li v-for="problem in group.problems" :key="problem">{{ problem }}</li>
       </ul>
     </AppSectionMessage>
 
@@ -299,84 +423,95 @@ async function deleteProduct(product: TutorProductSummary) {
           @action="reset"
         />
 
-        <DashboardTable v-else :columns="productColumns" :data="rows" primary-key="title" action-key="aksi">
-          <template #cell(title)="{ item }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
-            <span
-              v-if="item.status === 'rejected' && item.rejectReason"
-              class="mt-1 block text-[0.82rem] text-danger-ink"
+        <template v-else>
+          <!-- Each button names how many of the selection it applies to, so
+               "3 dipilih · Ajukan tayang (1)" is honest about the two it
+               will skip (already live, or not yet complete). -->
+          <DashboardSelectionBar :count="selected.length" item-noun="produk" @clear="selected = []">
+            <AppButton
+              size="xs"
+              :disabled="submitTargets.length === 0 || bulkBusy !== ''"
+              :loading="bulkBusy === 'submit'"
+              @click="bulkSubmit"
             >
-              Catatan revisi: {{ item.rejectReason }}
-            </span>
-          </template>
-          <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
-          <template #cell(category)="{ value, item }">
-            {{ item.subcategory ? `${value} · ${item.subcategory}` : (value || 'Umum') }}
-          </template>
-          <template #cell(price)="{ value }">
-            <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
-            <span v-else class="font-semibold text-success-ink">Gratis</span>
-          </template>
-          <template #cell(questionCount)="{ item }">
-            <span v-if="item.type === 'single'" class="tabular-nums">
-              {{ item.questionCount }}/{{ item.questionTarget }} soal
-            </span>
-            <span v-else class="text-muted">Paket gabungan</span>
-          </template>
-          <template #cell(status)="{ item }">
-            <DashboardBadge :tone="productStatusTone(item.status)">
-              {{ productStatusLabel(item.status) }}
-            </DashboardBadge>
-          </template>
-          <template #cell(aksi)="{ item }">
-            <!-- v-for over a one-item array recovers the typed row from
-                 `findProduct` as a template-scoped variable, narrowed by the
-                 v-if below — avoids passing DashboardTable's untyped `item` straight
-                 into functions that expect the real TutorProductSummary shape. -->
-            <template v-for="product in [findProduct(item.id)]" :key="item.id">
-              <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
-                <NuxtLink
-                  v-if="canEdit(product)"
-                  :to="`/dashboard/tutor/products/${product.id}/edit`"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline"
-                >
-                  Edit
-                </NuxtLink>
-                <button
-                  v-if="canSubmit(product)"
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                  :disabled="busyId === product.id"
-                  @click="submitProduct(product)"
-                >
-                  {{ busyId === product.id ? 'Mengajukan...' : 'Ajukan tayang' }}
-                </button>
-                <button
-                  v-if="product.status === 'live'"
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                  :disabled="busyId === product.id"
-                  @click="archiveProduct(product)"
-                >
-                  Arsipkan
-                </button>
-                <button
-                  v-if="canDelete(product)"
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                  :disabled="busyId === product.id"
-                  @click="deleteProduct(product)"
-                >
-                  {{ busyId === product.id ? 'Menghapus...' : 'Hapus' }}
-                </button>
-                <span
-                  v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
-                  class="text-[0.86rem] text-muted"
-                >-</span>
+              Ajukan tayang ({{ submitTargets.length }})
+            </AppButton>
+            <AppButton
+              variant="outline"
+              size="xs"
+              :disabled="archiveTargets.length === 0 || bulkBusy !== ''"
+              :loading="bulkBusy === 'archive'"
+              @click="bulkArchive"
+            >
+              Arsipkan ({{ archiveTargets.length }})
+            </AppButton>
+            <AppButton
+              variant="danger"
+              size="xs"
+              :disabled="deleteTargets.length === 0 || bulkBusy !== ''"
+              :loading="bulkBusy === 'delete'"
+              @click="bulkDelete"
+            >
+              Hapus ({{ deleteTargets.length }})
+            </AppButton>
+          </DashboardSelectionBar>
+
+          <DashboardTable
+            v-model:selected="selected"
+            :columns="productColumns"
+            :data="rows"
+            primary-key="title"
+            action-key="aksi"
+            selectable
+          >
+            <template #cell(title)="{ item }">
+              <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
+              <span
+                v-if="item.status === 'rejected' && item.rejectReason"
+                class="mt-1 block text-[0.82rem] text-danger-ink"
+              >
+                Catatan revisi: {{ item.rejectReason }}
               </span>
             </template>
-          </template>
-        </DashboardTable>
+            <template #cell(type)="{ value }">{{ productTypeLabel(value) }}</template>
+            <template #cell(category)="{ value, item }">
+              {{ item.subcategory ? `${value} · ${item.subcategory}` : (value || 'Umum') }}
+            </template>
+            <template #cell(price)="{ value }">
+              <span v-if="value > 0" class="tabular-nums">{{ formatRupiah(value) }}</span>
+              <span v-else class="font-semibold text-success-ink">Gratis</span>
+            </template>
+            <template #cell(questionCount)="{ item }">
+              <span v-if="item.type === 'single'" class="tabular-nums">
+                {{ item.questionCount }}/{{ item.questionTarget }} soal
+              </span>
+              <span v-else class="text-muted">Paket gabungan</span>
+            </template>
+            <template #cell(status)="{ item }">
+              <DashboardBadge :tone="productStatusTone(item.status)">
+                {{ productStatusLabel(item.status) }}
+              </DashboardBadge>
+            </template>
+            <template #cell(aksi)="{ item }">
+              <!-- v-for over a one-item array recovers the typed row from
+                   `findProduct` as a template-scoped variable, narrowed by the
+                   v-if below — avoids passing DashboardTable's untyped `item` straight
+                   into functions that expect the real TutorProductSummary shape. -->
+              <template v-for="product in [findProduct(item.id)]" :key="item.id">
+                <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
+                  <AppIconButton v-if="canEdit(product)" :to="`/dashboard/tutor/products/${product.id}/edit`" variant="ghost" size="sm" aria-label="Edit produk" ariaLabel="Edit produk" title="Edit produk"><AppIcon name="pencil-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="canSubmit(product)" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Ajukan tayang" ariaLabel="Ajukan tayang" title="Ajukan tayang" @click="submitProduct(product)"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="product.status === 'live'" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Arsipkan produk" ariaLabel="Arsipkan produk" title="Arsipkan produk" @click="archiveProduct(product)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="canDelete(product)" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Hapus produk" ariaLabel="Hapus produk" title="Hapus produk" @click="deleteProduct(product)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
+                  <span
+                    v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
+                    class="text-[0.86rem] text-muted"
+                  >-</span>
+                </span>
+              </template>
+            </template>
+          </DashboardTable>
+        </template>
       </div>
     </DashboardPanel>
   </div>

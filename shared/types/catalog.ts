@@ -8,6 +8,8 @@ import type { ExamFamily, SchoolPractice, ScoreScale } from './tutor-product'
 export interface Author {
   name: string
   avatarUrl: string
+  /** Public author surface: a tutor or the bimbel that published the package. */
+  type?: 'tutor' | 'bimbel'
   /** Stable tutor account ID; used when the tutor has no username yet. */
   id?: string
   /**
@@ -15,17 +17,16 @@ export interface Author {
    * handle; callers fall back to `id` for a reachable legacy profile.
    */
   username: string
+  /** Public bimbel slug; populated when `type` is `bimbel`. */
+  slug?: string
 }
 
 /**
- * Bimbel pemilik paket, ikut pada respons publik hanya ketika paketnya memang
- * milik sebuah bimbel — paket pribadi tutor tidak membawa field ini sama
- * sekali. Penulisnya tetap ada di `author`: sejak "Terbitkan sebagai", bimbel
- * menambah bendera di atas nama tutor, bukan menggantikannya.
+ * Legacy compatibility field. New marketplace responses expose exactly one
+ * author in `author`, either a tutor or a bimbel, and omit this field.
  *
- * `slug` sengaja belum dipakai untuk menaut ke mana pun — halaman publik
- * bimbel (`/bimbel/:slug`) belum ada, dan tautan mati lebih buruk daripada
- * teks biasa.
+ * Existing profile responses may still carry this shape while clients roll
+ * forward; it is retained so older tutor-profile payloads remain readable.
  */
 export interface PackageBimbel {
   name: string
@@ -84,6 +85,8 @@ export interface PackageDetail extends Package {
   topics: Topic[]
   /** Unix seconds. */
   updatedAt: number
+  /** Catatan perubahan terbaru dari tutor yang perlu diketahui siswa. */
+  changeSummary?: string
 }
 
 export interface Testimonial {
