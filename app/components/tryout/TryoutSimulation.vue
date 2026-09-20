@@ -170,6 +170,7 @@ async function exitSimulation() {
       <template v-else-if="session.phase.value === 'running' && session.currentQuestion.value">
         <TryoutHeader
           :package-title="blueprint.title"
+          :brand="blueprint.brand"
           :remaining-seconds="session.remainingSeconds.value"
           simulate
         >

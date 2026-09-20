@@ -236,7 +236,11 @@ function retry() {
 
     <!-- Sesi berjalan. -->
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
-      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value">
+      <TryoutHeader
+        :package-title="blueprint.title"
+        :brand="blueprint.brand"
+        :remaining-seconds="session.remainingSeconds.value"
+      >
         <template #action>
           <ExamTextScaleControl v-model="textScale" />
         </template>
