@@ -187,7 +187,7 @@ async function exitSimulation() {
         </TryoutHeader>
 
         <main class="container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24">
-          <div class="min-h-0 md:h-screen md:overflow-y-auto md:pr-1">
+          <div class="min-h-0 pb-24 md:h-screen md:overflow-y-auto md:pr-1 md:pb-24">
             <!-- Spanduk praktik, menempel tepat di bawah header dan sebelum
                  area soal, supaya UI ujian ini tidak pernah tertukar dengan
                  pengerjaan sungguhan. -->
