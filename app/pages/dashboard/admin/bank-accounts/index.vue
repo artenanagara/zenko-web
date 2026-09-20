@@ -269,14 +269,15 @@ async function confirmVerify() {
                  `findAccount` as a template-scoped variable (see
                  tutor/products/index.vue for the pattern's rationale). -->
             <template v-for="account in [findAccount(item.accountId)]" :key="item.accountId">
-              <button
+              <AppIconButton
                 v-if="account && !account.verifiedAt"
-                type="button"
-                class="text-[0.86rem] font-semibold text-primary hover:underline"
+                variant="ghost"
+                size="sm"
                 @click="openVerify(account)"
-              >
-                Verifikasi
-              </button>
+                aria-label="Verifikasi rekening"
+                ariaLabel="Verifikasi rekening"
+                title="Verifikasi rekening"
+              ><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
               <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>
           </template>

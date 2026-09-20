@@ -382,44 +382,16 @@ async function confirmReject(reason: string) {
                 v-if="payout && payout.status === 'requested'"
                 class="inline-flex items-center gap-3 whitespace-nowrap"
               >
-                <button
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                  :disabled="busyId === payout.id"
-                  @click="processPayout(payout)"
-                >
-                  {{ busyId === payout.id ? 'Memproses…' : 'Proses' }}
-                </button>
-                <button
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                  :disabled="busyId === payout.id"
-                  @click="openReject(payout)"
-                >
-                  Tolak…
-                </button>
+                <AppIconButton variant="ghost" size="sm" :disabled="busyId === payout.id" aria-label="Proses pencairan" ariaLabel="Proses pencairan" title="Proses pencairan" @click="processPayout(payout)"><AppIcon name="play" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === payout.id" aria-label="Tolak pencairan" ariaLabel="Tolak pencairan" title="Tolak pencairan" @click="openReject(payout)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
 
               <span
                 v-else-if="payout && payout.status === 'processing'"
                 class="inline-flex items-center gap-3 whitespace-nowrap"
               >
-                <button
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline disabled:opacity-50"
-                  :disabled="busyId === payout.id"
-                  @click="openTransfer(payout)"
-                >
-                  Tandai ditransfer
-                </button>
-                <button
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-danger hover:underline disabled:opacity-50"
-                  :disabled="busyId === payout.id"
-                  @click="openReject(payout)"
-                >
-                  Tolak…
-                </button>
+                <AppIconButton variant="ghost" size="sm" :disabled="busyId === payout.id" aria-label="Tandai sudah ditransfer" ariaLabel="Tandai sudah ditransfer" title="Tandai sudah ditransfer" @click="openTransfer(payout)"><AppIcon name="check" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === payout.id" aria-label="Tolak pencairan" ariaLabel="Tolak pencairan" title="Tolak pencairan" @click="openReject(payout)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
 
               <span v-else class="text-[0.86rem] text-muted">-</span>

@@ -3,6 +3,8 @@ export interface ConfirmOptions {
   description: string
   confirmLabel?: string
   cancelLabel?: string
+  /** Visual treatment for the decision button. Destructive remains the default. */
+  confirmVariant?: 'primary' | 'danger'
 }
 
 // Module-level singleton state, not useState: this is purely client-side,

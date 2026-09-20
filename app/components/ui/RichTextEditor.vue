@@ -47,6 +47,8 @@ const props = defineProps<{
    * (riwayat urungkan bawaan ProseMirror tetap jalan lewat Ctrl/Cmd+Z).
    */
   compact?: boolean
+  /** Let long-form editors grow with their article instead of scrolling inside the field. */
+  autoGrow?: boolean
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -614,7 +616,7 @@ defineExpose({
 <template>
   <div
     class="rte rounded-sm border border-line bg-surface"
-    :class="{ 'rte-compact': compact, 'rte-fullscreen': isFullscreen }"
+    :class="{ 'rte-compact': compact, 'rte-fullscreen': isFullscreen, 'rte-auto-grow': autoGrow }"
     @keydown="onRootKeydown"
   >
     <div class="rte-toolbar flex flex-wrap items-center gap-1 rounded-t-[11px] border-b border-line bg-surface-alt px-2 py-1.5">
@@ -1279,6 +1281,13 @@ defineExpose({
 .rte-scroll {
   max-height: 26rem;
   overflow-y: auto;
+}
+
+/* Article writing should read like one continuous canvas. Keep the bounded
+   editor for question fields, but let long-form content push the page down. */
+.rte-auto-grow .rte-scroll {
+  max-height: none;
+  overflow-y: visible;
 }
 
 /* Layar penuh: editor menutupi viewport, area edit memanjang mengisi sisa. */

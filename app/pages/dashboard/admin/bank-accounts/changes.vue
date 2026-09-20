@@ -370,20 +370,8 @@ async function confirmReject(reason: string) {
                 v-if="request && request.status === 'pending'"
                 class="inline-flex items-center gap-3 whitespace-nowrap"
               >
-                <button
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-primary hover:underline"
-                  @click="openApprove(request)"
-                >
-                  Setujui
-                </button>
-                <button
-                  type="button"
-                  class="text-[0.86rem] font-semibold text-danger hover:underline"
-                  @click="openReject(request)"
-                >
-                  Tolak…
-                </button>
+                <AppIconButton variant="ghost" size="sm" aria-label="Setujui perubahan rekening" ariaLabel="Setujui perubahan rekening" title="Setujui perubahan rekening" @click="openApprove(request)"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
+                <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Tolak perubahan rekening" ariaLabel="Tolak perubahan rekening" title="Tolak perubahan rekening" @click="openReject(request)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
               </span>
               <span v-else class="text-[0.86rem] text-muted">-</span>
             </template>

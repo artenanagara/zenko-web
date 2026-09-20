@@ -5,6 +5,7 @@ const { public: config } = useRuntimeConfig()
 const categories = ref<{ id: string, name: string }[]>([])
 const saving = ref(false)
 const error = ref('')
+const toast = useToast()
 const form = reactive({ title: '', subtitle: '', slug: '', coverUrl: '', coverAlt: '', content: '', categoryId: '', metaTitle: '', metaDescription: '', noIndex: false, status: 'draft' })
 
 onMounted(async () => { try { categories.value = await useApiFetch('/marketing/categories', { baseURL: config.apiBase, credentials: 'include' }) } catch { /* optional */ } })
@@ -14,8 +15,11 @@ async function save() {
   if (!form.title.trim()) { error.value = 'Judul artikel wajib diisi.'; return }
   saving.value = true; error.value = ''
   try {
-    const article = await useApiFetch<{ id: string }>('/marketing/articles', { baseURL: config.apiBase, method: 'POST', credentials: 'include', body: form })
-    await navigateTo(`/dashboard/marketing/articles/${article.id}`)
+    await useApiFetch<{ id: string }>('/marketing/articles', { baseURL: config.apiBase, method: 'POST', credentials: 'include', body: form })
+    toast.success(
+      form.status === 'published' ? 'Artikel sudah terbit.' : form.status === 'draft' ? 'Artikel disimpan di draft.' : 'Artikel dijadwalkan.',
+    )
+    await navigateTo('/dashboard/marketing/articles')
   } catch { error.value = 'Artikel belum berhasil disimpan.' }
   finally { saving.value = false }
 }
@@ -34,7 +38,7 @@ async function save() {
             <MarketingImageUpload v-model="form.coverUrl" label="Gambar sampul" :alt="form.coverAlt || form.title || 'Pratinjau gambar sampul'" />
             <AppTextField id="article-cover-alt" v-model="form.coverAlt" label="Alt text gambar" />
           </div>
-          <RichTextEditor v-model="form.content" aria-label="Isi artikel" placeholder="Mulai menulis artikel..." />
+          <RichTextEditor v-model="form.content" auto-grow aria-label="Isi artikel" placeholder="Mulai menulis artikel..." />
         </div>
       </AppPanel>
       <div class="grid content-start gap-6">

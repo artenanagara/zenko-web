@@ -308,13 +308,7 @@ async function submitDecision() {
             </DashboardBadge>
           </template>
           <template #cell(aksi)="{ item }">
-            <button
-              type="button"
-              class="text-[0.86rem] font-semibold text-primary hover:underline"
-              @click="openDetail(item.id)"
-            >
-              Tinjau
-            </button>
+            <AppIconButton variant="ghost" size="sm" aria-label="Tinjau pengajuan" ariaLabel="Tinjau pengajuan" title="Tinjau pengajuan" @click="openDetail(item.id)"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>

@@ -16,7 +16,7 @@ const { isOpen, options, handleConfirm, handleCancel } = useConfirm()
       <AppButton variant="outline" size="sm" @click="handleCancel">
         {{ options.cancelLabel || 'Batal' }}
       </AppButton>
-      <AppButton variant="danger" size="sm" @click="handleConfirm">
+      <AppButton :variant="options.confirmVariant || 'danger'" size="sm" @click="handleConfirm">
         {{ options.confirmLabel || 'Lanjutkan' }}
       </AppButton>
     </template>
