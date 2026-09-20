@@ -18,7 +18,10 @@ import { renderInlineMathHtml } from '~/utils/richText'
  * memperlihatkan soal yang sama, bukan versi yang diproses berbeda.
  */
 const props = defineProps<{
-  question: TryoutQuestion
+  question: TryoutQuestion & {
+    /** Server-side verdict is present on stored review questions. */
+    isCorrect?: boolean
+  }
   /** Nomor yang ditampilkan — berjalan lintas subtes, sama dengan navigasi soal. */
   number: number
   answer: TryoutAnswerState | undefined
@@ -101,6 +104,10 @@ function optionStateClass(option: TryoutOption): string {
 
 const outcome = computed<{ label: string, tone: 'success' | 'danger' | 'warning' | 'neutral' }>(() => {
   if (!hasAnswer.value) return { label: 'Tidak dijawab', tone: 'warning' }
+  if (props.question.isCorrect === true) return { label: 'Tepat', tone: 'success' }
+  if (props.question.isCorrect === false && props.question.kind !== 'situational') {
+    return { label: 'Kurang tepat', tone: 'danger' }
+  }
   if (props.question.kind === 'multiple_choice' || props.question.kind === 'true_false') {
     return { label: 'Terjawab', tone: 'neutral' }
   }
