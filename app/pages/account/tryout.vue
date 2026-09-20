@@ -236,7 +236,11 @@ function retry() {
 
     <!-- Sesi berjalan. -->
     <template v-else-if="session.phase.value === 'running' && session.currentSection.value && session.currentQuestion.value">
-      <TryoutHeader :package-title="blueprint.title" :remaining-seconds="session.remainingSeconds.value">
+      <TryoutHeader
+        :package-title="blueprint.title"
+        :brand="blueprint.brand"
+        :remaining-seconds="session.remainingSeconds.value"
+      >
         <template #action>
           <ExamTextScaleControl v-model="textScale" />
         </template>
@@ -255,7 +259,7 @@ function retry() {
         class="exam-protected container-page grid gap-5 pt-18 pb-24 md:h-screen md:grid-cols-[minmax(0,1fr)_280px] md:pt-24"
         :class="obscured && 'blur-lg'"
       >
-        <div class="min-h-0 md:h-screen md:overflow-y-auto md:pr-1">
+        <div class="min-h-0 pb-24 md:h-screen md:overflow-y-auto md:pr-1 md:pb-24">
           <TryoutQuestion
             :question="session.currentQuestion.value"
             :index="session.displayIndex.value"
