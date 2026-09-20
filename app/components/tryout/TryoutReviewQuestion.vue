@@ -25,6 +25,37 @@ const props = defineProps<{
 }>()
 
 const selected = computed(() => props.answer?.selected ?? null)
+const answerValue = computed(() => props.answer?.value ?? props.answer?.selected ?? null)
+const hasAnswer = computed(() => selected.value != null || answerValue.value != null)
+const selectedMultiple = computed(() =>
+  props.question.kind === 'multiple_choice' && Array.isArray(answerValue.value)
+    ? answerValue.value as string[]
+    : [],
+)
+const trueFalseValues = computed(() => {
+  if (props.question.kind !== 'true_false') return {}
+  const value = answerValue.value
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, boolean>
+    : {}
+})
+const matchingValues = computed(() => {
+  if (props.question.kind !== 'matching') return {}
+  const value = answerValue.value
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, string>
+    : {}
+})
+const orderingValues = computed(() =>
+  props.question.kind === 'ordering' && Array.isArray(answerValue.value)
+    ? answerValue.value as string[]
+    : [],
+)
+const shortAnswerValue = computed(() =>
+  props.question.kind === 'short_answer' && typeof answerValue.value === 'string'
+    ? answerValue.value
+    : '',
+)
 
 /** Keep review rendering identical to the active tryout question view. */
 function renderedHtml(value: string): string {
@@ -58,7 +89,7 @@ function isBest(option: TryoutOption): boolean {
 
 function optionStateClass(option: TryoutOption): string {
   if (isBest(option)) return 'border-success bg-success-soft'
-  if (selected.value === option.label) {
+  if (selected.value === option.label || selectedMultiple.value.includes(option.label)) {
     // Untuk soal weighted, pilihan yang bukan tertinggi tetap berpoin —
     // menandainya merah akan berbohong soal cara skornya dihitung.
     return props.question.kind === 'objective'
@@ -69,8 +100,11 @@ function optionStateClass(option: TryoutOption): string {
 }
 
 const outcome = computed<{ label: string, tone: 'success' | 'danger' | 'warning' | 'neutral' }>(() => {
-  if (!selected.value) return { label: 'Tidak dijawab', tone: 'warning' }
-  if (isBestLabel(selected.value)) return { label: 'Tepat', tone: 'success' }
+  if (!hasAnswer.value) return { label: 'Tidak dijawab', tone: 'warning' }
+  if (props.question.kind === 'multiple_choice' || props.question.kind === 'true_false') {
+    return { label: 'Terjawab', tone: 'neutral' }
+  }
+  if (isBestLabel(selected.value ?? '')) return { label: 'Tepat', tone: 'success' }
   return props.question.kind === 'objective'
     ? { label: 'Kurang tepat', tone: 'danger' }
     : { label: 'Belum optimal', tone: 'neutral' }
@@ -145,6 +179,35 @@ function isBestLabel(label: string): boolean {
         />
       </li>
     </ul>
+
+    <div v-if="question.kind === 'multiple_choice'" class="mt-4 rounded-sm border border-primary bg-primary-soft p-3 text-[0.86rem] text-primary">
+      <span class="font-bold">Jawabanmu:</span>
+      {{ selectedMultiple.length ? selectedMultiple.join(', ') : 'Tidak dijawab' }}
+    </div>
+
+    <div v-else-if="question.kind === 'true_false'" class="mt-4 grid gap-2 rounded-sm border border-primary bg-primary-soft p-3 text-[0.86rem] text-primary">
+      <p class="font-bold">Jawabanmu:</p>
+      <p v-for="option in question.options" :key="option.label">
+        {{ option.label }}: {{ trueFalseValues[option.label] === undefined ? 'Belum dijawab' : trueFalseValues[option.label] ? 'Benar' : 'Salah' }}
+      </p>
+    </div>
+
+    <div v-else-if="question.kind === 'short_answer'" class="mt-4 rounded-sm border border-primary bg-primary-soft p-3 text-[0.86rem] text-primary">
+      <span class="font-bold">Jawabanmu:</span>
+      {{ shortAnswerValue || 'Tidak dijawab' }}
+    </div>
+
+    <div v-else-if="question.kind === 'matching'" class="mt-4 grid gap-2 rounded-sm border border-primary bg-primary-soft p-3 text-[0.86rem] text-primary">
+      <p class="font-bold">Jawabanmu:</p>
+      <p v-for="option in question.options" :key="option.label">
+        {{ option.label }}: {{ matchingValues[option.label] || 'Belum dijawab' }}
+      </p>
+    </div>
+
+    <div v-else-if="question.kind === 'ordering'" class="mt-4 rounded-sm border border-primary bg-primary-soft p-3 text-[0.86rem] text-primary">
+      <span class="font-bold">Urutan jawabanmu:</span>
+      {{ orderingValues.length ? orderingValues.join(' → ') : 'Tidak dijawab' }}
+    </div>
 
     <div class="mt-4 rounded-sm border border-hairline bg-surface-alt p-3.5">
       <p class="mb-1.5 flex items-center gap-1.5 text-[0.76rem] font-bold tracking-wide text-faint uppercase">
