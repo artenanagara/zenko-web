@@ -34,7 +34,10 @@ test.describe('route guard (app/middleware/auth.ts)', () => {
 
     await page.goto('/dashboard/tutor')
 
-    // homePathFor('student') === '/akun' — see shared/types/user.ts.
-    await expect(page).toHaveURL('/akun')
+    // waitForURL, not expect().toHaveURL: on the public domain the guard sends
+    // a wrong-role session to its own home — homePathFor('student') === '/akun',
+    // see shared/types/user.ts — but in dev the redirect only fires once Vite
+    // has compiled this route's chunk, which outlasts the 5s expect timeout.
+    await page.waitForURL('/akun')
   })
 })

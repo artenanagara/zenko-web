@@ -104,36 +104,40 @@ test.describe('catalog (/paket)', () => {
   })
 
   /**
-   * Atribusi ganda. Paket bimbel dulu tampil dengan nama bimbel MENGGANTIKAN
-   * penulisnya; sekarang keduanya ada. Yang dijaga di sini: penulisnya tidak
-   * hilang lagi, dan nama bimbel tidak diam-diam berubah jadi tautan — halaman
-   * publik bimbel belum ada, jadi tautannya akan mati.
+   * Satu penulis publik per kartu. Paket terbitan bimbel memajang lembaganya —
+   * bukan pengajar di baliknya — dan namanya menautkan ke profil publik bimbel
+   * itu, bukan ke /tutor/.
    */
-  test('a bimbel paket shows its tutor and its bimbel, and only the tutor links', async ({ page }) => {
-    const card = page.locator(CARD).first()
+  test('a bimbel paket shows the organisation as its author and links to its profile', async ({ page }) => {
+    const published = PACKAGES['snbt-master-class-2026']!
+    expect(published.author.type).toBe('bimbel')
+    const card = page.locator(`article:has(a[href="/paket/${published.slug}"])`).first()
 
-    await expect(card.getByRole('link', { name: CPNS.author.name })).toBeVisible()
-    await expect(card.getByText(CPNS.bimbel!.name)).toBeVisible()
-    await expect(card.getByRole('link', { name: CPNS.bimbel!.name })).toHaveCount(0)
+    await expect(card.getByRole('link', { name: published.author.name })).toHaveAttribute(
+      'href',
+      `/bimbel/${published.author.slug}`,
+    )
 
-    // Paket pribadi — mayoritas katalog — tidak menumbuhkan baris kedua.
-    const personal = PACKAGES['prediksi-bumn-2026']!
-    expect(personal.bimbel).toBeUndefined()
-    const personalCard = page.locator(`article:has(a[href="/paket/${personal.slug}"])`).first()
-    await expect(personalCard.getByText('Bimbel', { exact: false })).toHaveCount(0)
+    // Paket pribadi tutor — mayoritas katalog — tetap menunjuk ke /tutor/.
+    expect(CPNS.author.type).toBeUndefined()
+    const personalCard = page.locator(CARD).first()
+    await expect(personalCard.getByRole('link', { name: CPNS.author.name })).toHaveAttribute(
+      'href',
+      `/tutor/${CPNS.author.username}`,
+    )
   })
 
   /**
-   * Kartu katalog itu grid: nama bimbel yang panjang harus dipotong, bukan
+   * Kartu katalog itu grid: nama penulis yang panjang harus dipotong, bukan
    * melebarkan kartunya. Diuji di lebar mobile karena di situlah ruangnya
-   * paling sempit.
+   * paling sempit, dengan nama bimbel terpanjang di fixture.
    */
-  test('a long bimbel name is truncated instead of widening the card', async ({ page }) => {
+  test('a long author name is truncated instead of widening the card', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 })
 
     const long = PACKAGES['snbt-master-class-2026']!
     const card = page.locator(`article:has(a[href="/paket/${long.slug}"])`).first()
-    const name = card.getByText(long.bimbel!.name)
+    const name = card.getByText(long.author.name)
 
     await expect(name).toBeVisible()
     const overflowsCard = await name.evaluate((el) => {
