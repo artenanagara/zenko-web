@@ -1,20 +1,21 @@
 /**
- * Indonesian province and regency/city data from wilayah.id.
+ * Data provinsi dan kabupaten/kota Indonesia, dibaca dari server Zenko sendiri.
  *
- * The service publishes static JSON sourced from the cahyadsn/wilayah GitHub
- * repository. Keep the API response behind this composable so forms do not
- * depend on the provider's response envelope or URL layout.
+ * Sumbernya tetap wilayah.id, tetapi halaman tidak boleh memanggilnya langsung:
+ * respons GET wilayah.id tidak mengirim `Access-Control-Allow-Origin` sama
+ * sekali — preflight OPTIONS-nya mengirim, permintaan sebenarnya tidak — jadi
+ * browser memblokir setiap panggilan dan daftarnya selalu kosong, tanpa jejak
+ * selain satu galat CORS di konsol. Route server di server/api/regions
+ * mengambilnya dari sisi server dan menyajikannya dari origin yang sama dengan
+ * halamannya, di mana CORS tidak berlaku.
+ *
+ * Amplop respons penyedia sudah dibuka di route itu, jadi di sini yang datang
+ * selalu berupa array.
  */
 export interface IndonesiaRegion {
   code: string
   name: string
 }
-
-interface RegionResponse {
-  data: IndonesiaRegion[]
-}
-
-const WILAYAH_API = 'https://wilayah.id/api'
 
 export const useIndonesiaRegions = () => {
   const provinces = useState<IndonesiaRegion[]>('indonesia-provinces', () => [])
@@ -29,8 +30,7 @@ export const useIndonesiaRegions = () => {
     isLoadingProvinces.value = true
     error.value = ''
     try {
-      const response = await $fetch<RegionResponse>(`${WILAYAH_API}/provinces.json`)
-      provinces.value = response.data
+      provinces.value = await $fetch<IndonesiaRegion[]>('/api/regions/provinces')
     }
     catch {
       error.value = 'Daftar provinsi belum bisa dimuat. Coba lagi.'
@@ -47,8 +47,7 @@ export const useIndonesiaRegions = () => {
     isLoadingCities.value = true
     error.value = ''
     try {
-      const response = await $fetch<RegionResponse>(`${WILAYAH_API}/regencies/${encodeURIComponent(provinceCode)}.json`)
-      cities.value = response.data
+      cities.value = await $fetch<IndonesiaRegion[]>(`/api/regions/regencies/${encodeURIComponent(provinceCode)}`)
     }
     catch {
       error.value = 'Daftar kota belum bisa dimuat. Coba pilih provinsi lagi.'
