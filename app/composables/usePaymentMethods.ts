@@ -5,10 +5,10 @@ import type { PaymentMethods } from '#shared/types/order'
  * Which payment paths this deployment can actually charge right now.
  *
  * Not a constant, which is why it is fetched rather than hardcoded: a
- * deployment without a database or a merchant name can take nothing, and a
- * gateway channel will join the list once one is wired in. A picker built
- * from a hardcoded list would eventually offer a buyer a method the server
- * then refuses.
+ * deployment without iPaymu credentials can only take manual transfers, one
+ * without a merchant name can only take the gateway, and an operator can turn
+ * either off between deploys. A picker built from a hardcoded list would
+ * eventually offer a buyer a method the server then refuses.
  *
  * A failed fetch is not an error state here. The server applies its own
  * default when the browser sends no channel at all, so the honest fallback is
@@ -20,6 +20,11 @@ import type { PaymentMethods } from '#shared/types/order'
  *  reads is a frontend concern, and /payments/methods deliberately sends only
  *  identifiers so this copy can change without deploying the API. */
 const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string }> = {
+  ipaymu_qris: {
+    label: 'QRIS otomatis',
+    hint: 'Scan dari aplikasi bank atau e-wallet apa pun',
+    timing: 'Paket langsung terbuka setelah pembayaran masuk',
+  },
   manual_qris: {
     label: 'Transfer QRIS manual',
     // DANA is named as the issuer, never as the method. The poster is a QRIS
@@ -36,12 +41,15 @@ const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string
  *
  * Ditampilkan sebagai pilihan mati berlabel "Segera", bukan disembunyikan,
  * supaya pembeli yang menimbang transfer manual tahu pembayaran seketika
- * sedang disiapkan. Kosong sekarang: tidak ada gateway yang sedang dipasang.
+ * sedang disiapkan — dan supaya jalur manual tidak terbaca sebagai
+ * satu-satunya cara Zenko akan pernah menerima uang.
  *
  * Ini bukan sakelar terpisah yang bisa lupa dimatikan: begitu server menyebut
  * sebuah channel di `available`, ia berhenti muncul di sini dengan sendirinya.
+ * Mengaktifkan iPaymu cukup mengisi kredensialnya di API — tidak perlu
+ * deploy kedua hanya untuk mencabut label "Segera".
  */
-const ANNOUNCED: PaymentChannel[] = []
+const ANNOUNCED: PaymentChannel[] = ['ipaymu_qris']
 
 /**
  * Copy untuk sebuah channel. Order lama bisa membawa pengenal gateway yang
