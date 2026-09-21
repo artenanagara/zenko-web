@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { EarningsWorkspace } from '~/composables/useTutorEarnings'
 /**
  * Hapus akun — dibuka dari baris "Hapus akun" di tab Keamanan /akun/profil.
  *
@@ -28,7 +29,25 @@ const isAdmin = computed(() => user.value?.role === 'admin')
 const { data: memberships, ensure: ensureMemberships } = useBimbelMemberships()
 const ownedBimbels = computed(() => memberships.value.filter(m => m.role === 'owner' && m.status !== 'left'))
 const managedBimbels = computed(() => memberships.value.filter(m => (m.role === 'admin' || m.role === 'teacher') && m.status !== 'left'))
-const balance = useTutorBalance()
+/**
+ * Rute saldo mana yang boleh dibuka akun ini.
+ *
+ * Ledger dikunci per account ID, bukan per peran: penjualan tutor dan bagi
+ * hasil owner bimbel jatuh ke akun yang sama, dan DeleteAccount di server
+ * memeriksa satu saldo itu saja. Kedua rute di bawah mengembalikan angka yang
+ * sama — handler-nya membaca account ID dari sesi dan mengabaikan parameter
+ * path — jadi yang perlu dipilih hanya rute yang penjaganya mengizinkan.
+ *
+ * Sebelumnya rute tutor selalu dipanggil, sehingga owner bimbel yang bukan
+ * tutor dijawab 403 dan peringatan saldonya tidak pernah muncul. Mereka tetap
+ * tidak bisa menghapus akun (server menolak), tapi baru tahu sesudah menekan.
+ */
+const balanceWorkspace = computed<EarningsWorkspace | undefined>(() => {
+  if (isTutor.value || isAdmin.value) return undefined
+  const owned = ownedBimbels.value[0]
+  return owned ? { bimbelId: owned.bimbelId } : undefined
+})
+const balance = useTutorBalance(balanceWorkspace)
 const owedAmount = computed(() => balance.data.value.available + balance.data.value.held)
 const owesBalance = computed(() => owedAmount.value > 0)
 
@@ -45,8 +64,8 @@ watch(open, (isOpen) => {
 onMounted(() => {
   // Saldo hanya ada untuk tutor dan owner bimbel; siswa biasa tidak punya
   // rute ini, jadi jangan memanggilnya untuk mereka.
-  watch([isTutor, ownedBimbels], ([tutor, owned]) => {
-    if (tutor || owned.length) void balance.refresh()
+  watch([isTutor, isAdmin, ownedBimbels], ([tutor, admin, owned]) => {
+    if (tutor || admin || owned.length) void balance.refresh()
   }, { immediate: true })
 })
 

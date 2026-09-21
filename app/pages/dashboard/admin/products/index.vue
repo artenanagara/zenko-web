@@ -330,8 +330,11 @@ async function decide(approve: boolean, reason?: string) {
         />
 
         <DashboardTable v-else :columns="columns" :data="rows" primary-key="title" action-key="aksi">
-          <template #cell(title)="{ value }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
+          <!-- Judulnya sendiri yang membuka tinjauan, bukan ikon terpisah di
+               kolom aksi: nama baris adalah hal yang paling wajar diklik, dan
+               pola ini sudah dipakai direktori tutor dan bimbel. -->
+          <template #cell(title)="{ value, item }">
+            <NuxtLink :to="`/dashboard/admin/products/${item.id}`" class="block font-semibold tracking-[-0.02em] text-ink hover:text-primary hover:underline">{{ value }}</NuxtLink>
           </template>
           <template #cell(type)="{ value }">{{ typeLabel(value) }}</template>
           <template #cell(author)="{ item }">
@@ -349,7 +352,6 @@ async function decide(approve: boolean, reason?: string) {
             <!-- v-for over a one-item array recovers the typed row (tutor/products pattern). -->
             <template v-for="product in [findProduct(item.id)]" :key="item.id">
               <span v-if="product" class="inline-flex items-center gap-3 whitespace-nowrap">
-                <AppIconButton :to="`/dashboard/admin/products/${product.id}`" variant="ghost" size="sm" aria-label="Tinjau produk" ariaLabel="Tinjau produk" title="Tinjau produk"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
                 <template v-if="product.status === 'review'">
                   <AppIconButton variant="ghost" size="sm" :disabled="decisionBusy" aria-label="Setujui produk" ariaLabel="Setujui produk" title="Setujui produk" @click="openApprove(product)"><AppIcon name="check-circle" :size="17" aria-hidden="true" /></AppIconButton>
                   <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="decisionBusy" aria-label="Tolak produk" ariaLabel="Tolak produk" title="Tolak produk" @click="openReject(product)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>

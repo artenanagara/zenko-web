@@ -106,6 +106,7 @@ function validate() {
   else if (name.length < MIN_NAME_LENGTH) errors.bimbelName = `Nama bimbel minimal ${MIN_NAME_LENGTH} karakter.`
   else if (name.length > MAX_NAME_LENGTH) errors.bimbelName = `Nama bimbel maksimal ${MAX_NAME_LENGTH} karakter.`
 
+  if (!form.provinceCode) errors.provinceCode = 'Pilih provinsi.'
   if (!form.studentCountBand) errors.studentCountBand = 'Pilih rentang jumlah siswa.'
   if (!form.termsAccepted) errors.termsAccepted = 'Kamu perlu menyetujui syarat dan ketentuan bimbel.'
 
@@ -121,6 +122,7 @@ async function onSubmit() {
     await applyBimbel({
       bimbelName: form.bimbelName.trim(),
       studentCountBand: form.studentCountBand as '<25' | '25-50' | '51-150' | '>150',
+      provinceCode: form.provinceCode,
       ...(form.city.trim() ? { city: form.city.trim() } : {}),
       termsAccepted: true,
     })
@@ -308,8 +310,14 @@ const formState = computed<FormState>(() => {
                 :options="provinceOptions"
                 placeholder="Pilih provinsi"
                 :disabled="isLoadingProvinces || provinceOptions.length === 0"
+                :invalid="Boolean(errors.provinceCode)"
               />
               <p v-if="isLoadingProvinces" class="mt-1.5 text-xs text-muted">Memuat provinsi…</p>
+              <p v-else-if="regionError" class="mt-1.5 text-xs text-danger-ink" role="alert">
+                {{ regionError }}
+                <button type="button" class="font-semibold underline" @click="loadProvinces">Coba lagi</button>
+              </p>
+              <p v-if="errors.provinceCode" class="mt-1.5 text-xs text-danger" role="alert">{{ errors.provinceCode }}</p>
             </div>
 
             <div>

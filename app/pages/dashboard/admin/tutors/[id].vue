@@ -510,8 +510,8 @@ async function removeProduct(product: Record<string, any>) {
             Tutor ini belum membuat produk.
           </p>
           <DashboardTable v-else :columns="PRODUCT_COLUMNS" :data="sortedProducts" primary-key="title" action-key="aksi">
-            <template #cell(title)="{ value }">
-              <span class="block font-semibold tracking-[-0.02em] text-ink">{{ value }}</span>
+            <template #cell(title)="{ value, item }">
+              <NuxtLink :to="`/dashboard/admin/products/${item.id}`" class="block font-semibold tracking-[-0.02em] text-ink hover:text-primary hover:underline">{{ value }}</NuxtLink>
             </template>
             <template #cell(type)="{ value }">{{ typeLabel(value) }}</template>
             <template #cell(price)="{ value }">
@@ -523,16 +523,6 @@ async function removeProduct(product: Record<string, any>) {
             </template>
             <template #cell(aksi)="{ item }">
               <span class="inline-flex items-center gap-1 whitespace-nowrap">
-                <AppIconButton
-                  :to="`/dashboard/admin/products/${item.id}`"
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Lihat produk"
-                  ariaLabel="Lihat produk"
-                  title="Lihat produk"
-                >
-                  <AppIcon name="eye" :size="17" aria-hidden="true" />
-                </AppIconButton>
                 <AppIconButton
                   variant="ghost"
                   size="sm"

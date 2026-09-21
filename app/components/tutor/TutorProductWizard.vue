@@ -31,14 +31,14 @@ import type {
  * menelusuri semua langkah; isi soalnya dibuka lewat tombol Edit soal jika
  * rollout edit konten live diaktifkan.
  */
-const props = defineProps<{ productId?: string, bimbelId?: string }>()
+const props = defineProps<{ productId?: string, bimbelId?: string, admin?: boolean }>()
 
 const workspace = computed<ProductWorkspace | undefined>(() =>
   props.bimbelId ? { bimbelId: props.bimbelId } : undefined,
 )
 const productDashboardPath = computed(() => props.bimbelId
   ? `/dashboard/bimbel/${props.bimbelId}/products`
-  : '/dashboard/tutor/products')
+  : props.admin ? '/dashboard/admin/products' : '/dashboard/tutor/products')
 
 const isEdit = computed(() => Boolean(props.productId))
 
@@ -1118,7 +1118,7 @@ const priceHintBlocking = computed(() =>
   <div class="grid gap-6 pb-24">
     <AppPageHeader
       :title="isEdit ? 'Edit produk' : 'Buat produk'"
-      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah tayang, paket langsung terbuka untuk seluruh siswa bimbel.' : 'Susun tryout, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
+      :description="props.bimbelId ? 'Susun paket untuk bank soal bimbel. Setelah tayang, paket langsung terbuka untuk seluruh siswa bimbel.' : props.admin ? 'Susun paket sebagai admin, lalu tawarkan kepemilikannya kepada tutor penulis soal.' : 'Susun tryout, lengkapi infonya, lalu ajukan untuk tayang di katalog.'"
     >
       <template #actions>
         <p
