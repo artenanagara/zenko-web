@@ -323,7 +323,7 @@ export const helpArticles: HelpArticle[] = [
           'Muat ulang /akun/paket, lalu cek pesanannya di Riwayat pembelian (/akun/pembelian). Kalau statusnya Lunas tapi paketnya tetap tidak muncul, hubungi kami dengan menyertakan nomor invoice.',
       },
     ],
-    keywords: ['beli paket', 'checkout', 'paket gratis', 'rp0', 'pembayaran belum aktif', 'bayar qris', 'qris', 'doku'],
+    keywords: ['beli paket', 'checkout', 'paket gratis', 'rp0', 'pembayaran belum aktif', 'bayar qris', 'qris', 'ipaymu'],
   },
   {
     slug: 'riwayat-transaksi-dan-invoice',
