@@ -35,7 +35,7 @@ const sharing = [
     purpose: 'Mengirim verifikasi akun, pemulihan kata sandi, dan pemberitahuan layanan',
   },
   {
-    party: 'DOKU dan mitra kanal pembayarannya',
+    party: 'iPaymu dan mitra kanal pembayarannya',
     data: 'Identitas dan kontak yang diperlukan, nomor pesanan, nilai, metode, serta status transaksi',
     purpose: 'Memproses, memverifikasi, menangani pengembalian dana, dan mencegah penipuan pembayaran',
   },
@@ -91,7 +91,7 @@ const retention = [
 </script>
 
 <template>
-  <LegalDocument lead="Kebijakan" accent="Privasi" updated="10 September 2026">
+  <LegalDocument lead="Kebijakan" accent="Privasi" updated="21 September 2026">
     <p>
       Kebijakan Privasi ini menjelaskan cara Zenko mengumpulkan, menggunakan,
       menyimpan, membagikan, dan melindungi data pribadi ketika Anda menggunakan
@@ -166,7 +166,7 @@ const retention = [
         waktu, referensi gateway, refund, dan riwayat pencairan;
       </li>
       <li>
-        Informasi terbatas yang diterima dari DOKU, seperti jenis pembayaran,
+        Informasi terbatas yang diterima dari iPaymu, seperti jenis pembayaran,
         bank atau penerbit, dan nomor instrumen yang disamarkan. Zenko tidak menyimpan
         nomor kartu, PIN, CVV, atau kredensial rekening pembayaran secara lengkap.
       </li>
@@ -187,7 +187,7 @@ const retention = [
       <li>Langsung dari Anda ketika mendaftar, mengisi profil, membeli, belajar, atau menghubungi kami;</li>
       <li>Dari pemilik atau Pengelola Bimbel ketika mereka mengundang anggota, menetapkan peran, membuat kelas, atau mengelola pembelajaran;</li>
       <li>Dari Google apabila Anda memilih autentikasi Google;</li>
-      <li>Dari DOKU dan kanal pembayaran terkait ketika Anda melakukan transaksi;</li>
+      <li>Dari iPaymu dan kanal pembayaran terkait ketika Anda melakukan transaksi;</li>
       <li>Secara otomatis dari perangkat dan penggunaan layanan melalui cookie yang diperlukan dan log sistem.</li>
     </ul>
 
@@ -259,7 +259,7 @@ const retention = [
 
     <h2 id="transfer-data">6. Pemrosesan di Luar Indonesia</h2>
     <p>
-      Sebagian penyedia layanan, termasuk Google, Resend, DOKU, atau subprosesornya,
+      Sebagian penyedia layanan, termasuk Google, Resend, iPaymu, atau subprosesornya,
       dapat memproses data melalui infrastruktur di luar Indonesia. Jika terjadi
       transfer lintas negara, kami akan menerapkan persyaratan pelindungan data yang
       diwajibkan UU PDP, termasuk memastikan tingkat pelindungan yang memadai atau
