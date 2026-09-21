@@ -6,9 +6,8 @@ import type { PaymentChannel } from '#shared/types/account'
  * The checkout page posts a slug and nothing else — the session cookie decides
  * who is buying and the server recomputes the price from the slug, so the
  * browser is never trusted to carry an amount. zenko-api answers POST /orders
- * with a `Purchase` (see #shared/types/account), charged through DOKU QRIS
- * and pending until the webhook reports it paid — or, when the buyer picks the
- * manual channel, waiting on an admin to spot the transfer instead.
+ * with a `Purchase` (see #shared/types/account) that stays pending until an
+ * admin verifies the buyer's transfer to Zenko's static QRIS poster.
  * Keep in sync with zenko-api/internal/model/order.go.
  */
 

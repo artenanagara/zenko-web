@@ -13,7 +13,7 @@ import type { TableControlOption } from '~/composables/useTableControls'
  *
  * Yang TIDAK digabung adalah akibat keputusannya, dan itu disengaja.
  * Menyetujui pembelian paket melunasi satu pesanan lalu memanggil hook ledger
- * yang sama persis dengan callback DOKU. Menyetujui langganan memanggil
+ * yang sama persis dengan klaim paket gratis. Menyetujui langganan memanggil
  * BimbelBilling.Activate — mengaktifkan langganan dengan kuota kursi dan
  * durasinya. Dua endpoint berbeda, dua konsekuensi berbeda, jadi tiap kartu
  * membawa angka yang jenisnya butuhkan (kode unik dan paket untuk pembelian;

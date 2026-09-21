@@ -6,25 +6,22 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *
  * POST /orders creates a pending purchase from a slug — the session cookie says
  * who is buying and the server prices the slug, so the browser carries neither
- * identity nor amount. It also charges a QRIS payment through DOKU in the
- * same request and returns the pending purchase with `qrUrl`/`expiresAt`
- * filled in, which is what the checkout page renders while it waits.
+ * identity nor amount. It returns the pending purchase with `expiresAt` (and,
+ * on a gateway channel, `qrUrl`) filled in, which is what the payment page
+ * renders while it waits.
  *
  * - paymentEnabled off → nothing is created; the page says payment is not
  *   connected yet, rather than pretending an order was placed.
- * - paymentEnabled on → the order is created and left pending. With a
- *   payment gateway key configured on the backend, `purchase.qrUrl` carries
- *   DOKU's raw QRIS payload string (rendered into a scannable code
- *   client-side, see payment.vue); without one (local dev with no gateway key
- *   set) it stays null and the page falls back to a plain "waiting for
- *   payment" message, same as before this was wired up.
+ * - paymentEnabled on → the order is created and left pending. On the manual
+ *   channel `purchase.qrUrl` is null — the buyer pays the static poster the
+ *   payment page shows. A gateway channel would fill it with a raw QRIS
+ *   payload, rendered into a scannable code client-side (see payment.vue).
  *
  * Settlement is never polled aggressively for its own sake — a short interval
- * checks `/me/purchases/:invoice` while a charge is outstanding, but it is
- * DOKU's webhook that actually marks the order paid server-side; polling
- * only notices once that has already happened. A local timer flips the state
- * to 'expired' at the QR's own deadline as a client-side fallback, in case the
- * settlement (or expiry) webhook is slow to land.
+ * checks `/me/purchases/:invoice` while an order is outstanding, but it is the
+ * server (an admin's decision today) that actually marks the order paid;
+ * polling only notices once that has already happened. A local timer flips the
+ * state to 'expired' at the order's own deadline as a client-side fallback.
  *
  * A 409 means the package is already owned — send them to it. A 404 means the
  * slug is unknown — say so plainly.
@@ -255,7 +252,7 @@ export function useCheckout() {
       }
 
       if (created.qrUrl || created.paymentChannel === 'manual_qris') {
-        // Something to pay: either a DOKU QR to scan, or the static QRIS
+        // Something to pay: a per-order QR from a gateway, or the static QRIS
         // poster and its receipt upload. Either way the dedicated payment page
         // owns showing it and waiting from here.
         await navigateTo(`/pembayaran/${created.invoice}`)
