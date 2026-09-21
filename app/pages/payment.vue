@@ -128,9 +128,9 @@ const showManual = computed(() =>
   isManual.value && !isExpired.value && !isPaid.value && !isVerifying.value,
 )
 
-// `qrUrl` now carries DOKU's raw QRIS payload string, not a hosted image —
-// rendered into an image locally (no third-party image API ever sees a
-// payment code). Regenerates whenever the payload changes; starts over
+// `qrUrl` carries a raw QRIS payload string, not a hosted image — rendered
+// into an image locally (no third-party image API ever sees a payment code).
+// Only a gateway channel fills it; on the manual channel it is null. Regenerates whenever the payload changes; starts over
 // (cleared, not stale) the moment it does, so a slow generation never shows
 // the previous invoice's code under a new one's data.
 const qrDataUrl = ref<string | null>(null)
@@ -472,7 +472,7 @@ watch(isRedirecting, (active, wasActive) => {
             <!-- Atribusi penyedia pembayaran ditampilkan di layar tempat uang
                  benar-benar berpindah, bukan hanya di halaman legal. -->
             <p class="mt-4 text-center text-[0.8rem] leading-[1.6] text-muted">
-              Pembayaran diproses oleh <strong class="font-semibold text-ink">DOKU</strong>.
+              Pembayaran diproses lewat penyedia pembayaran berlisensi.
               Zenko tidak pernah meminta PIN, OTP, atau kata sandimu.
               <NuxtLink to="/kebijakan-refund" class="font-semibold text-primary hover:underline">
                 Kebijakan Refund
@@ -568,7 +568,7 @@ watch(isRedirecting, (active, wasActive) => {
             · Dibuat {{ formatDateLong(purchase.date) }}
           </p>
           <p v-if="purchase.chargeReference" class="mt-1 text-center text-[0.82rem] text-muted">
-            Referensi DOKU <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
+            Referensi pembayaran <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
           </p>
         </aside>
       </div>

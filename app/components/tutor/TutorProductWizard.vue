@@ -137,9 +137,9 @@ onMounted(refreshPricingRule)
 
 /**
  * Harga hanya dikunci ketika checkout belum diaktifkan pada environment ini.
- * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk menguji DOKU, jadi
- * tutor bisa mengisi harga berbayar; nilai Rp0 tetap dikirim sebagai paket
- * gratis dan checkout tidak perlu memanggil gateway.
+ * Staging menyalakan `NUXT_PUBLIC_PAYMENT_ENABLED` untuk menguji checkout,
+ * jadi tutor bisa mengisi harga berbayar; nilai Rp0 tetap dikirim sebagai
+ * paket gratis dan langsung lunas tanpa pembayaran.
  */
 const { public: runtimeConfig } = useRuntimeConfig()
 const PRICE_INPUT_DISABLED = runtimeConfig.paymentEnabled !== true
