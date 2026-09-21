@@ -153,14 +153,18 @@ export type OrderStatus = 'pending' | 'verifying' | 'paid' | 'expired'
  * The buyer picks between whatever GET /payments/methods says this deployment
  * can offer; the server still validates the choice and derives every amount
  * itself, so picking a channel changes how an order is paid and never how much
- * it costs. Today there is one path: transfer to Zenko's static QRIS poster,
- * verified by an admin.
+ * it costs.
+ *
+ * - `ipaymu_qris`: a per-order QRIS code from iPaymu, carried in `qrUrl` and
+ *   valid until `expiresAt`; the server settles it from iPaymu's record.
+ * - `manual_qris`: transfer to Zenko's static QRIS poster, verified by an
+ *   admin.
  *
  * Orders created before the manual channel existed carry a retired gateway
- * identifier in `paymentChannel`. Treat anything that is not `manual_qris` as
- * "not manual" rather than matching it — see paymentChannelCopy.
+ * identifier in `paymentChannel`. Treat anything unknown as "not manual"
+ * rather than matching it — see paymentChannelCopy.
  */
-export type PaymentChannel = 'manual_qris'
+export type PaymentChannel = 'ipaymu_qris' | 'manual_qris'
 
 /** Where the buyer's newest transfer receipt stands. */
 export type PaymentProofStatus = 'submitted' | 'approved' | 'rejected'
@@ -191,14 +195,14 @@ export interface Purchase {
   method: string | null
   /** Nomor rujukan dari penyedia pembayaran; null sebelum ada. */
   reference: string | null
-  /** Raw QRIS payload of a dynamic per-order charge, rendered into a
-   * scannable code client-side (see payment.vue); null when no charge was
-   * created. Always null on the manual channel — one static poster serves
-   * every buyer, so there is no per-order code — which today means always. */
+  /** iPaymu's raw QRIS payload for this order, rendered into a scannable
+   * code client-side (see payment.vue); null when no charge was created.
+   * Always null on the manual channel — one static poster serves every
+   * buyer, so there is no per-order code. */
   qrUrl: string | null
   /** Unix seconds the payment window closes; null when there is no deadline. */
   expiresAt: number | null
-  /** The payment provider's reference for a pending charge (captured at QR
+  /** iPaymu's transaction id for the pending charge (captured at QR
    * creation, like qrUrl/expiresAt) — distinct from `reference`, which stays
    * null until payment settles. Null if no charge was created. */
   chargeReference: string | null
@@ -214,9 +218,8 @@ export interface Purchase {
    *
    * Di jalur manual angka inilah satu-satunya pegangan admin untuk mencocokkan
    * mutasi bank dengan pesanan — tidak ada bukti transfer yang diunggah. Di
-   * jalur gateway (bila nanti ada) ia tidak dipakai untuk mencocokkan apa pun
-   * (QRIS dinamis membawa nominalnya sendiri); ia tetap ada supaya angka yang
-   * dilihat pembeli tidak berubah tergantung metode yang dipilihnya.
+   * jalur iPaymu nilainya 0: QRIS dinamis membawa nominalnya sendiri dan
+   * pembeli membayar persis harga paket.
    *
    * Bukan bagian dari harga: bagi hasil tutor tetap dihitung dari harga item.
    * 0 pada pesanan gratis.

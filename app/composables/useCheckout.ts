@@ -6,22 +6,25 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *
  * POST /orders creates a pending purchase from a slug — the session cookie says
  * who is buying and the server prices the slug, so the browser carries neither
- * identity nor amount. It returns the pending purchase with `expiresAt` (and,
- * on a gateway channel, `qrUrl`) filled in, which is what the payment page
- * renders while it waits.
+ * identity nor amount. On the iPaymu channel it also asks iPaymu for a QRIS
+ * code in the same request and returns the pending purchase with
+ * `qrUrl`/`expiresAt` filled in, which is what the payment page renders while
+ * it waits.
  *
  * - paymentEnabled off → nothing is created; the page says payment is not
  *   connected yet, rather than pretending an order was placed.
- * - paymentEnabled on → the order is created and left pending. On the manual
- *   channel `purchase.qrUrl` is null — the buyer pays the static poster the
- *   payment page shows. A gateway channel would fill it with a raw QRIS
- *   payload, rendered into a scannable code client-side (see payment.vue).
+ * - paymentEnabled on → the order is created and left pending. On the iPaymu
+ *   channel `purchase.qrUrl` carries the raw QRIS payload (rendered into a
+ *   scannable code client-side, see payment.vue); on the manual channel it is
+ *   null and the buyer pays the static poster the payment page shows.
  *
  * Settlement is never polled aggressively for its own sake — a short interval
- * checks `/me/purchases/:invoice` while an order is outstanding, but it is the
- * server (an admin's decision today) that actually marks the order paid;
- * polling only notices once that has already happened. A local timer flips the
- * state to 'expired' at the order's own deadline as a client-side fallback.
+ * checks `/me/purchases/:invoice` while an order is outstanding, and it is the
+ * server that marks the order paid: from iPaymu's notification, from the poll
+ * itself (the server confirms a pending iPaymu order against iPaymu's record
+ * on every read), or from an admin's decision on the manual channel. A local
+ * timer flips the state to 'expired' at the code's own deadline as a
+ * client-side fallback, in case the server is slow to notice.
  *
  * A 409 means the package is already owned — send them to it. A 404 means the
  * slug is unknown — say so plainly.
@@ -252,9 +255,9 @@ export function useCheckout() {
       }
 
       if (created.qrUrl || created.paymentChannel === 'manual_qris') {
-        // Something to pay: a per-order QR from a gateway, or the static QRIS
-        // poster and its receipt upload. Either way the dedicated payment page
-        // owns showing it and waiting from here.
+        // Something to pay: an iPaymu QR to scan, or the static QRIS poster
+        // and its receipt upload. Either way the dedicated payment page owns
+        // showing it and waiting from here.
         await navigateTo(`/pembayaran/${created.invoice}`)
         return
       }

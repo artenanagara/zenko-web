@@ -184,11 +184,11 @@ export default defineNuxtConfig({
       // NUXT_PUBLIC_ANALYTICS_MEASUREMENT_ID.
       analyticsMeasurementId: 'G-20Y9CGTQ0L',
       // Whether checkout may call POST /orders. How the resulting order is
-      // actually paid is the server's decision — today the manual QRIS
-      // channel, where the buyer transfers to Zenko's static QR and an admin
-      // verifies it. This flag only says whether to attempt an order at all;
-      // while off, the checkout page says payment is not connected instead of
-      // placing one.
+      // actually paid is the server's decision — an iPaymu QRIS code, or the
+      // manual QRIS channel where the buyer transfers to Zenko's static QR and
+      // an admin verifies it (zenko-api's PAYMENT_CHANNEL). This flag only
+      // says whether to attempt an order at all; while off, the checkout page
+      // says payment is not connected instead of placing one.
       //
       // Still off by default, on purpose. It now gates two things, not one:
       // the tutor price input follows it too (see TutorProductWizard's
