@@ -64,8 +64,14 @@ export function useTutorSales(workspace?: EarningsWorkspace) {
   return { summary, sales, pending, error, refresh }
 }
 
-/** GET /tutor/balance — agregat ledger. */
-export function useTutorBalance(workspace?: EarningsWorkspace) {
+/**
+ * GET /tutor/balance — agregat ledger.
+ *
+ * Workspace-nya boleh berupa ref atau getter, bukan hanya objek tetap: ada
+ * pemanggil yang baru tahu bimbel mana yang relevan setelah daftar
+ * keanggotaannya termuat. Objek biasa tetap diterima apa adanya.
+ */
+export function useTutorBalance(workspace?: MaybeRefOrGetter<EarningsWorkspace | undefined>) {
   const { public: config } = useRuntimeConfig()
 
   const data = ref<TutorBalance>({ available: 0, held: 0, totalPaidOut: 0 })
@@ -76,7 +82,7 @@ export function useTutorBalance(workspace?: EarningsWorkspace) {
     pending.value = true
     error.value = ''
     try {
-      data.value = await useApiFetch<TutorBalance>(`${earningsRoot(workspace)}/balance`, {
+      data.value = await useApiFetch<TutorBalance>(`${earningsRoot(toValue(workspace))}/balance`, {
         baseURL: config.apiBase,
         credentials: 'include',
       })
