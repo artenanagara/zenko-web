@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.0](https://github.com/artenanagara/zenko-web/compare/v0.31.0...v0.32.0) (2026-09-22)
+
+
+### Features
+
+* offer iPaymu QRIS at checkout ([#88](https://github.com/artenanagara/zenko-web/issues/88)) ([9d5fa44](https://github.com/artenanagara/zenko-web/commit/9d5fa4416c2ca9fdf33533af10c5166c4c1474a6))
+
 ## [0.31.0](https://github.com/artenanagara/zenko-web/compare/v0.30.1...v0.31.0) (2026-09-20)
 
 
