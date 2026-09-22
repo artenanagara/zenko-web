@@ -1,4 +1,5 @@
 import type { AdminStudentRow } from '#shared/types/admin-directory'
+import type { User } from '#shared/types/user'
 
 /**
  * Admin's student directory: every account holding the student role.
@@ -34,4 +35,26 @@ export function useAdminStudents() {
   }
 
   return { data, pending, error, refresh }
+}
+
+/**
+ * POST /admin/students/:accountId/promote-tutor — memberi peran tutor kepada
+ * akun yang tidak pernah mengajukan.
+ *
+ * Antrean Pengajuan tutor tetap jalur biasanya: ada yang meminta, admin
+ * memutuskan. Ini kasus sebaliknya, saat Zenko yang mendekati gurunya. API
+ * menolak (409) bila akun itu justru punya pengajuan yang masih menunggu, agar
+ * alasan seseorang menjadi tutor tercatat di satu tempat saja.
+ *
+ * Perannya langsung berlaku tanpa login ulang — guard peran membaca ulang dari
+ * database setiap request.
+ */
+export async function promoteStudentToTutor(accountId: string): Promise<User> {
+  const { public: config } = useRuntimeConfig()
+
+  return await useApiFetch<User>(`/admin/students/${accountId}/promote-tutor`, {
+    baseURL: config.apiBase,
+    credentials: 'include',
+    method: 'POST',
+  })
 }

@@ -69,7 +69,7 @@ const applyPreset = (val: string) => {
       <!-- Hours Column -->
       <div class="space-y-1">
         <span class="text-[0.65rem] font-bold text-muted uppercase tracking-wider block text-center">Jam</span>
-        <div class="h-40 overflow-y-auto rounded-xs border border-line bg-surface-sunken p-1 space-y-0.5">
+        <div class="h-40 overflow-y-auto overscroll-contain rounded-xs border border-line bg-surface-sunken p-1 space-y-0.5">
           <button
             v-for="h in hours"
             :key="h"
@@ -90,7 +90,7 @@ const applyPreset = (val: string) => {
       <!-- Minutes Column -->
       <div class="space-y-1">
         <span class="text-[0.65rem] font-bold text-muted uppercase tracking-wider block text-center">Menit</span>
-        <div class="h-40 overflow-y-auto rounded-xs border border-line bg-surface-sunken p-1 space-y-0.5">
+        <div class="h-40 overflow-y-auto overscroll-contain rounded-xs border border-line bg-surface-sunken p-1 space-y-0.5">
           <button
             v-for="m in minutes"
             :key="m"

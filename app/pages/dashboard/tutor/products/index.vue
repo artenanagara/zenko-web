@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TutorProductSummary } from '#shared/types/tutor-product'
+import type { TutorProductDetail, TutorProductSummary } from '#shared/types/tutor-product'
 import type { TableControlOption } from '~/composables/useTableControls'
 
 definePageMeta({
@@ -17,10 +17,44 @@ const { data: products, pending, error, refresh } = useTutorProducts()
 const { confirm } = useConfirm()
 const route = useRoute()
 
+/* --------------------------------------------------------------------------
+ * Penyerahan paket admin → tutor.
+ *
+ * Halaman ini melayani dua peran (roles di definePageMeta), jadi kedua sisi
+ * penyerahan tinggal di sini: seorang admin menawarkan draft yang ia ketikkan,
+ * seorang tutor menjawab tawaran yang ditujukan kepadanya. Yang dilihat
+ * masing-masing ditentukan perannya, bukan halaman yang berbeda.
+ * ------------------------------------------------------------------------ */
+
+const { user } = useAuth()
+const isAdmin = computed(() => user.value?.role === 'admin')
+
+const {
+  data: transferOffers,
+  refresh: refreshOffers,
+  accept: acceptOffer,
+  decline: declineOffer,
+} = useProductTransferOffers()
+
+const { data: adminTutors, pending: adminTutorsPending, refresh: refreshAdminTutors } = useAdminTutors()
+const { byProductId: outgoingOffers, refresh: refreshOutgoing } = useOutgoingProductTransfers()
+
+/** Paket yang sedang ditawarkan lewat modal; null saat modal tertutup. */
+const transferTarget = ref<TutorProductSummary | null>(null)
+const transferOpen = ref(false)
+const transferSubmitting = ref(false)
+/** Id tawaran yang sedang dijawab, agar hanya kartunya yang terkunci. */
+const offerBusyId = ref('')
+
 // Client-only fetch: the session cookie never reaches the Nuxt server, so the
 // list resolves after hydration (see useTutorProducts).
 onMounted(async () => {
   await refresh()
+  // Tawaran dimuat untuk semua peran: seorang admin pun bisa menjadi penerima
+  // penyerahan dari admin lain. Direktori tutor hanya untuk admin — bagi tutor
+  // biasa endpoint-nya dijawab 403.
+  await refreshOffers()
+  if (isAdmin.value) await Promise.all([refreshAdminTutors(), refreshOutgoing()])
   // Ringkasan can hand over a selection (?pilih=id,id): the tutor ticked rows
   // in the preview there and asked to manage them here. Unknown ids are
   // dropped by the pruning watcher below; the query is cleared so a reload
@@ -347,6 +381,126 @@ async function deleteProduct(product: TutorProductSummary) {
     busyId.value = ''
   }
 }
+/* --------------------------------------------------------------------------
+ * Sisi admin: menawarkan dan menarik kembali.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Yang boleh diserahkan, persis seperti aturan yang ditegakkan server: draft
+ * milik sendiri, tryout tunggal, bukan materi bimbel. Tombolnya disembunyikan
+ * untuk apa pun di luar itu supaya admin tidak menabrak penolakan yang sudah
+ * bisa diketahui dari barisnya sendiri.
+ */
+const canTransfer = (product: TutorProductSummary) =>
+  isAdmin.value
+  && product.status === 'draft'
+  && product.type === 'single'
+  && product.visibility !== 'bimbel'
+  && !outgoingOffers.value.has(product.id)
+
+/** Tawaran yang sedang menunggu untuk baris ini, kalau ada. */
+const pendingOffer = (product: TutorProductSummary) => outgoingOffers.value.get(product.id)
+
+function openTransfer(product: TutorProductSummary) {
+  transferTarget.value = product
+  transferOpen.value = true
+}
+
+async function submitTransfer(toAccountId: string) {
+  const product = transferTarget.value
+  if (!product) return
+
+  transferSubmitting.value = true
+  try {
+    await offerProductTransfer(product.id, toAccountId)
+    await Promise.all([refresh(), refreshOutgoing()])
+    transferOpen.value = false
+    const tutor = adminTutors.value.find(row => row.id === toAccountId)
+    toast.success(
+      'Paket ditawarkan ke tutor.',
+      `Menunggu ${tutor?.name || tutor?.email || 'tutor'} menerimanya. Sampai saat itu paket ini masih milikmu.`,
+    )
+  }
+  catch (cause) {
+    toast.error('Paket belum berhasil diserahkan.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    transferSubmitting.value = false
+  }
+}
+
+async function withdrawTransfer(product: TutorProductSummary) {
+  const ok = await confirm({
+    title: `Tarik tawaran "${product.title}"?`,
+    description: `Tawaran ke ${pendingOffer(product)?.toEmail || 'tutor'} akan dibatalkan. Paket tetap menjadi draft milikmu dan bisa ditawarkan lagi kapan saja.`,
+    confirmLabel: 'Tarik tawaran',
+  })
+  if (!ok) return
+
+  busyId.value = product.id
+  try {
+    await withdrawProductTransfer(product.id)
+    await Promise.all([refresh(), refreshOutgoing()])
+    toast.success('Tawaran ditarik.')
+  }
+  catch (cause) {
+    toast.error('Tawaran belum berhasil ditarik.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    busyId.value = ''
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Sisi tutor: menjawab tawaran.
+ * ------------------------------------------------------------------------ */
+
+async function acceptTransfer(offer: TutorProductDetail) {
+  const ok = await confirm({
+    title: `Terima "${offer.title}" sebagai paketmu?`,
+    description: 'Paket ini akan tercatat atas namamu — termasuk di katalog dan pembagian hasil penjualan. Pastikan soal di dalamnya memang tulisanmu.',
+    confirmLabel: 'Terima paket',
+  })
+  if (!ok) return
+
+  offerBusyId.value = offer.id
+  try {
+    await acceptOffer(offer.id)
+    // Dua daftar berubah sekaligus: tawarannya hilang, paketnya muncul di rak.
+    await Promise.all([refreshOffers(), refresh()])
+    toast.success('Paket kini milikmu.', 'Kamu bisa mengeditnya lalu mengajukannya untuk tayang.')
+  }
+  catch (cause) {
+    await refreshOffers()
+    toast.error('Paket belum berhasil diterima.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    offerBusyId.value = ''
+  }
+}
+
+async function declineTransfer(offer: TutorProductDetail) {
+  const ok = await confirm({
+    title: `Tolak "${offer.title}"?`,
+    description: 'Tawaran ini akan hilang dari daftarmu. Paketnya tetap ada pada tim Zenko, jadi tidak ada pekerjaan yang terbuang.',
+    confirmLabel: 'Tolak',
+  })
+  if (!ok) return
+
+  offerBusyId.value = offer.id
+  try {
+    await declineOffer(offer.id)
+    await refreshOffers()
+    toast.success('Tawaran ditolak.')
+  }
+  catch (cause) {
+    await refreshOffers()
+    toast.error('Tawaran belum berhasil ditolak.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    offerBusyId.value = ''
+  }
+}
 </script>
 
 <template>
@@ -368,6 +522,15 @@ async function deleteProduct(product: TutorProductSummary) {
         <li v-for="problem in group.problems" :key="problem">{{ problem }}</li>
       </ul>
     </AppSectionMessage>
+
+    <!-- Tawaran paket dari tim Zenko. Merender dirinya sendiri hanya saat ada,
+         jadi bagi kebanyakan tutor bagian ini tidak pernah muncul. -->
+    <TutorTransferOffers
+      :offers="transferOffers"
+      :busy-id="offerBusyId"
+      @accept="acceptTransfer"
+      @decline="declineTransfer"
+    />
 
     <DashboardPanel>
       <DashboardSkeleton v-if="pending" :count="5" label="Memuat produk..." />
@@ -503,8 +666,22 @@ async function deleteProduct(product: TutorProductSummary) {
                   <AppIconButton v-if="canSubmit(product)" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Ajukan tayang" ariaLabel="Ajukan tayang" title="Ajukan tayang" @click="submitProduct(product)"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
                   <AppIconButton v-if="product.status === 'live'" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Arsipkan produk" ariaLabel="Arsipkan produk" title="Arsipkan produk" @click="archiveProduct(product)"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
                   <AppIconButton v-if="canDelete(product)" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Hapus produk" ariaLabel="Hapus produk" title="Hapus produk" @click="deleteProduct(product)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
+                  <AppIconButton v-if="canTransfer(product)" variant="ghost" size="sm" aria-label="Serahkan ke tutor" ariaLabel="Serahkan ke tutor" title="Serahkan ke tutor" @click="openTransfer(product)"><AppIcon name="handshake" :size="17" aria-hidden="true" /></AppIconButton>
+                  <!-- Tawaran yang belum dijawab: siapa yang ditunggu, dan
+                       satu-satunya aksi yang tersisa sampai ia menjawab. -->
+                  <template v-if="isAdmin && pendingOffer(product)">
+                    <!-- Hanya "Menunggu": kolom aksi ini sticky di kanan, dan
+                         satu alamat email di dalamnya cukup lebar untuk menutupi
+                         kolom Soal dan Status di belakangnya. Siapa yang ditunggu
+                         tetap terbaca lewat title, dan dialog penarikan
+                         menyebutkannya utuh. -->
+                    <span :title="`Menunggu ${pendingOffer(product)?.toEmail || 'tutor'} menerima paket ini`">
+                      <DashboardBadge tone="warning">Menunggu</DashboardBadge>
+                    </span>
+                    <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Tarik tawaran" ariaLabel="Tarik tawaran" title="Tarik tawaran" @click="withdrawTransfer(product)"><AppIcon name="x" :size="17" aria-hidden="true" /></AppIconButton>
+                  </template>
                   <span
-                    v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product)"
+                    v-if="!canEdit(product) && !canSubmit(product) && !canDelete(product) && !canTransfer(product)"
                     class="text-[0.86rem] text-muted"
                   >-</span>
                 </span>
@@ -514,5 +691,14 @@ async function deleteProduct(product: TutorProductSummary) {
         </template>
       </div>
     </DashboardPanel>
+
+    <TutorTransferModal
+      v-model:open="transferOpen"
+      :product="transferTarget"
+      :tutors="adminTutors"
+      :tutors-pending="adminTutorsPending"
+      :submitting="transferSubmitting"
+      @submit="submitTransfer"
+    />
   </div>
 </template>

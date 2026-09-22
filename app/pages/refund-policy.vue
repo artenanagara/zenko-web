@@ -20,7 +20,7 @@ useHead({
 </script>
 
 <template>
-  <LegalDocument lead="Kebijakan" accent="Refund" updated="25 Agustus 2026">
+  <LegalDocument lead="Kebijakan" accent="Refund" updated="21 September 2026">
     <p>
       Kebijakan Refund ini menjelaskan kapan dan bagaimana kamu dapat
       mengajukan pengembalian dana atas pembelian paket tryout di Zenko.
@@ -94,7 +94,7 @@ useHead({
     <h2 id="metode-pengembalian">4. Metode dan Waktu Pengembalian Dana</h2>
     <p>
       Refund yang disetujui dikembalikan ke kanal pembayaran asal melalui
-      <strong>DOKU</strong>, penyedia payment gateway Zenko, apabila kanal
+      <strong>iPaymu</strong>, penyedia payment gateway Zenko, apabila kanal
       tersebut mendukung pengembalian dana. Jika tidak didukung, kami dapat
       meminta rekening bank atau dompet digital atas nama pembeli yang telah
       diverifikasi sebagai tujuan pengembalian dana.
@@ -113,7 +113,7 @@ useHead({
       Zenko dioperasikan oleh <strong>PT Zenko Edukasi Digital</strong>,
       sebuah perseroan terbatas yang berkedudukan di Klaten, Jawa Tengah,
       Indonesia. Pemrosesan pembayaran dan pengembalian dana pada Platform
-      dilakukan melalui <strong>DOKU</strong> sebagai penyedia payment
+      dilakukan melalui <strong>iPaymu</strong> sebagai penyedia payment
       gateway resmi Zenko.
     </p>
 

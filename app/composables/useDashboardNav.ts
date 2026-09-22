@@ -141,8 +141,11 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // menunggu admin — yang tersisa daftar bacaan, dan tempatnya di sini.
       { label: 'Daftar bimbel', to: '/dashboard/admin/bimbels', icon: IconHandshake, section: 'Direktori' },
 
+      { label: 'Produk saya', to: '/dashboard/admin/my-products', icon: IconGrid, section: 'Pengelolaan' },
       { label: 'Pengguna marketing', to: '/dashboard/admin/marketing-users', icon: IconUsers, section: 'Pengelolaan' },
-      { label: 'Pengaturan', to: '/dashboard/admin/settings', icon: IconSettings, section: 'Pengelolaan' },
+      // Admin memakai pengaturan tutor yang sama: profil publik, ulasan, dan
+      // rekening bank tidak boleh punya dua implementasi yang berbeda.
+      { label: 'Pengaturan', to: '/dashboard/tutor/settings', icon: IconSettings, section: 'Pengelolaan' },
 
       { label: 'Pusat Bantuan', to: '/pusat-bantuan', icon: IconLifebuoy, section: 'Bantuan' },
     ],

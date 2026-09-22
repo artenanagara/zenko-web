@@ -238,8 +238,18 @@ async function toggleMarketplace(product: TutorProductSummary, enabled: boolean)
         />
 
         <DashboardTable v-else :columns="productColumns" :data="rows" primary-key="title" action-key="aksi">
+          <!-- Satu-satunya "lihat" pada baris ini adalah rekap hasil, dan itu
+               hanya ada setelah paket ditayangkan. Judulnya jadi tautan ke
+               sana saat tersedia, dan teks biasa selama belum. -->
           <template #cell(title)="{ item }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
+            <NuxtLink
+              v-if="item.visibility === 'bimbel' && (item.status === 'live' || item.status === 'archived')"
+              :to="`/dashboard/bimbel/${bimbelId}/products/${item.id}/hasil`"
+              class="block font-semibold tracking-[-0.02em] text-ink hover:text-primary hover:underline"
+            >
+              {{ item.title }}
+            </NuxtLink>
+            <span v-else class="block font-semibold tracking-[-0.02em] text-ink">{{ item.title }}</span>
             <span v-if="item.type === 'bundle'" class="mt-1 block text-[0.82rem] text-muted">Paket gabungan</span>
             <span v-if="item.status === 'rejected' && item.rejectReason" class="mt-1 block text-[0.82rem] text-danger-ink">
               Catatan revisi: {{ item.rejectReason }}
@@ -278,7 +288,6 @@ async function toggleMarketplace(product: TutorProductSummary, enabled: boolean)
               <span v-if="product" class="inline-flex flex-wrap items-center justify-end gap-x-3 gap-y-2 whitespace-nowrap">
                 <AppIconButton v-if="canEdit(product)" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/edit`" variant="ghost" size="sm" aria-label="Edit paket" ariaLabel="Edit paket" title="Edit paket"><AppIcon name="pencil-simple" :size="17" aria-hidden="true" /></AppIconButton>
                 <AppIconButton v-if="canPublish(product)" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Tayangkan paket" ariaLabel="Tayangkan paket" title="Tayangkan paket" @click="run(product, 'publish')"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
-                <AppIconButton v-if="product.visibility === 'bimbel' && (product.status === 'live' || product.status === 'archived')" :to="`/dashboard/bimbel/${bimbelId}/products/${product.id}/hasil`" variant="ghost" size="sm" aria-label="Lihat hasil" ariaLabel="Lihat hasil" title="Lihat hasil"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
                 <AppIconButton v-if="product.visibility === 'public' && (product.status === 'draft' || product.status === 'rejected') && canManageMarketplace" variant="ghost" size="sm" :disabled="busyId === product.id" aria-label="Ajukan ulang ke marketplace" ariaLabel="Ajukan ulang ke marketplace" title="Ajukan ulang ke marketplace" @click="run(product, 'marketplace')"><AppIcon name="upload-simple" :size="17" aria-hidden="true" /></AppIconButton>
                 <AppIconButton v-if="product.status === 'live'" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Arsipkan paket" ariaLabel="Arsipkan paket" title="Arsipkan paket" @click="run(product, 'archive')"><AppIcon name="x-circle" :size="17" aria-hidden="true" /></AppIconButton>
                 <AppIconButton v-if="canDelete(product)" variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" :disabled="busyId === product.id" aria-label="Hapus paket" ariaLabel="Hapus paket" title="Hapus paket" @click="run(product, 'delete')"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>

@@ -105,12 +105,52 @@ function initial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?'
 }
 
+/* --------------------------------------------------------------------------
+ * Menjadikan siswa seorang tutor.
+ *
+ * Jalur biasa tetap antrean Pengajuan tutor. Ini untuk kebalikannya: guru yang
+ * Zenko dekati sendiri, yang tidak pernah mengisi pengajuan apa pun. Setelah
+ * dipromosikan, akunnya pindah dari direktori ini ke Daftar tutor — jadi
+ * barisnya memang hilang dari tabel, dan pesan suksesnya mengatakan itu.
+ * ------------------------------------------------------------------------ */
+
+const { confirm } = useConfirm()
+const toast = useToast()
+/** Id baris yang sedang diproses, supaya hanya tombolnya yang terkunci. */
+const promotingId = ref('')
+
+async function promoteStudent(student: AdminStudentRow) {
+  const ok = await confirm({
+    title: `Jadikan ${student.name || student.email} seorang tutor?`,
+    description: 'Akunnya langsung bisa membuat dan menjual paket soal, dan pindah ke Daftar tutor. Zenko mengirimkan email pemberitahuan kepadanya.',
+    confirmLabel: 'Jadikan tutor',
+  })
+  if (!ok) return
+
+  promotingId.value = student.id
+  try {
+    await promoteStudentToTutor(student.id)
+    await refresh()
+    toast.success(
+      `${student.name || student.email} kini tutor.`,
+      'Akunnya sudah pindah ke Daftar tutor dan bisa langsung membuat paket.',
+    )
+  }
+  catch (cause) {
+    toast.error('Peran belum berhasil diubah.', tutorApiMessage(cause, 'Coba lagi sebentar lagi.'))
+  }
+  finally {
+    promotingId.value = ''
+  }
+}
+
 const deleteTarget = ref<AdminStudentRow | null>(null)
 const deleteOpen = ref(false)
 const deleteBusy = ref(false)
 const deleteError = ref('')
 function openDelete(student: AdminStudentRow) { deleteTarget.value = student; deleteError.value = ''; deleteOpen.value = true }
 function openStudentDelete(id: string) { const student = students.value.find(item => item.id === id); if (student) openDelete(student) }
+function promoteStudentById(id: string) { const student = students.value.find(item => item.id === id); if (student) void promoteStudent(student) }
 async function removeStudent() {
   if (!deleteTarget.value || deleteBusy.value) return
   deleteBusy.value = true; deleteError.value = ''
@@ -220,7 +260,10 @@ async function removeStudent() {
             <span class="whitespace-nowrap text-[0.86rem] text-muted">{{ formatDate(item.createdAt) }}</span>
           </template>
           <template #cell(actions)="{ item }">
-            <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus siswa" ariaLabel="Hapus siswa" title="Hapus siswa" @click="openStudentDelete(item.id)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
+            <span class="inline-flex items-center gap-3 whitespace-nowrap">
+              <AppIconButton variant="ghost" size="sm" :disabled="promotingId === item.id" aria-label="Jadikan tutor" ariaLabel="Jadikan tutor" title="Jadikan tutor" @click="promoteStudentById(item.id)"><AppIcon name="chalkboard-teacher" :size="17" aria-hidden="true" /></AppIconButton>
+              <AppIconButton variant="ghost" size="sm" class="text-danger hover:bg-danger-soft" aria-label="Hapus siswa" ariaLabel="Hapus siswa" title="Hapus siswa" @click="openStudentDelete(item.id)"><AppIcon name="trash" :size="17" aria-hidden="true" /></AppIconButton>
+            </span>
           </template>
         </DashboardTable>
       </div>

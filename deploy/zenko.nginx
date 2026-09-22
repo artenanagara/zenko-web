@@ -259,8 +259,8 @@ server {
     }
 
     location / {
-        # Staging is intentionally public so remote testers and Duitku
-        # sandbox callbacks can reach the application.
+        # Staging is intentionally public so remote testers can reach the
+        # application.
         return 308 https://staging.zenkoedu.id$request_uri;
     }
 }

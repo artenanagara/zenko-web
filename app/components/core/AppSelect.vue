@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useScrollLock } from '@artenanagara/zenko-design-system'
 import type { ComponentPublicInstance } from 'vue'
 
 /**
@@ -67,6 +68,11 @@ const buttonRef = ref<HTMLButtonElement | null>(null)
 const optionRefs = ref<(HTMLElement | null)[]>([])
 
 const isOpen = ref(false)
+// An anchored panel is positioned against its trigger, so a page that scrolls
+// underneath slides the panel away from the control it belongs to. The lock is
+// the design system's, shared with AppModal, so a select opened inside a dialog
+// does not unlock the page when it closes while the dialog is still up.
+useScrollLock(isOpen)
 /** The visually highlighted option while open — not the committed value. */
 const activeIndex = ref(-1)
 
@@ -310,7 +316,7 @@ const isCompact = computed(() => props.size === 'sm')
       role="listbox"
       :aria-labelledby="label ? labelId : undefined"
       :aria-label="!label ? ariaLabel : undefined"
-      class="absolute top-[calc(100%+4px)] left-0 z-50 max-h-64 w-full overflow-y-auto rounded-md border border-line bg-surface p-1 shadow-float"
+      class="absolute top-[calc(100%+4px)] left-0 z-50 max-h-64 w-full overflow-y-auto overscroll-contain rounded-md border border-line bg-surface p-1 shadow-float"
     >
       <div
         v-for="(opt, index) in options"
