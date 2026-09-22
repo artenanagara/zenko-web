@@ -126,10 +126,11 @@ export const transferBimbelOwnership = (id: string, accountId: string) => bimbel
 export const applyBimbel = (body: {
   bimbelName: string
   studentCountBand: BimbelStudentCountBand
+  provinceCode: string
   city?: string
   termsAccepted: true
 }) => bimbelRequest<BimbelApplication>('/bimbel-applications', { method: 'POST', body })
-export const updateBimbel = (id: string, body: Partial<Pick<Bimbel, 'name' | 'city' | 'description' | 'logoUrl'>> & { username?: string }) => bimbelRequest<Bimbel>(bimbelPath(id), { method: 'PATCH', body })
+export const updateBimbel = (id: string, body: Partial<Pick<Bimbel, 'name' | 'provinceCode' | 'city' | 'description' | 'logoUrl'>> & { username?: string }) => bimbelRequest<Bimbel>(bimbelPath(id), { method: 'PATCH', body })
 export const rotateBimbelJoinCode = (id: string) => bimbelRequest<Bimbel>(bimbelPath(id, '/join-code/rotate'), { method: 'POST' })
 export const inviteBimbelMember = (id: string, email: string, role: string) => bimbelRequest<BimbelMember>(bimbelPath(id, '/members'), { method: 'POST', body: { email, role } })
 export const updateBimbelMember = (id: string, accountId: string, body: { role?: string, status?: string }) => bimbelRequest<BimbelMember>(bimbelPath(id, `/members/${accountId}`), { method: 'PATCH', body })

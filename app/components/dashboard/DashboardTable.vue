@@ -134,6 +134,19 @@ const actionColumn = computed(() =>
   props.actionKey ? props.columns.find(c => c.key === props.actionKey) ?? null : null,
 )
 
+/**
+ * Kolom aksi menyusut sepanjang isinya, bukan ikut kebagian sisa lebar tabel.
+ *
+ * `table-layout: auto` membagi ruang yang tersisa ke semua kolom, dan kolom
+ * aksi selalu kebagian jatah besar meski isinya cuma beberapa tombol ikon —
+ * pada antrean moderasi kolomnya jadi 320px untuk isi 164px, sementara kolom
+ * judul produk yang justru butuh ruang malah terpotong. `w-px` + `nowrap`
+ * adalah cara baku menyuruh algoritma itu memberi kolom ini seminimal mungkin:
+ * lebarnya lalu ditentukan isi terlebar di kolom tersebut, dan sisanya jatuh
+ * ke kolom yang benar-benar memakainya.
+ */
+const ACTION_CELL_WIDTH = 'w-px whitespace-nowrap'
+
 function alignClass(col: DashboardTableColumn) {
   return col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
 }
@@ -203,7 +216,7 @@ function alignClass(col: DashboardTableColumn) {
               @change="toggleAllVisible"
             >
           </th>
-          <th v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col), col.key === actionColumn?.key ? 'sticky right-0 z-20 border-l border-line bg-surface-sunken shadow-[-8px_0_12px_-12px_rgba(15,23,42,.35)]' : '']">
+          <th v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col), col.key === actionColumn?.key ? `${ACTION_CELL_WIDTH} sticky right-0 z-20 border-l border-line bg-surface-sunken shadow-[-8px_0_12px_-12px_rgba(15,23,42,.35)]` : '']">
             {{ col.label }}
           </th>
         </tr>
@@ -224,7 +237,7 @@ function alignClass(col: DashboardTableColumn) {
               @change="toggleRow(row, ($event.target as HTMLInputElement).checked)"
             >
           </td>
-          <td v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col), col.key === actionColumn?.key ? 'sticky right-0 z-10 border-l border-line bg-surface shadow-[-8px_0_12px_-12px_rgba(15,23,42,.25)]' : '']">
+          <td v-for="col in columns" :key="col.key" :class="[cellPadding, alignClass(col), col.key === actionColumn?.key ? `${ACTION_CELL_WIDTH} sticky right-0 z-10 border-l border-line bg-surface shadow-[-8px_0_12px_-12px_rgba(15,23,42,.25)]` : '']">
             <slot :name="`cell(${col.key})`" :item="row" :value="row[col.key]">
               {{ row[col.key] }}
             </slot>

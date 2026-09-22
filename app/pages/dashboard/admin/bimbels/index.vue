@@ -137,7 +137,7 @@ const {
   isActive,
   reset,
 } = useTableControls<Bimbel>(bimbels, {
-  searchFields: item => [item.name, item.city, item.slug, bimbelPlanLabel(item.plan)],
+  searchFields: item => [item.name, item.city, item.provinceName, item.slug, bimbelPlanLabel(item.plan)],
   filters: {
     all: () => true,
     trial: item => item.status === 'trial',
@@ -166,7 +166,7 @@ const lapsedCount = computed(() =>
 
 const columns = [
   { key: 'bimbel', label: 'Bimbel' },
-  { key: 'city', label: 'Kota', hideOnMobile: true },
+  { key: 'city', label: 'Asal', hideOnMobile: true },
   { key: 'plan', label: 'Tingkat' },
   { key: 'seats', label: 'Kursi', align: 'right' as const },
   { key: 'joined', label: 'Mendaftar' },
@@ -265,8 +265,13 @@ function findBimbel(id: string): Bimbel | undefined {
             <span class="block text-[0.82rem] text-muted">/{{ item.slug }}</span>
           </template>
 
-          <template #cell(city)="{ value }">
-            <span v-if="value" class="text-[0.88rem]">{{ value }}</span>
+          <!-- Kota dan provinsi dibaca sebagai satu hal: "Bandung" saja tidak
+               cukup untuk tahu di mana sebuah bimbel berada. Provinsinya dari
+               provinceName, yang sudah diterjemahkan API dari kodenya. -->
+          <template #cell(city)="{ item }">
+            <span v-if="item.city || item.provinceName" class="text-[0.88rem]">
+              {{ [item.city, item.provinceName].filter(Boolean).join(' · ') }}
+            </span>
             <span v-else class="text-muted">—</span>
           </template>
 

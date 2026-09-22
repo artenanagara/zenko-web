@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@aarkue/tiptap-math-extension": "^1.4.0",
-    "@artenanagara/zenko-design-system": "^1.2.1",
+    "@artenanagara/zenko-design-system": "^1.7.0",
     "@nuxtjs/sitemap": "^8.5.0",
     "@phosphor-icons/vue": "^2.2.1",
     "@tiptap/extension-color": "3.30.1",

@@ -25,7 +25,7 @@ useHead({
 </script>
 
 <template>
-  <LegalDocument lead="Syarat" accent="Tutor" updated="12 September 2026">
+  <LegalDocument lead="Syarat" accent="Tutor" updated="21 September 2026">
     <p>
       Syarat dan Ketentuan Tutor ini (&ldquo;Syarat Tutor&rdquo;) mengatur
       hubungan antara Zenko dan setiap Tutor yang menerbitkan dan menjual
@@ -118,7 +118,7 @@ useHead({
     </ul>
     <p>
       Porsi milik Zenko digunakan untuk menutup biaya pemrosesan
-      pembayaran otomatis melalui DOKU, biaya server dan hosting sistem CBT
+      pembayaran otomatis melalui iPaymu, biaya server dan hosting sistem CBT
       engine, serta operasional Platform secara umum. Rincian lengkap
       mekanisme bagi hasil, termasuk pengecualian dan potongan karena refund
       atau chargeback, diatur pada Bagian 7 Ketentuan Layanan.

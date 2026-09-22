@@ -5,7 +5,7 @@ import type { PaymentMethods } from '#shared/types/order'
  * Which payment paths this deployment can actually charge right now.
  *
  * Not a constant, which is why it is fetched rather than hardcoded: a
- * deployment without gateway credentials can only take manual transfers, one
+ * deployment without iPaymu credentials can only take manual transfers, one
  * without a merchant name can only take the gateway, and an operator can turn
  * either off between deploys. A picker built from a hardcoded list would
  * eventually offer a buyer a method the server then refuses.
@@ -20,14 +20,7 @@ import type { PaymentMethods } from '#shared/types/order'
  *  reads is a frontend concern, and /payments/methods deliberately sends only
  *  identifiers so this copy can change without deploying the API. */
 const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string }> = {
-  doku_qris: {
-    label: 'QRIS otomatis',
-    hint: 'Scan dari aplikasi bank atau e-wallet apa pun',
-    timing: 'Paket langsung terbuka setelah pembayaran masuk',
-  },
-  // Never offered for new orders, but a historical purchase can still be
-  // rendered with it — see PaymentChannel in #shared/types/account.
-  duitku_qris: {
+  ipaymu_qris: {
     label: 'QRIS otomatis',
     hint: 'Scan dari aplikasi bank atau e-wallet apa pun',
     timing: 'Paket langsung terbuka setelah pembayaran masuk',
@@ -53,13 +46,18 @@ const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string
  *
  * Ini bukan sakelar terpisah yang bisa lupa dimatikan: begitu server menyebut
  * sebuah channel di `available`, ia berhenti muncul di sini dengan sendirinya.
- * Mengaktifkan DOKU cukup mengisi kredensialnya — tidak perlu deploy kedua
- * hanya untuk mencabut label "Segera".
+ * Mengaktifkan iPaymu cukup mengisi kredensialnya di API — tidak perlu
+ * deploy kedua hanya untuk mencabut label "Segera".
  */
-const ANNOUNCED: PaymentChannel[] = ['doku_qris']
+const ANNOUNCED: PaymentChannel[] = ['ipaymu_qris']
 
-export function paymentChannelCopy(channel: PaymentChannel) {
-  return COPY[channel] ?? COPY.doku_qris
+/**
+ * Copy untuk sebuah channel. Order lama bisa membawa pengenal gateway yang
+ * sudah pensiun di `paymentChannel`; apa pun yang tidak dikenal jatuh ke copy
+ * manual supaya riwayat pembelian tetap bisa digambar.
+ */
+export function paymentChannelCopy(channel: PaymentChannel | string) {
+  return COPY[channel as PaymentChannel] ?? COPY.manual_qris
 }
 
 export function usePaymentMethods() {

@@ -90,7 +90,6 @@ const columns = [
   { key: 'whatsapp', label: 'Kontak' },
   { key: 'submittedAt', label: 'Masuk' },
   { key: 'status', label: 'Status' },
-  { key: 'aksi', label: 'Aksi', align: 'right' as const },
 ]
 
 // DashboardTable's cell slots hand back `item` as Record<string, any>; lookups go
@@ -291,9 +290,21 @@ async function submitDecision() {
           @action="reset"
         />
 
-        <DashboardTable v-else :columns="columns" :data="rows" primary-key="name" action-key="aksi">
+        <!-- Tanpa action-key: meninjau adalah satu-satunya aksi di sini, dan
+             itu sudah dijalankan oleh nama pengajunya. Kolom aksi yang tersisa
+             hanya akan jadi kolom kosong. -->
+        <DashboardTable v-else :columns="columns" :data="rows" primary-key="name">
+          <!-- Tinjauannya berupa modal, bukan halaman, jadi namanya sebuah
+               tombol — tetap tampil dan berperilaku seperti tautan nama di
+               tabel lain. -->
           <template #cell(name)="{ item }">
-            <span class="block font-semibold tracking-[-0.02em] text-ink">{{ item.name }}</span>
+            <button
+              type="button"
+              class="block text-left font-semibold tracking-[-0.02em] text-ink hover:text-primary hover:underline"
+              @click="openDetail(item.id)"
+            >
+              {{ item.name }}
+            </button>
             <span class="block text-[0.82rem] text-muted">{{ item.email }}</span>
           </template>
           <template #cell(whatsapp)="{ value }">
@@ -306,9 +317,6 @@ async function submitDecision() {
             <DashboardBadge :tone="statusTone(item.status)">
               {{ statusLabel(item.status) }}
             </DashboardBadge>
-          </template>
-          <template #cell(aksi)="{ item }">
-            <AppIconButton variant="ghost" size="sm" aria-label="Tinjau pengajuan" ariaLabel="Tinjau pengajuan" title="Tinjau pengajuan" @click="openDetail(item.id)"><AppIcon name="eye" :size="17" aria-hidden="true" /></AppIconButton>
           </template>
         </DashboardTable>
       </div>

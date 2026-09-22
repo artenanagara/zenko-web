@@ -263,6 +263,23 @@ export interface TutorProductSummary {
   updatedAt: number
 }
 
+/**
+ * GET /admin/product-transfers — satu penyerahan paket yang masih menunggu
+ * jawaban tutor, dilihat dari sisi admin yang menawarkannya.
+ *
+ * Terpisah dari TutorProductSummary dan bukan sekadar dua field tambahan di
+ * sana: bentuk itu ikut dipakai storefront publik tutor, jadi email penerima
+ * tidak boleh menumpang di dalamnya.
+ */
+export interface ProductTransferOffer {
+  productId: string
+  title: string
+  toAccountId: string
+  toEmail: string
+  /** Unix seconds. */
+  offeredAt: number
+}
+
 /** Bundle membership as returned inside the bundle detail. */
 export interface BundleItem {
   productId: string
@@ -299,6 +316,13 @@ export interface TutorProductDetail extends TutorProductSummary {
    * Editor order (`position`) is unaffected. Defaults to `false`.
    */
   shuffleQuestions?: boolean
+  /**
+   * Kapan paket ini ditawarkan kepada penerimanya (Unix detik). Hanya terisi
+   * pada baris GET /tutor/product-transfers — agregat penuh yang dikirim ke
+   * calon penerima. Ada di sini, bukan di TutorProductSummary, karena bentuk
+   * ringkas itu ikut melayani storefront publik tutor.
+   */
+  transferOfferedAt?: number
 }
 
 /**

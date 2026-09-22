@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useScrollLock } from '@artenanagara/zenko-design-system'
 const props = withDefaults(
   defineProps<{
     dateValue?: string
@@ -19,6 +20,10 @@ const emit = defineEmits<{
 
 const isDateOpen = ref(false)
 const isTimeOpen = ref(false)
+
+// Either panel counts: both are anchored to their own trigger, and both drift
+// away from it if the page moves underneath.
+useScrollLock(computed(() => isDateOpen.value || isTimeOpen.value))
 
 const localDate = ref(props.dateValue)
 const localTime = ref(props.timeValue)

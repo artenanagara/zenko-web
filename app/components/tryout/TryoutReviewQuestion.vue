@@ -42,6 +42,10 @@ const trueFalseValues = computed(() => {
     ? value as Record<string, boolean>
     : {}
 })
+const trueFalseKeys = computed(() => {
+  if (props.question.kind !== 'true_false') return {}
+  return props.question.correctStatements ?? {}
+})
 const matchingValues = computed(() => {
   if (props.question.kind !== 'matching') return {}
   const value = answerValue.value
@@ -195,7 +199,11 @@ function isBestLabel(label: string): boolean {
     <div v-else-if="question.kind === 'true_false'" class="mt-4 grid gap-2 rounded-sm border border-primary bg-primary-soft p-3 text-[0.86rem] text-primary">
       <p class="font-bold">Jawabanmu:</p>
       <p v-for="option in question.options" :key="option.label">
-        {{ option.label }}: {{ trueFalseValues[option.label] === undefined ? 'Belum dijawab' : trueFalseValues[option.label] ? 'Benar' : 'Salah' }}
+        {{ option.label }}:
+        {{ trueFalseValues[option.label] === undefined ? 'Belum dijawab' : trueFalseValues[option.label] ? 'Benar' : 'Salah' }}
+        <span v-if="trueFalseKeys[option.label] !== undefined" class="font-semibold">
+          · Kunci: {{ trueFalseKeys[option.label] ? 'Benar' : 'Salah' }}
+        </span>
       </p>
     </div>
 
