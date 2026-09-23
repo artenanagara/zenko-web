@@ -61,6 +61,7 @@ const columns: FooterColumn[] = [
     links: [
       { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
       { label: 'FAQ', to: '/faq' },
+      { label: 'Kontak Kami', to: '/kontak' },
       { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
     ],
   },
