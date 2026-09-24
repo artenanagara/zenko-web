@@ -205,7 +205,7 @@ const bimbelRevenueShare = [
     </div>
 
     <ul>
-      <li>Tutor dapat mengajukan pencairan kapan saja setelah saldo tersedia mencapai minimal <strong>Rp100.000</strong>.</li>
+      <li>Tutor dapat mengajukan pencairan kapan saja setelah saldo tersedia mencapai minimal <strong>Rp50.000</strong>.</li>
       <li>Pencairan dikirim ke rekening terverifikasi dan umumnya diproses paling lambat 5 Hari Kerja setelah permintaan dan verifikasi selesai.</li>
       <li>Keterlambatan bank, data rekening yang salah, pemeriksaan keamanan, hari libur, atau gangguan pihak ketiga dapat menambah waktu pemrosesan.</li>
       <li>Refund, chargeback, transaksi tidak sah, atau kewajiban lain terkait Paket dapat dikurangkan dari saldo Tutor.</li>

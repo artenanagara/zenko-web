@@ -856,11 +856,11 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Saldo siap dicairkan dan saldo tertahan',
-        body: 'Setiap penjualan ditahan 7 hari sejak pesanannya lunas sebelum masuk ke "Saldo siap dicairkan". Selama masa itu, jumlahnya tampil sebagai "Saldo tertahan".',
+        body: 'Setiap penjualan ditahan 3 hari (H+3) sejak pesanannya lunas sebelum masuk ke "Saldo siap dicairkan". Selama masa itu, jumlahnya tampil sebagai "Saldo tertahan".',
       },
       {
         title: 'Klik "Tarik saldo"',
-        body: 'Masukkan jumlah penarikan (minimal Rp100.000 dan paling banyak sebesar saldo siap dicairkan), lalu klik "Ajukan pencairan".',
+        body: 'Masukkan jumlah penarikan (minimal Rp50.000 dan paling banyak sebesar saldo siap dicairkan), lalu klik "Ajukan pencairan".',
       },
       {
         title: 'Pantau status pencairan',
@@ -875,7 +875,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         question: 'Kenapa sebagian saldo saya masih tertahan?',
-        answer: 'Setiap penjualan ditahan 7 hari sejak lunas sebagai perlindungan terhadap pembatalan atau refund.',
+        answer: 'Setiap penjualan ditahan 3 hari (H+3) sejak lunas sebagai perlindungan terhadap pembatalan atau refund.',
       },
     ],
     keywords: ['payout', 'pencairan dana', 'tarik saldo', 'withdraw', 'saldo tertahan', 'bagi hasil', '70%'],
