@@ -27,7 +27,12 @@ useHead({
 // against its own fetch rather than this page's `purchase` — so it cannot
 // just flip `purchase.value.status` itself. This flag is what lets the poll
 // hand the "paid" moment back to the page instead of leaving immediately
-// (see `startPolling`'s `onPaid`).
+// (see `startPolling`'s `onPaid`). It only ever turns true from that live
+// callback, never from the initial fetch — which is also what makes it the
+// right signal for whether PaymentSuccessBadge should celebrate: true means
+// the buyer was watching this exact page when it flipped, false means the
+// purchase merely loaded already-paid (bookmark, refresh, or a completed
+// order revisited), so the badge shows without replaying the animation.
 const livePaid = ref(false)
 
 // Whichever way this page was reached — redirected straight from checkout, or
@@ -249,9 +254,7 @@ watch(isRedirecting, (active, wasActive) => {
             v-if="isPaid"
             class="grid justify-items-center gap-4 rounded-lg border border-hairline bg-surface px-6 py-12 text-center shadow-xs"
           >
-            <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-success-soft text-success-ink">
-              <IconCheckCircle class="h-9 w-9" />
-            </span>
+            <PaymentSuccessBadge :celebrate="livePaid" />
             <div>
               <p class="text-[1.3rem] font-bold tracking-[-0.03em]">Pembayaran berhasil</p>
               <p class="mt-2 max-w-sm text-[0.92rem] text-muted">
