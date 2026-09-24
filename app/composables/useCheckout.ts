@@ -6,23 +6,26 @@ import type { CreateOrderRequest } from '#shared/types/order'
  *
  * POST /orders creates a pending purchase from a slug — the session cookie says
  * who is buying and the server prices the slug, so the browser carries neither
- * identity nor amount. On the iPaymu channel it also asks iPaymu for a QRIS
+ * identity nor amount. On the DOKU channel it also asks DOKU for a QRIS
  * code in the same request and returns the pending purchase with
  * `qrUrl`/`expiresAt` filled in, which is what the payment page renders while
- * it waits.
+ * it waits. That code lives only 15 minutes; an expired one is replaced in
+ * place on the same order (new `qrUrl`/`expiresAt`, same invoice) rather than
+ * forcing a new order — see the poll below.
  *
  * - paymentEnabled off → nothing is created; the page says payment is not
  *   connected yet, rather than pretending an order was placed.
- * - paymentEnabled on → the order is created and left pending. On the iPaymu
+ * - paymentEnabled on → the order is created and left pending. On the DOKU
  *   channel `purchase.qrUrl` carries the raw QRIS payload (rendered into a
  *   scannable code client-side, see payment.vue); on the manual channel it is
  *   null and the buyer pays the static poster the payment page shows.
  *
  * Settlement is never polled aggressively for its own sake — a short interval
  * checks `/me/purchases/:invoice` while an order is outstanding, and it is the
- * server that marks the order paid: from iPaymu's notification, from the poll
- * itself (the server confirms a pending iPaymu order against iPaymu's record
- * on every read), or from an admin's decision on the manual channel. A local
+ * server that marks the order paid: from DOKU's notification, from the poll
+ * itself (the server confirms a pending DOKU order against DOKU's record
+ * on every read — and refreshes the QR in place if it lapsed), or from an
+ * admin's decision on the manual channel. A local
  * timer flips the state to 'expired' at the code's own deadline as a
  * client-side fallback, in case the server is slow to notice.
  *
@@ -75,8 +78,17 @@ export function useCheckout() {
     }
   }
 
-  /** One-shot timer at the QR's own deadline — not a ticking countdown, just the state flip. */
+  /**
+   * One-shot timer at the QR's own deadline — not a ticking countdown, just
+   * the state flip. Safe to call again with a later deadline: clears
+   * whatever was scheduled before, which is exactly what a DOKU refresh
+   * needs — see the poll's "still open" branch below.
+   */
   function scheduleExpiry(expiresAt: number) {
+    if (expiryHandle !== null) {
+      clearTimeout(expiryHandle)
+      expiryHandle = null
+    }
     const msLeft = expiresAt * 1000 - Date.now()
     if (msLeft <= 0) {
       state.value = 'expired'
@@ -123,7 +135,22 @@ export function useCheckout() {
         // Still open. The row is kept anyway, because on the manual channel
         // this is how an admin's rejection — and its reason — reaches the page:
         // the order drops back to pending carrying `paymentProof.rejectReason`.
+        //
+        // On the DOKU channel a lapsed code is replaced in place rather than
+        // ending the order — same invoice, new qrUrl/expiresAt further out.
+        // The local expiry timer above was scheduled against the code this
+        // page started with, so a refresh needs to push it out too, or it
+        // fires at the old deadline and shows "expired" over a QR that is
+        // actually still good. Re-scheduling also covers the case where the
+        // buyer already saw the local flip to 'expired' a moment before this
+        // tick landed with the fresh code — the order was never actually
+        // dead, so the screen un-expires along with the timer.
+        const refreshed = latest.expiresAt != null && latest.expiresAt !== purchase.value?.expiresAt
         purchase.value = latest
+        if (refreshed && latest.expiresAt) {
+          scheduleExpiry(latest.expiresAt)
+          if (state.value === 'expired') state.value = 'awaiting-payment'
+        }
         if (latest.status === 'pending' && state.value === 'awaiting-verification') {
           stopWaiting()
           resumeWaiting(latest, onPaid)
@@ -255,7 +282,7 @@ export function useCheckout() {
       }
 
       if (created.qrUrl || created.paymentChannel === 'manual_qris') {
-        // Something to pay: an iPaymu QR to scan, or the static QRIS poster
+        // Something to pay: a DOKU QR to scan, or the static QRIS poster
         // and its receipt upload. Either way the dedicated payment page owns
         // showing it and waiting from here.
         await navigateTo(`/pembayaran/${created.invoice}`)

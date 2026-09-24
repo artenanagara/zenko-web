@@ -133,9 +133,9 @@ const showManual = computed(() =>
   isManual.value && !isExpired.value && !isPaid.value && !isVerifying.value,
 )
 
-// `qrUrl` carries iPaymu's raw QRIS payload string, not a hosted image —
+// `qrUrl` carries DOKU's raw QRIS payload string, not a hosted image —
 // rendered into an image locally (no third-party image API ever sees a
-// payment code). Only the iPaymu channel fills it; on manual it is null. Regenerates whenever the payload changes; starts over
+// payment code). Only the DOKU channel fills it; on manual it is null. Regenerates whenever the payload changes; starts over
 // (cleared, not stale) the moment it does, so a slow generation never shows
 // the previous invoice's code under a new one's data.
 const qrDataUrl = ref<string | null>(null)
@@ -384,7 +384,7 @@ watch(isRedirecting, (active, wasActive) => {
                 <!-- Nominalnya sudah tertanam di kode, jadi tidak ada yang
                      perlu diketik. Tetap ditulis supaya pembeli bisa
                      mencocokkan angka di aplikasi banknya sebelum menekan
-                     bayar. Di jalur iPaymu tidak ada kode unik — QR dinamis
+                     bayar. Di jalur DOKU tidak ada kode unik — QR dinamis
                      membawa nominalnya sendiri — jadi baris kode unik di
                      bawah hanya muncul bila memang ada. -->
                 <div
@@ -476,7 +476,7 @@ watch(isRedirecting, (active, wasActive) => {
             <!-- Atribusi penyedia pembayaran ditampilkan di layar tempat uang
                  benar-benar berpindah, bukan hanya di halaman legal. -->
             <p class="mt-4 text-center text-[0.8rem] leading-[1.6] text-muted">
-              Pembayaran diproses oleh <strong class="font-semibold text-ink">iPaymu</strong>.
+              Pembayaran diproses oleh <strong class="font-semibold text-ink">DOKU</strong>.
               Zenko tidak pernah meminta PIN, OTP, atau kata sandimu.
               <NuxtLink to="/kebijakan-refund" class="font-semibold text-primary hover:underline">
                 Kebijakan Refund
@@ -572,7 +572,7 @@ watch(isRedirecting, (active, wasActive) => {
             · Dibuat {{ formatDateLong(purchase.date) }}
           </p>
           <p v-if="purchase.chargeReference" class="mt-1 text-center text-[0.82rem] text-muted">
-            Referensi iPaymu <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
+            Referensi DOKU <span class="font-semibold text-ink">{{ purchase.chargeReference }}</span>
           </p>
         </aside>
       </div>
