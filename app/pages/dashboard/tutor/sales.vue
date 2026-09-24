@@ -272,7 +272,7 @@ function shareStatusLabel(status: TutorSale['shareStatus']): string {
   <div class="grid gap-6">
     <AppPageHeader
       title="Penjualan"
-      description="Catatan seluruh transaksi paket soalmu. Penghasilan bersih akan siap dicairkan 7 hari setelah pembayaran terverifikasi. Untuk menjaga kenyamanan bersama, nama pembeli disamarkan."
+      description="Catatan seluruh transaksi paket soalmu. Penghasilan bersih akan siap dicairkan H+3 setelah pembayaran terverifikasi. Untuk menjaga kenyamanan bersama, nama pembeli disamarkan."
     />
 
     <DashboardSkeleton v-if="shareRatePending && !shareRate" variant="stats" :count="1" :columns="2" label="Memuat informasi bagi hasil..." />

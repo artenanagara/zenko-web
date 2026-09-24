@@ -238,8 +238,8 @@ export async function requestTutorPayout(amount: number, workspace?: EarningsWor
  * value and both dashboards agree on the same words.
  * ------------------------------------------------------------------------ */
 
-/** Minimum pencairan per kontrak (docs/tutor-flow-contract.md): Rp100.000. */
-export const PAYOUT_MINIMUM = 100_000
+/** Minimum pencairan, mirrors zenko-api's payoutMinimum: Rp50.000. */
+export const PAYOUT_MINIMUM = 50_000
 
 /**
  * Bank umum Indonesia untuk pilihan rekening. The contract stores

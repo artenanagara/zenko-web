@@ -95,7 +95,7 @@ const bankAccountLast4 = computed(() => {
 })
 
 /* --------------------------------------------------------------------------
- * Ajukan pencairan — minimum Rp100.000, maksimum saldo tersedia, dan rekening
+ * Ajukan pencairan — minimum Rp50.000, maksimum saldo tersedia, dan rekening
  * harus sudah tersimpan. The server re-validates all three. Lives in
  * PayoutModal now; this page just owns the state and the request.
  * ------------------------------------------------------------------------ */
@@ -241,7 +241,7 @@ async function submitPayout() {
              matrix, not singled out. -->
         <div class="flex flex-1 flex-col justify-between rounded-lg border border-hairline bg-surface px-5 py-4 shadow-xs">
           <AppMetricText :value="formatRupiah(balance.held)" label="Saldo tertahan" />
-          <p class="mt-2 text-[0.78rem] text-muted">Siap dicairkan 7 hari setelah transaksi terverifikasi.</p>
+          <p class="mt-2 text-[0.78rem] text-muted">Siap dicairkan H+3 setelah transaksi terverifikasi.</p>
         </div>
       </div>
     </div>
