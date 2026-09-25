@@ -5,7 +5,7 @@ import type { PaymentMethods } from '#shared/types/order'
  * Which payment paths this deployment can actually charge right now.
  *
  * Not a constant, which is why it is fetched rather than hardcoded: a
- * deployment without iPaymu credentials can only take manual transfers, one
+ * deployment without DOKU credentials can only take manual transfers, one
  * without a merchant name can only take the gateway, and an operator can turn
  * either off between deploys. A picker built from a hardcoded list would
  * eventually offer a buyer a method the server then refuses.
@@ -20,6 +20,14 @@ import type { PaymentMethods } from '#shared/types/order'
  *  reads is a frontend concern, and /payments/methods deliberately sends only
  *  identifiers so this copy can change without deploying the API. */
 const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string }> = {
+  doku_qris: {
+    label: 'QRIS otomatis',
+    hint: 'Scan dari aplikasi bank atau e-wallet apa pun',
+    timing: 'Paket langsung terbuka setelah pembayaran masuk',
+  },
+  // Retired — kept only so an old order's history still renders accurate
+  // copy instead of falling through to the manual channel's. No route
+  // creates this channel any more; see PaymentChannel.
   ipaymu_qris: {
     label: 'QRIS otomatis',
     hint: 'Scan dari aplikasi bank atau e-wallet apa pun',
@@ -46,10 +54,12 @@ const COPY: Record<PaymentChannel, { label: string, hint: string, timing: string
  *
  * Ini bukan sakelar terpisah yang bisa lupa dimatikan: begitu server menyebut
  * sebuah channel di `available`, ia berhenti muncul di sini dengan sendirinya.
- * Mengaktifkan iPaymu cukup mengisi kredensialnya di API — tidak perlu
- * deploy kedua hanya untuk mencabut label "Segera".
+ *
+ * Kosong sekarang — DOKU sudah hidup, dan manual sengaja tidak diumumkan:
+ * itu cadangan darurat saat DOKU maintenance (MANUAL_QRIS_FALLBACK_ENABLED
+ * di API), bukan sesuatu yang pantas dijanjikan "segera" ke pembeli.
  */
-const ANNOUNCED: PaymentChannel[] = ['ipaymu_qris']
+const ANNOUNCED: PaymentChannel[] = []
 
 /**
  * Copy untuk sebuah channel. Order lama bisa membawa pengenal gateway yang

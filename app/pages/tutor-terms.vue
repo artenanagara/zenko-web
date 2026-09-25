@@ -118,7 +118,7 @@ useHead({
     </ul>
     <p>
       Porsi milik Zenko digunakan untuk menutup biaya pemrosesan
-      pembayaran otomatis melalui iPaymu, biaya server dan hosting sistem CBT
+      pembayaran otomatis melalui DOKU, biaya server dan hosting sistem CBT
       engine, serta operasional Platform secara umum. Rincian lengkap
       mekanisme bagi hasil, termasuk pengecualian dan potongan karena refund
       atau chargeback, diatur pada Bagian 7 Ketentuan Layanan.
