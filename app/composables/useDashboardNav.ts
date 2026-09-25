@@ -19,6 +19,7 @@ import IconLink from '~/components/icons/IconLink.vue'
 import IconSearch from '~/components/icons/IconSearch.vue'
 import IconTarget from '~/components/icons/IconTarget.vue'
 import IconTableInsert from '~/components/icons/IconTableInsert.vue'
+import IconTicket from '~/components/icons/IconTicket.vue'
 import IconTrophy from '~/components/icons/IconTrophy.vue'
 
 /** Roles that have a dashboard. A student's home is the account area instead. */
@@ -127,6 +128,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
         ],
       },
       { label: 'Tagihan bimbel', to: '/dashboard/admin/bimbels/orders', icon: IconRepeat, section: 'Keuangan' },
+      { label: 'Voucher', to: '/dashboard/admin/vouchers', icon: IconTicket, section: 'Keuangan' },
 
       // Direktori — tidak ada yang menunggu di sini; ini tempat mencari orang,
       // bukan tempat memutuskan sesuatu. Ikon di seluruh sidebar ini sengaja
@@ -159,6 +161,7 @@ const NAV_BY_ROLE: Record<DashboardRole, DashboardNav> = {
       // Uang menyusul produk: tidak ada penjualan sebelum ada yang dijual.
       { label: 'Penjualan', to: '/dashboard/tutor/sales', icon: IconReceipt, section: 'Pendapatan' },
       { label: 'Pencairan', to: '/dashboard/tutor/payouts', icon: IconWallet, section: 'Pendapatan' },
+      { label: 'Voucher', to: '/dashboard/tutor/vouchers', icon: IconTicket, section: 'Pendapatan' },
 
       // Pusat Bantuan sengaja tidak ada di sini (juga di sidebar bimbel dan
       // dropdown profil): pintunya satu, tab Bantuan di Akun saya
