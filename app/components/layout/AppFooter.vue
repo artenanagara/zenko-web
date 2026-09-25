@@ -44,7 +44,6 @@ const columns: FooterColumn[] = [
         { label: 'Tentang Kami', to: '/tentang' },
         { label: 'Cara Kerja', to: '/#cara-kerja' },
         { label: 'Artikel', to: '/artikel' },
-        { label: 'Panduan TKA', to: '/tka' },
       ],
   },
   {
@@ -61,7 +60,6 @@ const columns: FooterColumn[] = [
     links: [
       { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
       { label: 'FAQ', to: '/faq' },
-      { label: 'Kontak Kami', to: '/kontak' },
       { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
     ],
   },

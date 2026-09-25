@@ -82,7 +82,7 @@ const faqs = [
   {
     question: 'Kapan penghasilan saya bisa dicairkan?',
     answer:
-      'Penghasilan dari setiap transaksi tercatat otomatis di dashboard tutormu dan siap dicairkan 7 hari setelah pembayaran terverifikasi, dengan batas minimum pencairan Rp100.000.',
+      'Penghasilan dari setiap transaksi tercatat otomatis di dashboard tutormu dan siap dicairkan H+3 setelah pembayaran terverifikasi, dengan batas minimum pencairan Rp50.000.',
   },
 ]
 
