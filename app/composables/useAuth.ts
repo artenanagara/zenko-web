@@ -75,10 +75,20 @@ export function useAuth() {
     password: string,
   ): Promise<EmailRegistrationResult> {
     try {
+      const marketingSessionKey = localStorage.getItem('zenko-marketing-session') || crypto.randomUUID()
+      localStorage.setItem('zenko-marketing-session', marketingSessionKey)
       const created = await useApiFetch<{ email: string }>('/auth/register', {
         baseURL: config.apiBase,
         method: 'POST',
-        body: { name, email, password },
+        body: {
+          name,
+          email,
+          password,
+          utmSource: localStorage.getItem('zenko-utm_source') || '',
+          utmMedium: localStorage.getItem('zenko-utm_medium') || '',
+          utmCampaign: localStorage.getItem('zenko-utm_campaign') || '',
+          marketingSessionKey,
+        },
         credentials: 'include',
       })
       return { ok: true, email: created.email }

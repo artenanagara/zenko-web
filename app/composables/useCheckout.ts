@@ -262,7 +262,13 @@ export function useCheckout() {
       const created = await useApiFetch<Purchase>('/orders', {
         baseURL: config.apiBase,
         method: 'POST',
-        body: request,
+        body: {
+          ...request,
+          utmSource: localStorage.getItem('zenko-utm_source') || '',
+          utmMedium: localStorage.getItem('zenko-utm_medium') || '',
+          utmCampaign: localStorage.getItem('zenko-utm_campaign') || '',
+          marketingSessionKey: localStorage.getItem('zenko-marketing-session') || '',
+        },
         credentials: 'include',
       })
 

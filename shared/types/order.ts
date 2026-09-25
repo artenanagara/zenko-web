@@ -24,6 +24,11 @@ export interface CreateOrderRequest {
    * Omit it to take whatever the server prefers.
    */
   paymentChannel?: PaymentChannel
+  /** Marketing attribution captured at checkout; the API still determines every charge amount. */
+  utmSource?: string
+  utmMedium?: string
+  utmCampaign?: string
+  marketingSessionKey?: string
 }
 
 /** GET /payments/methods — which paths this deployment can actually charge. */
