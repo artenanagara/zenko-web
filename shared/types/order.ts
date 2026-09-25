@@ -29,6 +29,13 @@ export interface CreateOrderRequest {
   utmMedium?: string
   utmCampaign?: string
   marketingSessionKey?: string
+  /**
+   * The code the buyer typed, already confirmed once via POST
+   * /vouchers/validate — but the server resolves it again from scratch here
+   * and derives the discount itself, never trusting whatever the preview
+   * said.
+   */
+  voucherCode?: string
 }
 
 /** GET /payments/methods — which paths this deployment can actually charge. */

@@ -69,3 +69,16 @@ export interface VoucherStepUp {
   stepUpToken: string
   expiresIn: number
 }
+
+/**
+ * POST /vouchers/validate response — a pure preview, never spends the
+ * voucher's usage limit. `reason` is a buyer-facing Indonesian message set
+ * only when `valid` is false.
+ */
+export interface VoucherValidateResponse {
+  valid: boolean
+  reason?: string
+  code?: string
+  discountAmount?: number
+  finalTotal?: number
+}

@@ -3,6 +3,7 @@ import type {
   VoucherRedemption,
   VoucherRequest,
   VoucherStepUp,
+  VoucherValidateResponse,
 } from '#shared/types/voucher'
 
 /**
@@ -28,6 +29,23 @@ export function isHighRiskVoucherInput(input: Pick<VoucherRequest, 'discountType
   return input.discountType === 'percent'
     && input.discountValue >= HIGH_RISK_DISCOUNT_PERCENT
     && !input.maxDiscount
+}
+
+/**
+ * Checkout's preview — POST /vouchers/validate. Never spends the voucher's
+ * usage limit (see the backend's own doc on this route), so it is safe to
+ * call on every "Terapkan" click without worrying about burning someone
+ * else's shot at a limited code. The authoritative check happens again from
+ * scratch when the order itself is created.
+ */
+export async function validateVoucherCode(code: string, slug: string): Promise<VoucherValidateResponse> {
+  const { public: config } = useRuntimeConfig()
+  return await useApiFetch<VoucherValidateResponse>('/vouchers/validate', {
+    baseURL: config.apiBase,
+    method: 'POST',
+    body: { code, slug },
+    credentials: 'include',
+  })
 }
 
 export async function stepUpVoucher(password: string): Promise<VoucherStepUp> {

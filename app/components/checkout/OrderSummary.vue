@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import type { PackageDetail } from '#shared/types/catalog'
 
-const props = defineProps<{ item: PackageDetail }>()
+const props = withDefaults(defineProps<{
+  item: PackageDetail
+  /** Potongan voucher yang sudah diterapkan (preview dari POST /vouchers/validate), belum termasuk di item.price. */
+  voucherDiscount?: number
+  voucherCode?: string
+}>(), {
+  voucherDiscount: 0,
+  voucherCode: '',
+})
 
 /**
  * Prices come straight from the catalogue and are shown, not trusted: the
@@ -21,6 +29,12 @@ const props = defineProps<{ item: PackageDetail }>()
  */
 const listPrice = computed(() => Math.max(props.item.priceOriginal, props.item.price))
 const discount = computed(() => listPrice.value - props.item.price)
+
+// Diskon voucher dihitung di atas item.price (yang sudah termasuk diskon
+// katalog di atas) — dua diskon ini boleh bertumpuk, dan itu memang
+// tujuannya. Dibatasi tidak pernah negatif walau discount voucher lebih
+// besar dari item.price (server sendiri sudah menjamin ini tidak terjadi).
+const finalTotal = computed(() => Math.max(props.item.price - props.voucherDiscount, 0))
 </script>
 
 <template>
@@ -51,12 +65,18 @@ const discount = computed(() => listPrice.value - props.item.price)
         <dt class="text-muted">Diskon</dt>
         <dd class="font-semibold text-success-ink">−{{ formatRupiah(discount) }}</dd>
       </div>
+      <div v-if="voucherDiscount > 0" class="flex items-center justify-between gap-4">
+        <dt class="text-muted">Voucher{{ voucherCode ? ` (${voucherCode})` : '' }}</dt>
+        <dd class="font-semibold text-success-ink">−{{ formatRupiah(voucherDiscount) }}</dd>
+      </div>
     </dl>
+
+    <slot name="voucher" />
 
     <div class="mt-5 flex items-baseline justify-between gap-4 border-t border-line pt-5">
       <span class="font-semibold">Total</span>
-      <span v-if="item.price > 0" class="text-[1.6rem] font-extrabold tracking-[-0.04em]">
-        {{ formatRupiah(item.price) }}
+      <span v-if="finalTotal > 0" class="text-[1.6rem] font-extrabold tracking-[-0.04em]">
+        {{ formatRupiah(finalTotal) }}
       </span>
       <DashboardBadge v-else tone="success">Gratis</DashboardBadge>
     </div>

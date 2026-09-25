@@ -34,6 +34,47 @@ const { owned: ownsPackage } = usePackageOwnershipGuard(slug, () => isSignedIn.v
 
 const { state, error, pay, reset } = useCheckout()
 
+/* --------------------------------------------------------------------------
+ * Kode voucher — preview lewat POST /vouchers/validate (tidak pernah
+ * memakai kuota), diterapkan sungguhan hanya saat POST /orders dipanggil.
+ * ------------------------------------------------------------------------ */
+
+const appliedVoucher = ref<{ code: string, discountAmount: number } | null>(null)
+const voucherChecking = ref(false)
+const voucherError = ref('')
+
+async function applyVoucher(code: string) {
+  voucherChecking.value = true
+  voucherError.value = ''
+  try {
+    const result = await validateVoucherCode(code, slug)
+    if (!result.valid) {
+      voucherError.value = result.reason || 'Kode voucher tidak bisa dipakai.'
+      return
+    }
+    appliedVoucher.value = { code: result.code ?? code.toUpperCase(), discountAmount: result.discountAmount ?? 0 }
+  }
+  catch (cause) {
+    voucherError.value = apiErrorStatus(cause) === 401
+      ? 'Masuk dulu untuk memakai kode voucher.'
+      : messageFor(cause)
+  }
+  finally {
+    voucherChecking.value = false
+  }
+}
+
+function removeVoucher() {
+  appliedVoucher.value = null
+  voucherError.value = ''
+}
+
+/** zenko-api renders every error as { error, requestId }; fall back for the rest. */
+function messageFor(cause: unknown): string {
+  const message = (cause as { data?: { error?: string } })?.data?.error
+  return message || 'Kode voucher belum bisa diperiksa. Coba lagi sebentar lagi.'
+}
+
 // Which methods this deployment can actually charge, and which one the buyer
 // picked. Loaded on mount rather than during SSR: it needs the session cookie,
 // and a checkout page that renders without it is better than one that waits.
@@ -50,10 +91,19 @@ onMounted(() => {
 // charged. A real QR sends the buyer straight to /pembayaran/:invoice (see
 // useCheckout); this page only ever sees 'awaiting-payment' for the no-QR
 // local-dev fallback.
+// finalTotal mirrors OrderSummary's own calc — needed here only to decide
+// the `free` hint pay() takes, since a voucher can bring a paid package down
+// to Rp0 the same way a package that was already free does.
+const finalTotal = computed(() => Math.max(detail.value.price - (appliedVoucher.value?.discountAmount ?? 0), 0))
+
 function onSubmit() {
   pay(
-    { slug, ...(methods.selected.value ? { paymentChannel: methods.selected.value } : {}) },
-    detail.value.price === 0,
+    {
+      slug,
+      ...(methods.selected.value ? { paymentChannel: methods.selected.value } : {}),
+      ...(appliedVoucher.value ? { voucherCode: appliedVoucher.value.code } : {}),
+    },
+    finalTotal.value === 0,
   )
 }
 
@@ -143,9 +193,11 @@ function onSignedIn() {
         <section class="rounded-lg border border-hairline bg-surface p-6 shadow-xs">
           <h2 class="mb-4 font-bold tracking-[-0.02em]">Metode pembayaran</h2>
           <!-- Rp0 never reaches ChargeQRIS (see Orders.Create) — showing QRIS
-               as "the" method here would promise a step that never happens. -->
+               as "the" method here would promise a step that never happens.
+               finalTotal, not detail.price: a voucher can bring a paid
+               package down to Rp0 the same way an already-free one is. -->
           <div
-            v-if="detail.price === 0"
+            v-if="finalTotal === 0"
             class="flex items-center gap-3.5 rounded-sm border border-success bg-success-soft/40 px-4 py-3.5"
           >
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface text-success-ink">
@@ -182,7 +234,21 @@ function onSignedIn() {
       </div>
 
       <aside class="min-[901px]:sticky min-[901px]:top-24">
-        <OrderSummary :item="detail">
+        <OrderSummary
+          :item="detail"
+          :voucher-code="appliedVoucher?.code"
+          :voucher-discount="appliedVoucher?.discountAmount ?? 0"
+        >
+          <template v-if="detail.price > 0" #voucher>
+            <VoucherCodeInput
+              :checking="voucherChecking"
+              :applied="appliedVoucher"
+              :error="voucherError"
+              @apply="applyVoucher"
+              @remove="removeVoucher"
+            />
+          </template>
+
           <template #action>
             <AppButton
               v-if="!isSignedIn"

@@ -231,4 +231,8 @@ export interface Purchase {
   uniqueCode: number
   /** Bukti transfer terbaru pada pesanan ini; null kalau belum pernah unggah. */
   paymentProof: PaymentProofBrief | null
+  /** Kode voucher yang dipakai, kalau ada — kosong berarti tidak ada voucher. */
+  voucherCode?: string
+  /** Nominal potongan voucher, sudah termasuk dalam item.price — baris terpisah untuk ditampilkan, bukan untuk dihitung ulang. */
+  voucherDiscount?: number
 }
