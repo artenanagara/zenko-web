@@ -20,6 +20,19 @@ export interface ProductWorkspace {
   bimbelId?: string
 }
 
+export type TutorProductPerformancePeriod = '7d' | '28d' | '90d'
+
+export interface TutorProductPerformance {
+  productId: string
+  slug: string
+  title: string
+  status: ProductStatus
+  views: number
+  clicks: number
+  checkouts: number
+  sales: number
+}
+
 function workspaceRoot(workspace?: ProductWorkspace): string {
   return workspace?.bimbelId ? `/bimbel/${workspace.bimbelId}` : '/tutor'
 }
@@ -86,6 +99,48 @@ export function useTutorProducts(workspace?: ProductWorkspace) {
   }
 
   return { data, pending, error, refresh }
+}
+
+/** GET /tutor/product-performance — session-scoped, client-only summary. */
+export function useTutorProductPerformance(period: Ref<TutorProductPerformancePeriod>) {
+  const { public: config } = useRuntimeConfig()
+  const data = ref<TutorProductPerformance[]>([])
+  const pending = ref(false)
+  const error = ref('')
+  const unavailable = ref(false)
+
+  async function refresh() {
+    pending.value = true
+    error.value = ''
+    unavailable.value = false
+    try {
+      data.value = await useApiFetch<TutorProductPerformance[]>('/tutor/product-performance', {
+        baseURL: config.apiBase,
+        query: { period: period.value },
+        credentials: 'include',
+      })
+    }
+    catch (cause) {
+      if (isTutorApiNotFound(cause)) {
+        data.value = []
+        unavailable.value = true
+      }
+      else {
+        error.value = tutorApiMessage(cause, 'Performa produk belum berhasil dimuat.')
+      }
+    }
+    finally {
+      pending.value = false
+    }
+  }
+
+  watch(period, refresh)
+  return { data, pending, error, unavailable, refresh }
+}
+
+function isTutorApiNotFound(cause: unknown): boolean {
+  const value = cause as { statusCode?: number, status?: number, response?: { status?: number } } | null
+  return value?.statusCode === 404 || value?.status === 404 || value?.response?.status === 404
 }
 
 /** One product in full. Call `refresh()` from onMounted; re-call after edits. */
