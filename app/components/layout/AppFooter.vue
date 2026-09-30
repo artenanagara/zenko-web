@@ -23,18 +23,22 @@ type FooterColumn = {
 }
 
 /**
- * Search links use the catalogue's existing `q` query. They stay useful even
- * when the API introduces a new category label or changes its category slug.
+ * Category links point at the landing pages. Their slugs are the curated keys
+ * of CATEGORY_LANDINGS, and a curated page renders even while it has no live
+ * package, so none of these can 404. Sitewide links like these are also what
+ * tells search engines the category pages matter.
  */
 const columns: FooterColumn[] = [
   {
     title: 'Paket',
     links: [
-      { label: 'CPNS / SKD', to: '/paket?q=SKD' },
-      { label: 'PPPK', to: '/paket?q=PPPK' },
-      { label: 'UTBK-SNBT', to: '/paket?q=UTBK+SNBT' },
-      { label: 'TKA', to: '/paket?q=TKA' },
-      { label: 'Rekrutmen BUMN', to: '/paket?q=BUMN' },
+      { label: 'SKD CPNS', to: '/kategori/skd/cpns' },
+      { label: 'UTBK-SNBT', to: '/kategori/utbk-snbt' },
+      { label: 'TKA', to: '/kategori/tka' },
+      { label: 'PPPK', to: '/kategori/pppk' },
+      { label: 'Rekrutmen BUMN', to: '/kategori/rekrutmen-bumn' },
+      { label: 'TNI & Polri', to: '/kategori/tni-polri' },
+      { label: 'Semua kategori', to: '/kategori' },
       { label: 'Semua paket', to: '/paket' },
     ],
   },

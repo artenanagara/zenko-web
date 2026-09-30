@@ -12,6 +12,7 @@ const route = useRoute()
  */
 const BROWSE_LINKS = [
   { label: 'Paket', to: '/paket' },
+  { label: 'Kategori', to: '/kategori' },
   { label: 'Artikel', to: '/artikel' },
   { label: 'Tentang Kami', to: '/tentang' },
 ] as const
