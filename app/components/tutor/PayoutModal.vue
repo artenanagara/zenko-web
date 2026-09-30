@@ -42,7 +42,7 @@ const modalDescription = computed(() =>
         <AppCurrencyField
           id="payout-amount"
           v-model="amount"
-          placeholder="100.000"
+          placeholder="50.000"
           :ariaInvalid="Boolean(amountError)"
           :ariaDescribedby="amountError ? 'payout-amount-error' : undefined"
         />

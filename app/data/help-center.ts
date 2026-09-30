@@ -303,19 +303,14 @@ export const helpArticles: HelpArticle[] = [
       {
         title: 'Paket berbayar',
         body:
-          'Pembayaran QRIS saat ini masih dalam proses aktivasi. Selama belum aktif, checkout paket berbayar menampilkan "Pembayaran belum aktif": pesanan tidak dibuat dan kamu tidak ditagih apa pun.',
-        note: {
-          appearance: 'information',
-          title: 'Setelah pembayaran aktif',
-          body: 'Paket berbayar dibayar dengan QRIS dari aplikasi m-banking atau e-wallet apa pun. Panduan ini akan diperbarui begitu pembayarannya aktif.',
-        },
+          'Pesanan dibuat berstatus Menunggu Pembayaran dan halaman /pembayaran/[invoice] menampilkan kode QRIS dari DOKU. Nominalnya sudah tertanam di kode — scan dari aplikasi m-banking atau e-wallet apa pun, paketnya langsung aktif begitu pembayaran masuk.',
       },
     ],
     troubleshooting: [
       {
-        question: 'Kenapa checkout paket berbayar tidak membuat pesanan?',
+        question: 'QR pembayaran saya sudah kedaluwarsa, harus buat pesanan baru?',
         answer:
-          'Karena pembayaran belum aktif. Zenko sengaja tidak membuat pesanan yang belum bisa dibayar, jadi tidak ada tagihan yang menggantung di akunmu.',
+          'Tidak perlu. Kode QRIS DOKU berlaku 15 menit; begitu kedaluwarsa, halaman pembayaran menerbitkan kode baru otomatis di pesanan yang sama — tidak ada pesanan baru dan nomor invoice tidak berubah.',
       },
       {
         question: 'Paket gratis sudah saya ambil, tapi tidak muncul di Paket saya.',
@@ -323,7 +318,7 @@ export const helpArticles: HelpArticle[] = [
           'Muat ulang /akun/paket, lalu cek pesanannya di Riwayat pembelian (/akun/pembelian). Kalau statusnya Lunas tapi paketnya tetap tidak muncul, hubungi kami dengan menyertakan nomor invoice.',
       },
     ],
-    keywords: ['beli paket', 'checkout', 'paket gratis', 'rp0', 'pembayaran belum aktif', 'bayar qris', 'qris', 'ipaymu'],
+    keywords: ['beli paket', 'checkout', 'paket gratis', 'rp0', 'bayar qris', 'qris', 'doku'],
   },
   {
     slug: 'riwayat-transaksi-dan-invoice',
@@ -856,11 +851,11 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         title: 'Saldo siap dicairkan dan saldo tertahan',
-        body: 'Setiap penjualan ditahan 7 hari sejak pesanannya lunas sebelum masuk ke "Saldo siap dicairkan". Selama masa itu, jumlahnya tampil sebagai "Saldo tertahan".',
+        body: 'Setiap penjualan ditahan 3 hari (H+3) sejak pesanannya lunas sebelum masuk ke "Saldo siap dicairkan". Selama masa itu, jumlahnya tampil sebagai "Saldo tertahan".',
       },
       {
         title: 'Klik "Tarik saldo"',
-        body: 'Masukkan jumlah penarikan (minimal Rp100.000 dan paling banyak sebesar saldo siap dicairkan), lalu klik "Ajukan pencairan".',
+        body: 'Masukkan jumlah penarikan (minimal Rp50.000 dan paling banyak sebesar saldo siap dicairkan), lalu klik "Ajukan pencairan".',
       },
       {
         title: 'Pantau status pencairan',
@@ -875,7 +870,7 @@ export const helpArticles: HelpArticle[] = [
       },
       {
         question: 'Kenapa sebagian saldo saya masih tertahan?',
-        answer: 'Setiap penjualan ditahan 7 hari sejak lunas sebagai perlindungan terhadap pembatalan atau refund.',
+        answer: 'Setiap penjualan ditahan 3 hari (H+3) sejak lunas sebagai perlindungan terhadap pembatalan atau refund.',
       },
     ],
     keywords: ['payout', 'pencairan dana', 'tarik saldo', 'withdraw', 'saldo tertahan', 'bagi hasil', '70%'],

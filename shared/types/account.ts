@@ -155,16 +155,20 @@ export type OrderStatus = 'pending' | 'verifying' | 'paid' | 'expired'
  * itself, so picking a channel changes how an order is paid and never how much
  * it costs.
  *
- * - `ipaymu_qris`: a per-order QRIS code from iPaymu, carried in `qrUrl` and
- *   valid until `expiresAt`; the server settles it from iPaymu's record.
+ * - `doku_qris`: a per-order QRIS code from DOKU, carried in `qrUrl` and
+ *   valid until `expiresAt`; the server settles it from DOKU's record. An
+ *   expired code is replaced in place on the same order rather than
+ *   forcing a new one, so `qrUrl`/`expiresAt` can change under a purchase
+ *   already on screen.
  * - `manual_qris`: transfer to Zenko's static QRIS poster, verified by an
  *   admin.
  *
- * Orders created before the manual channel existed carry a retired gateway
- * identifier in `paymentChannel`. Treat anything unknown as "not manual"
- * rather than matching it — see paymentChannelCopy.
+ * `ipaymu_qris` is a retired gateway: no route creates it any more, but
+ * older orders still carry it in `paymentChannel` and must keep rendering.
+ * Treat anything unknown the same way — as "not manual, not doku" — rather
+ * than matching it as if it were live. See paymentChannelCopy.
  */
-export type PaymentChannel = 'ipaymu_qris' | 'manual_qris'
+export type PaymentChannel = 'doku_qris' | 'ipaymu_qris' | 'manual_qris'
 
 /** Where the buyer's newest transfer receipt stands. */
 export type PaymentProofStatus = 'submitted' | 'approved' | 'rejected'

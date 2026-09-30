@@ -140,8 +140,8 @@ const bimbelRevenueShare = [
     <ul>
       <li>Harga ditampilkan dalam Rupiah pada halaman Paket atau checkout.</li>
       <li>Potongan harga, pajak, atau biaya tambahan yang berlaku akan ditampilkan sebelum pembayaran diselesaikan.</li>
-      <li>Pembayaran diproses oleh iPaymu dan kanal pembayaran yang tersedia pada saat transaksi.</li>
-      <li>Pesanan dianggap berhasil setelah status pembayaran dikonfirmasi oleh sistem Zenko berdasarkan informasi dari iPaymu.</li>
+      <li>Pembayaran diproses oleh DOKU dan kanal pembayaran yang tersedia pada saat transaksi.</li>
+      <li>Pesanan dianggap berhasil setelah status pembayaran dikonfirmasi oleh sistem Zenko berdasarkan informasi dari DOKU.</li>
       <li>Instruksi, batas waktu, dan biaya kanal pembayaran tertentu mengikuti ketentuan penyedia pembayaran.</li>
     </ul>
     <p>
@@ -205,7 +205,7 @@ const bimbelRevenueShare = [
     </div>
 
     <ul>
-      <li>Tutor dapat mengajukan pencairan kapan saja setelah saldo tersedia mencapai minimal <strong>Rp100.000</strong>.</li>
+      <li>Tutor dapat mengajukan pencairan kapan saja setelah saldo tersedia mencapai minimal <strong>Rp50.000</strong>.</li>
       <li>Pencairan dikirim ke rekening terverifikasi dan umumnya diproses paling lambat 5 Hari Kerja setelah permintaan dan verifikasi selesai.</li>
       <li>Keterlambatan bank, data rekening yang salah, pemeriksaan keamanan, hari libur, atau gangguan pihak ketiga dapat menambah waktu pemrosesan.</li>
       <li>Refund, chargeback, transaksi tidak sah, atau kewajiban lain terkait Paket dapat dikurangkan dari saldo Tutor.</li>
@@ -254,7 +254,7 @@ const bimbelRevenueShare = [
     <p>
       Refund dapat diberikan penuh atau proporsional sesuai bagian layanan yang gagal.
       Pembayaran ganda dan kegagalan akses total yang memenuhi syarat dikembalikan penuh.
-      Dana dikembalikan ke metode pembayaran awal apabila didukung iPaymu; jika tidak,
+      Dana dikembalikan ke metode pembayaran awal apabila didukung DOKU; jika tidak,
       kami dapat meminta rekening atau dompet digital atas nama pembeli yang telah
       diverifikasi. Setelah disetujui, pemrosesan umumnya memerlukan 5&ndash;14 Hari Kerja,
       tidak termasuk keterlambatan bank atau penyedia pembayaran.

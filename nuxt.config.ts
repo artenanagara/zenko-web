@@ -55,6 +55,8 @@ export default defineNuxtConfig({
       '/checkout/**',
       '/pembayaran/**',
       '/paket/*/coba',
+      // Undangan akses Marketing Hub: halamannya noindex, jadi tidak ikut sitemap.
+      '/undangan/**',
     ],
   },
 
