@@ -25,6 +25,15 @@ export default defineSitemapEventHandler(async () => {
       .filter(Boolean),
   )]
 
+  // Bimbel yang menerbitkan paket publik punya profil di /bimbel/:slug — halaman
+  // yang juga dirujuk Product JSON-LD setiap paketnya.
+  const bimbelSlugs = [...new Set(
+    packages
+      .filter(pkg => pkg.author.type === 'bimbel')
+      .map(pkg => pkg.author.slug?.trim() ?? '')
+      .filter(Boolean),
+  )]
+
   return [
     ...packages.map(pkg => ({ loc: `/paket/${pkg.slug}` })),
     ...categories
@@ -38,5 +47,6 @@ export default defineSitemapEventHandler(async () => {
     ...helpArticles.map(article => ({ loc: `/pusat-bantuan/${article.slug}` })),
     ...articles.map(article => ({ loc: `/artikel/${article.slug}`, lastmod: article.updatedAt })),
     ...tutorUsernames.map(username => ({ loc: `/tutor/${encodeURIComponent(username)}` })),
+    ...bimbelSlugs.map(slug => ({ loc: `/bimbel/${encodeURIComponent(slug)}` })),
   ]
 })

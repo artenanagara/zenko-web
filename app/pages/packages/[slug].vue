@@ -106,7 +106,9 @@ const productJsonLd = {
   name: detail.value.title,
   description: detail.value.description,
   category: detail.value.category,
-  image: detail.value.thumbnailUrl,
+  // Google mewajibkan `image` untuk rich result Product; string kosong dari
+  // paket tanpa sampul dilaporkan sebagai error, jadi pakai sampul cadangan.
+  image: detail.value.thumbnailUrl || PACKAGE_COVER_FALLBACK_OG,
   brand: { '@type': 'Brand', name: detail.value.author.name },
   author: {
     '@type': detail.value.author.type === 'bimbel' ? 'Organization' : 'Person',
@@ -133,13 +135,29 @@ const productJsonLd = {
     : {}),
 }
 
+// Breadcrumb menunjuk halaman kategori (dan subkategori bila ada), bukan
+// katalog umum: sinyal hierarki paket → kategori untuk mesin pencari, dan
+// satu-satunya tautan internal ke /kategori/** dari halaman paket.
+const categoryUrl = `/kategori/${categorySlug(detail.value.category)}`
+const breadcrumbTrail = [
+  { label: detail.value.category, to: categoryUrl },
+  ...(detail.value.subcategory
+    ? [{ label: detail.value.subcategory, to: `${categoryUrl}/${categorySlug(detail.value.subcategory)}` }]
+    : []),
+]
+
 const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Beranda', item: 'https://zenkoedu.id/' },
-    { '@type': 'ListItem', position: 2, name: detail.value.category, item: 'https://zenkoedu.id/paket' },
-    { '@type': 'ListItem', position: 3, name: detail.value.title, item: canonicalUrl },
+    ...breadcrumbTrail.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 2,
+      name: crumb.label,
+      item: `https://zenkoedu.id${crumb.to}`,
+    })),
+    { '@type': 'ListItem', position: breadcrumbTrail.length + 2, name: detail.value.title, item: canonicalUrl },
   ],
 }
 
@@ -161,7 +179,7 @@ useHead({
           class="mb-6"
           :items="[
             { label: 'Beranda', to: '/' },
-            { label: detail.category, to: '/#paket' },
+            ...breadcrumbTrail,
             { label: detail.title },
           ]"
         />

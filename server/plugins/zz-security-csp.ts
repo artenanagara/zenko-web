@@ -101,12 +101,14 @@ function contentSecurityPolicy(nonce: string, devApi: string[]) {
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    `script-src 'self' 'nonce-${nonce}'`,
+    // Google Analytics 4: gtag.js disisipkan plugin analytics.client.ts saat
+    // runtime, jadi tidak ikut mendapat nonce dari render:html.
+    `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com`,
     "script-src-attr 'none'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     `img-src 'self' https: data: blob:${dev}`,
-    `connect-src 'self' https://zenkoedu.id https://staging.zenkoedu.id https://marketing.zenkoedu.id https://marketing-staging.zenkoedu.id https://admin.zenkoedu.id https://admin-staging.zenkoedu.id${dev}`,
+    `connect-src 'self' https://zenkoedu.id https://staging.zenkoedu.id https://marketing.zenkoedu.id https://marketing-staging.zenkoedu.id https://admin.zenkoedu.id https://admin-staging.zenkoedu.id https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com${dev}`,
     "frame-src 'none'",
     'upgrade-insecure-requests',
   ].join('; ')
