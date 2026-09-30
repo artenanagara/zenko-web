@@ -106,7 +106,9 @@ const productJsonLd = {
   name: detail.value.title,
   description: detail.value.description,
   category: detail.value.category,
-  image: detail.value.thumbnailUrl,
+  // Google mewajibkan `image` untuk rich result Product; string kosong dari
+  // paket tanpa sampul dilaporkan sebagai error, jadi pakai sampul cadangan.
+  image: detail.value.thumbnailUrl || PACKAGE_COVER_FALLBACK_OG,
   brand: { '@type': 'Brand', name: detail.value.author.name },
   author: {
     '@type': detail.value.author.type === 'bimbel' ? 'Organization' : 'Person',

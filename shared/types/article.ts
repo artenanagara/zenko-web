@@ -22,6 +22,12 @@ export interface Article {
   authorName: string
   metaTitle: string
   metaDescription: string
+  /**
+   * Toggle "Jangan indeks artikel ini" di Marketing Hub. API tetap menyajikan
+   * artikelnya lewat slug (hanya menyembunyikannya dari daftar), jadi halaman
+   * yang wajib memasang meta robots noindex.
+   */
+  noIndex?: boolean
   /** ISO 8601. Absent while the article has never been published. */
   publishedAt?: string
   createdAt: string
