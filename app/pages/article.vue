@@ -57,6 +57,7 @@ useSeoMeta({
   articlePublishedTime: publishedAt,
   articleModifiedTime: computed(() => article.value.updatedAt),
   twitterCard: 'summary_large_image',
+  robots: computed(() => (article.value.noIndex ? 'noindex,follow' : undefined)),
 })
 
 useHead({

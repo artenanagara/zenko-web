@@ -47,3 +47,13 @@ export function metaDescription(value: string, max = 155): string {
   const wordBoundary = cut.lastIndexOf(' ')
   return `${(wordBoundary > 0 ? cut.slice(0, wordBoundary) : cut).trimEnd()}${suffix}`
 }
+
+/**
+ * Slug URL untuk label kategori/subkategori katalog ("Rekrutmen BUMN" →
+ * "rekrutmen-bumn"). Harus identik dengan service.SlugifyFacet dan
+ * slugifyCategory di zenko-api — API mengirim label, bukan slug, pada setiap
+ * Package, dan `/kategori/:slug` dicocokkan dengan slug buatan API.
+ */
+export function categorySlug(label: string): string {
+  return label.toLowerCase().replaceAll('/', '-').replaceAll(' ', '-')
+}
