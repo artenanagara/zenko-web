@@ -12,6 +12,7 @@ const slug = computed(() => String(route.params.slug))
 
 // Throws a real 404 for an unknown slug — see useArticle.
 const article = await useArticle(slug)
+onMounted(() => trackArticleView({ articleId: article.value.id, articleSlug: article.value.slug, articleName: article.value.title }))
 
 const canonicalUrl = computed(() => `https://zenkoedu.id/artikel/${article.value.slug}`)
 const pageTitle = computed(() => article.value.metaTitle || `${article.value.title} | Zenko`)

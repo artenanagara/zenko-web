@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Category } from '#shared/types/catalog'
 import { SUPPORT_CONTACT, supportMailto } from '~/data/support-contact'
 
 const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
@@ -24,71 +23,51 @@ type FooterColumn = {
 }
 
 /**
- * Jenis ujian di kolom "Paket". Tautannya menunjuk halaman kategori
- * (`/kategori/:slug`) begitu kategori itu punya paket live: halaman itulah
- * target SEO per ujian, dan footer tampil di setiap halaman — tautan internal
- * terkuat yang dimiliki situs. Kategori yang belum punya paket jatuh ke
- * pencarian katalog (`q`), karena `/kategori/:slug` untuk kategori kosong
- * adalah 404.
+ * Category links point at the landing pages. Their slugs are the curated keys
+ * of CATEGORY_LANDINGS, and a curated page renders even while it has no live
+ * package, so none of these can 404. Sitewide links like these are also what
+ * tells search engines the category pages matter.
  */
-const examLinks = [
-  { label: 'CPNS / SKD', category: 'SKD', q: 'SKD' },
-  { label: 'PPPK', category: 'PPPK', q: 'PPPK' },
-  { label: 'UTBK-SNBT', category: 'UTBK-SNBT', q: 'UTBK SNBT' },
-  { label: 'TKA', category: 'TKA', q: 'TKA' },
-  { label: 'Rekrutmen BUMN', category: 'Rekrutmen BUMN', q: 'BUMN' },
-]
-
-const { public: config } = useRuntimeConfig()
-const { data: categories } = await useFetch<Category[]>('/categories', {
-  baseURL: config.apiBase,
-  key: 'footer-categories',
-  default: () => [],
-})
-
-const columns = computed<FooterColumn[]>(() => {
-  const liveSlugs = new Set(categories.value.filter(item => item.count > 0).map(item => item.slug))
-  return [
-    {
-      title: 'Paket',
-      links: [
-        ...examLinks.map(({ label, category, q }) => {
-          const slug = categorySlug(category)
-          return {
-            label,
-            to: liveSlugs.has(slug) ? `/kategori/${slug}` : `/paket?${new URLSearchParams({ q })}`,
-          }
-        }),
-        { label: 'Semua paket', to: '/paket' },
-      ],
-    },
-    {
+const columns: FooterColumn[] = [
+  {
+    title: 'Paket',
+    links: [
+      { label: 'SKD CPNS', to: '/kategori/skd/cpns' },
+      { label: 'UTBK-SNBT', to: '/kategori/utbk-snbt' },
+      { label: 'TKA', to: '/kategori/tka' },
+      { label: 'PPPK', to: '/kategori/pppk' },
+      { label: 'Rekrutmen BUMN', to: '/kategori/rekrutmen-bumn' },
+      { label: 'TNI & Polri', to: '/kategori/tni-polri' },
+      { label: 'Semua kategori', to: '/kategori' },
+      { label: 'Semua paket', to: '/paket' },
+    ],
+  },
+  {
       title: 'Zenko',
       links: [
         { label: 'Tentang Kami', to: '/tentang' },
         { label: 'Cara Kerja', to: '/#cara-kerja' },
         { label: 'Artikel', to: '/artikel' },
       ],
-    },
-    {
-      // Rekrutmen dipisah dari info perusahaan: pembacanya berbeda.
-      title: 'Mengajar di Zenko',
-      links: [
-        { label: 'Jadi Tutor', to: '/jadi-tutor' },
-        { label: 'Syarat Tutor', to: '/syarat-tutor' },
-        { label: 'Untuk Bimbel', to: '/untuk-bimbel' },
-      ],
-    },
-    {
-      title: 'Bantuan',
-      links: [
-        { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
-        { label: 'FAQ', to: '/faq' },
-        { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
-      ],
-    },
-  ]
-})
+  },
+  {
+    // Rekrutmen dipisah dari info perusahaan: pembacanya berbeda.
+    title: 'Mengajar di Zenko',
+    links: [
+      { label: 'Jadi Tutor', to: '/jadi-tutor' },
+      { label: 'Syarat Tutor', to: '/syarat-tutor' },
+      { label: 'Untuk Bimbel', to: '/untuk-bimbel' },
+    ],
+  },
+  {
+    title: 'Bantuan',
+    links: [
+      { label: 'Pusat Bantuan', to: '/pusat-bantuan' },
+      { label: 'FAQ', to: '/faq' },
+      { label: 'Kebijakan Refund', to: '/kebijakan-refund' },
+    ],
+  },
+]
 
 const year = new Date().getFullYear()
 </script>

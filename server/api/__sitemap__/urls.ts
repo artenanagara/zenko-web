@@ -1,5 +1,8 @@
 import type { Category, Package } from '#shared/types/catalog'
+import type { ExamType } from '#shared/types/tutor-product'
+import { CATEGORY_LANDINGS } from '../../../app/data/category-landing'
 import { helpArticles } from '../../../app/data/help-center'
+import { slugifyCategory } from '../../../app/utils/categorySlug'
 
 /**
  * Dynamic sitemap entries for the catalogue: one per real package, fetched
@@ -16,6 +19,9 @@ export default defineSitemapEventHandler(async () => {
     baseURL: config.apiBase,
   })
   const articles = await $fetch<{ slug: string, updatedAt: string }[]>('/articles', {
+    baseURL: config.apiBase,
+  })
+  const examTypes = await $fetch<ExamType[]>('/exam-types', {
     baseURL: config.apiBase,
   })
 
@@ -36,17 +42,46 @@ export default defineSitemapEventHandler(async () => {
 
   return [
     ...packages.map(pkg => ({ loc: `/paket/${pkg.slug}` })),
-    ...categories
-      .filter(category => category.count >= 2)
-      .flatMap(category => [
-        { loc: `/kategori/${category.slug}` },
-        ...(category.subcategories ?? [])
-          .filter(subcategory => subcategory.count >= 2)
-          .map(subcategory => ({ loc: `/kategori/${category.slug}/${subcategory.slug}` })),
-      ]),
+    { loc: '/kategori' },
+    ...categoryUrls(categories, examTypes),
     ...helpArticles.map(article => ({ loc: `/pusat-bantuan/${article.slug}` })),
     ...articles.map(article => ({ loc: `/artikel/${article.slug}`, lastmod: article.updatedAt })),
     ...tutorUsernames.map(username => ({ loc: `/tutor/${encodeURIComponent(username)}` })),
     ...bimbelSlugs.map(slug => ({ loc: `/bimbel/${encodeURIComponent(slug)}` })),
   ]
 })
+
+/**
+ * Category landing pages, following the same index rule the pages set in
+ * useCategoryLanding: a curated category (and every subcategory under it) is
+ * always indexable, since its copy and format table stand on their own; any
+ * other category or subcategory needs at least two live packages.
+ */
+function categoryUrls(categories: Category[], examTypes: ExamType[]) {
+  const urls = new Set<string>()
+  const live = new Map(categories.map(category => [category.slug, category]))
+
+  for (const [slug, landing] of Object.entries(CATEGORY_LANDINGS)) {
+    urls.add(`/kategori/${slug}`)
+    const subs = new Set<string>([
+      ...(live.get(slug)?.subcategories ?? []).map(sub => sub.slug),
+      ...examTypes
+        .filter(type => slugifyCategory(type.category) === slug && type.subcategory)
+        .map(type => slugifyCategory(type.subcategory)),
+      ...Object.entries(landing.subcategories ?? {})
+        .filter(([, sub]) => sub.label)
+        .map(([subSlug]) => subSlug),
+    ])
+    for (const sub of subs) urls.add(`/kategori/${slug}/${sub}`)
+  }
+
+  for (const category of categories) {
+    if (CATEGORY_LANDINGS[category.slug] || category.count < 2) continue
+    urls.add(`/kategori/${category.slug}`)
+    for (const sub of category.subcategories ?? []) {
+      if (sub.count >= 2) urls.add(`/kategori/${category.slug}/${sub.slug}`)
+    }
+  }
+
+  return [...urls].map(loc => ({ loc }))
+}

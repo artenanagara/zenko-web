@@ -532,6 +532,8 @@ async function declineTransfer(offer: TutorProductDetail) {
       @decline="declineTransfer"
     />
 
+    <TutorProductPerformancePanel v-if="products.length > 0" :products="products" />
+
     <DashboardPanel>
       <DashboardSkeleton v-if="pending" :count="5" label="Memuat produk..." />
 

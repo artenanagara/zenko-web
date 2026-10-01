@@ -135,30 +135,29 @@ const productJsonLd = {
     : {}),
 }
 
-// Breadcrumb menunjuk halaman kategori (dan subkategori bila ada), bukan
-// katalog umum: sinyal hierarki paket → kategori untuk mesin pencari, dan
-// satu-satunya tautan internal ke /kategori/** dari halaman paket.
-const categoryUrl = `/kategori/${categorySlug(detail.value.category)}`
+// The trail climbs back through the category (and subcategory) landing pages,
+// so every package page passes link equity up to them. Bundles sit in a
+// "Bundel" category that has no landing page and point at the catalogue.
+const categorySlug = slugifyCategory(detail.value.category)
+const hasCategoryPage = categorySlug !== '' && categorySlug !== 'bundel'
 const breadcrumbTrail = [
-  { label: detail.value.category, to: categoryUrl },
-  ...(detail.value.subcategory
-    ? [{ label: detail.value.subcategory, to: `${categoryUrl}/${categorySlug(detail.value.subcategory)}` }]
+  { label: 'Beranda', to: '/' },
+  { label: detail.value.category, to: hasCategoryPage ? `/kategori/${categorySlug}` : '/paket' },
+  ...(hasCategoryPage && detail.value.subcategory
+    ? [{ label: detail.value.subcategory, to: `/kategori/${categorySlug}/${slugifyCategory(detail.value.subcategory)}` }]
     : []),
+  { label: detail.value.title },
 ]
 
 const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Beranda', item: 'https://zenkoedu.id/' },
-    ...breadcrumbTrail.map((crumb, index) => ({
-      '@type': 'ListItem',
-      position: index + 2,
-      name: crumb.label,
-      item: `https://zenkoedu.id${crumb.to}`,
-    })),
-    { '@type': 'ListItem', position: breadcrumbTrail.length + 2, name: detail.value.title, item: canonicalUrl },
-  ],
+  itemListElement: breadcrumbTrail.map((crumb, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: crumb.label,
+    item: crumb.to ? `https://zenkoedu.id${crumb.to}` : canonicalUrl,
+  })),
 }
 
 useHead({
@@ -177,11 +176,7 @@ useHead({
       <div class="container-page relative z-1 py-8 md:py-12">
         <AppBreadcrumbs
           class="mb-6"
-          :items="[
-            { label: 'Beranda', to: '/' },
-            ...breadcrumbTrail,
-            { label: detail.title },
-          ]"
+          :items="breadcrumbTrail"
         />
 
         <div class="max-w-190">
