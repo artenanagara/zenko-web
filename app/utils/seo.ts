@@ -50,10 +50,10 @@ export function metaDescription(value: string, max = 155): string {
 
 /**
  * Slug URL untuk label kategori/subkategori katalog ("Rekrutmen BUMN" →
- * "rekrutmen-bumn"). Harus identik dengan service.SlugifyFacet dan
- * slugifyCategory di zenko-api — API mengirim label, bukan slug, pada setiap
- * Package, dan `/kategori/:slug` dicocokkan dengan slug buatan API.
+ * "rekrutmen-bumn"). Hanya alias: aturan slugnya satu, di slugifyCategory
+ * (app/utils/categorySlug.ts), yang identik dengan service.SlugifyFacet di
+ * zenko-api.
  */
 export function categorySlug(label: string): string {
-  return label.toLowerCase().replaceAll('/', '-').replaceAll(' ', '-')
+  return slugifyCategory(label)
 }
