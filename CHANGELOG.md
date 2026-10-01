@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.33.1](https://github.com/artenanagara/zenko-web/compare/v0.33.0...v0.33.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* read tutor product performance rows from wrapped API response ([#100](https://github.com/artenanagara/zenko-web/issues/100)) ([eea93db](https://github.com/artenanagara/zenko-web/commit/eea93db790c311adcc3f4f2b4223429bab00d480))
+
 ## [0.33.0](https://github.com/artenanagara/zenko-web/compare/v0.32.0...v0.33.0) (2026-10-01)
 
 
