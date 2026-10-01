@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.33.0](https://github.com/artenanagara/zenko-web/compare/v0.32.0...v0.33.0) (2026-10-01)
+
+
+### Features
+
+* add a contact page and link it from the footer ([#90](https://github.com/artenanagara/zenko-web/issues/90)) ([929e7e9](https://github.com/artenanagara/zenko-web/commit/929e7e910fe53e74a59048690c2674f31c6856f1))
+* add per-product performance summary to tutor dashboard ([#94](https://github.com/artenanagara/zenko-web/issues/94)) ([6ad0573](https://github.com/artenanagara/zenko-web/commit/6ad0573d51d45667c457b160ab00e2e99532ea95))
+* category landing pages with SEO copy and internal links ([#98](https://github.com/artenanagara/zenko-web/issues/98)) ([c0c2be0](https://github.com/artenanagara/zenko-web/commit/c0c2be0f3271422022c69d81e9cbcd04f805e1b5))
+* celebrate payment success on the QRIS payment page ([22b60fc](https://github.com/artenanagara/zenko-web/commit/22b60fc73edf7e0375b6e7bac1a0db5343c0ab2d))
+* **marketing:** improve UTM and article publishing flows ([c30546d](https://github.com/artenanagara/zenko-web/commit/c30546df03b74c351a798767aeb8cbe8c9a735cf))
+* **payout:** mirror the backend's Rp50.000/H+3 payout policy ([2e3b701](https://github.com/artenanagara/zenko-web/commit/2e3b70115ffdff7c45d3034de35cf6acc361fc9f))
+
+
+### Bug Fixes
+
+* finish the iPaymu→DOKU swap staging's own branch missed ([46fb921](https://github.com/artenanagara/zenko-web/commit/46fb9212fc31dc9d6b476c48e8c529e67f4e2280))
+* finish the iPaymu→DOKU swap staging's own branch missed ([#93](https://github.com/artenanagara/zenko-web/issues/93)) ([eaf600d](https://github.com/artenanagara/zenko-web/commit/eaf600d589f47f281346c7df61352395cf8dc1ae))
+* **seo:** repair product schema, breadcrumbs, sitemap, article noindex and GA4 CSP ([#97](https://github.com/artenanagara/zenko-web/issues/97)) ([2cfaad2](https://github.com/artenanagara/zenko-web/commit/2cfaad2f8f27035cb651f28c9c3797e0402b2449))
+
 ## [0.32.0](https://github.com/artenanagara/zenko-web/compare/v0.31.0...v0.32.0) (2026-09-22)
 
 
