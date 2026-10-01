@@ -114,11 +114,13 @@ export function useTutorProductPerformance(period: Ref<TutorProductPerformancePe
     error.value = ''
     unavailable.value = false
     try {
-      data.value = await useApiFetch<TutorProductPerformance[]>('/tutor/product-performance', {
+      const response = await useApiFetch<{ products?: TutorProductPerformance[] | null }>('/tutor/product-performance', {
         baseURL: config.apiBase,
         query: { period: period.value },
         credentials: 'include',
       })
+      // The API wraps rows as { period, products }; never let a missing list reach the panel's array helpers.
+      data.value = Array.isArray(response?.products) ? response.products : []
     }
     catch (cause) {
       if (isTutorApiNotFound(cause)) {
