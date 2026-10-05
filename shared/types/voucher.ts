@@ -30,6 +30,11 @@ export interface Voucher {
   /** Unix seconds; kosong berarti tanpa kedaluwarsa. */
   expiresAt?: number
   active: boolean
+  /**
+   * Kill switch admin atas voucher tutor. Terpisah dari `active` (toggle
+   * milik pembuat): tutor tidak bisa menghapusnya, hanya admin.
+   */
+  adminDisabled?: boolean
   createdByRole: VoucherCreatedByRole
   internalNote?: string
   createdAt: number

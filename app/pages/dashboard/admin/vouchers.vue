@@ -78,7 +78,9 @@ async function handleSubmit(input: VoucherRequest, password: string) {
   formError.value = ''
   try {
     let stepUpToken: string | undefined
-    if (isHighRiskVoucherInput(input)) {
+    // The modal only asks for (and passes) a password when the server will
+    // want step-up: saving a high-risk code, or switching a locked one back on.
+    if (password) {
       const stepUp = await stepUpVoucher(password)
       stepUpToken = stepUp.stepUpToken
     }
@@ -107,15 +109,52 @@ async function handleSubmit(input: VoucherRequest, password: string) {
  * ------------------------------------------------------------------------ */
 
 const togglingId = ref('')
+const toggleError = ref('')
 
-async function toggleActive(voucher: Voucher) {
+// Re-enabling a high-risk voucher needs the acting admin's password again;
+// the server answers step_up_required and this dialog collects it.
+const stepUpFor = ref<Voucher | null>(null)
+const stepUpOpen = computed({
+  get: () => stepUpFor.value !== null,
+  set: (open: boolean) => { if (!open) stepUpFor.value = null },
+})
+const stepUpPassword = ref('')
+const stepUpError = ref('')
+
+async function toggleActive(voucher: Voucher, stepUpToken?: string) {
   togglingId.value = voucher.id
+  toggleError.value = ''
   try {
-    await setAdminVoucherActive(voucher.id, !voucher.active)
+    await setAdminVoucherActive(voucher.id, !isVoucherEnabledByAdmin(voucher), stepUpToken)
+    stepUpFor.value = null
     await refresh()
+  }
+  catch (cause) {
+    if (voucherErrorCode(cause) === 'step_up_required' && !stepUpToken) {
+      stepUpPassword.value = ''
+      stepUpError.value = ''
+      stepUpFor.value = voucher
+      return
+    }
+    const message = voucherApiMessage(cause, 'Status voucher belum berhasil diubah.')
+    if (stepUpToken) stepUpError.value = message
+    else toggleError.value = message
   }
   finally {
     togglingId.value = ''
+  }
+}
+
+async function confirmStepUp() {
+  const voucher = stepUpFor.value
+  if (!voucher || !stepUpPassword.value) return
+  stepUpError.value = ''
+  try {
+    const stepUp = await stepUpVoucher(stepUpPassword.value)
+    await toggleActive(voucher, stepUp.stepUpToken)
+  }
+  catch {
+    stepUpError.value = 'Kata sandi tidak cocok. Coba lagi.'
   }
 }
 
@@ -201,6 +240,7 @@ async function openRedemptions(voucher: Voucher) {
       </template>
 
       <template v-else>
+        <AppInlineMessage v-if="toggleError" type="error" class="mb-4">{{ toggleError }}</AppInlineMessage>
         <p v-if="tutorVouchers.length === 0" class="py-6 text-center text-muted">
           Belum ada voucher buatan tutor.
         </p>
@@ -226,7 +266,7 @@ async function openRedemptions(voucher: Voucher) {
                 type="button" class="text-[0.84rem] font-semibold text-danger hover:underline disabled:opacity-50"
                 :disabled="togglingId === item.id" @click="toggleActive(asVoucher(item))"
               >
-                {{ item.active ? 'Nonaktifkan' : 'Aktifkan' }}
+                {{ isVoucherEnabledByAdmin(asVoucher(item)) ? 'Nonaktifkan' : 'Aktifkan' }}
               </button>
             </div>
           </template>
@@ -242,6 +282,25 @@ async function openRedemptions(voucher: Voucher) {
       :locked="locked"
       @submit="handleSubmit"
     />
+
+    <AppModal v-model="stepUpOpen" :title="stepUpFor ? `Aktifkan ulang ${stepUpFor.code}` : 'Konfirmasi'">
+      <form class="grid gap-4" @submit.prevent="confirmStepUp">
+        <p class="text-[0.9rem] text-muted">
+          Potongan voucher ini 80% ke atas atau Rp50.000 ke atas. Masukkan ulang kata sandimu untuk mengaktifkannya.
+        </p>
+        <div>
+          <label for="admin-voucher-reactivate-password" :class="FIELD_LABEL_CLASS">Kata sandi akunmu</label>
+          <input
+            id="admin-voucher-reactivate-password" v-model="stepUpPassword" type="password"
+            autocomplete="current-password" :class="FIELD_CLASS"
+          >
+        </div>
+        <AppInlineMessage v-if="stepUpError" type="error">{{ stepUpError }}</AppInlineMessage>
+        <AppButton type="submit" size="sm" :disabled="!stepUpPassword || togglingId !== ''">
+          Aktifkan voucher
+        </AppButton>
+      </form>
+    </AppModal>
 
     <AppModal
       v-model="redemptionsOpen"

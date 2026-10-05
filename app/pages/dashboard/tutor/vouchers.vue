@@ -77,7 +77,9 @@ async function handleSubmit(input: VoucherRequest, password: string) {
   formError.value = ''
   try {
     let stepUpToken: string | undefined
-    if (isHighRiskVoucherInput(input)) {
+    // The modal only asks for (and passes) a password when the server will
+    // want step-up: saving a high-risk code, or switching a locked one back on.
+    if (password) {
       const stepUp = await stepUpVoucher(password)
       stepUpToken = stepUp.stepUpToken
     }

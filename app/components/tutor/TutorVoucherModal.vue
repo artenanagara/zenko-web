@@ -58,12 +58,6 @@ function resetForm() {
 
 watch(open, (isOpen) => { if (isOpen) resetForm() })
 
-function applyFreePreset() {
-  discountType.value = 'percent'
-  discountValue.value = 100
-  maxDiscount.value = null
-}
-
 const currentInput = computed<VoucherRequest>(() => ({
   code: code.value.trim(),
   discountType: discountType.value,
@@ -85,15 +79,20 @@ const currentInput = computed<VoucherRequest>(() => ({
 
 const isHighRisk = computed(() => isHighRiskVoucherInput(currentInput.value))
 
+/** Step-up dibutuhkan saat menyimpan voucher berisiko tinggi, dan juga saat
+ * mengaktifkan ulang voucher berisiko tinggi yang sudah terkunci. */
+const needsStepUp = computed(() => isHighRisk.value
+  && (!props.locked || (active.value && !props.voucher?.active)))
+
 const canSubmit = computed(() => {
   if (props.saving) return false
-  if (props.locked) return true
-  if (!code.value.trim() || !discountValue.value) return false
-  if (discountType.value === 'percent' && (discountValue.value <= 0 || discountValue.value > 100)) return false
+  if (props.locked) return !needsStepUp.value || Boolean(password.value)
+  if (!isValidVoucherCode(code.value) || !discountValue.value) return false
+  if (discountType.value === 'percent' && (discountValue.value <= 0 || discountValue.value > TUTOR_VOUCHER_MAX_PERCENT)) return false
   if (scope.value === 'category' && !scopeCategoriesText.value.trim()) return false
   if (scope.value === 'products' && scopeProductIds.value.length === 0) return false
   if (isHighRisk.value && !usageLimitTotal.value) return false
-  if (isHighRisk.value && !password.value) return false
+  if (needsStepUp.value && !password.value) return false
   return true
 })
 
@@ -127,6 +126,7 @@ function toggleProduct(id: string, checked: boolean) {
           id="voucher-code" v-model="code" type="text" placeholder="DISKON20" :disabled="locked"
           :class="[FIELD_CLASS, 'uppercase']" maxlength="32"
         >
+        <p class="mt-1.5 text-[0.8rem] text-muted">4–32 karakter: huruf, angka, tanda hubung (-) atau garis bawah (_).</p>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
@@ -146,20 +146,16 @@ function toggleProduct(id: string, checked: boolean) {
             id="voucher-discount-value" v-model="discountValue" placeholder="20.000" :disabled="locked"
           />
           <input
-            v-else id="voucher-discount-value" v-model.number="discountValue" type="number" min="1" max="100"
-            placeholder="20" :disabled="locked" :class="FIELD_CLASS"
+            v-else id="voucher-discount-value" v-model.number="discountValue" type="number" min="1"
+            :max="TUTOR_VOUCHER_MAX_PERCENT" placeholder="20" :disabled="locked" :class="FIELD_CLASS"
           >
         </div>
       </div>
 
-      <button
-        v-if="discountType !== 'percent' || discountValue !== 100"
-        type="button" :disabled="locked"
-        class="w-fit text-[0.82rem] font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
-        @click="applyFreePreset"
-      >
-        Gratiskan sepenuhnya (100%)
-      </button>
+      <p class="text-[0.8rem] text-muted">
+        Potongan voucher tutor maksimal {{ TUTOR_VOUCHER_MAX_PERCENT }}%, dan pembeli tetap membayar minimal
+        {{ formatRupiah(TUTOR_VOUCHER_MIN_TOTAL) }}. Voucher yang menggratiskan paket hanya bisa dibuat admin.
+      </p>
 
       <div v-if="discountType === 'percent'">
         <label for="voucher-max-discount" :class="FIELD_LABEL_CLASS">Batas maksimum potongan (opsional)</label>
@@ -232,12 +228,17 @@ function toggleProduct(id: string, checked: boolean) {
         <span class="text-[0.9rem] font-semibold">{{ active ? 'Aktif' : 'Nonaktif' }}</span>
       </label>
 
-      <AppSectionMessage v-if="isHighRisk && !locked" appearance="warning">
-        Potongan ini 80% atau lebih tanpa batas maksimum — wajib mengisi batas total pemakaian, dan kamu perlu
+      <AppSectionMessage v-if="needsStepUp" appearance="warning">
+        Potongan ini 80% ke atas atau Rp50.000 ke atas — wajib mengisi batas total pemakaian, dan kamu perlu
         memasukkan ulang kata sandi untuk konfirmasi.
       </AppSectionMessage>
 
-      <div v-if="isHighRisk && !locked">
+      <AppSectionMessage v-if="voucher?.adminDisabled" appearance="warning">
+        Voucher ini dinonaktifkan oleh admin Zenko, jadi tidak bisa dipakai pembeli walaupun kamu mengaktifkannya.
+        Hubungi tim Zenko kalau menurutmu ini keliru.
+      </AppSectionMessage>
+
+      <div v-if="needsStepUp">
         <label for="voucher-step-up-password" :class="FIELD_LABEL_CLASS">Kata sandi akunmu</label>
         <input
           id="voucher-step-up-password" v-model="password" type="password" autocomplete="current-password"

@@ -83,14 +83,19 @@ const currentInput = computed<VoucherRequest>(() => ({
 
 const isHighRisk = computed(() => isHighRiskVoucherInput(currentInput.value))
 
+/** Step-up dibutuhkan saat menyimpan voucher berisiko tinggi, dan juga saat
+ * mengaktifkan ulang voucher berisiko tinggi yang sudah terkunci. */
+const needsStepUp = computed(() => isHighRisk.value
+  && (!props.locked || (active.value && !props.voucher?.active)))
+
 const canSubmit = computed(() => {
   if (props.saving) return false
-  if (props.locked) return true
-  if (!code.value.trim() || !discountValue.value) return false
+  if (props.locked) return !needsStepUp.value || Boolean(password.value)
+  if (!isValidVoucherCode(code.value) || !discountValue.value) return false
   if (discountType.value === 'percent' && (discountValue.value <= 0 || discountValue.value > 100)) return false
   if (scope.value === 'category' && !scopeCategoriesText.value.trim()) return false
   if (isHighRisk.value && !usageLimitTotal.value) return false
-  if (isHighRisk.value && !password.value) return false
+  if (needsStepUp.value && !password.value) return false
   return true
 })
 
@@ -213,12 +218,12 @@ function submit() {
         <span class="text-[0.9rem] font-semibold">{{ active ? 'Aktif' : 'Nonaktif' }}</span>
       </label>
 
-      <AppSectionMessage v-if="isHighRisk && !locked" appearance="warning">
-        Potongan ini 80% atau lebih tanpa batas maksimum — wajib mengisi batas total pemakaian, dan kamu perlu
+      <AppSectionMessage v-if="needsStepUp" appearance="warning">
+        Potongan ini 80% ke atas atau Rp50.000 ke atas — wajib mengisi batas total pemakaian, dan kamu perlu
         memasukkan ulang kata sandi untuk konfirmasi.
       </AppSectionMessage>
 
-      <div v-if="isHighRisk && !locked">
+      <div v-if="needsStepUp">
         <label for="admin-voucher-step-up-password" :class="FIELD_LABEL_CLASS">Kata sandi akunmu</label>
         <input
           id="admin-voucher-step-up-password" v-model="password" type="password" autocomplete="current-password"

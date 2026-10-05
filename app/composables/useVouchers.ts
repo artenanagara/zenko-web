@@ -17,18 +17,35 @@ import type {
 
 const STEP_UP_HEADER = 'X-Voucher-Step-Up'
 
-/** Ambang yang sama dengan model.VoucherHighRiskDiscountPercent di backend —
- * dipakai untuk menampilkan field step-up sebelum submit, bukan sumber
- * kebenaran (server tetap memvalidasi ulang penuh). */
-const HIGH_RISK_DISCOUNT_PERCENT = 80
+/** Ambang yang sama dengan model.VoucherHighRiskDiscountPercent dan
+ * model.VoucherHighRiskFlatAmount di backend — dipakai untuk menampilkan
+ * field step-up sebelum submit, bukan sumber kebenaran (server tetap
+ * memvalidasi ulang penuh). */
+export const HIGH_RISK_DISCOUNT_PERCENT = 80
+export const HIGH_RISK_FLAT_AMOUNT = 50_000
+
+/** Persentase tertinggi untuk voucher tutor: menggratiskan paket hanya hak
+ * admin, dan server membatasi voucher tutor supaya pembeli tetap membayar
+ * minimal TUTOR_VOUCHER_MIN_TOTAL (model.VoucherTutorMinTotal). */
+export const TUTOR_VOUCHER_MAX_PERCENT = 99
+export const TUTOR_VOUCHER_MIN_TOTAL = 1_000
+
+/** Format kode yang diterima server: 4–32 karakter, huruf/angka, tanda
+ * hubung atau garis bawah (setelah diubah ke huruf besar). */
+export const VOUCHER_CODE_PATTERN = /^[A-Z0-9][A-Z0-9_-]{3,31}$/
+
+export function isValidVoucherCode(code: string): boolean {
+  return VOUCHER_CODE_PATTERN.test(code.trim().toUpperCase())
+}
 
 /** Cermin client-side dari model.VoucherCode.IsHighRisk di backend — kode
  * dengan potongan sebesar ini butuh batas total pemakaian dan step-up
- * password sebelum bisa disimpan. */
-export function isHighRiskVoucherInput(input: Pick<VoucherRequest, 'discountType' | 'discountValue' | 'maxDiscount'>): boolean {
+ * password sebelum bisa disimpan atau diaktifkan ulang. Batas maksimum
+ * potongan sengaja tidak menurunkan risikonya. */
+export function isHighRiskVoucherInput(input: Pick<VoucherRequest, 'discountType' | 'discountValue'>): boolean {
   return input.discountType === 'percent'
-    && input.discountValue >= HIGH_RISK_DISCOUNT_PERCENT
-    && !input.maxDiscount
+    ? input.discountValue >= HIGH_RISK_DISCOUNT_PERCENT
+    : input.discountValue >= HIGH_RISK_FLAT_AMOUNT
 }
 
 /**
@@ -129,14 +146,22 @@ export async function updateAdminVoucher(id: string, input: VoucherRequest, step
 }
 
 /** Kill switch moderasi — jalan untuk voucher siapa pun, hanya menyentuh Active. */
-export async function setAdminVoucherActive(id: string, active: boolean): Promise<Voucher> {
+export async function setAdminVoucherActive(id: string, active: boolean, stepUpToken?: string): Promise<Voucher> {
   const { public: config } = useRuntimeConfig()
   return await useApiFetch<Voucher>(`/admin/vouchers/${id}/active`, {
     baseURL: config.apiBase,
     method: 'PATCH',
     body: { active },
+    headers: stepUpHeaders(stepUpToken),
     credentials: 'include',
   })
+}
+
+/** Apakah voucher ini sedang menyala dari sudut pandang admin: untuk voucher
+ * tutor, kill switch admin (adminDisabled) yang menentukan, bukan toggle
+ * milik tutor. */
+export function isVoucherEnabledByAdmin(voucher: Voucher): boolean {
+  return voucher.createdByRole === 'tutor' ? !voucher.adminDisabled : voucher.active
 }
 
 export async function adminVoucherRedemptions(id: string): Promise<VoucherRedemption[]> {
@@ -215,6 +240,7 @@ export type VoucherStatusTone = 'success' | 'warning' | 'neutral'
 
 /** Status yang dirender — diturunkan dari active + jendela waktu, bukan kolom tersendiri. */
 export function voucherStatus(voucher: Voucher, now = Date.now() / 1000): { label: string, tone: VoucherStatusTone } {
+  if (voucher.adminDisabled) return { label: 'Dinonaktifkan admin', tone: 'warning' }
   if (!voucher.active) return { label: 'Nonaktif', tone: 'neutral' }
   if (voucher.expiresAt && now >= voucher.expiresAt) return { label: 'Kedaluwarsa', tone: 'neutral' }
   if (voucher.startsAt && now < voucher.startsAt) return { label: 'Terjadwal', tone: 'warning' }
