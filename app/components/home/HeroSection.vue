@@ -1,5 +1,13 @@
 <script setup lang="ts">
-const popularSearches = ['SKD CPNS', 'PPPK', 'UTBK-SNBT', 'TKA', 'BUMN']
+// Popular picks open the category landing pages (curated slugs, so they
+// always resolve) rather than a raw keyword search.
+const popularCategories = [
+  { label: 'SKD CPNS', to: '/kategori/skd/cpns' },
+  { label: 'UTBK-SNBT', to: '/kategori/utbk-snbt' },
+  { label: 'TKA', to: '/kategori/tka' },
+  { label: 'PPPK', to: '/kategori/pppk' },
+  { label: 'BUMN', to: '/kategori/rekrutmen-bumn' },
+]
 
 const query = ref('')
 
@@ -62,14 +70,12 @@ function onSubmit() {
           <!-- The label sits straight on the wash, so it needs a darker ink
                than the chips, which carry their own near-white background. -->
           <span class="mr-0.5 font-semibold text-ink/75">Pilihan populer</span>
-          <!-- Popular-search chips run a real search rather than jumping to
-               the grid below because the label promises a keyword. -->
           <NuxtLink
-            v-for="term in popularSearches"
-            :key="term"
-            :to="{ path: '/paket', query: { q: term } }"
+            v-for="item in popularCategories"
+            :key="item.to"
+            :to="item.to"
             class="rounded-xs border border-white/80 bg-white/85 px-3.5 py-1.5 font-medium shadow-xs backdrop-blur-[6px] transition-[background,border-color,color] duration-200 ease-smooth hover:border-primary/35 hover:bg-white hover:text-primary"
-          >{{ term }}</NuxtLink>
+          >{{ item.label }}</NuxtLink>
         </div>
       </div>
     </div>
